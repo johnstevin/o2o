@@ -1,0 +1,10 @@
+.project
+.idea
+.settings/
+.buildpath
+.externalToolBuilders
+*.bak
+*bak.*
+lua
+*~
+*.cache
