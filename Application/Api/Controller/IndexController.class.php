@@ -1,8 +1,8 @@
 <?php
 
-namespace Admin\Controller;
+namespace Api\Controller;
 
-class IndexController extends AdminController {
+class IndexController extends ApiController {
 
 	//系统首页
     public function index(){

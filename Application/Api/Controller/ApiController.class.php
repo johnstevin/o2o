@@ -1,9 +1,9 @@
 <?php
 
-namespace Admin\Controller;
+namespace Home\Controller;
 use Think\Controller;
 
-class AdminController extends Controller {
+class ApiController extends Controller {
 
 	public function _empty(){
 
