@@ -1,0 +1,40 @@
+.project
+.idea
+.settings/
+.buildpath
+.externalToolBuilders
+*.bak
+*bak.*
+lua
+*~
+*.cache
+Runtime/
+Data/
+Uploads/
+<<<<<<< HEAD
+#Application/Common/Conf/config.php
+=======
+Application/Common/Conf/config.php
+>>>>>>> origin/feature/stevin
+
+# db config file
+db.config.php
+
+# netbeans
+nbproject
+
+# windows thumbnail cache
+Thumbs.db
+
+# composer itself is not needed
+composer.lock
+
+# Mac DS_Store Files
+.DS_Store
+
+# phpunit itself is not needed
+phpunit.phar
+
+# local phpunit config
+/phpunit.xml
+

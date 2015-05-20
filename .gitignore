@@ -11,7 +11,7 @@ lua
 Runtime/
 Data/
 Uploads/
-#Application/Common/Conf/config.php
+Application/Common/Conf/config.php
 
 # db config file
 db.config.php

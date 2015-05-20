@@ -125,13 +125,9 @@ function G($start,$end='',$dec=4) {
     if(is_float($end)) { // 记录时间
         $_info[$start]  =   $end;
     }elseif(!empty($end)){ // 统计时间和内存使用
-        if(!isset($_info[$end])) {
-        	$_info[$end]       =  microtime(TRUE);
-        }
+        if(!isset($_info[$end])) $_info[$end]       =  microtime(TRUE);
         if(MEMORY_LIMIT_ON && $dec=='m'){
-            if(!isset($_mem[$end])) {
-            	$_mem[$end]     =  memory_get_usage();
-            }
+            if(!isset($_mem[$end])) $_mem[$end]     =  memory_get_usage();
             return number_format(($_mem[$end]-$_mem[$start])/1024);
         }else{
             return number_format(($_info[$end]-$_info[$start]),$dec);
@@ -139,9 +135,7 @@ function G($start,$end='',$dec=4) {
 
     }else{ // 记录时间和内存使用
         $_info[$start]  =  microtime(TRUE);
-        if(MEMORY_LIMIT_ON) {
-        	$_mem[$start]           =  memory_get_usage();
-        }
+        if(MEMORY_LIMIT_ON) $_mem[$start]           =  memory_get_usage();
     }
     return null;
 }
@@ -207,9 +201,8 @@ function compile($filename) {
     }else{
         $content    =   'namespace {'.$content;
     }
-    if ('?>' == substr($content, -2)){
+    if ('?>' == substr($content, -2))
         $content    = substr($content, 0, -2);
-    }
     return $content.'}';
 }
 
@@ -276,6 +269,7 @@ function T($template='',$layer=''){
  * @return mixed
  */
 function I($name,$default='',$filter=null,$datas=null) {
+	static $_PUT	=	null;
 	if(strpos($name,'/')){ // 指定修饰符
 		list($name,$type) 	=	explode('/',$name,2);
 	}elseif(C('VAR_AUTO_STRING')){ // 默认强制转换为字符串
@@ -294,7 +288,10 @@ function I($name,$default='',$filter=null,$datas=null) {
         	$input =& $_POST;
         	break;
         case 'put'     :   
-        	parse_str(file_get_contents('php://input'), $input);
+        	if(is_null($_PUT)){
+            	parse_str(file_get_contents('php://input'), $_PUT);
+        	}
+        	$input 	=	$_PUT;        
         	break;
         case 'param'   :
             switch($_SERVER['REQUEST_METHOD']) {
@@ -302,7 +299,10 @@ function I($name,$default='',$filter=null,$datas=null) {
                     $input  =  $_POST;
                     break;
                 case 'PUT':
-                    parse_str(file_get_contents('php://input'), $input);
+                	if(is_null($_PUT)){
+                    	parse_str(file_get_contents('php://input'), $_PUT);
+                	}
+                	$input 	=	$_PUT;
                     break;
                 default:
                     $input  =  $_GET;
@@ -334,7 +334,7 @@ function I($name,$default='',$filter=null,$datas=null) {
         	$input =& $datas;      
         	break;
         default:
-            return NULL;
+            return null;
     }
     if(''==$name) { // 获取全部变量
         $data       =   $input;
@@ -352,23 +352,27 @@ function I($name,$default='',$filter=null,$datas=null) {
         $filters    =   isset($filter)?$filter:C('DEFAULT_FILTER');
         if($filters) {
             if(is_string($filters)){
-                $filters    =   explode(',',$filters);
+                if(0 === strpos($filters,'/')){
+                    if(1 !== preg_match($filters,(string)$data)){
+                        // 支持正则验证
+                        return   isset($default) ? $default : null;
+                    }
+                }else{
+                    $filters    =   explode(',',$filters);                    
+                }
             }elseif(is_int($filters)){
                 $filters    =   array($filters);
             }
             
-            foreach($filters as $filter){
-                if(function_exists($filter)) {
-                    $data   =   is_array($data) ? array_map_recursive($filter,$data) : $filter($data); // 参数过滤
-                }elseif(0===strpos($filter,'/')){
-                	// 支持正则验证
-                	if(1 !== preg_match($filter,(string)$data)){
-                		return   isset($default) ? $default : NULL;
-                	}
-                }else{
-                    $data   =   filter_var($data,is_int($filter) ? $filter : filter_id($filter));
-                    if(false === $data) {
-                        return   isset($default) ? $default : NULL;
+            if(is_array($filters)){
+                foreach($filters as $filter){
+                    if(function_exists($filter)) {
+                        $data   =   is_array($data) ? array_map_recursive($filter,$data) : $filter($data); // 参数过滤
+                    }else{
+                        $data   =   filter_var($data,is_int($filter) ? $filter : filter_id($filter));
+                        if(false === $data) {
+                            return   isset($default) ? $default : null;
+                        }
                     }
                 }
             }
@@ -393,7 +397,7 @@ function I($name,$default='',$filter=null,$datas=null) {
         	}
         }
     }else{ // 变量默认值
-        $data       =    isset($default)?$default:NULL;
+        $data       =    isset($default)?$default:null;
     }
     is_array($data) && array_walk_recursive($data,'think_filter');
     return $data;
@@ -498,11 +502,10 @@ function file_exists_case($filename) {
 function import($class, $baseUrl = '', $ext=EXT) {
     static $_file = array();
     $class = str_replace(array('.', '#'), array('/', '.'), $class);
-    if (isset($_file[$class . $baseUrl])){
+    if (isset($_file[$class . $baseUrl]))
         return true;
-    }else{
+    else
         $_file[$class . $baseUrl] = true;
-    }
     $class_strut     = explode('/', $class);
     if (empty($baseUrl)) {
         if ('@' == $class_strut[0] || MODULE_NAME == $class_strut[0]) {
@@ -520,9 +523,8 @@ function import($class, $baseUrl = '', $ext=EXT) {
             $baseUrl = APP_PATH;
         }
     }
-    if (substr($baseUrl, -1) != '/'){
+    if (substr($baseUrl, -1) != '/')
         $baseUrl    .= '/';
-    }
     $classfile       = $baseUrl . $class . $ext;
     if (!class_exists(basename($class),false)) {
         // 如果类不存在 则导入类库文件
@@ -615,9 +617,8 @@ function M($name='', $tablePrefix='',$connection='') {
         $class      =   'Think\\Model';
     }
     $guid           =   (is_array($connection)?implode('',$connection):$connection).$tablePrefix . $name . '_' . $class;
-    if (!isset($_model[$guid])){
+    if (!isset($_model[$guid]))
         $_model[$guid] = new $class($name,$tablePrefix,$connection);
-    }
     return $_model[$guid];
 }
 
@@ -751,7 +752,7 @@ function B($name, $tag='',&$params=NULL) {
     if(''==$tag){
         $name   .=  'Behavior';
     }
-    \Think\Hook::exec($name,$tag,$params);
+    return \Think\Hook::exec($name,$tag,$params);
 }
 
 /**
@@ -813,12 +814,10 @@ function strip_whitespace($content) {
  */
 function throw_exception($msg, $type='Think\\Exception', $code=0) {
     Think\Log::record('建议使用E方法替代throw_exception',Think\Log::NOTICE);
-    if (class_exists($type, false)){
+    if (class_exists($type, false))
         throw new $type($msg, $code);
-    }
-    else{
+    else
         Think\Think::halt($msg);        // 异常类型不存在则输出错误信息字串
-    }
 }
 
 /**
@@ -850,9 +849,8 @@ function dump($var, $echo=true, $label=null, $strict=true) {
     if ($echo) {
         echo($output);
         return null;
-    }else{
+    }else
         return $output;
-    }
 }
 
 /**
@@ -1038,7 +1036,7 @@ function U($url='',$vars='',$suffix=true,$domain=false) {
  * @return void
  */
 function W($name, $data=array()) {
-    R($name,$data,'Widget');
+    return R($name,$data,'Widget');
 }
 
 /**
@@ -1077,9 +1075,8 @@ function redirect($url, $time=0, $msg='') {
         exit();
     } else {
         $str    = "<meta http-equiv='Refresh' content='{$time};URL={$url}'>";
-        if ($time != 0){
+        if ($time != 0)
             $str .= $msg;
-        }
         exit($str);
     }
 }
@@ -1145,9 +1142,8 @@ function F($name, $value='', $path=DATA_PATH) {
         }
     }
     // 获取缓存数据
-    if (isset($_cache[$name])){
+    if (isset($_cache[$name]))
         return $_cache[$name];
-    }
     if (Think\Storage::has($filename,'F')){
         $value      =   unserialize(Think\Storage::read($filename,'F'));
         $_cache[$name]  =   $value;
@@ -1236,7 +1232,7 @@ function session($name='',$value='') {
         }elseif(isset($name['id'])) {
             session_id($name['id']);
         }
-        if('common' != APP_MODE){ // 其它模式可能不支持
+        if('common' == APP_MODE){ // 其它模式可能不支持
             ini_set('session.auto_start', 0);
         }
         if(isset($name['name']))            session_name($name['name']);
@@ -1363,11 +1359,10 @@ function cookie($name='', $value='', $option=null) {
     );
     // 参数设置(会覆盖黙认设置)
     if (!is_null($option)) {
-        if (is_numeric($option)){
+        if (is_numeric($option))
             $option = array('expire' => $option);
-        }elseif (is_string($option)){
+        elseif (is_string($option))
             parse_str($option, $option);
-        }
         $config     = array_merge($config, array_change_key_case($option));
     }
     if(!empty($config['httponly'])){
