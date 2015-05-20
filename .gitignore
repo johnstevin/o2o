@@ -11,3 +11,21 @@ lua
 Runtime/
 Data/
 Uploads/
+
+nbproject
+
+# windows thumbnail cache
+Thumbs.db
+
+# composer itself is not needed
+composer.lock
+
+# Mac DS_Store Files
+.DS_Store
+
+# phpunit itself is not needed
+phpunit.phar
+
+# local phpunit config
+/phpunit.xml
+
