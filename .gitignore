@@ -8,9 +8,9 @@
 lua
 *~
 *.cache
-#Runtime/
-#Data/
-#Uploads/
+Runtime/
+Data/
+Uploads/
 #Application/Common/Conf/config.php
 
 # db config file
