@@ -12,6 +12,10 @@ Runtime/
 Data/
 Uploads/
 
+# db config file
+db.config.php
+
+# netbeans
 nbproject
 
 # windows thumbnail cache
