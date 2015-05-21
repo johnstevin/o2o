@@ -31,7 +31,7 @@ class ProductController extends ApiController
      * @param int $pagesize
      * @return json
      */
-    public function lists_get($categoryId = null, $brandId = null, $title = null, $pagesize = 10)
+    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10)
     {
         $where = [];
         if (!empty($categoryId)) $where['cate_id'] = $categoryId;
