@@ -11,16 +11,6 @@ use Think\Model;
  */
 class ProductController extends ApiController
 {
-    protected $model = null;//Product Model
-
-    protected function _initialize()
-    {
-        parent::_initialize();
-        if (!($this->model instanceof Model)) {
-            $this->model = new ProductModel();
-        }
-    }
-
     /**
      * 活取列表
      * @author Fufeng Nie <niefufeng@gmail.com>
