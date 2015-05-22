@@ -43,9 +43,6 @@ class ProductController extends ApiController
      */
     public function find($id)
     {
-        $where = [];
-        $where['id'] = intval($id);
-        $where['status'] = ProductModel::STATUS_ACTIVE;
-        $this->response($this->model->cache(true)->find(['where' => $where]), $this->_type);
+        $this->response(ProductModel::get($id), $this->_type);
     }
 }
