@@ -1,9 +1,9 @@
 <?php
 
-namespace Home\Controller;
-use Think\Controller;
+namespace Api\Controller;
+use Think\Controller\RestController;
 
-class ApiController extends Controller {
+class ApiController extends RestController  {
 
 	public function _empty(){
 
