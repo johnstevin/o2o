@@ -3,7 +3,6 @@ namespace Api\Controller;
 
 use Common\Model\ProductModel;
 use Think\Model;
-use Think\Page;
 
 /**
  * Product Api
