@@ -25,22 +25,16 @@ class ProductController extends ApiController
     /**
      * 活取列表
      * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param null|string $categoryId
-     * @param null|int $brandId
-     * @param null|string $title
-     * @param int $pagesize
+     * @param null|string $categoryId 分类ID
+     * @param null|int $brandId 品牌ID
+     * @param null|string $title 商品标题（模糊查询）
+     * @param int $pagesize 页面大小
+     * @param int|null $status 状态
      * @return json
      */
-    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10)
+    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE)
     {
-        $where = [];
-        if (!empty($categoryId)) $where['cate_id'] = $categoryId;
-        if (!empty($brandId)) $where['brand_id'] = $brandId;
-        if (!empty($title)) $where['title'] = ['LIKE', $title];
-        $where['status'] = ProductModel::STATUS_ACTIVE;
-        $total = $this->model->where($where)->count();
-        $pager = new Page($total, $pagesize);
-        $this->response($this->model->cache(true)->where($where)->limit($pager->firstRow . ',' . $pager->listRows)->select(), $this->_type);
+        $this->response(ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize)['data'], $this->_type);
     }
 
     /**
@@ -51,7 +45,7 @@ class ProductController extends ApiController
     public function find($id)
     {
         $where = [];
-        if (!empty($id)) $where['id'] = intval($id);
+        $where['id'] = intval($id);
         $where['status'] = ProductModel::STATUS_ACTIVE;
         $this->response($this->model->cache(true)->find(['where' => $where]), $this->_type);
     }
