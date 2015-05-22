@@ -48,8 +48,6 @@ class CategoryController extends ApiController {
             }
      */
     public function read($ids=null,$pid=null,$words=null,$words_op='or',$return_mode='list',$deep_fetch='false'){
-        //TODO:奇葩问题，传入的参数是'or'时，TP会转换成'or '
-        $words_op=trim($words_op);
 
         if($this->_method=='get'){
             $ret=null;
@@ -63,25 +61,8 @@ class CategoryController extends ApiController {
                     $map['pid']  = array('eq',$pid);
                 }
 
-                if(!is_null($words)){
-                    $words=explode(',',$words);
-                    $flds=['title','description'];
-
-                    $nw=count($words);
-                    $nf=count($flds);
-                    $where_kws=null;
-                    for($i=0;$i<$nf;$i++){
-                        $val=array();
-                        for($j=0;$j<$nw;$j++){
-                            $val[]=array('like','%'.$words[$j].'%');
-                        }
-                        $val[]=$words_op;
-                        //$val['_logic']='or';
-                        $where_kws[$flds[$i]]=$val;
-                    }
-                    $where_kws['_logic']='or';
-                    $map['_complex']=$where_kws;
-                }
+                if(!is_null($words))
+                    build_words_query(explode(',',$words), $words_op, ['title','description'], $map);
             }
 
             //TODO:$deep_fetch
@@ -89,7 +70,10 @@ class CategoryController extends ApiController {
             if(is_null($map))
                 $this->error('查询条件不能为空','',true);
 
-            $sql=D('Category')->where($map)->field(['id','pid','title','description']);
+            //TODO:在必要的时候，放到查询参数中
+            $map['status']=1;
+
+            $sql=D('Category')->where($map)->field(['id','pid','title','description','icon']);
             $ret=$sql->select();
 
             if(is_null($ret))
@@ -160,5 +144,6 @@ class CategoryController extends ApiController {
         }
         return false;
     }
+
 
 }
