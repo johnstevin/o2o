@@ -1,6 +1,7 @@
 <?php
 namespace Common\Model;
 
+use Think\Exception;
 use Think\Model\AdvModel;
 use Think\Page;
 
@@ -198,5 +199,22 @@ class ProductModel extends AdvModel
             'data' => $data,
             'pagination' => $pagination->show()
         ];
+    }
+
+    /**
+     * 根据获取单条记录
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id ID
+     * @return null|array
+     * @throws Exception
+     */
+    public static function get($id)
+    {
+        $id = intval($id);
+        if ($id === 0) throw new Exception('参数非法', 500);
+        $model = new self;
+        $where['id'] = $id;
+        $where['status'] = self::STATUS_ACTIVE;
+        return $model->where($where)->find();
     }
 }
