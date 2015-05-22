@@ -12,6 +12,7 @@ use Think\Page;
  */
 class ProductModel extends AdvModel
 {
+    protected static $model;
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
@@ -45,7 +46,7 @@ class ProductModel extends AdvModel
      * 只读字段
      * @var array
      */
-    protected $readonlyField = ['id'];
+    protected $readonlyField = ['id', 'add_time', 'add_ip'];
 
     /**
      * 自动验证
@@ -129,8 +130,23 @@ class ProductModel extends AdvModel
             'get_client_ip',
             self::MODEL_UPDATE,
             'function'
+        ],
+        [
+            'status',
+            self::STATUS_ACTIVE,
+            self::MODEL_INSERT
         ]
     ];
+
+    /**
+     * 获取当前模型实例
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @return ProductModel
+     */
+    protected static function getInstance()
+    {
+        return self::$model instanceof self ? self::$model : self::$model = new self;
+    }
 
     /**
      * 验证分类是否存在
@@ -147,6 +163,7 @@ class ProductModel extends AdvModel
 
     /**
      * 活取所有状态的数组
+     * @author Fufeng Nie <niefufeng@gmail.com>
      * @return array
      */
     public static function getStatusOptions()
@@ -184,7 +201,7 @@ class ProductModel extends AdvModel
         }
         if (!empty($status)) $where['status'] = in_array($status, array_keys(self::getStatusOptions())) ? $status : self::STATUS_ACTIVE;
         if (!empty($title)) $where['title'] = ['LIKE', trim($title)];
-        $model = new self;
+        $model = self::getInstance();
         if (isset($products)) {
             $subSql = $model->where(['id' => ['IN', $products]])->buildSql();
             $total = $model->table($subSql . ' sub')->where($where)->count('id');
@@ -211,8 +228,8 @@ class ProductModel extends AdvModel
     public static function get($id)
     {
         $id = intval($id);
-        if ($id === 0) throw new Exception('参数非法', 500);
-        $model = new self;
+        if ($id === 0) return null;
+        $model = self::getInstance();
         $where['id'] = $id;
         $where['status'] = self::STATUS_ACTIVE;
         return $model->where($where)->find();
