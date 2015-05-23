@@ -104,6 +104,7 @@ function check_product_exist($id)
 
 /**
  * 检测订单号是否存在
+ * @author Fufeng Nie <niefufeng@gmail.com>
  * @param string $id
  * @return bool
  */
@@ -114,6 +115,7 @@ function check_order_exist($id)
 
 /**
  * 检测分类是否存在
+ * @author Fufeng Nie <niefufeng@gmail.com>
  * @param int $id
  * @return bool
  */
