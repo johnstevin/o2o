@@ -56,7 +56,7 @@ class MerchantController extends ApiController
                 ->bind(':lat', $lat)
                 ->bind(':dist', $range)
                 ->field(['id', 'title','description','type','open_status','open_time_mode'
-                    ,'begin_open_time','end_open_time','delivery_range','phone_number','address']);
+                    ,'begin_open_time','end_open_time','delivery_range','phone_number','address','group_id']);
 
             $ret = $sql->select();
 
@@ -69,4 +69,19 @@ class MerchantController extends ApiController
         }
     }
 
+    /**
+     * 查询门店商品分类
+     * @param $group_id
+     */
+    public function shop_category($group_id){
+        //TODO:还未测试
+        if ($this->_method == 'get') {
+            $this->response(array('items'=>M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
+                ->where('a.group_id=:group_id and a.category_id=b.id')
+                ->field(['b.id','b.title'])
+                ->select()),'json');
+        } else {
+            $this->error('该访问被禁止', '', true);
+        }
+    }
 }
