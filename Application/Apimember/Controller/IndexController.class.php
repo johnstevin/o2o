@@ -4,10 +4,8 @@ namespace Api\Controller;
 
 class IndexController extends ApiController {
 
-	//系统首页
+    //TODO
     public function index(){
-
-        echo '正常';
 
     }
 
