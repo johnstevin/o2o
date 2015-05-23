@@ -264,7 +264,7 @@ class CategoryModel extends AdvModel
             $categorys[$parentId] = list_to_tree(self::getLists($fields), 'id', 'pid', '_child', $parentId);
             S('sys_category_tree', $categorys);
         }
-        return $categorys[$parentId];
+        return empty($categorys[$parentId]) ? [] : $categorys[$parentId];
     }
 
     /**
