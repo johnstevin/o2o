@@ -101,3 +101,23 @@ function check_product_exist($id)
 {
     return \Common\Model\ProductModel::checkProductExist($id);
 }
+
+/**
+ * 检测订单号是否存在
+ * @param string $id
+ * @return bool
+ */
+function check_order_exist($id)
+{
+    return \Common\Model\OrderModel::checkOrderExist($id);
+}
+
+/**
+ * 检测分类是否存在
+ * @param int $id
+ * @return bool
+ */
+function check_category_exist($id)
+{
+    return \Common\Model\CategoryModel::checkCategoryExist($id);
+}
