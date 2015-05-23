@@ -205,11 +205,18 @@ class ProductModel extends AdvModel
     public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $relation = false)
     {
         $where = [];
+        $productIds = null;
         if (!empty($categoryIds)) {
             $categoryIds = is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds);
             $categoryIds = array_unique($categoryIds);
             $categoryProducts = M('product_category')->where(['category_id' => ['IN', $categoryIds]])->select();
-            $products = array_map(function ($value) {
+            if (empty($categoryProducts)) {
+                return [
+                    'data' => [],
+                    'pagination' => ''
+                ];
+            }
+            $productIds = array_map(function ($value) {
                 return $value['product_id'];
             }, $categoryProducts);
         }
@@ -220,8 +227,8 @@ class ProductModel extends AdvModel
         if (!empty($status)) $where['status'] = in_array($status, array_keys(self::getStatusOptions())) ? $status : self::STATUS_ACTIVE;
         if (!empty($title)) $where['title'] = ['LIKE', trim($title)];
         $model = self::getInstance();
-        if (isset($products)) {
-            $subSql = $model->where(['id' => ['IN', $products]])->buildSql();
+        if ($productIds) {
+            $subSql = $model->where(['id' => ['IN', $productIds]])->buildSql();
             $total = $model->table($subSql . ' sub')->where($where)->count('id');
             $pagination = new Page($total, $pageSize);
             $data = $model->table($subSql . ' sub')->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
