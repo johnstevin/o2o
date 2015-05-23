@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{:C('WEB_SITE_TITLE')}</title>
+
+</head>
+<body>
+
+<form action="{:U('Public/register')}" method="post" name="form">
+
+    用户名：<input type="text" name="username" value="" />　<br />
+    手机：<input type="text" name="mobile" value="" />　<br />
+    邮箱：<input type="text" name="email" value="" />　<br />
+    密码：<input type="password" name="password" value="" />
+    验证码：<input type="" name="verify" />
+           <img src="{:U('Public/verify')}" />
+        <input type="submit" value="提交" />
+
+</form>
+
+</body>
+</html>
