@@ -75,7 +75,7 @@ class CategoryModel extends AdvModel
         ],
         [
             'pid',
-            'checkCategoryExist',
+            'checkCategoryPidExist',
             '父级ID非法',
             self::MUST_VALIDATE,
             'callback'
@@ -158,7 +158,7 @@ class CategoryModel extends AdvModel
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @return CategoryModel
      */
-    protected static function getInstance()
+    public static function getInstance()
     {
         return self::$model instanceof self ? self::$model : self::$model = new self;
     }
@@ -222,21 +222,59 @@ class CategoryModel extends AdvModel
      * @param int $id
      * @return bool
      */
-    protected static function checkCategoryExist($id)
+    public static function checkCategoryExist($id)
     {
         $id = intval($id);
-        return ($id === 0 || self::getInstance()->field('id')->where(['id' => $id, 'status' => self::STATUS_ACTIVE])->find()) ? true : false;
+        return ($id && self::get($id, 'id')) ? true : false;
+    }
+
+    /**
+     * 检测父级ID是否合法
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $pid 父级ID
+     * @return bool
+     */
+    public static function checkCategoryPidExist($pid)
+    {
+        return ($pid == 0 || self::checkCategoryExist($pid)) ? true : false;
+    }
+
+    /**
+     * 获得分组列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @return null|array
+     */
+    public static function getLists()
+    {
+        return self::getInstance()->where(['status' => self::STATUS_ACTIVE])->order('order DESC')->select();
+    }
+
+    /**
+     * 获取分类树
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $parentId 父级ID
+     * @return array
+     */
+    public static function getTree($parentId = 0)
+    {
+        $categorys = S('sys_category_tree');
+        if (!isset($categorys[$parentId])) {
+            $categorys[$parentId] = list_to_tree(self::getLists(), 'id', 'pid', '_child', $parentId);
+            S('sys_category_tree', $categorys);
+        }
+        return $categorys[$parentId];
     }
 
     /**
      * 根据ID获取分类信息
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 分类ID
+     * @param string|array $fields 要查询的字段
      * @return array|null
      */
-    public static function get($id)
+    public static function get($id, $fields = '*')
     {
         $id = intval($id);
-        return $id ? self::getInstance()->where(['id' => $id, 'status' => self::STATUS_ACTIVE])->find() : null;
+        return $id ? self::getInstance()->field($fields)->where(['id' => $id, 'status' => self::STATUS_ACTIVE])->find() : null;
     }
 }
