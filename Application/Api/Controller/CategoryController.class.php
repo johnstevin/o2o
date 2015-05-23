@@ -159,25 +159,29 @@ class CategoryController extends ApiController {
                     ->bind(':cateid',$cateid);
                 $ret=$sql->select();
             }else if($mode==2){
-                $sql=M()->table('sq_brand as b,sq_norms as n,sq_category_brand_norms as l')
-                    ->field(['b.id as bid','b.title as brand','n.id as nid','n.title as norm'])
-                    ->where('b.id=l.brand_id and n.id=l.norms_id and l.category_id=:cateid')
-                    ->group('b.id,n.id')
+
+                $sql=M()->table('sq_category_brand_norms as l')
+                    ->field(['sq_brand.id as bid','sq_brand.title as brand','sq_norms.id as nid','sq_norms.title as norm'])
+                    ->join('LEFT JOIN sq_norms on sq_norms.id=l.norms_id')
+                    ->join('left JOIN sq_brand on sq_brand.id=l.brand_id')
+                    ->where('l.category_id=:cateid')
                     ->bind(':cateid',$cateid);
+
                 $ret=$sql->select();
 
+                $map=[];
                 foreach($ret as $i){
                     if(!array_key_exists($i['bid'],$map))
                         $map[$i['bid']]=array('id'=>$i['bid'],'title'=>$i['brand']);
-
-                    $map[$i['bid']]['norms'][]=array('id'=>$i['nid'],'title'=>$i['norm']);
+                    if(!is_null($i['nid']) or !is_null($i['norm']))
+                        $map[$i['bid']]['norms'][]=array('id'=>$i['nid'],'title'=>$i['norm']);
                 }
 
                 $ret=[];
                 foreach($map as $i){
                     $ret[]=$i;
                 }
-                
+
             }
             $this->response(array('items'=>$ret),'json');
         }else{
