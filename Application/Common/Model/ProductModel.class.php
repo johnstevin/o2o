@@ -99,7 +99,7 @@ class ProductModel extends AdvModel
             '状态的范围不正确',
             self::MUST_VALIDATE,
             'in'
-        ]
+        ],
     ];
 
     /**
@@ -143,22 +143,39 @@ class ProductModel extends AdvModel
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @return ProductModel
      */
-    protected static function getInstance()
+    public static function getInstance()
     {
         return self::$model instanceof self ? self::$model : self::$model = new self;
     }
 
+    protected function _after_find(&$result, $options = '')
+    {
+        parent::_after_find($result, $options);
+        $result['_status'] = self::getStatusOptions()[$result['status']];
+        $result['_add_time'] = date(C('DATE_FORMAT'), $result['add_time']);
+        $result['_edit_time'] = date(C('DATE_FORMAT'), $result['edit_time']);
+    }
+
+    protected function _after_select(&$result, $options = '')
+    {
+        parent::_after_select($result, $options);
+        foreach ($result as &$value) {
+            $value['_status'] = self::getStatusOptions()[$result['status']];
+            $value['_add_time'] = date(C('DATE_FORMAT'), $result['add_time']);
+            $value['_edit_time'] = date(C('DATE_FORMAT'), $result['edit_time']);
+        }
+    }
+
     /**
-     * 验证分类是否存在
+     * 检测商品是否存在
      * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param string|array $categoryIds
+     * @param int $id 商品ID
      * @return bool
      */
-    protected function checkCateExist($categoryIds)
+    public static function checkProductExist($id)
     {
-        $ids = is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds);
-        $ids = array_unique($ids);
-        return true;
+        $id = intval($id);
+        return ($id && self::get($id, 'id')) ? true : false;
     }
 
     /**
@@ -182,9 +199,10 @@ class ProductModel extends AdvModel
      * @param null|int $status 状态，可传null或数字
      * @param null|string $title 商品标题，用于模糊搜索，可传NULL
      * @param int $pageSize 分页大小，默认为10
+     * @param bool $relation 是否关联查询
      * @return array
      */
-    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10)
+    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $relation = false)
     {
         $where = [];
         if (!empty($categoryIds)) {
@@ -212,6 +230,18 @@ class ProductModel extends AdvModel
             $pagination = new Page($total, $pageSize);
             $data = $model->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
         }
+        $categoryModel = CategoryModel::getInstance();
+        $productCategoryModel = M('product_category');
+        if ((bool)$relation) {
+            foreach ($data as &$value) {
+                $categorys = $productCategoryModel->field('category_id')->where(['product_id' => $value['id']])->select();
+                $categoryIds = array_map(function ($category) {
+                    return $category['category_id'];
+                }, $categorys);
+                $value['categorys'] = $categoryModel->where(['id' => ['IN', $categoryIds]])->select();
+                // TODO $value['brand']待添加
+            }
+        }
         return [
             'data' => $data,
             'pagination' => $pagination->show()
@@ -222,16 +252,12 @@ class ProductModel extends AdvModel
      * 根据获取单条记录
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id ID
+     * @param string|array $fields 要查询的字段
      * @return null|array
-     * @throws Exception
      */
-    public static function get($id)
+    public static function get($id, $fields = '*')
     {
         $id = intval($id);
-        if ($id === 0) return null;
-        $model = self::getInstance();
-        $where['id'] = $id;
-        $where['status'] = self::STATUS_ACTIVE;
-        return $model->where($where)->find();
+        return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
     }
 }
