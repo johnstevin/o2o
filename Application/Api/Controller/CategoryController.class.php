@@ -145,5 +145,62 @@ class CategoryController extends ApiController {
         return false;
     }
 
+    /**
+     * 查询品牌
+     * @param $cateid int 分类ID
+     * @param $mode int 查询模式，1-只返回品牌，2-返回关联的规格
+     */
+    public function brand($cateid,$mode=1){
+        if($this->_method=='get'){
+
+            if($mode==1){
+                $sql=M()->table('sq_brand as b,sq_category_brand_norms as l')
+                    ->field(['b.id','b.title'])->where('b.id=l.brand_id and l.category_id=:cateid')->group('b.id')
+                    ->bind(':cateid',$cateid);
+                $ret=$sql->select();
+            }else if($mode==2){
+                $sql=M()->table('sq_brand as b,sq_norms as n,sq_category_brand_norms as l')
+                    ->field(['b.id as bid','b.title as brand','n.id as nid','n.title as norm'])
+                    ->where('b.id=l.brand_id and n.id=l.norms_id and l.category_id=:cateid')
+                    ->group('b.id,n.id')
+                    ->bind(':cateid',$cateid);
+                $ret=$sql->select();
+
+                foreach($ret as $i){
+                    if(!array_key_exists($i['bid'],$map))
+                        $map[$i['bid']]=array('id'=>$i['bid'],'title'=>$i['brand']);
+
+                    $map[$i['bid']]['norms'][]=array('id'=>$i['nid'],'title'=>$i['norm']);
+                }
+
+                $ret=[];
+                foreach($map as $i){
+                    $ret[]=$i;
+                }
+                
+            }
+            $this->response(array('items'=>$ret),'json');
+        }else{
+            $this->error('该访问被禁止','',true);
+        }
+    }
+
+    /**
+     * 查询规格
+     * @param $cateid  int 分类ID
+     * @param $brandid int 品牌ID
+     */
+    public function norm($cateid,$brandid){
+        if($this->_method=='get'){
+            $this->response(array('items'=>M()->table('sq_norms as n,sq_category_brand_norms as l')
+                ->field(['n.id','n.title'])->where('n.id=norms_id and l.brand_id=:brandid and l.category_id=:cateid')->group('n.id')
+                ->bind(':cateid',$cateid)
+                ->bind(':brandid',$brandid)
+                ->select()),'json');
+        }else{
+            $this->error('该访问被禁止','',true);
+        }
+    }
+
 
 }
