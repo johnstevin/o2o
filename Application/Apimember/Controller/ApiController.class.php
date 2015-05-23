@@ -36,7 +36,7 @@ abstract class ApiController extends Controller{
      * @param null $redirect
      * @param null $extra
      * @return mixed
-     * @throws \Api\Exception\ReturnException
+     * @throws ReturnException
      */
     protected function apiReturn($success, $error_code=0, $message=null, $redirect=null, $extra=null){
 
@@ -81,7 +81,7 @@ abstract class ApiController extends Controller{
 
     /**
      * 失败时调用
-     * @param $error_code　　　错误代码，商户默认以40001开始
+     * @param $error_code　　　错误代码，商户默认以50001开始
      * @param $message　　　　　错误信息
      * @param null $redirect　　手机端调用，参数设null
      * @param null $extra      扩展目录，返回数据，可包含多维数组，默认键名为data,例：array('data'=>$return)
