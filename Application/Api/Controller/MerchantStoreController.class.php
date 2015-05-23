@@ -54,7 +54,7 @@ class MerchantStoreController extends ApiController {
             if(!is_null($words))
                 build_words_query(explode(',',$words), $words_op, ['title','description'], $map);
 
-            $sql = M('MerchantStore')->where($map)
+            $sql = M('MerchantShop')->where($map)
                 ->bind(':lng', $lng)
                 ->bind(':lat', $lat)
                 ->bind(':dist', $range)
