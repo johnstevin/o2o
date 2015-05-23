@@ -19,11 +19,12 @@ class ProductController extends ApiController
      * @param null|string $title 商品标题（模糊查询）
      * @param int $pagesize 页面大小
      * @param int|null $status 状态
+     * @param bool $relation 是否进行关联查询
      * @return json
      */
-    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE)
+    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE, $relation = false)
     {
-        $this->response(ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize)['data'], $this->_type);
+        $this->response(ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize, $relation)['data'], $this->_type);
     }
 
     /**
