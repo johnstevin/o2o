@@ -17,7 +17,7 @@ class MerchantDepotModel extends AdvModel
     const STATUS_CLOSE = 0;//关闭
 
     protected $fields = [
-        'merchant_id',
+        'group_id',
         'product_id',
         'status',
         'price',
@@ -27,7 +27,7 @@ class MerchantDepotModel extends AdvModel
         'update_time',
         'update_ip',
         '_type' => [
-            'merchant_id' => 'int',
+            'group_id' => 'int',
             'product_id' => 'int',
             'price' => 'double',
             'add_time' => 'int',
@@ -41,11 +41,11 @@ class MerchantDepotModel extends AdvModel
      * 只读字段
      * @var array
      */
-    protected $readonlyField = ['merchant_id', 'product_id', 'add_time', 'add_ip'];
+    protected $readonlyField = ['group_id', 'product_id', 'add_time', 'add_ip'];
 
     protected $_validate = [
         [
-            'merchant_id',
+            'group_id',
             'require',
             '商家ID不能为空',
             self::MUST_VALIDATE
@@ -63,7 +63,7 @@ class MerchantDepotModel extends AdvModel
             self::MUST_VALIDATE
         ],
         [
-            'merchant_id',
+            'group_id',
             'check_merchant_exist',
             '有非法商家ID',
             self::MUST_VALIDATE,
