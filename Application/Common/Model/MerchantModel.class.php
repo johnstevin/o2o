@@ -200,7 +200,7 @@ class MerchantModel extends AdvModel
     public static function get($id, $fields = '*')
     {
         $id = intval($id);
-        return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->find() : null;
+        return $id ? self::getInstance()->field($fields)->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->find() : null;
     }
 
     // TODO 这个因为要算距离，我做不到
