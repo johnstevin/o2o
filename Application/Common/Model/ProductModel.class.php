@@ -199,14 +199,15 @@ class ProductModel extends AdvModel
      * @param null|int $status 状态，可传null或数字
      * @param null|string $title 商品标题，用于模糊搜索，可传NULL
      * @param int $pageSize 分页大小，默认为10
-     * @param bool $relation 是否关联查询
+     * @param array|string $relation 要进行关联查询的表，用逗号分割或者直接数组，可关联category、brand
      * @return array
      */
-    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $relation = false)
+    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $relation = [])
     {
         $where = [];
         $productIds = null;
-        if (!empty($categoryIds)) {
+        $relation = is_array($relation) ? $relation : explode(',', $relation);
+        if (!empty($categoryIds)) {//如果分类ID不为空，则先查询出分类下所有的商品ID
             $categoryIds = is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds);
             $categoryIds = array_unique($categoryIds);
             $categoryProducts = M('product_category')->where(['category_id' => ['IN', $categoryIds]])->select();
@@ -226,7 +227,7 @@ class ProductModel extends AdvModel
         }
         if (!empty($status)) $where['status'] = in_array($status, array_keys(self::getStatusOptions())) ? $status : self::STATUS_ACTIVE;
         if (!empty($title)) $where['title'] = ['LIKE', trim($title)];
-        $model = self::getInstance();
+        $model = self::getInstance()->alias('p');
         if ($productIds) {
             $subSql = $model->where(['id' => ['IN', $productIds]])->buildSql();
             $total = $model->table($subSql . ' sub')->where($where)->count('id');
@@ -237,18 +238,8 @@ class ProductModel extends AdvModel
             $pagination = new Page($total, $pageSize);
             $data = $model->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
         }
-        $categoryModel = CategoryModel::getInstance();
-        $productCategoryModel = M('product_category');
-        if ((bool)$relation) {
-            foreach ($data as &$value) {
-                $categorys = $productCategoryModel->field('category_id')->where(['product_id' => $value['id']])->select();
-                $categoryIds = array_map(function ($category) {
-                    return $category['category_id'];
-                }, $categorys);
-                $value['categorys'] = $categoryModel->where(['id' => ['IN', $categoryIds]])->select();
-                // TODO $value['brand']待添加
-            }
-        }
+        if (array_search('category', $relation) !== false) self::relationCategory($data);//关联分类
+        if (array_search('brand', $relation) !== false) self::relationBrand($data);//关联品牌
         return [
             'data' => $data,
             'pagination' => $pagination->show()
@@ -266,5 +257,50 @@ class ProductModel extends AdvModel
     {
         $id = intval($id);
         return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
+    }
+
+    /**
+     * 关联分类
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param array $data 查询出来的数组
+     * @param bool $isList 是否是多个产品
+     */
+    public static function relationCategory(&$data, $isList = true)
+    {
+        $categoryModel = CategoryModel::getInstance();
+        $productCategoryModel = M('product_category');
+        if ($isList) {
+            foreach ($data as &$value) {
+                $categorys = $productCategoryModel->field('category_id')->where(['product_id' => $value['id']])->select();
+                $categoryIds = array_map(function ($category) {
+                    return $category['category_id'];
+                }, $categorys);
+                $value['categorys'] = $categoryModel->where(['id' => ['IN', $categoryIds]])->select();
+            }
+        } else {
+            $categorys = $productCategoryModel->field('category_id')->where(['product_id' => $data['id']])->select();
+            $categoryIds = array_map(function ($category) {
+                return $category['category_id'];
+            }, $categorys);
+            $data['categorys'] = $categoryModel->where(['id' => ['IN', $categoryIds]]);
+        }
+    }
+
+    /**
+     * 关联品牌
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param array $data 查询出来的产品数组
+     * @param bool $isList 是否有多个产品
+     */
+    public static function relationBrand(&$data, $isList = true)
+    {
+        $brandModel = BrandModel::getInstance();
+        if ($isList) {
+            foreach ($data as &$value) {
+                $value['brand'] = $brandModel->find($value['brand_id']);
+            }
+        } else {
+            $data['brand'] = $brandModel->find($data['brand_id']);;
+        }
     }
 }
