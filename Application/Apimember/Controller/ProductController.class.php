@@ -29,7 +29,7 @@ class ProductController extends ApiController {
      */
     public function getMerchantList($lat, $lng, $range = 100,$words=null,$wordsOp='or',$type=0){
         try{
-            $this->apiSuccess('','',array('data'=>(new MerchantShopModel())
+            $this->apiSuccess(array('data'=>(new MerchantShopModel())
                 ->getList($lat, $lng, $range,$words,$wordsOp,$type)));
         }catch (Exception $ex){
             $this->apiError(50002,$ex->getMessage());
@@ -39,49 +39,52 @@ class ProductController extends ApiController {
     /**
      * 根据获取的商家仓库的商品获取商品分类接口
      * @param array|string $groupIds 商家分组ID，可以通过getMerchantList获得
-     * @author  stevin
+     * @author  stevin WangJiang
      */
     public function getDepotCategory($groupIds=''){
-        if(empty($groupIds)){
-            $this->apiError(50003,'参数groupIds不能为空');
-            return;
-        }
+        //TODO:需要考虑返回的分类是第几层
+        try{
+            empty($groupIds) and E('参数groupIds不能为空');
 
-        if(is_string($groupIds))
             $groupIds=explode(',',$groupIds);
 
-        $this->apiSuccess('','',array('data'=>M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
-            ->where('a.group_id in (:groupIds) and a.category_id=b.id')
-            ->field(['b.id','b.title'])
-            ->bind(':groupIds',$groupIds)
-            ->select()));
+            $this->apiSuccess(array('data'=>M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
+                ->where('a.group_id in (:groupIds) and a.category_id=b.id')
+                ->field(['b.id','b.title'])
+                ->bind(':groupIds',$groupIds)
+                ->select()));
+
+        }catch (Exception $ex){
+            $this->apiError(50003,$ex->getMessage());
+        }
     }
 
     /**
      * 根据获取的商家仓库的商品获取商品品牌接口
      * @param
-     * @author  stevin
+     * @author  stevin WangJiang
      */
     public function getDepotBrand($groupIds=''){
-        if(empty($groupIds)){
-            $this->apiError(50004,'参数groupIds不能为空');
-            return;
-        }
+        try{
+            empty($groupIds) and E('参数groupIds不能为空');
 
-        if(is_string($groupIds))
             $groupIds=explode(',',$groupIds);
 
-        $this->apiSuccess('','',array('data'=>M()->table('sq_merchant_depot_pro_category as a,sq_category as b,sq_category_brand_norms as c')
-            ->where('a.group_id in (:groupIds) and a.category_id=b.id and ')
-            ->field(['b.id','b.title'])
-            ->bind(':groupIds',$groupIds)
-            ->select()));
+            $this->apiSuccess(array('data'=>M()->table('sq_merchant_depot_pro_category as a,sq_category as b,sq_category_brand_norms as c,sq_brand as d')
+                ->where('a.group_id in (:groupIds) and a.category_id=b.id and a.category_id=c.category_id and d.id=c.brand_id')
+                ->field(['b.id','b.title','d.title as brand'])
+                ->bind(':groupIds',$groupIds)
+                ->select()));
+
+        }catch (Exception $ex){
+            $this->apiError(50004,$ex->getMessage());
+        }
     }
 
     /**
      * 根据获取的商家仓库的商品获取商品规格接口
      * @param
-     * @author  stevin
+     * @author  stevin WangJiang
      */
     public function getDepotNorms(){
 
@@ -98,7 +101,7 @@ class ProductController extends ApiController {
      * @author  stevin WangJiang
      */
     public function getProductList($categoryId = null, $brandId = null, $status = ProductModel::STATUS_ACTIVE, $title = null, $pageSize = 10){
-        $this->apiSuccess('','',array('data'=>ProductModel::getLists($categoryId, $brandId, $status, $title, $pageSize)));
+        $this->apiSuccess(array('data'=>ProductModel::getLists($categoryId, $brandId, $status, $title, $pageSize)));
     }
 
     /**
