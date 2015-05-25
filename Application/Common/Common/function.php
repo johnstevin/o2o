@@ -1,4 +1,5 @@
 <?php
+<<<<<<< HEAD
 
 /**
  * 检查IP是否合法
@@ -9,3 +10,5 @@ function checkIpFormat($ip)
 {
     return filter_var($ip, FILTER_VALIDATE_IP) ? true : false;
 }
+=======
+>>>>>>> origin/feature/stevin

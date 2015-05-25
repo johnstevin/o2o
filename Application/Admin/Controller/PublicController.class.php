@@ -58,6 +58,34 @@ class PublicController extends \Think\Controller {
         }
     }
 
+    /**
+     * 后台用户注册
+     * @author stevin.john
+     */
+    public function register($mobile = '', $password = '', $username = '', $email = '',  $verify = ''){
+
+        if(IS_POST){
+            /* 检测验证码 */
+            //if(!check_verify($verify)){
+            //    $this->error('验证码输入错误！');
+            //}
+
+            /* 调用注册接口注册用户 */
+            $User = new UserApi;
+            $uid = $User->register($mobile, $password, $username, $email);
+            if(0 < $uid){ //注册成功
+                //TODO: 发送验证邮件
+                $this->success('注册成功！',U('login'));
+            } else { //注册失败，显示错误信息
+                $this->error($this->showRegError($uid));
+            }
+
+        } else {
+            print_r(C('HHH'));exit;
+            $this->display('User/register');
+        }
+    }
+
     /* 退出登录 */
     public function logout(){
         if(is_login()){

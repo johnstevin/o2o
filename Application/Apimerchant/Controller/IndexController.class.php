@@ -1,13 +1,17 @@
 <?php
 // +----------------------------------------------------------------------
-// | 商户管理模块
+// | Created by stevin.
 // +----------------------------------------------------------------------
-// | Data:2015-5-20
+// | Date: 2015-5-25
 // +----------------------------------------------------------------------
 namespace Api\Controller;
 
-class MerchantController extends ApiController
-{
+class IndexController extends ApiController {
+
+	//TODO
+    public function index(){
+    }
+
     /**
      * 查询商家门店
      * @param double $lat 查询中心维度，必须是百度坐标
@@ -24,39 +28,39 @@ class MerchantController extends ApiController
 
         if ($this->_method == 'get') {
 
-            if(!is_numeric($lat) or !is_numeric($lng))
+            if (!is_numeric($lat) or !is_numeric($lng))
                 $this->error('坐标必须是数值', '', true);
 
-            if($lat<-90 or $lat>90 or $lng<-180 or $lng>180)
+            if ($lat < -90 or $lat > 90 or $lng < -180 or $lng > 180)
                 $this->error('非法坐标', '', true);
 
-            if(!is_numeric($range))
+            if (!is_numeric($range))
                 $this->error('查询范围必须是数值', '', true);
 
             //TODO：需要考虑最大查询范围
-            if($range<0)
+            if ($range < 0)
                 $this->error('非法查询范围', '', true);
 
-            $map['_string']='ST_Distance_Sphere(lnglat,POINT(:lng,:lat))<:dist';
+            $map['_string'] = 'ST_Distance_Sphere(lnglat,POINT(:lng,:lat))<:dist';
 
-            if(!is_numeric($type))
+            if (!is_numeric($type))
                 $this->error('坐标必须是数值', '', true);
 
-            if(!in_array($type,['0','1','2','3','4']))
+            if (!in_array($type, ['0', '1', '2', '3', '4']))
                 $this->error('非法店面类型，可选项：0-所有类型，1-超市，2-生鲜，3-洗车，4-送水', '', true);
 
-            if($type!='0')
-                $map['type']=$type;
+            if ($type != '0')
+                $map['type'] = $type;
 
-            if(!empty($words))
-                build_words_query(explode(',',$words), $words_op, ['title','description'], $map);
+            if (!empty($words))
+                build_words_query(explode(',', $words), $words_op, ['title', 'description'], $map);
 
             $sql = M('MerchantShop')->where($map)
                 ->bind(':lng', $lng)
                 ->bind(':lat', $lat)
                 ->bind(':dist', $range)
-                ->field(['id', 'title','description','type','open_status','open_time_mode'
-                    ,'begin_open_time','end_open_time','delivery_range','phone_number','address','group_id']);
+                ->field(['id', 'title', 'description', 'type', 'open_status', 'open_time_mode'
+                    , 'begin_open_time', 'end_open_time', 'delivery_range', 'phone_number', 'address', 'group_id']);
 
             $ret = $sql->select();
 
