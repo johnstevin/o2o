@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{$meta_title}</title>
+    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container-fluid">
+    <!-- 标题栏 -->
+    <div>
+        <h2>组织管理</h2>
+    </div>
+    <!-- 操作  -->
+    <div>
+        <a id="add-group" class="btn btn-success" href="{:U('add')}">新 增</a>
+        <!--<a id="edit-group" class="btn btn-info" href="{:U('edit')}">编 辑</a>-->
+        <!--<a id="remove-group" class="btn btn-warning" href="{:U('remove')}">删 除</a>-->
+    </div>
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <!--<th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>-->
+            <th>用户组</th>
+            <th>添加子分类</th>
+            <th>描述</th>
+            <th>层级</th>
+            <th>状态</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <notempty name="_list">
+            <volist name="_list" id="vo">
+                <tr>
+                    <!--<td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}"/></td>-->
+                    <td><a href="{:U('edit?id='.$vo['id'].'&pid='.$vo['pid'])}">{$vo.title}</a></td>
+                    <td><a href="{:U('add?pid='.$vo['id'])}">添加子分类</a></td>
+                    <td><span>{:mb_strimwidth($vo['description'],0,60,"...","utf-8")}</span></td>
+                    <td>{$vo.level}</td>
+                    <td>{$vo.status_text}</td>
+                    <td>
+                        <eq name="vo.status" value="1">
+                            <a href="{:U('Group/changeStatus?method=forbidGroup&id='.$vo['id'])}"
+                               class="ajax-get">禁用</a>
+                            <else/>
+                            <a href="{:U('Group/changeStatus?method=resumeGroup&id='.$vo['id'])}"
+                               class="ajax-get">启用</a>
+                        </eq>
+                        <a href="{:U('Group/changeStatus?method=deleteGroup&id='.$vo['id'])}"
+                           class="confirm ajax-get">删除</a>
+                    </td>
+                </tr>
+            </volist>
+            <else/>
+            <td colspan="6" class="text-center"> aOh! 暂时还没有内容!</td>
+        </notempty>
+        </tbody>
+    </table>
+    <div class="page">
+        <nav>
+            <ul class="pagination">
+                {$_page}
+            </ul>
+        </nav>
+    </div>
+</div>
+</body>
+</html>
