@@ -5,7 +5,7 @@
 // | Date: 2015-5-25
 // +----------------------------------------------------------------------
 
-namespace Api\Controller;
+namespace Apimerchant\Controller;
 use Think\Controller;
 use Apimerchant\Exception\ReturnException;
 
