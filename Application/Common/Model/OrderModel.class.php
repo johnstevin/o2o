@@ -1,9 +1,33 @@
 <?php
 namespace Common\Model;
 
-use Think\Model\AdvModel;
+use Think\Model\RelationModel;
+use Think\Page;
 
-class OrderModel extends AdvModel
+/**
+ * Class OrderModel
+ * @property int $id
+ * @property int $pid 父级ID
+ * @property string $consignee 收货人姓名
+ * @property float $price 订单价格
+ * @property string $mobile 收货人联系电话
+ * @property string $remark 订单备注
+ * @property int $status 订单状态
+ * @property int $user_id 用户ID
+ * @property int $pay_status 订单支付状态
+ * @property int $pay_mode 支付方式
+ * @property string $address 收货地址
+ * @property int $add_id 创建订单的IP
+ * @property int $add_time 创建订单的时间
+ * @property int $update_ip 更新订单的IP
+ * @property int $update_time 更新订单的时间
+ * @property string $deliveryman 送货员
+ * @property int $delivery_mode 送货模式
+ * @property int $delivery_time 送货时间
+ *
+ * @package Common\Model
+ */
+class OrderModel extends RelationModel
 {
     protected static $model;
 
@@ -23,16 +47,33 @@ class OrderModel extends AdvModel
     const DELIVERY_MODE_PICKEDUP = 0;//自提
     const DELIVERY_MODE_DELIVERY = 1;//配送
 
+    protected $_link = [
+        'Childs' => [
+            'mapping_type' => self::HAS_MANY,
+            'class_name' => 'Order',
+            'parent_key' => 'pid',
+            'mapping_name' => '_childs',
+            'mapping_order' => 'id desc',
+            // 定义更多的关联属性
+        ],
+        'Products' => [
+            'mapping_type' => self::HAS_MANY,
+            'class_name' => 'OrderItem',
+            'foreign_key' => 'order_id',
+            'mapping_name' => '_products',
+        ]
+    ];
+
     protected $fields = [
         'id',
         'pid',
-        'name',
         'price',
-        'phone',
+        'mobile',
         'remark',
         'status',
         'user_id',
         'pay_mode',
+        'consignee',
         'pay_status',
         'address',
         'add_ip',
@@ -45,12 +86,12 @@ class OrderModel extends AdvModel
         '_type' => [
             'id' => 'int',
             'pid' => 'int',
-            'name' => 'char',
             'price' => 'double',
-            'phone' => 'varchar',
+            'mobile' => 'varchar',
             'remark' => 'varchar',
             'status' => 'tinyint',
             'user_id' => 'int',
+            'consignee' => 'char',
             'pay_mode' => 'tinyint',
             'pay_status' => 'tinyint',
             'address' => 'varchar',
@@ -68,7 +109,8 @@ class OrderModel extends AdvModel
         'id',
         'add_time',
         'add_ip',
-        'user_id'
+        'user_id',
+        'order_code'
     ];
 
     protected $_validate = [
@@ -196,6 +238,11 @@ class OrderModel extends AdvModel
             'pid',
             '',
             self::MODEL_INSERT
+        ],
+        [
+            'order_code',
+            'create_order_code',
+            self::MODEL_INSERT
         ]
     ];
 
@@ -265,15 +312,15 @@ class OrderModel extends AdvModel
     }
 
     /**
-     * 获取是否需要检查的选项
+     * 获取所有的支付状态
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @return array
      */
-    public static function getCheckOptions()
+    public static function getPayStatusOptions()
     {
         return [
-            self::CHECK_DISABLE => '关闭',
-            self::CHECK_ENABLE => '开启'
+            self::PAY_STATUS_TRUE,
+            self::PAY_STATUS_FALSE
         ];
     }
 
@@ -284,10 +331,96 @@ class OrderModel extends AdvModel
      * @param string|array $fields 要查询的字段
      * @return array|null
      */
-    public static function get($id, $fields = '*')
+    public static function get($id, $status = null, $fields = '*')
     {
         $id = trim($id);
-        //TODO 考虑子订单的情况
-        return $id ? self::getInstance()->field($fields)->where(['id' => $id, 'status' => ['neq', self::STATUS_DELETE]])->find() : null;
+        if (empty($id)) return null;
+        $where['id'] = $id;
+        if (!empty($status) && in_array($status, array_keys(self::getStatusOptions()))) {
+            $where['status'] = $status;
+        } else {
+            $where['status'] = ['NEQ', self::STATUS_DELETE];
+        }
+        if (!$order = self::getInstance()->field($fields)->where($where)->find()) {
+            return [];
+        }
+        if ($subOrder = self::getLists($order['shop_id'], $order['user_id'], $order['status'], null, $fields, $order['id'], false)) {
+
+        }
+    }
+
+    /**
+     * 根据用户ID获取订单列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $userId 用户ID
+     * @param null|int $status 订单状态
+     * @param null|int $payStatus 支付状态
+     * @param bool|array|string $fields 要查询的字段
+     * @param bool $relation 是否进行关联查询
+     * @return array|null
+     */
+    public static function getListsByUserId($userId, $status = null, $payStatus = null, $fields = true, $relation = true)
+    {
+        return self::getLists(null, $userId, $status, $payStatus, $fields, $relation);
+    }
+
+    /**
+     * 根据商铺ID获取订单列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $shopId 商铺ID
+     * @param null|int $status 订单状态
+     * @param null|int $payStatus 支付状态
+     * @param bool|array|string $fields 要查询的字段
+     * @param bool $relation 是否进行关联查询
+     * @return array|null
+     */
+    public static function getListsByShopId($shopId, $status = null, $payStatus = null, $fields = true, $relation = true)
+    {
+        return self::getLists($shopId, null, $status, $payStatus, $fields, $relation);
+    }
+
+    /**
+     * 获取订单列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param null|int $shopId 商铺ID
+     * @param null|int $userId 用户ID
+     * @param null|int $status 订单状态
+     * @param null|int $payStatus 支付状态
+     * @param bool|array|string $fields 要查询的字段，按照TP模型规则来，如果自定义，必须要包括pid字段
+     * @param bool $relation 是否进行关联查询
+     * @return array|null
+     */
+    public static function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = true, $relation = true)
+    {
+        $where = [
+            'pid' => 0
+        ];
+        if (!empty($shopId)) $where['shop_id'] = intval($shopId);
+        if (!empty($userId)) $where['user_id'] = intval($userId);
+        if (!empty($status) && in_array($status, array_keys(self::getStatusOptions()))) {
+            $where['status'] = $status;
+        } else {
+            $where['status'] = ['NEQ', self::STATUS_DELETE];
+        }
+        if (!empty($payStatus) && in_array($payStatus, array_keys(self::getPayStatusOptions()))) $where['pay_status'] = $payStatus;
+        $model = self::getInstance();
+        $total = $model->where($where)->count('id');
+        $pagination = new Page($total);
+        $data = $model->relation($relation)->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->field($fields)->select();
+        foreach ($data as &$value) {
+            if (!empty($value['_childs'])) {
+                foreach ($value['_childs'] as &$child) {
+                    $child['_products'] = self::getProducts($value['id']);
+                }
+            }
+        }
+        return $data;
+    }
+
+    public static function getProducts($orderId)
+    {
     }
 }
