@@ -1,19 +1,15 @@
 <?php
 // +----------------------------------------------------------------------
-// | 用户管理模块
+// | Created by stevin.
 // +----------------------------------------------------------------------
-// | Data:2015-5-20
+// | Date: 2015-5-25
 // +----------------------------------------------------------------------
 namespace Api\Controller;
 
-class UserController extends ApiController {
+class IndexController extends ApiController {
 
-
-    public function login(){
-
-    }
-
-    public function register(){
+	//TODO
+    public function index(){
 
     }
 
