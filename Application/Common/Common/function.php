@@ -123,3 +123,14 @@ function check_category_exist($id)
 {
     return \Common\Model\CategoryModel::checkCategoryExist($id);
 }
+
+/**
+ * 生成订单代码
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @return string
+ */
+function create_order_code()
+{
+    //TODO 没有代码。。。
+    return '';
+}
