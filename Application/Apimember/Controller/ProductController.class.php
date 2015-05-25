@@ -4,9 +4,7 @@
 // +----------------------------------------------------------------------
 // | Date: 2015-5-25
 // +----------------------------------------------------------------------
-namespace Api\Controller;
-use Think\Exception;
-use Common\Model\MerchantShop;
+namespace Apimember\Controller;
 
 /**
  * 商品

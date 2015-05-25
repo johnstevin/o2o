@@ -1,5 +1,5 @@
 <?php
-namespace Api\Controller;
+namespace Apimember\Controller;
 
 /**
  * 空模块，主要用于显示404页面，请不要删除
