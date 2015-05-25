@@ -52,22 +52,22 @@ class CategoryController extends ApiController {
         if($this->_method=='get'){
             $ret=null;
             $map=null;
-            if(!is_null($ids)){
+            if(!empty($ids)){
                 $ids=explode(',',$ids);
                 $map['id']  = array('in',$ids);
 
             }else{
-                if(!is_null($pid)){
+                if(!empty($pid)){
                     $map['pid']  = array('eq',$pid);
                 }
 
-                if(!is_null($words))
+                if(!empty($words))
                     build_words_query(explode(',',$words), $words_op, ['title','description'], $map);
             }
 
             //TODO:$deep_fetch
 
-            if(is_null($map))
+            if(empty($map))
                 $this->error('查询条件不能为空','',true);
 
             //TODO:在必要的时候，放到查询参数中

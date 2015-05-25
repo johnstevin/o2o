@@ -48,7 +48,7 @@ class MerchantController extends ApiController
             if($type!='0')
                 $map['type']=$type;
 
-            if(!is_null($words))
+            if(!empty($words))
                 build_words_query(explode(',',$words), $words_op, ['title','description'], $map);
 
             $sql = M('MerchantShop')->where($map)
