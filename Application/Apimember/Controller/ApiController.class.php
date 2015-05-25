@@ -5,7 +5,7 @@
 // | Date: 2015-5-25
 // +----------------------------------------------------------------------
 
-namespace Api\Controller;
+namespace Apimember\Controller;
 use Think\Controller;
 use Apimember\Exception\ReturnException;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Api\Controller;
+namespace Apimember\Controller;
 
 class IndexController extends ApiController {
 
