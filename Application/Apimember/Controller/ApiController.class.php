@@ -7,7 +7,7 @@
 
 namespace Api\Controller;
 use Think\Controller;
-use Api\Exception\ReturnException;
+use Apimember\Exception\ReturnException;
 
 abstract class ApiController extends Controller{
 

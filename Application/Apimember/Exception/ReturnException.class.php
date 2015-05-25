@@ -5,7 +5,7 @@
 // | Date: 2015-5-25
 // +----------------------------------------------------------------------
 
-namespace Apimerchant\Exception;
+namespace Apimember\Exception;
 use Think\Exception;
 
 class ReturnException extends Exception {
