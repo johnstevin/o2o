@@ -186,6 +186,12 @@ class OrderModel extends RelationModel
             'IP格式非法',
             self::EXISTS_VALIDATE,
             'function'
+        ],
+        [
+            'order_code',
+            'unique',
+            '订单代码已经存在',
+            self::EXISTS_VALIDATE
         ]
     ];
 
