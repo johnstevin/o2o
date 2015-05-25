@@ -1,9 +1,9 @@
 <?php
-return array(
+return [
     /* 模块相关配置 */
-    'AUTOLOAD_NAMESPACE' => array('Addons' => ONETHINK_ADDON_PATH), //扩展模块列表
+    'AUTOLOAD_NAMESPACE' => ['Addons' => ONETHINK_ADDON_PATH], //扩展模块列表
     'DEFAULT_MODULE' => 'Home',
-    'MODULE_DENY_LIST' => array('Common', 'User', 'Admin', 'Install'),
+    'MODULE_DENY_LIST' => ['Common', 'User', 'Admin', 'Install'],
     //'MODULE_ALLOW_LIST'  => array('Home','Admin'),
 
     /* 系统数据加密设置 */
@@ -23,5 +23,6 @@ return array(
     'DEFAULT_FILTER' => '', //全局过滤函数
 
     /* 文档模型配置 (文档模型核心配置，请勿更改) */
-    'DOCUMENT_MODEL_TYPE' => array(2 => '主题', 1 => '目录', 3 => '段落'),
-);
+    'DOCUMENT_MODEL_TYPE' => [2 => '主题', 1 => '目录', 3 => '段落'],
+    'DATE_FORMAT' => 'Y-m-d H:i:s'
+];
