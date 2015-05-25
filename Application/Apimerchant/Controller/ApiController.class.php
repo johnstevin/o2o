@@ -31,12 +31,12 @@ abstract class ApiController extends Controller{
 
     /**
      * @param $success
-     * @param int $error_code
-     * @param null $message
-     * @param null $redirect
-     * @param null $extra
+     * @param $error_code
+     * @param $message
+     * @param $redirect
+     * @param $extra
      * @return mixed
-     * @throws \Api\Exception\ReturnException
+     * @throws ReturnException
      */
     protected function apiReturn($success, $error_code=0, $message=null, $redirect=null, $extra=null){
 
