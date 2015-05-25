@@ -6,19 +6,23 @@
 // +----------------------------------------------------------------------
 namespace Apimember\Controller;
 
+use Common\Model\ProductModel;
+
 /**
  * 商品
  * Class ProductController
  * @package Api\Controller
  */
-class ProductController extends ApiController {
+class ProductController extends ApiController
+{
 
     /**
      * 根据经纬度获取附近商家信息接口
      * @param
      * @author  stevin
      */
-    public function getMerchantList(){
+    public function getMerchantList()
+    {
 
     }
 
@@ -27,7 +31,8 @@ class ProductController extends ApiController {
      * @param
      * @author  stevin
      */
-    public function getDepotCategory(){
+    public function getDepotCategory()
+    {
 
     }
 
@@ -36,7 +41,8 @@ class ProductController extends ApiController {
      * @param
      * @author  stevin
      */
-    public function getDepotBrand(){
+    public function getDepotBrand()
+    {
 
     }
 
@@ -45,7 +51,8 @@ class ProductController extends ApiController {
      * @param
      * @author  stevin
      */
-    public function getDepotNorms(){
+    public function getDepotNorms()
+    {
 
     }
 
@@ -54,7 +61,8 @@ class ProductController extends ApiController {
      * @param
      * @author  stevin
      */
-    public function getProductList(){
+    public function getProductList()
+    {
 
     }
 
@@ -63,7 +71,8 @@ class ProductController extends ApiController {
      * @param
      * @author  stevin
      */
-    public function getProductDetail(){
+    public function getProductDetail()
+    {
 
     }
 
@@ -80,17 +89,19 @@ class ProductController extends ApiController {
      */
     public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE, $relation = false)
     {
-        $this->apiSuccess(ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize, $relation)['data']);
+        $this->apiSuccess(['data' => ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize, $relation)['data']]);
     }
 
     /**
      * 根据ID查找单条记录
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id
+     * @param bool|string|array $fields 要查询的字段
+     * @return json|xml
      */
-    public function find($id)
+    public function find($id, $fields = true)
     {
-        $this->apiSuccess(ProductModel::get($id));
+        $this->apiSuccess(ProductModel::get($id, $fields));
     }
 
 }
