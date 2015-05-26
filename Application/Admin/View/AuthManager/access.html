@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{$meta_title}</title>
+    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container">
+<!-- 管理员用户组新增和编辑页面 -->
+<h5>请选择角色</h5>
+    <div class="form-group">
+
+        <select id="group_pid" name="group" class="form-control">
+            <volist name="auth_group" id="vo">
+                <option value="{:U('AuthManager/access',array('group_id'=>$vo['id'],'group_name'=>$vo['title']))}" <eq name="vo['id']" value="$this_group['id']">selected</eq> >{$vo.title}</option>
+            </volist>
+        </select>
+
+    <hr>
+            <!-- 访问授权 -->
+                <form action="{:U('addToRule')}" method="POST" class="form-horizontal auth-form">
+                    <volist name="node_list" id="node" >
+                        <dl class="checkmod">
+                            <dt class="hd">
+                                <label class="checkbox"><input class="auth_rules rules_all" type="checkbox" name="rules[]" value="{$node.id}">{$node.title}</label>
+                            </dt>
+                            <dd class="bd">
+                                <present name="node['child']">
+                                    <volist name="node['child']" id="child" >
+                                        <div class="rule_check">
+                                            <div>
+                                                <input class="auth_rules rules_row" <notempty name="child['tip']">title='{$child.tip}'</notempty> type="checkbox" name="rules[]" value="{$child.id}"/>{$child.title}
+                                            </div>
+                                        </div>
+                                    </volist>
+                                </present>
+                            </dd>
+                        </dl>
+                    </volist>
+
+                    <input type="hidden" name="role" value="{$this_group.id}" />
+                    <input type="hidden" name="batch" value="true">
+                    <button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>
+                    <button type="submit" class="btn btn-primary" >确 定</button>
+                </form>
+            </div>
+
+    <script type="text/javascript" src="__STATIC__/js/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            var rules = [{$child_list}];
+        $('.auth_rules').each(function () {
+            if ($.inArray(parseInt(this.value, 10), rules) > -1) {
+                $(this).prop('checked', true);
+            }
+            if (this.value == '') {
+                $(this).closest('span').remove();
+            }
+        });
+
+        //全选节点
+        $('.rules_all').on('change', function () {
+            $(this).closest('dl').find('dd').find('input').prop('checked', this.checked);
+        });
+        $('.rules_row').on('change', function () {
+            $(this).closest('.rule_check').find('.child_row').find('input').prop('checked', this.checked);
+        });
+
+
+        $('select[name=group]').change(function () {
+            location.href = this.value;
+        });
+        });
+    </script>
+</div>
+</body>
+</html>

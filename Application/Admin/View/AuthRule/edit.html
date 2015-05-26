@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{:C('WEB_SITE_TITLE')}</title>
+    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container">
+    <h2>{:isset($info['id'])?'编辑':'新增'}节点</h2>
+    <hr>
+    <form action="{:U()}" method="post">
+        <div class="form-horizontal">
+            <div class="form-group">
+                <label for="group_pid" class="control-label col-md-2">上级</label>
+
+                <div class="col-md-10">
+                    <input id="group_pid" type="text" class="form-control" disabled="disabled" value="{$category['title']|default='无'}"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="auth-title" class="control-label col-md-2">标题</label>
+
+                <div class="col-md-10">
+                    <input id="auth-title" type="text" name="title" class="form-control"
+                           value="{$info.title|default=''}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="auth-sort" class="control-label col-md-2">排序</label>
+
+                <div class="col-md-10">
+                    <input id="auth-sort" type="text" name="sort" class="form-control"
+                           value="{$info.sort|default=''}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="auth-module" class="control-label col-md-2">模块</label>
+
+                <div class="col-md-10">
+                    <input id="auth-module" type="text" name="module" class="form-control"
+                           value="{$info.module|default=''}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="auth-url" class="control-label col-md-2">URL</label>
+
+                <div class="col-md-10">
+                    <input id="auth-url" type="text" name="url" class="form-control"
+                           value="{$info.url|default=''}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="group_tip" class="control-label col-md-2">提示</label>
+
+                <div class="col-md-10">
+                    <input id="group_tip" type="text" name="group_tip" class="form-control"
+                           value="{$info.group_tip|default=''}"/>
+                </div>
+            </div>
+            <!--<div class="form-group">-->
+            <!--<label for="level" class="control-label col-md-2">层级</label>-->
+
+            <!--<div class="col-md-10">-->
+            <!--<input id="level" type="text" name="level" class="form-control"-->
+            <!--value="{$category['level']|default=''}"/>-->
+            <!--</div>-->
+            <!--</div>-->
+            <div class="form-group">
+                <label  class="control-label col-md-2">是否隐藏</label>
+
+                <div class="col-md-10">
+                    <eq name="info.hide" value="1">
+                        <input type="radio" name="hide" value="1" checked>是
+                        <input type="radio" name="hide" value="0">否
+                        <else/>
+                        <input type="radio" name="hide" value="1">是
+                        <input type="radio" name="hide" value="0" checked>否
+                    </eq>
+
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <input type="hidden" name="id" value="{$info.id|default=''}">
+            <input type="hidden" name="level" value="{$category['level']|default=''}"/>
+            <input type="hidden" name="pid" value="{:isset($category['id'])?$category['id']:$info['pid']}">
+            <button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>
+            <button type="submit" class="btn btn-primary">确 定</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

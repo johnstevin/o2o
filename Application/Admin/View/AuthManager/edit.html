@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{:C('WEB_SITE_TITLE')}</title>
+    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container">
+    <h2>{:isset($info['id'])?'编辑':'新增'}用户组</h2>
+    <hr>
+    <form action="{:U()}" method="post">
+        <div class="form-horizontal">
+            <div class="form-group">
+                <label for="group_pid" class="control-label col-md-2">组织</label>
+
+                <div class="col-md-10">
+                    <!--<input id="group_pid" type="text" class="form-control" disabled="disabled" value="{$category['title']|default='无'}"/>-->
+
+                <select id="group_pid" class="form-control" name="group_id">
+                    <option value="0">--请选择--</option>
+                <volist name="auth_group" id="vo">
+
+                    <option value="{$vo['id']|default='无'}" <eq name="vo['id']" value="$info.group_id">selected</eq> >{$vo.title}</option>
+                </volist>
+                    </select> </div>
+            </div>
+
+            <div class="form-group">
+                <label for="role-title" class="control-label col-md-2">标题</label>
+
+                <div class="col-md-10">
+                    <input id="role-title" type="text" name="title" class="form-control"
+                           value="{$info.title|default=''}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="role_code" class="control-label col-md-2">编码</label>
+
+                <div class="col-md-10">
+                    <input id="role_code" type="text" name="role_code" class="form-control"
+                           value="{$info.group_code|default=''}"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <label  class="control-label col-md-2">是否公共</label>
+
+                <div class="col-md-10">
+                    <eq name="info.public" value="1">
+                        <input type="radio" name="public" value="1" checked>是
+                        <input type="radio" name="public" value="0">否
+                        <else/>
+                        <input type="radio" name="public" value="1">是
+                        <input type="radio" name="public" value="0" checked>否
+                    </eq>
+
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="role-description" class="control-label col-md-2">描述</label>
+
+                <div class="col-md-10">
+                    <textarea id="role-description" rows="4" type="text" name="description" class="form-control">{$info.description|default=''}</textarea>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <input type="hidden" name="id" value="{$info.id|default=''}">
+            <button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>
+            <button type="submit" class="btn btn-primary">确 定</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>
