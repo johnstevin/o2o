@@ -1,5 +1,11 @@
 <?php
-namespace User\Model;
+// +----------------------------------------------------------------------
+// | 公共调用类
+// +----------------------------------------------------------------------
+// | Author: stevin.john Date: 2015-5-21
+// +----------------------------------------------------------------------
+
+namespace Admin\Model;
 use Think\Model;
 /**
  * 会员模型
@@ -31,9 +37,12 @@ class UcenterMemberModel extends Model{
 	/* 用户模型自动完成 */
 	protected $_auto = array(
 		array('password', 'md5', self::MODEL_BOTH, 'function'),
+        array('saltkey', '123456'),
 		array('reg_time', NOW_TIME, self::MODEL_INSERT),
 		array('reg_ip', 'get_client_ip', self::MODEL_INSERT, 'function', 1),
 		array('update_time', NOW_TIME),
+        array('is_member', 1),
+        array('is_admin', 1),
 	);
 
 	/**
@@ -60,7 +69,7 @@ class UcenterMemberModel extends Model{
 			$uid = $this->add();
 			return $uid ? $uid : 0; //0-未知错误，大于0-注册成功
 		} else {
-			return $this->getError(); //错误详情见自动验证注释
+			return $this->getError();
 		}
 	}
 
