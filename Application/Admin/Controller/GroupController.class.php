@@ -5,6 +5,7 @@ use Common\Model\AuthGroupModel;
 /**
  * Class 用户组控制器
  * @package Admin\Controller
+ * @author liuhui
  */
 class GroupController extends AdminController{
 

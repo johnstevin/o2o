@@ -8,6 +8,7 @@ use Think\Model;
 /**
  * 用户组模型类
  * Class AuthGroupModel
+ * @author liuhui
  */
 class AuthGroupModel extends Model
 {

@@ -5,6 +5,7 @@ namespace Common\Model;
 use Think\Model;
 /**
  * 权限规则模型
+ * @author liuhui
  */
 class AuthRuleModel extends Model{
     

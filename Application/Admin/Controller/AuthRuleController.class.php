@@ -5,6 +5,7 @@ use Common\Model\AuthRuleModel;
 /**
  * Class 权限节点控制器
  * @package Admin\Controller
+ * @author liuhui
  */
 class AuthRuleController extends AdminController{
 

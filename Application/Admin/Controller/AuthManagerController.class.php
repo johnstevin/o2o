@@ -9,6 +9,7 @@ use Common\Model\AuthGroupModel;
  * 权限管理控制器
  * Class AuthController
  * @package Admin\Controller
+ * @author liuhui
  */
 class AuthManagerController extends AdminController
 {
