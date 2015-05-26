@@ -1,7 +1,7 @@
 <?php
 namespace Common\Model;
 
-use Think\Model\AdvModel;
+use Think\Model\RelationModel;
 use Think\Page;
 
 /**
@@ -9,7 +9,7 @@ use Think\Page;
  * @author Fufeng Nie <niefufeng@gmail.com>
  * @package Common\Model
  */
-class MerchantDepotModel extends AdvModel
+class MerchantDepotModel extends RelationModel
 {
     protected static $model;
     ## 状态常量
