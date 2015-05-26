@@ -75,18 +75,25 @@ class ProductController extends ApiController {
 
                 foreach($data as $i){
                     //echo json_encode(CategoryModel::get($i['id']));
-                    if(in_array($i['id'],$topHint))
-                        continue;
+
 
                     if($i['level']==$level) {
-                        $cats[] = $i;
-                        $topHint[]=$i['id'];
+                        if(!in_array($i['id'],$topHint)){
+                            $cats[] = $i;
+                            $topHint[]=$i['id'];
+                        }
                         !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
                     }else if($i['level']>=$level){
-                        $top=$this->_find_level_top($i,$level,$catIds);
-                        if(!in_array($top['id'],$topHint)){
-                            $cats[] = $top;
-                            $topHint[]=$top['id'];
+                        $temp=[$i['id']];
+                        $top=$this->_find_level_top($i,$level,$temp);
+                        if(!is_null($top)) {
+                            if (!in_array($top['id'], $topHint)) {
+                                $cats[] = $top;
+                                $topHint[] = $top['id'];
+                            }
+                            foreach($temp as $id){
+                                !in_array($id,$catIds) and $catIds[]=$id;
+                            }
                         }
                     }
                 }
@@ -94,18 +101,23 @@ class ProductController extends ApiController {
             }else if(!is_null($pid)){
                 foreach($data as $i){
                     //echo json_encode(CategoryModel::get($i['id']));
-                    if(in_array($i['id'],$topHint))
-                        continue;
-
                     if($i['pid']==$pid) {
-                        $cats[] = $i;
-                        $topHint[]=$i['id'];
+                        if(!in_array($i['id'],$topHint)){
+                            $cats[] = $i;
+                            $topHint[]=$i['id'];
+                        }
                         !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
                     }else if($i['pid']>0){
-                        $top=$this->_find_parent_top($i,$pid,$catIds);
-                        if(!is_null($top) and !in_array($top['id'],$topHint)){
-                            $cats[] = $top;
-                            $topHint[]=$top['id'];
+                        $temp=[$i['id']];
+                        $top=$this->_find_parent_top($i,$pid,$temp);
+                        if(!is_null($top)){
+                            if(!in_array($top['id'],$topHint)){
+                                $cats[] = $top;
+                                $topHint[]=$top['id'];
+                            }
+                            foreach($temp as $id){
+                                !in_array($id,$catIds) and $catIds[]=$id;
+                            }
                         }
                     }
                 }
@@ -114,9 +126,11 @@ class ProductController extends ApiController {
 
             $ret['categories']=$cats;
 
+            //print_r($catIds);
+
             $brands=[];
             $norms=[];
-            if($return_brands_norms and !empty($cats)){
+            if($return_brands_norms and !empty($catIds)){
                 //print_r($catIds);
                 list($bindNames, $bindValues) = build_sql_bind($catIds);
                 $sql=M()->table('sq_category_brand_norms as l')
