@@ -6,6 +6,8 @@ use Think\Page;
 
 /**
  * Class OrderModel
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
  * @property int $id
  * @property int $pid 父级ID
  * @property string $consignee 收货人姓名
@@ -47,6 +49,11 @@ class OrderModel extends RelationModel
     const DELIVERY_MODE_PICKEDUP = 0;//自提
     const DELIVERY_MODE_DELIVERY = 1;//配送
 
+    /**
+     * 关联
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @var array
+     */
     protected $_link = [
         'Childs' => [
             'mapping_type' => self::HAS_MANY,
@@ -61,6 +68,13 @@ class OrderModel extends RelationModel
             'class_name' => 'OrderItem',
             'foreign_key' => 'order_id',
             'mapping_name' => '_products',
+        ],
+        'Parent' => [
+            'mapping_type' => self::BELONGS_TO,
+            'class_name' => 'Order',
+            'parent_key' => 'pid',
+            'mapping_name' => '_parent',
+            'condition' => 'status !=' . self::STATUS_DELETE
         ]
     ];
 
@@ -113,6 +127,11 @@ class OrderModel extends RelationModel
         'order_code'
     ];
 
+    /**
+     * 验证规则
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @var array
+     */
     protected $_validate = [
         [
             'price',
@@ -195,6 +214,11 @@ class OrderModel extends RelationModel
         ]
     ];
 
+    /**
+     * 自动完成
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @var array
+     */
     protected $_auto = [
         [
             'status',
@@ -272,7 +296,6 @@ class OrderModel extends RelationModel
     {
         $id = trim($id);
         return ($id !== '' && self::get($id, 'id')) ? true : false;
-
     }
 
     /**
@@ -334,10 +357,14 @@ class OrderModel extends RelationModel
      * 根据ID获取分类信息
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param string $id 分类ID
+     * @param int|null $status 订单状态，默认为不等于删除的
+     * @param bool $getChilds 是否获得子订单
+     * @param bool $getProducts 是否获得订单的商品
+     * @param bool $getParent 是否获取父级订单
      * @param string|array $fields 要查询的字段
      * @return array|null
      */
-    public static function get($id, $status = null, $fields = '*')
+    public static function get($id, $status = null, $fields = '*', $getChilds = true, $getProducts = false, $getParent = false)
     {
         $id = trim($id);
         if (empty($id)) return null;
@@ -347,12 +374,28 @@ class OrderModel extends RelationModel
         } else {
             $where['status'] = ['NEQ', self::STATUS_DELETE];
         }
-        if (!$order = self::getInstance()->field($fields)->where($where)->find()) {
-            return [];
+        $relation = [];
+        if ($getChilds) $relation[] = '_childs';
+        if ($getProducts) $relation[] = '_products';
+        if ($getParent) $relation[] = '_parent';
+        $data = self::getInstance()->relation($relation)->field($fields)->where($where)->find();
+        if (!$getProducts) return $data;
+        if (!empty($data['_products'])) {
+            $productIds = array_map(function ($order) {
+                return $order['product_id'];
+            }, $data['_products']);
+            $data['_products'] = ProductModel::getListsByProductIds($productIds);
+        } else {
+            $orderItemModel = M('order_item');
+            foreach ($data['_childs'] as &$child) {
+                $productIds = $orderItemModel->field('product_id')->where(['order_id' => $child['id']])->select();
+                $productIds = array_map(function ($item) {
+                    return $item['product_id'];
+                }, $productIds);
+                $child['_products'] = ProductModel::getListsByProductIds($productIds);
+            }
         }
-        if ($subOrder = self::getLists($order['shop_id'], $order['user_id'], $order['status'], null, $fields, $order['id'], false)) {
-
-        }
+        return $data;
     }
 
     /**
@@ -363,12 +406,12 @@ class OrderModel extends RelationModel
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
      * @param bool|array|string $fields 要查询的字段
-     * @param bool $relation 是否进行关联查询
+     * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getListsByUserId($userId, $status = null, $payStatus = null, $fields = true, $relation = true)
+    public static function getListsByUserId($userId, $status = null, $payStatus = null, $fields = true, $getProducts = true)
     {
-        return self::getLists(null, $userId, $status, $payStatus, $fields, $relation);
+        return self::getLists(null, $userId, $status, $payStatus, $fields, $getProducts);
     }
 
     /**
@@ -379,12 +422,12 @@ class OrderModel extends RelationModel
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
      * @param bool|array|string $fields 要查询的字段
-     * @param bool $relation 是否进行关联查询
+     * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getListsByShopId($shopId, $status = null, $payStatus = null, $fields = true, $relation = true)
+    public static function getListsByShopId($shopId, $status = null, $payStatus = null, $fields = true, $getProducts = true)
     {
-        return self::getLists($shopId, null, $status, $payStatus, $fields, $relation);
+        return self::getLists($shopId, null, $status, $payStatus, $fields, $getProducts);
     }
 
     /**
@@ -396,10 +439,10 @@ class OrderModel extends RelationModel
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
      * @param bool|array|string $fields 要查询的字段，按照TP模型规则来，如果自定义，必须要包括pid字段
-     * @param bool $relation 是否进行关联查询
+     * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = true, $relation = true)
+    public static function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = true, $getProducts = false)
     {
         $where = [
             'pid' => 0
@@ -415,18 +458,33 @@ class OrderModel extends RelationModel
         $model = self::getInstance();
         $total = $model->where($where)->count('id');
         $pagination = new Page($total);
-        $data = $model->relation($relation)->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->field($fields)->select();
-        foreach ($data as &$value) {
-            if (!empty($value['_childs'])) {
-                foreach ($value['_childs'] as &$child) {
-                    $child['_products'] = self::getProducts($value['id']);
+        $data = $model->relation('_childs')->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->field($fields)->select();
+        if ($getProducts) {
+            foreach ($data as &$value) {
+                if (empty($value['_childs'])) {
+                    $value['_products'] = self::getProductsByOrderId($value['id']);
+                } else {
+                    foreach ($value['_childs'] as &$child) {
+                        $child['_products'] = self::getProductsByOrderId($child['id']);
+                    }
                 }
             }
         }
-        return $data;
+        return [
+            'data' => $data,
+            'pagination' => $pagination->show()
+        ];
     }
 
-    public static function getProducts($orderId)
+    /**
+     * 获取订单的商品列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $orderId 订单ID
+     * @return null|array
+     */
+    public static function getProductsByOrderId($orderId)
     {
+        if (!$order = self::get($orderId, null, 'id', false, true)) return null;
+        return $order['_products'];
     }
 }
