@@ -15,7 +15,8 @@ use Common\Model\ProductModel;
  * Class ProductController
  * @package Api\Controller
  */
-class ProductController extends ApiController {
+class ProductController extends ApiController
+{
 
     /**
      * 根据经纬度获取附近商家信息接口
@@ -230,7 +231,8 @@ class ProductController extends ApiController {
      * @author  stevin WangJiang
      * @Deprecated 统一到getDepotCategory中
      */
-    public function getDepotNorms(){
+    public function getDepotNorms()
+    {
 
     }
 
@@ -257,12 +259,36 @@ class ProductController extends ApiController {
      * @return mixed
      * @author  stevin WangJiang
      */
-    public function getProductDetail($id){
-        try{
-            $this->apiSuccess(array('data'=>ProductModel::get($id)));
-        }catch (Exception $ex){
-            $this->apiError(50006,$ex->getMessage());
-        }
+    public function getProductDetail()
+    {
+
     }
 
+    /**
+     * 活取列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param null|string $categoryId 分类ID
+     * @param null|int $brandId 品牌ID
+     * @param null|string $title 商品标题（模糊查询）
+     * @param int $pagesize 页面大小
+     * @param int|null $status 状态
+     * @param string|array $relation 是否进行关联查询
+     * @return json
+     */
+    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE, $relation = [])
+    {
+        $this->apiSuccess(['data' => ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize, $relation)['data']]);
+    }
+
+    /**
+     * 根据ID查找单条记录
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id
+     * @param bool|string|array $fields 要查询的字段
+     * @return json|xml
+     */
+    public function find($id, $fields = true)
+    {
+        $this->apiSuccess(['data' => ProductModel::get($id, $fields)]);
+    }
 }

@@ -104,7 +104,7 @@ class MerchantModel extends AdvModel
         ],
         [
             'pid',
-            'checkMerchantExist',
+            'checkMerchantPidExist',
             '父级ID非法',
             self::MUST_VALIDATE,
             'callback'
@@ -150,7 +150,7 @@ class MerchantModel extends AdvModel
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @return MerchantModel
      */
-    protected static function getInstance()
+    public static function getInstance()
     {
         return self::$model instanceof self ? self::$model : self::$model = new self;
     }
@@ -177,19 +177,35 @@ class MerchantModel extends AdvModel
     public static function checkMerchantExist($id)
     {
         $id = intval($id);
-        return self::getInstance()->field('id')->find(['where' => ['id' => $id, 'status' => self::STATUS_ACTIVE]]) ? true : false;
+        return self::get($id, 'id') ? true : false;
+    }
+
+    /**
+     * 检测父级ID是否合法
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $pid 父级ID
+     * @return bool
+     */
+    public static function checkMerchantPidExist($pid)
+    {
+        return ($pid == 0 || self::checkMerchantExist($pid)) ? true : false;
     }
 
     /**
      * 根据ID获取商家信息
      * @param int $id 商家ID
+     * @param string|array $fields 要查询的字段
      * @return array|null
      */
-    public static function get($id)
+    public static function get($id, $fields = '*')
     {
         $id = intval($id);
-        if (!$id) return null;
-        return self::getInstance()->find($id);
+        return $id ? self::getInstance()->field($fields)->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->find() : null;
+    }
+
+    // TODO 这个因为要算距离，我做不到
+    public static function getLists()
+    {
     }
 
 }

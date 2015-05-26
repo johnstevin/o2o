@@ -1,7 +1,7 @@
 <?php
 namespace Common\Model;
 
-use Think\Model\AdvModel;
+use Think\Model\RelationModel;
 use Think\Page;
 
 /**
@@ -9,7 +9,7 @@ use Think\Page;
  * @author Fufeng Nie <niefufeng@gmail.com>
  * @package Common\Model
  */
-class MerchantDepotModel extends AdvModel
+class MerchantDepotModel extends RelationModel
 {
     protected static $model;
     ## 状态常量
@@ -17,7 +17,7 @@ class MerchantDepotModel extends AdvModel
     const STATUS_CLOSE = 0;//关闭
 
     protected $fields = [
-        'merchant_id',
+        'group_id',
         'product_id',
         'status',
         'price',
@@ -27,7 +27,7 @@ class MerchantDepotModel extends AdvModel
         'update_time',
         'update_ip',
         '_type' => [
-            'merchant_id' => 'int',
+            'group_id' => 'int',
             'product_id' => 'int',
             'price' => 'double',
             'add_time' => 'int',
@@ -41,11 +41,11 @@ class MerchantDepotModel extends AdvModel
      * 只读字段
      * @var array
      */
-    protected $readonlyField = ['merchant_id', 'product_id', 'add_time', 'add_ip'];
+    protected $readonlyField = ['group_id', 'product_id', 'add_time', 'add_ip'];
 
     protected $_validate = [
         [
-            'merchant_id',
+            'group_id',
             'require',
             '商家ID不能为空',
             self::MUST_VALIDATE
@@ -63,18 +63,18 @@ class MerchantDepotModel extends AdvModel
             self::MUST_VALIDATE
         ],
         [
-            'merchant_id',
-            'checkMerchantExist',
+            'group_id',
+            'check_merchant_exist',
             '有非法商家ID',
             self::MUST_VALIDATE,
-            'callback'
+            'function'
         ],
         [
             'product_id',
-            'checkProductExist',
+            'check_product_exist',
             '有非法商品ID',
             self::MUST_VALIDATE,
-            'callback'
+            'function'
         ],
         [
             'price',
@@ -151,37 +151,9 @@ class MerchantDepotModel extends AdvModel
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @return MerchantDepotModel
      */
-    protected static function getInstance()
+    public static function getInstance()
     {
         return self::$model instanceof self ? self::$model : self::$model = new self;
-    }
-
-    /**
-     * 验证商家是否存在
-     * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param int|array $merchantIds 商家的ID或ID数组
-     * @return bool
-     */
-    protected function checkMerchantExist($merchantIds)
-    {
-        $ids = is_array($merchantIds) ? $merchantIds : explode(',', $merchantIds);
-        $ids = array_unique($ids);
-        // TODO:待完善
-        return true;
-    }
-
-    /**
-     * 验证商家是否存在
-     * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param int|array $productIds 商品的ID或ID数组
-     * @return bool
-     */
-    protected function checkProductExist($productIds)
-    {
-        $ids = is_array($productIds) ? $productIds : explode(',', $productIds);
-        $ids = array_unique($ids);
-        // TODO:待完善
-        return true;
     }
 
     /**
@@ -208,7 +180,7 @@ class MerchantDepotModel extends AdvModel
     public static function getLists($merchantId, $pageSize = 10, $status = self::STATUS_ACTIVE)
     {
         $where['id'] = intval($merchantId);
-        if (!$where['id'] || !MerchantModel::checkMerchantExist($where['id'])) return ['data' => [], 'pagination' => ''];
+        if (!$where['id'] || check_merchant_exist($where['id'])) return ['data' => [], 'pagination' => ''];
         if (!empty($status)) $where['status'] = in_array($status, array_keys(self::getStatusOptions())) ? $status : self::STATUS_ACTIVE;
         $pageSize = intval($pageSize);
         $model = self::getInstance();
@@ -219,5 +191,17 @@ class MerchantDepotModel extends AdvModel
             'data' => $data,
             'pagination' => $pagination->show()
         ];
+    }
+
+    /**
+     * 根据ID获取商家信息
+     * @param int $id
+     * @param string|array $fields 要查询的字段
+     * @return array|null
+     */
+    public static function get($id, $fields = '*')
+    {
+        $id = intval($id);
+        return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
     }
 }
