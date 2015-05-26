@@ -5,6 +5,7 @@
 // | Date: 2015-5-25
 // +----------------------------------------------------------------------
 namespace Apimember\Controller;
+use Common\Model\CategoryModel;
 use Common\Model\MerchantShopModel;
 use Think\Exception;
 use Common\Model\ProductModel;
@@ -38,43 +39,163 @@ class ProductController extends ApiController {
 
     /**
      * 根据获取的商家仓库的商品获取商品分类接口
-     * @param array|string $groupIds 商家分组ID，可以通过getMerchantList获得
+     * @param int $level 指定返回分类层级，为空则不限制分类
+     * @param int $pid 指定上级分类，为空则忽略，如果设置了$level则忽略该参数
+     * @param array|string $shopIds 商铺ID，可以通过getMerchantList获得，该参数可选
+     * @param true|false $return_brands_norms 返回相关品牌规格等
+     * @return mixed
      * @author  stevin WangJiang
      */
-    public function getDepotCategory($groupIds=''){
-        //TODO:需要考虑返回的分类是第几层
+    public function getDepotCategory($level=null,$pid=null,$shopIds='',$return_brands_norms='false'){
+        //TODO:开发平台上测试的效率不理想，需要进一步优化，修改sq_merchant_depot_pro_category的数据，每次商品上架，该表必须保存指定分类以及他的所有上级节点
         try{
-            empty($groupIds) and E('参数groupIds不能为空');
+            empty($shopIds) and E('参数shopIds不能为空');
 
-            $groupIds=explode(',',$groupIds);
+            $return_brands_norms=$return_brands_norms==='true';
 
-            $this->apiSuccess(array('data'=>M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
-                ->where('a.group_id in (:groupIds) and a.category_id=b.id')
-                ->field(['b.id','b.title'])
-                ->bind(':groupIds',$groupIds)
-                ->select()));
+            $shopIds=explode(',',$shopIds);
+            list($bindNames, $bindValues) = build_sql_bind($shopIds);
+
+            $sql=M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
+                ->where('a.shop_id in ('.implode(',',$bindNames).') and a.category_id=b.id')
+                ->field(['b.id','b.title','b.pid','b.level'])
+                ->bind($bindValues);
+
+            $data=$sql->select();
+
+            //print_r($bindNames);
+            //print_r($sql->getLastSql());
+
+            $ret=[];
+            $cats=[];
+            $topHint=[];
+            $catIds=[];
+            if(!is_null($level)){
+                //$begin = microtime(true);
+
+                foreach($data as $i){
+                    //echo json_encode(CategoryModel::get($i['id']));
+                    if(in_array($i['id'],$topHint))
+                        continue;
+
+                    if($i['level']==$level) {
+                        $cats[] = $i;
+                        $topHint[]=$i['id'];
+                        !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
+                    }else if($i['level']>=$level){
+                        $top=$this->_find_level_top($i,$level,$catIds);
+                        if(!in_array($top['id'],$topHint)){
+                            $cats[] = $top;
+                            $topHint[]=$top['id'];
+                        }
+                    }
+                }
+                //echo (microtime(true) - $begin);die;
+            }else if(!is_null($pid)){
+                foreach($data as $i){
+                    //echo json_encode(CategoryModel::get($i['id']));
+                    if(in_array($i['id'],$topHint))
+                        continue;
+
+                    if($i['pid']==$pid) {
+                        $cats[] = $i;
+                        $topHint[]=$i['id'];
+                        !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
+                    }else if($i['pid']>0){
+                        $top=$this->_find_parent_top($i,$pid,$catIds);
+                        if(!is_null($top) and !in_array($top['id'],$topHint)){
+                            $cats[] = $top;
+                            $topHint[]=$top['id'];
+                        }
+                    }
+                }
+            }else
+                E('参数level或pid不能全部为空');
+
+            $ret['categories']=$cats;
+
+            $brands=[];
+            $norms=[];
+            if($return_brands_norms and !empty($cats)){
+                //print_r($catIds);
+                list($bindNames, $bindValues) = build_sql_bind($catIds);
+                $sql=M()->table('sq_category_brand_norms as l')
+                    ->field(['sq_brand.id as bid','sq_brand.title as brand','sq_norms.id as nid','sq_norms.title as norm'])
+                    ->join('LEFT JOIN sq_norms on sq_norms.id=l.norms_id')
+                    ->join('left JOIN sq_brand on sq_brand.id=l.brand_id')
+                    ->where('l.category_id in ('.implode(',',$bindNames).')')
+                    ->bind($bindValues);
+
+                $temp=$sql->select();
+
+                $bidHint=[];
+                $nidHint=[];
+                foreach($temp as $i){
+                    if(!in_array($i['bid'],$bidHint)){
+                        $bidHint[]=$i['bid'];
+                        $brands[]=array('id'=>$i['bid'],'title'=>$i['brand']);
+                    }
+
+                    if(!in_array($i['nid'],$nidHint)){
+                        $nidHint[]=$i['nid'];
+                        $norms[]=array('id'=>$i['nid'],'title'=>$i['norm']);
+                    }
+                }
+            }
+            $ret['brands']=$brands;
+            $ret['norms']=$norms;
+
+            $this->apiSuccess(array('data'=>$ret));
 
         }catch (Exception $ex){
             $this->apiError(50003,$ex->getMessage());
         }
     }
 
+    private function _find_parent_top($i,$pid,&$catIds){
+        $i=CategoryModel::get($i['pid']);
+        !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
+        if($i['pid']==$pid)
+            return $i;
+        if($i['pid']<=0)
+            return null;
+        return $this->_find_parent_top($i,$pid,$catIds);
+    }
+
+    private function _find_level_top($i,$level,&$catIds){
+        $i=CategoryModel::get($i['pid']);
+        !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
+        if($i['level']==$level)
+            return $i;
+        return $this->_find_level_top($i,$level,$catIds);
+    }
+
     /**
      * 根据获取的商家仓库的商品获取商品品牌接口
-     * @param
+     * @param array|string $shopIds 商铺ID，可以通过getMerchantList获得
+     * @param int $categoryId 分类ID
+     * @return mixed
      * @author  stevin WangJiang
+     * @Deprecated 统一到getDepotCategory中
      */
-    public function getDepotBrand($groupIds=''){
+    public function getDepotBrand($shopIds,$categoryId){
         try{
-            empty($groupIds) and E('参数groupIds不能为空');
+            empty($shopIds) and E('参数shopIds不能为空');
+            empty($categoryId) and E('参数categoryId不能为空');
 
-            $groupIds=explode(',',$groupIds);
+            $shopIds=explode(',',$shopIds);
+            list($bindNames, $bindValues) = build_sql_bind($shopIds);
 
-            $this->apiSuccess(array('data'=>M()->table('sq_merchant_depot_pro_category as a,sq_category as b,sq_category_brand_norms as c,sq_brand as d')
-                ->where('a.group_id in (:groupIds) and a.category_id=b.id and a.category_id=c.category_id and d.id=c.brand_id')
+            $bindValues[':categoryId']=$categoryId;
+
+            $sql=M()->table('sq_merchant_depot_pro_category as a,sq_category as b,sq_category_brand_norms as c,sq_brand as d')
+                ->where('a.shop_id in ('.implode(',',$bindNames).') and a.category_id=b.id and b.id=:categoryId and a.category_id=c.category_id and d.id=c.brand_id')
                 ->field(['b.id','b.title','d.title as brand'])
-                ->bind(':groupIds',$groupIds)
-                ->select()));
+                ->bind($bindValues);
+
+            $this->apiSuccess(array('data'=>$sql->select()));
+
+            //print_r($sql->getLastSql());
 
         }catch (Exception $ex){
             $this->apiError(50004,$ex->getMessage());
@@ -85,6 +206,7 @@ class ProductController extends ApiController {
      * 根据获取的商家仓库的商品获取商品规格接口
      * @param
      * @author  stevin WangJiang
+     * @Deprecated 统一到getDepotCategory中
      */
     public function getDepotNorms(){
 
@@ -113,6 +235,7 @@ class ProductController extends ApiController {
     public function getProductDetail($id){
         $this->apiSuccess('','',array('data'=>ProductModel::get($id)));
     }
+
 
 
 }
