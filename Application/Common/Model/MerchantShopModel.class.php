@@ -66,8 +66,7 @@ class MerchantShopModel extends AdvModel{
             ->bind(':lng', $lng)
             ->bind(':lat', $lat)
             ->bind(':dist', $range)
-            ->field(['id', 'title', 'description', 'type', 'open_status', 'open_time_mode'
-                , 'begin_open_time', 'end_open_time', 'delivery_range', 'phone_number', 'address', 'group_id']);
+            ->field(['id', 'title']);
 
         return $sql->select();
     }
@@ -83,5 +82,18 @@ class MerchantShopModel extends AdvModel{
             ->where('a.group_id=:group_id and a.category_id=b.id')
             ->field(['b.id','b.title'])
             ->select();
+    }
+
+    /**
+     * 根据ID获取商家信息
+     * @param int $id 商家ID
+     * @return array|null
+     */
+    public function get($id)
+    {
+        $id = intval($id);
+        if (!$id) return null;
+        return $this->field(['id', 'title', 'description', 'type', 'open_status', 'open_time_mode'
+            , 'begin_open_time', 'end_open_time', 'delivery_range', 'phone_number', 'address', 'group_id'])->find($id);
     }
 }

@@ -37,6 +37,14 @@ class ProductController extends ApiController {
         }
     }
 
+    public function getMerchantDetail($id){
+        try{
+            $this->apiSuccess(array('data'=>(new MerchantShopModel())->get($id)));
+        }catch (Exception $ex){
+            $this->apiError(50003,$ex->getMessage());
+        }
+    }
+
     /**
      * 根据获取的商家仓库的商品获取商品分类接口
      * @param int $level 指定返回分类层级，为空则不限制分类
@@ -162,7 +170,7 @@ class ProductController extends ApiController {
             $this->apiSuccess(array('data'=>$ret));
 
         }catch (Exception $ex){
-            $this->apiError(50003,$ex->getMessage());
+            $this->apiError(50004,$ex->getMessage());
         }
     }
 
@@ -237,7 +245,10 @@ class ProductController extends ApiController {
      * @author  stevin WangJiang
      */
     public function getProductList($categoryId = null, $brandId = null, $status = ProductModel::STATUS_ACTIVE, $title = null, $pageSize = 10){
-        $this->apiSuccess(array('data'=>ProductModel::getLists($categoryId, $brandId, $status, $title, $pageSize)));
+        try{
+        }catch (Exception $ex){
+            $this->apiError(50005,$ex->getMessage());
+        }
     }
 
     /**
@@ -247,9 +258,11 @@ class ProductController extends ApiController {
      * @author  stevin WangJiang
      */
     public function getProductDetail($id){
-        $this->apiSuccess('','',array('data'=>ProductModel::get($id)));
+        try{
+            $this->apiSuccess(array('data'=>ProductModel::get($id)));
+        }catch (Exception $ex){
+            $this->apiError(50006,$ex->getMessage());
+        }
     }
-
-
 
 }
