@@ -101,7 +101,7 @@ class ProductController extends ApiController
      */
     public function find($id, $fields = true)
     {
-        $this->apiSuccess(ProductModel::get($id, $fields));
+        $this->apiSuccess(['data' => ProductModel::get($id, $fields)]);
     }
 
 }
