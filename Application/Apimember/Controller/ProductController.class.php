@@ -237,17 +237,20 @@ class ProductController extends ApiController
     }
 
     /**
-     * 根据分类（品牌、规格）获取商品信息接口
+     * 查询商家商品
+     * @param array|string $shopIds 商铺ID
      * @param null|string $categoryId 分类ID
      * @param null|int $brandId 品牌ID
+     * @param null|int $normId 规格ID
      * @param null|string $title 商品标题（模糊查询）
      * @param int $pageSize 页面大小
      * @param int|null $status 状态
      * @return mixed
      * @author  stevin WangJiang
      */
-    public function getProductList($categoryId = null, $brandId = null, $status = ProductModel::STATUS_ACTIVE, $title = null, $pageSize = 10){
+    public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $status = ProductModel::STATUS_ACTIVE, $title = null, $pageSize = 10){
         try{
+
         }catch (Exception $ex){
             $this->apiError(50005,$ex->getMessage());
         }
@@ -259,9 +262,13 @@ class ProductController extends ApiController
      * @return mixed
      * @author  stevin WangJiang
      */
-    public function getProductDetail()
+    public function getProductDetail($id)
     {
-
+        try{
+            $this->apiSuccess(['data' => ProductModel::get($id)]);
+        }catch (Exception $ex){
+            $this->apiError(50006,$ex->getMessage());
+        }
     }
 
     /**

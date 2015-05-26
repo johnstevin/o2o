@@ -11,11 +11,13 @@ function checkIpFormat($ip)
 }
 
 /**
- * @param $words
- * @param $words_op
- * @param $flds
- * @param $map
- * @return mixed
+ * 构建关键字查询条件帮助函数
+ * @author WangJiang
+ * @param string $words 关键字，多个用','隔开
+ * @param string $words_op 'or|and' 关键字逻辑关系，缺省为‘or’
+ * @param array $flds 参与查询的字段
+ * @param array $map TP查询条件，返回值
+ * @return None
  */
 function build_words_query($words, $words_op, $flds, &$map)
 {
