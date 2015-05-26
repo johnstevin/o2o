@@ -32,6 +32,7 @@ class CategoryModel extends AdvModel
         'reply',
         'check',
         'extend',
+        'level',
         'create_time',
         'update_time',
         'status',
@@ -47,6 +48,7 @@ class CategoryModel extends AdvModel
             'replay' => 'tinyint',
             'check' => 'tinyint',
             'extend' => 'longtext',
+            'level'=>'tinyint',
             'create_time' => 'int',
             'update_time' => 'int',
             'status' => 'tinyint',
@@ -148,6 +150,11 @@ class CategoryModel extends AdvModel
         ],
         [
             'pid',
+            0,
+            self::MODEL_INSERT
+        ],
+        [
+            'level',
             0,
             self::MODEL_INSERT
         ]
