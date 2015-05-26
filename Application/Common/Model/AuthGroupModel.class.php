@@ -42,7 +42,8 @@ class AuthGroupModel extends Model
     {
         $map = array('status' => 1, 'id' => array('neq', AuthGroupModel::GROUP_ADMIN), 'module' => 'admin');
         $map = array_merge($map, $where);
-        return $this->relation('_roles')->where($map)->select();
+       // return $this->relation('_roles')->where($map)->select();
+        return $this->where($map)->select();
     }
 
     /**

@@ -126,7 +126,7 @@ class AuthManagerController extends AdminController
         /*获取组织下的所有的角色*/
         $AuthRole = M('AuthRole');
         foreach ($auth_Groups as &$key) {
-            $key['Roles'] = $AuthRole->where(array('group_id' => $key['id'], 'status' => '1'))->select();
+            $key['_roles'] = $AuthRole->where(array('group_id' => $key['id'], 'status' => '1'))->select();
         }
 //        $AuthAccess = M('AuthAccess');
 //        $user_roles = $AuthAccess->field('uid,group_id,role_id')->where(array('uid' => $uid))->group('group_id')->select();
