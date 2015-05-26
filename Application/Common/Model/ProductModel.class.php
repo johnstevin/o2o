@@ -1,8 +1,7 @@
 <?php
 namespace Common\Model;
 
-use Think\Exception;
-use Think\Model\AdvModel;
+use Think\Model\RelationModel;
 use Think\Page;
 
 /**
@@ -10,7 +9,7 @@ use Think\Page;
  * @author Fufeng Nie <niefufeng@gmail.com>
  * @package Common\Model
  */
-class ProductModel extends AdvModel
+class ProductModel extends RelationModel
 {
     protected static $model;
     ## 状态常量
@@ -147,6 +146,17 @@ class ProductModel extends AdvModel
     {
         return self::$model instanceof self ? self::$model : self::$model = new self;
     }
+
+    protected $_link = [
+        'Brand' => [
+            'mapping_type' => self::BELONGS_TO,
+            'class_name' => 'Brand',
+            'parent_key' => 'brand_id',
+            'mapping_name' => '_brand',
+            'mapping_order' => 'sort desc',
+            // 定义更多的关联属性
+        ],
+    ];
 
     protected function _after_find(&$result, $options = '')
     {
@@ -302,5 +312,22 @@ class ProductModel extends AdvModel
         } else {
             $data['brand'] = $brandModel->find($data['brand_id']);;
         }
+    }
+
+
+    /**
+     * 根据ID查询商品列表
+     * @param string|array $ids 多个商品ID
+     * @param bool $fields 要查询的字段，默认为所有
+     * @param bool $getBrand 是否获得品牌信息
+     * @return mixed
+     */
+    public static function getListsByProductIds($ids, $fields = true, $getBrand = false)
+    {
+        $ids = is_array($ids) ? $ids : explode(',', $ids);
+        $ids = array_unique($ids);
+        $where['id'] = ['IN', $ids];
+        $where['status'] = self::STATUS_ACTIVE;
+        return self::getInstance()->relation($getBrand ? '_brand' : false)->field($fields)->where($where)->select();
     }
 }
