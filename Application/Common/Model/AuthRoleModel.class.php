@@ -1,6 +1,7 @@
 <?php
 
 namespace Common\Model;
+
 use Think\Model;
 
 /**
@@ -8,15 +9,27 @@ use Think\Model;
  * Class AuthRoleModel
  * @package Common\Model
  */
-class AuthRoleModel extends Model{
+class AuthRoleModel extends Model
+{
 
-    const TYPE_ADMIN= 1; // 管理员用户组类型标识
-    const AUTH_ACCESS= 'auth_access'; // 关系表表名
+    const TYPE_ADMIN = 1; // 管理员用户组类型标识
+    const AUTH_ACCESS = 'auth_access'; // 关系表表名
 
     protected $_validate = array(
-        array('group_id','0', '必须选择组织', Model::MUST_VALIDATE ,'notequal',Model::MODEL_BOTH),
-        array('description','0,80', '描述最多80字符', Model::VALUE_VALIDATE , 'length'  ,Model::MODEL_BOTH ),
+        array('group_id', '0', '必须选择组织', self::MUST_VALIDATE, 'notequal', self::MODEL_BOTH),
+        array('description', '0,80', '描述最多80字符', self::VALUE_VALIDATE, 'length', self::MODEL_BOTH),
     );
+
+//    protected $_link = array(
+//        'Roles' => array(
+//            'mapping_type' => self::HAS_MANY,
+//            'class_name' => 'auth_access',
+//            'foreign_key' => 'group_id',
+//            'mapping_name' => '_roles',
+//            'mapping_order' => 'role_id desc',
+//    )
+//    );
+
     /**
      * 返回角色列表
      * 默认返回正常状态的管理员用户组列表
@@ -24,28 +37,30 @@ class AuthRoleModel extends Model{
      *
      * @return array 返回用户组列表
      */
-    public function getRoles($where=array()){
-        $map = array('status'=>1,'type'=>self::TYPE_ADMIN,'module'=>'admin');
-        $map = array_merge($map,$where);
+    public function getRoles($where = array())
+    {
+        $map = array('status' => 1, 'type' => self::TYPE_ADMIN, 'module' => 'admin');
+        $map = array_merge($map, $where);
         return $this->where($map)->select();
     }
 
     /**
      * 返回用户所属角色信息
-     * @param  int    $uid 用户id
+     * @param  int $uid 用户id
      * @return array  用户所属的角色 array(uid'=>'用户id','roles'=>'角色id','rules'=>'用户组拥有的规则id,多个,号隔开')
      */
-    static public function getUserRole($uid){
+    static public function getUserRole($uid)
+    {
         static $roles = array();
         if (isset($roles[$uid]))
             return $roles[$uid];
         $prefix = C('DB_PREFIX');
         $user_roles = M()
             ->field('uid,roles,rules')
-            ->table($prefix.self::AUTH_ACCESS.' a')
+            ->table($prefix . self::AUTH_ACCESS . ' a')
             ->where("a.uid='$uid'")
             ->find();
-        $roles[$uid]=$user_roles?$user_roles:array();
+        $roles[$uid] = $user_roles ? $user_roles : array();
         return $roles[$uid];
     }
 
@@ -55,42 +70,45 @@ class AuthRoleModel extends Model{
      *
      * 示例: 把uid=1的用户添加到group_id为1,2的组 `AuthGroupModel->addToGroup(1,'1,2');`
      */
-    public function addToRole($uid,$gid,$rules){
+    public function addToRole($uid, $gid)
+    {
 
-        if(empty($rules)){
-            $this->error = "请勾选权限";
-            return false;
-        };
-        $uid = is_array($uid)?implode(',',$uid):trim($uid,',');       //把用户uid数组转换成字符串
-
-        //$gid = is_array($gid)?$gid:explode( ',',trim($gid,',') );     //把用户组转换成数组
-        $gid = is_array($gid)?implode(',',$gid):trim($gid,',');
+        $uid = is_array($uid) ? implode(',', $uid) : trim($uid, ',');
+        $gid = is_array($gid) ? $gid : explode(',', trim($gid, ','));
 
         $Access = M(self::AUTH_ACCESS);
-        if( isset($_REQUEST['batch']) ){
-            //先删除旧数据
-            $del = $Access->where( array('uid'=>array('in',$uid)) )->delete();
+        if (isset($_REQUEST['batch'])) {
+            //为单个用户批量添加用户组时,先删除旧数据
+            $del = $Access->where(array('uid' => array('in', $uid)))->delete();
         }
 
-        $uid_arr = explode(',',$uid);
-        //$uid_arr = array_diff($uid_arr,array(C('USER_ADMINISTRATOR')));
+        $uid_arr = explode(',', $uid);
+        $uid_arr = array_diff($uid_arr, array(C('USER_ADMINISTRATOR')));
         $add = array();
-        if( $del!==false ){
-            foreach ($uid_arr as $u){
+        if ($del !== false) {
+            foreach ($uid_arr as $u) {
                 //判断用户id是否合法
-                if(M('Member')->getFieldByUid($u,'uid') == false){
+                if (M('Member')->getFieldByUid($u, 'uid') == false) {
                     $this->error = "编号为{$u}的用户不存在！";
                     return false;
                 }
-                    if( is_numeric($u) ){
-                        $add[] = array('roles'=>$gid,'uid'=>$u,'rules'=>$rules);
+                foreach ($gid as $k => $val) {
+                    foreach ($val as $g) {
+                        if (is_numeric($u) && is_numeric($g)) {
+                            $add[] = array('group_id' => $k, 'uid' => $u, 'role_id' => $g,'status'=>'1');
+                        }
                     }
+                }
             }
             $Access->addAll($add);
         }
         if ($Access->getDbError()) {
+            if (count($uid_arr) == 1 && count($gid) == 1) {
+                //单个添加时定制错误提示
+                $this->error = "不能重复添加";
+            }
             return false;
-        }else{
+        } else {
             return true;
         }
     }
@@ -99,16 +117,17 @@ class AuthRoleModel extends Model{
      * 更新角色信息
      * @return boolean 更新状态
      */
-    public function update(){
+    public function update()
+    {
         $data = $this->create();
-        if(!$data){ //数据对象创建错误
+        if (!$data) { //数据对象创建错误
             return false;
         }
 
         /* 添加或更新数据 */
-        if(empty($data['id'])){
+        if (empty($data['id'])) {
             $res = $this->add();
-        }else{
+        } else {
             $res = $this->save();
         }
 
@@ -121,22 +140,23 @@ class AuthRoleModel extends Model{
      * @param string $msg
      * @return array|string $gid  用户组id列表
      */
-    public function checkId($modelname,$mid,$msg = '以下id不存在:'){
-        if(is_array($mid)){
+    public function checkId($modelname, $mid, $msg = '以下id不存在:')
+    {
+        if (is_array($mid)) {
             $count = count($mid);
-            $ids   = implode(',',$mid);
-        }else{
-            $mid   = explode(',',$mid);
+            $ids = implode(',', $mid);
+        } else {
+            $mid = explode(',', $mid);
             $count = count($mid);
-            $ids   = $mid;
+            $ids = $mid;
         }
 
-        $s = M($modelname)->where(array('id'=>array('IN',$ids)))->getField('id',true);
-        if(count($s)===$count){
+        $s = M($modelname)->where(array('id' => array('IN', $ids)))->getField('id', true);
+        if (count($s) === $count) {
             return true;
-        }else{
-            $diff = implode(',',array_diff($mid,$s));
-            $this->error = $msg.$diff;
+        } else {
+            $diff = implode(',', array_diff($mid, $s));
+            $this->error = $msg . $diff;
             return false;
         }
     }
@@ -146,21 +166,23 @@ class AuthRoleModel extends Model{
      * @param $gid
      * @return array|string
      */
-    public function checkRoleId($gid){
-        return $this->checkId('AuthRole',$gid, '以下角色组id不存在:');
+    public function checkRoleId($gid)
+    {
+        return $this->checkId('AuthRole', $gid, '以下角色组id不存在:');
     }
 
     /**
      * 获取用户组详细信息
-     * @param  milit   $id 分类ID或标识
+     * @param  milit $id 分类ID或标识
      * @param  boolean $field 查询字段
      * @return array     分类信息
      * @author 麦当苗儿 <zuojiazi@vip.qq.com>
      */
-    public function info($id, $field = true){
+    public function info($id, $field = true)
+    {
         /* 获取分类信息 */
         $map = array();
-        if(is_numeric($id)){ //通过ID查询
+        if (is_numeric($id)) { //通过ID查询
             $map['id'] = $id;
         } else { //通过标识查询
             $map['name'] = $id;

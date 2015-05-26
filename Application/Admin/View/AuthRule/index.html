@@ -4,6 +4,28 @@
     <meta charset="UTF-8">
     <title>{$meta_title}</title>
     <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+    <script type="text/javascript" src="__STATIC__/js/jquery.min.js"></script>
+    <script>
+        var arrTree = jQuery.parseJSON('{$_list|json_encode}');
+        $(document).ready(function(){
+
+            function recursionJSON(data,str) {
+                str += "　";
+                if(typeof(data) == "object") {
+                    $.each(data, function(i, n){
+                        $("#tree").append('<li>'+str+'<input type="checkbox" value="'+ n.id+'" name="rule[]" />'+n.title+'</li>');
+                        if(typeof(n.child) == "object") {
+                            recursionJSON(n.child,str+"　");
+                        }
+                    });
+                }
+            }
+
+            recursionJSON(arrTree,"");
+
+        });
+
+    </script>
 </head>
 <body>
 <div class="container-fluid">
@@ -31,7 +53,7 @@
         </tr>
         </thead>
         <tbody>
-
+<!--<div id="tree"></div>-->
         <notempty name="_list">
             <!--&lt;!&ndash;递归显示数据&ndash;&gt;-->
             <!--<foreach name="list" item="item" >-->

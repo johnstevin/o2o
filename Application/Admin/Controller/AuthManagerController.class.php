@@ -1,8 +1,8 @@
 <?php
 
 namespace Admin\Controller;
-use Common\Model\AuthRuleModel;
 use Common\Model\AuthRoleModel;
+use Common\Model\AuthGroupModel;
 
 
 /**
@@ -116,12 +116,34 @@ class AuthManagerController extends AdminController
     public function role()
     {
         $uid = I('uid');
-        $auth_roles = D('AuthRole')->getRoles();
-        $user_roles = AuthRoleModel::getUserRole($uid);
-        $nickname = D('Member')->getNickName($uid);
-        $this->assign('nickname', $nickname);
-        $this->assign('auth_roles', $auth_roles);
-        $this->assign('user_roles', $user_roles['roles']);
+
+        /*获取组织*/
+        $auth_Groups = D('AuthGroup')->getGroups();
+        $userAccess = M('auth_access')->where(['uid' => $uid, 'status' => 1])->select();
+        foreach ($userAccess as $access) {
+            $hasAccess[$access['group_id']][] = $access['role_id'];
+        }
+        /*获取组织下的所有的角色*/
+        $AuthRole = M('AuthRole');
+        foreach ($auth_Groups as &$key) {
+            $key['Roles'] = $AuthRole->where(array('group_id' => $key['id'], 'status' => '1'))->select();
+        }
+//        $AuthAccess = M('AuthAccess');
+//        $user_roles = $AuthAccess->field('uid,group_id,role_id')->where(array('uid' => $uid))->group('group_id')->select();
+//        $roles = array();
+//        foreach ($user_roles as $val) {
+//            $roles[$val['group_id']] = $AuthAccess->field('role_id')->where(array('group_id' => $val['group_id']))->select();
+//        }
+//        echo "<pre>";
+//        print_r($roles);
+//        echo '</pre>';
+
+
+//        $nickname = D('Member')->getNickName($uid);
+//        $this->assign('nickname', $nickname);
+//        $this->assign('auth_roles', $auth_roles);
+        $this->assign('user_roles', $hasAccess);
+        $this->assign('node_list', $auth_Groups);
         $this->meta_title = '用户授权';
         $this->display();
     }
@@ -131,8 +153,11 @@ class AuthManagerController extends AdminController
      */
     public function addToRole()
     {
+
         $uid = I('uid');
-        $gid = I('role_id');
+
+        $gid = I('group_role');
+
         if (empty($uid)) {
             $this->error('参数有误');
         }
@@ -146,11 +171,15 @@ class AuthManagerController extends AdminController
             }
         }
 
-        if ($gid && !$AuthRole->checkRoleId($gid)) {
-            $this->error($AuthRole->error);
+        foreach ($gid as $val) {
+
+            if ($gid && !$AuthRole->checkRoleId($val)) {
+                $this->error($AuthRole->error);
+            }
+
         }
         if ($AuthRole->addToRole($uid, $gid)) {
-            $this->success('操作成功');
+            $this->success('操作成功', U('User/index'));
         } else {
             $this->error($AuthRole->getError());
         }
@@ -170,14 +199,16 @@ class AuthManagerController extends AdminController
 //        $map = array('module' => 'admin', 'type' => AuthRuleModel::RULE_URL, 'status' => 1);
 //        $child_rules = M('AuthRule')->where($map)->getField('id');
 //
+        /*获取rule*/
+        $tree = D('AuthRule')->getTree(0, 'id,title,level,pid,status');
 
-        $tree = D('AuthRule')->getTree(0,'id,title,level,pid,status');
-        $child_list=M('AuthRoleRule')->where(array('role_id'=>(int)I('group_id')))->select();
-        $child_tree=array();
-        foreach ($child_list as &$value){
-            $child_tree[]=$value['rule_id'];
+        /*获取之前用户已经存在的*/
+        $child_list = M('AuthRoleRule')->where(array('role_id' => (int)I('group_id')))->select();
+        $child_tree = array();
+        foreach ($child_list as &$value) {
+            $child_tree[] = $value['rule_id'];
         }
-        $child_tree = is_array($child_tree)?implode(',',$child_tree):trim($child_tree,',');
+        $child_tree = is_array($child_tree) ? implode(',', $child_tree) : trim($child_tree, ',');
 //        echo"<pre>";
 //        print_r($tree);
 //        echo"</pre>";
@@ -212,7 +243,7 @@ class AuthManagerController extends AdminController
             $this->error($AuthRule->error);
         }
         if ($AuthRule->addToRule($role, $rule)) {
-            $this->success('操作成功',U('index'));
+            $this->success('操作成功', U('index'));
         } else {
             $this->error($AuthRule->getError());
         }

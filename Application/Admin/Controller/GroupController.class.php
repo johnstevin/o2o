@@ -25,9 +25,17 @@ class GroupController extends AdminController{
 //        echo"<pre>";
 //        print_r($tree);
 //        echo"</pre>";
-        C('_SYS_GET_CATEGORY_TREE_', true); //标记系统获取分类树模板
+//        C('_SYS_GET_CATEGORY_TREE_', true); //标记系统获取分类树模板
         $this->meta_title = '用户组管理';
         $this->display();
+    }
+
+    /**
+     * @param int 上级pid，默认为顶级
+     */
+    public function getChildRegion($pid=0){
+        $region = D('Region')->getChildRegion($pid);
+        $this-ajaxReturn($region);
     }
 
     /**
@@ -35,6 +43,16 @@ class GroupController extends AdminController{
      */
     public function add($pid = 0)
     {
+        //TODO 保存区域
+        /*保存区域*/
+//        $region=I('level5')!=0?I('level5'):I('level4')!=0?I('level4'):I('level3')!=0?I('level3'):I('level2')!=0?I('level2'):I('level1')!=0?I('level1'):0;
+//        if($region==0){
+//            return false;
+//        }
+//        $GroupRegion = M('GroupRegion');
+//        $GroupRegion['group_id']='';
+//        $GroupRegion['region_id']=$region;
+//        $result=$GroupRegion->add($GroupRegion);
 
         $AuthGroup = D('AuthGroup');
         if (IS_POST) {
