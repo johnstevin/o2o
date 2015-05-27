@@ -9,7 +9,7 @@ class CategoryController extends AdminController {
         $tree=D("Category")->getTree(0,'id,sort,title,pid');
 //        $tree=M("Category")->select();
 //        $tree=D("Category")->info(0,'id,title,pid,sort,list_row,description,display,reply,check,extend,create_time,update_time,status,icon');
-        print_r($tree);
+        //print_r($tree);
         $this->assign('tree',$tree);
         $this->display();
     }

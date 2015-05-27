@@ -3,12 +3,14 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title></title>
+    <script type="text/javascript" src="../../../Public/static/js/jquery.min.js"></script>
 </head>
 <body>
 <div>
 <h2>分类管理</h2>
 </div>
 <div><a href="{:U('category/add')}">增加顶级分类</a></div>
+<div id="tree"></div>
 <table>
     <thead>
         <tr>
@@ -41,3 +43,25 @@
 </table>
 </body>
 </html>
+
+<script>
+    var arrTree = jQuery.parseJSON('{$tree|json_encode}');
+    $(document).ready(function(){
+
+        function recursionJSON(data,str) {
+            str += "　";
+            if(typeof(data) == "object") {
+                $.each(data, function(i, n){
+                    $("#tree").append('<li>'+str+'<input type="checkbox" value="'+ n.id+'" name="rule[]" />'+n.title+'</li>');
+                    if(typeof(n._child) == "object") {
+                        recursionJSON(n._child,str+"　");
+                    }
+                });
+            }
+        }
+
+        recursionJSON(arrTree,"");
+
+    });
+
+</script>

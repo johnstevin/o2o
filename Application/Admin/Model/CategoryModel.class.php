@@ -30,11 +30,10 @@ class CategoryModel extends Model{
         //获取所有分类
         $map=array();
         $list=$this->field($field)->where($map)->order('sort')->select();
-        $list=list_to_tree($list,$pk='id',$pid='pid',$root=$id);
-
+        $list=list_to_tree($list,$pk='id',$pid='pid',$child = '_child',$root=$id);
         //获取返回数据
         if(isset($info)){//指定分类则返回当前分类及其子分类
-            $info['_']=$list;
+            $info['child']=$list;
         }else{//否则则返回所有分类
             $info=$list;
         }
