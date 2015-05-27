@@ -6,32 +6,92 @@ class CategoryController extends AdminController {
     //分类列表
     public function index(){
     //查询出所有的分类
-        $tree=D("Category")->getTree(0,'id,sort,title,pid');
-//        $tree=M("Category")->select();
-//        $tree=D("Category")->info(0,'id,title,pid,sort,list_row,description,display,reply,check,extend,create_time,update_time,status,icon');
+        $tree=D("Category")->getTree(0,'id,sort,title,pid,status');
+//        var_dump($tree);
+        $tree=($tree);
         print_r($tree);
+//        exit;
         $this->assign('tree',$tree);
         $this->display();
     }
 
     //分类添加
-    public function add(){
-//    $cateadd=M("Category")->create();
-//        var_dump($cateadd);
-        $this->display();
-
+    public function add($pid = 0){
+        $Category = D('Category');
+        if (IS_POST) {
+            if(false !== $Category->update()){
+                $this->success('新增成功！', U('index'));
+            } else {
+                $error = $Category->getError();
+                $this->error(empty($error) ? '未知错误！' : $error);
+            }
+        } else {
+            $cate = array();
+            if($pid){
+                /* 获取上级分类信息 */
+                $cate = $Category->info($pid, 'id,level,title,status');
+                if(!($cate && 1 == $cate['status'])){
+                    $this->error('指定的上级分类不存在或被禁用！');
+                }
+                ++$cate['level'];
+            }
+            /* 获取分类信息 */
+            $this->assign('info', null);
+            $this->assign('category', $cate);
+            $this->display('edit');
+        }
     }
 
     //分类编辑
-    public function edit(){
+    public function edit($id = null, $pid = 0){
 
-        $this->display();
+        $Category = D('Category');
+        if(IS_POST){ //提交表单
+            if(false !== $Category->update()){
+                $this->success('编辑成功！', U('index'));
+            } else {
+                $error = $Category->getError();
+                $this->error(empty($error) ? '未知错误！' : $error);
+            }
+        } else {
+            $cate = '';
+            if($pid){
+                /* 获取上级分类信息 */
+                $cate = $Category->info($pid, 'id,level,title,status');
+                if(!($cate && 1 == $cate['status'])){
+                    $this->error('指定的上级用户组不存在或被禁用！');
+                }
+            }
+            /* 获取分类信息 */
+            $info = $id ? $Category->info($id) : '';
+            $this->assign('info',       $info);
+            $this->assign('category',   $cate);
+            $this->display('edit');
+        }
 
     }
 
-    //分类删除
-    public function delete(){
-
+    /**
+     * 状态修改
+     */
+    public function changeStatus($method = null)
+    {
+        if (empty($_REQUEST['id'])) {
+            $this->error('请选择要操作的数据!');
+        }
+        switch (strtolower($method)) {
+            case 'forbidcategory':
+                $this->forbid('Category');
+                break;
+            case 'resumecategory':
+                $this->resume('Category');
+                break;
+            case 'deletecategory':
+                $this->delete('Category');
+                break;
+            default:
+                $this->error($method . '参数非法');
+        }
     }
 
 }
