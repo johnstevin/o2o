@@ -10,23 +10,21 @@ use Think\Model;
 /**
  * 会员模型
  */
+DEFINE('SALTKEY',generate_saltKey());
+
 class UcenterMemberModel extends Model{
+
+    const USER_ADMIN         = 'admin';
+    const USER_MERCHANT      = 'merchant';
+    const USER_MEMBER        = 'member';
+
+
 
 	/* 用户模型自动验证 */
 	protected $_validate = array(
-		/* 验证用户名 */
-//		array('username', '1,30', -1, self::EXISTS_VALIDATE, 'length'), //用户名长度不合法
-//		array('username', 'checkDenyMember', -2, self::EXISTS_VALIDATE, 'callback'), //用户名禁止注册
-//		array('username', '', -3, self::EXISTS_VALIDATE, 'unique'), //用户名被占用
 
 		/* 验证密码 */
-		array('password', '6,30', -4, self::EXISTS_VALIDATE, 'length'), //密码长度不合法
-
-		/* 验证邮箱 */
-//		array('email', 'email', -5, self::EXISTS_VALIDATE), //邮箱格式不正确
-//		array('email', '1,32', -6, self::EXISTS_VALIDATE, 'length'), //邮箱长度不合法
-//		array('email', 'checkDenyEmail', -7, self::EXISTS_VALIDATE, 'callback'), //邮箱禁止注册
-//		array('email', '', -8, self::EXISTS_VALIDATE, 'unique'), //邮箱被占用
+		array('password', '6,32', -4, self::EXISTS_VALIDATE, 'length'), //密码长度不合法
 
 		/* 验证手机号码 */
 		array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', -9, self::EXISTS_VALIDATE), //手机格式不正确 TODO:
@@ -36,14 +34,18 @@ class UcenterMemberModel extends Model{
 
 	/* 用户模型自动完成 */
 	protected $_auto = array(
-		array('password', 'md5', self::MODEL_BOTH, 'function'),
-        array('saltkey', '123456'),
+		array('password', 'getPwd', self::MODEL_INSERT, 'callback'),
+        array('saltkey', SALTKEY),
 		array('reg_time', NOW_TIME, self::MODEL_INSERT),
 		array('reg_ip', 'get_client_ip', self::MODEL_INSERT, 'function', 1),
 		array('update_time', NOW_TIME),
         array('is_member', 1),
         array('is_admin', 1),
 	);
+
+    final public function getPwd( $pwd ){
+        return generate_password( $pwd, SALTKEY);
+    }
 
 	/**
 	 * 注册一个新用户
@@ -79,6 +81,7 @@ class UcenterMemberModel extends Model{
 	 * @param  string  $password 用户密码
 	 * @param  integer $type     用户名类型 （1-用户名，2-邮箱，3-手机，4-UID,5-全部）
 	 * @return integer           登录成功-用户ID，登录失败-错误编号
+     * @author stevin.john
 	 */
 	public function login($username, $password, $type = 1){
 		$map = array();
@@ -107,18 +110,64 @@ class UcenterMemberModel extends Model{
 
 		/* 获取用户数据 */
 		$user = $this->where($map)->find();
-		if(is_array($user) && $user['status']){
+		if(is_array($user) && $user['is_admin']){
 			/* 验证用户密码 */
-			if(think_ucenter_md5($password, UC_AUTH_KEY) === $user['password']){
-				$this->updateLogin($user['id']); //更新用户登录信息
-				return $user['id']; //登录成功，返回用户ID
+			if(generate_password($password, $user['saltkey']) === $user['password']){
+                //是管理员，插入或更新数据admin
+				return $this->updateLogin($user); //登录成功，返回用户ID
 			} else {
 				return -2; //密码错误
 			}
 		} else {
-			return -1; //用户不存在或被禁用
+			return -1; //用户不存在或不是管理员
 		}
 	}
+
+    /**
+     * 更新或插入管理员登录信息
+     * @param  integer $uid 用户ID
+     * @author  stevin.john
+     */
+    protected function updateLogin($user){
+        $data = array(
+            'id'              => $user['id'],
+            'login'           => array('exp', '`login`+1'),
+            'last_login_time' => NOW_TIME,
+            'last_login_ip'   => get_client_ip(1),
+            'status'          => 1,
+        );
+        $admin = M(self::USER_ADMIN);
+        $result = $admin->field('id')->where('id='.$user['id'])->find();
+        if( $result ){
+            $admin->save($data);
+        }else{
+            $admin->add($data);
+        }
+
+        if ($admin->getDbError())
+            return -3;  //插入或更新管理员信息失败
+
+        /* 记录登录SESSION和COOKIES */
+        $auth = array(
+            'uid'             => $user['id'],
+            'mobile'          => $user['mobile'],
+            'last_login_time' => $data['last_login_time'],
+        );
+
+        session('admin_auth', $auth);
+        session('admin_auth_sign', data_auth_sign($auth));
+
+        return $user['id'];
+    }
+
+    /**
+     * 注销当前用户
+     * @return void
+     */
+    public function logout(){
+        session('user_auth', null);
+        session('user_auth_sign', null);
+    }
 
 	/**
 	 * 获取用户信息
@@ -167,18 +216,7 @@ class UcenterMemberModel extends Model{
 		return $this->create($data) ? 1 : $this->getError();
 	}
 
-	/**
-	 * 更新用户登录信息
-	 * @param  integer $uid 用户ID
-	 */
-	protected function updateLogin($uid){
-		$data = array(
-			'id'              => $uid,
-			'last_login_time' => NOW_TIME,
-			'last_login_ip'   => get_client_ip(1),
-		);
-		$this->save($data);
-	}
+
 
 	/**
 	 * 更新用户信息

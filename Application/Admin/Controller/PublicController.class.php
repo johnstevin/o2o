@@ -11,8 +11,7 @@ use Think\Controller;
 class PublicController extends Controller {
 
     /* 保存允许访问的公共方法 */
-    static protected $allow = array('login','register');
-
+    //static protected $allow = array('login','register');
 
     /**
      * 后台用户登录
@@ -24,31 +23,25 @@ class PublicController extends Controller {
             //if(!check_verify($verify)){
             //    $this->error('验证码输入错误！');
             //}
+            $Ucenter = D('UcenterMember');
+            $uid = $Ucenter->login($username, $password, 5);
+            if(0 < $uid){
 
-            $User = new UserApi;
-            $uid = $User->login($username, $password, 5);
-            if(0 < $uid){ //UC登录成功
-                /* 登录用户 */
-                $Member = D('Member');
-                if($Member->login($uid)){ //登录用户
-                    //TODO:跳转到登录前页面
-                    $this->success('登录成功！', U('Index/index'));
-                } else {
-                    $this->error($Member->getError());
-                }
+                $this->success('登录成功！', U('Index/index'));
 
-            } else { //登录失败
+            } else {
                 switch($uid) {
                     case -1: $error = '用户不存在或被禁用！'; break; //系统级别禁用
                     case -2: $error = '密码错误！'; break;
+                    case -3: $error = '插入或更新管理员信息失败'; break;
                     default: $error = '未知错误！'; break; // 0-接口参数错误（调试阶段使用）
                 }
                 $this->error($error);
             }
         } else {
-//            if(is_login()){
-//                $this->redirect('Index/index');
-//            }else{
+            if(is_admin_login()){
+                $this->redirect('Index/index');
+            }else{
 //                /* 读取数据库中的配置 */
 //                $config	=	S('DB_CONFIG_DATA');
 //                if(!$config){
@@ -58,7 +51,7 @@ class PublicController extends Controller {
 //                C($config); //添加配置
                 
                 $this->display('User/login');
-            //}
+            }
         }
     }
 
@@ -66,7 +59,7 @@ class PublicController extends Controller {
      * 后台用户注册
      * @author stevin.john
      */
-    public function register($mobile = '', $password = '', $username = '', $email = '', $group_id = 0, $verify = ''){
+    public function register(){
 
         if(IS_POST){
             $verify      = I('post.verify');
@@ -82,21 +75,33 @@ class PublicController extends Controller {
             //    $this->error('验证码输入错误！');
             //}
 
-
-
             $Ucenter = D('UcenterMember');
             D()->startTrans();
 
             $uid = $Ucenter->register($mobile, $password, $username, $email);
             if(0 < $uid){
-                $Member = D('Member');
-                $umid   = $Member->register($uid);
-                if(0 < $umid){
-                    D()->commit();
-                    $this->success('注册成功!您的组织为7', U('login'));
-                } else {
+                //赋组织：用户组，赋角色：普通用户,状态1-正常
+                //赋组织：GET组织id,赋角色：0,状态0-待审核
+                $auth = D('AuthAccess');
+                $data[] = array(
+                    'uid'          => $uid,
+                    'group_id'     => C('AUTH_GROUP_ID.CLIENT_GROUP_ID'),
+                    'role_id'      => C('AUTH_ROLE_ID.CLIENT_ROLE_ID'),
+                    'status'       => 1,
+                );
+                $data[] = array(
+                    'uid'          => $uid,
+                    'group_id'     => $group_id,
+                    'role_id'      => 0,
+                    'status'       => 0,
+                );
+                $result = $auth->addUserAccess($data);
+                if( 0 > $result ){
                     D()->rollback();
-                    $this->error($this->showRegError($umid));
+                    $this->error($this->showRegError($result));
+                }else{
+                    D()->commit();
+                    $this->success('注册成功！', U('login'));
                 }
 
             } else {
@@ -128,15 +133,18 @@ class PublicController extends Controller {
             case -10: $error = '手机被禁止注册！'; break;
             case -11: $error = '手机号被占用！'; break;
             case -12: $error = '用户注册失败！code:-12'; break;
+            case -13: $error = '分配授权失败！code:-13'; break;
             default:  $error = '未知错误';
         }
         return $error;
     }
 
-    /* 退出登录 */
+    /**
+     * 退出登陆
+     */
     public function logout(){
-        if(is_login()){
-            D('Member')->logout();
+        if(is_admin_login()){
+            D('UcenterMember')->logout();
             session('[destroy]');
             $this->success('退出成功！', U('login'));
         } else {

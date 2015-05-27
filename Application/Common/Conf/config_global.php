@@ -1,7 +1,7 @@
 <?php
 return [
     /* 模块相关配置 */
-    'AUTOLOAD_NAMESPACE' => ['Addons' => ONETHINK_ADDON_PATH], //扩展模块列表
+    'AUTOLOAD_NAMESPACE' => ['Addons' => './Addons/'], //扩展模块列表
     'DEFAULT_MODULE' => 'Home',
     'MODULE_DENY_LIST' => ['Common', 'User', 'Admin', 'Install'],
     //'MODULE_ALLOW_LIST'  => array('Home','Admin'),
@@ -24,5 +24,17 @@ return [
 
     /* 文档模型配置 (文档模型核心配置，请勿更改) */
     'DOCUMENT_MODEL_TYPE' => [2 => '主题', 1 => '目录', 3 => '段落'],
-    'DATE_FORMAT' => 'Y-m-d H:i:s'
+    'DATE_FORMAT' => 'Y-m-d H:i:s',
+
+    /* 权限配置 */
+    'AUTH_GROUP_ID' => array(
+        'MERCHANT_GROUP_ID' => 2,
+        'MEMBER_GROUP_ID'   => 3,
+        'ADMIN_GROUP_ID'    => 4,
+        'CLIENT_GROUP_ID'   => 29,
+    ),
+    'AUTH_ROLE_ID' => array(
+        'CLIENT_ROLE_ID'    => 1,
+    ),
+
 ];

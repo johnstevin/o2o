@@ -163,3 +163,61 @@ function create_order_code()
     //TODO 没有代码。。。
     return '';
 }
+
+/**
+ * 数据签名认证
+ * @param  array  $data 被认证的数据
+ * @return string       签名
+ */
+function data_auth_sign($data) {
+    //数据类型检测
+    if(!is_array($data)){
+        $data = (array)$data;
+    }
+    ksort($data); //排序
+    $code = http_build_query($data); //url编码并生成query字符串
+    $sign = sha1($code); //生成签名
+    return $sign;
+}
+
+/**
+ * @return int
+ */
+function is_admin_login(){
+    $user = session('admin_auth');
+    if (empty($user)) {
+        return 0;
+    } else {
+        return session('admin_auth_sign') == data_auth_sign($user) ? $user['uid'] : 0;
+    }
+}
+
+/**
+ * @param int $length
+ * @return string
+ */
+function generate_saltKey( $length = 6 ) {
+    // 密码字符集，可任意添加你需要的字符
+    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_[]{}<>~`+=,.;:/?|';
+    $saltKey = '';
+    for ( $i = 0; $i < $length; $i++ ){
+        $saltKey .= $chars[ mt_rand(0, strlen($chars) - 1) ];
+    }
+    return $saltKey;
+}
+
+/**
+ * @param $pwd
+ * @param $saltkey
+ * @return string
+ */
+function generate_password( $pwd, $saltkey ) {
+    //Md5(Md5(盐值前三位.md5(密码).盐值后几位).盐值)，取最中间24位
+    $saltkey1 = substr($saltkey,0,3);
+    $saltkey2 = substr($saltkey,-3);
+    $pwd = md5(md5($saltkey1.$pwd.$saltkey2).$saltkey);
+    $pwd = substr($pwd,4,24);
+
+    return $pwd;
+}
+
