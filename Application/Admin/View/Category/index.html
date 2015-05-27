@@ -3,24 +3,34 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title></title>
+    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+    <script type="text/javascript" src="../../../Public/static/js/jquery.min.js"></script>
 </head>
 <body>
+<div class="container-fluid">
 <div>
 <h2>分类管理</h2>
 </div>
-<div><a href="{:U('category/add')}">增加顶级分类</a></div>
-<table>
+<div>
+    <a id="add-group" class="btn btn-success" href="{:U('add')}">新 增</a>
+</div>
+<table class="table">
     <thead>
-        <tr>
+            <tr>
             <th>折叠</th>
+            <th>ID</th>
             <th>排序</th>
             <th>标题</th>
+            <th>PID</th>
             <th>增加子类</th>
             <th>编辑</th>
-            <th>删除</th>
+            <th>操作</th>
         </tr>
     </thead>
+<div>
+    <ul id="tree"></ul>
 
+</div>
 <tfoot>
     <tr>
         <td colspan="3">分页</td>
@@ -29,15 +39,64 @@
 <tbody>
 <foreach name="tree" item="category">
     <tr>
-        <td><input type="checkbox"/></td>
+        <div class="show_details"></div><th></th>
+        <td>{$category.id}</td>
         <td>{$category.sort}</td>
         <td>{$category.title}</td>
-        <td><a href="{:U('category/add')}">增加子类</a></td>
-        <td><a href="{:U('category/edit')}">编辑</a></td>
-        <td><a href="{:U('category/delete')}">删除</a></td>
+        <td>{$category.pid}</td>
+        <td><a href="{:U('add?pid='.$category['id'])}">添加子类</a></td>
+        <td><a href="{:U('edit?id='.$category['id'].'&pid='.$category['pid'])}">编辑</a></td>
+        <td>
+            <eq name="vo.status" value="1">
+                <a href="{:U('Category/changeStatus?method=forbidCategory&id='.$category['id'])}"
+                   class="ajax-get">禁用</a>
+                <else/>
+                <a href="{:U('Category/changeStatus?method=resumeCategory&id='.$category['id'])}"
+                   class="ajax-get">启用</a>
+            </eq>
+            <a href="{:U('Category/changeStatus?method=deleteCategory&id='.$category['id'])}"
+               class="confirm ajax-get">删除</a>
+        </td>
     </tr>
 </foreach>
 </tbody>
 </table>
+    </div>
 </body>
 </html>
+<script>
+   /* $(document).ready(function(){
+        $("#show_details").toggle(function(){
+                    $("#details").show();
+                    $(".plus_icon").toggleClass("minus_icon");
+                    $("#show_details_font").html("收起详情");
+                },
+                function(){
+                    $("#details").hide();
+                    $(".plus_icon").toggleClass("minus_icon");
+                    $("#show_details_font").html("展开详情");
+                }
+        );
+    });*/
+    $(document).ready(function(){
+        var arrTree = jQuery.parseJSON('{$category|json_encode}');
+        function recursionJSON(data,str) {
+            str += " ";
+            if(typeof(data) == "object") {
+                $.each(data, function(i, n){
+                    //alert(n);
+                    $("#tree").append('<li>'+str+'<input type="checkbox" value="'+ n.id+'" name="rule[]" />'+n.title+'</li>');
+                    if(typeof(n.child) == "object") {
+                        recursionJSON(n.child,str+" ");
+                    }
+                });
+            }
+        }
+        recursionJSON(arrTree,"");
+
+    });
+
+
+</script>
+
+
