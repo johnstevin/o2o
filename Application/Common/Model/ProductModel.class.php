@@ -67,27 +67,13 @@ class ProductModel extends RelationModel
             'price',
             'currency',
             '价格非法',
-            self::MUST_VALIDATE
-        ],
-        [
-            'add_ip',
-            'checkIpFormat',
-            'IP非法',
-            self::MUST_VALIDATE,
-            'function'
-        ],
-        [
-            'edit_ip',
-            'checkIpFormat',
-            'IP非法',
-            self::MUST_VALIDATE,
-            'function'
+            self::EXISTS_VALIDATE
         ],
         [
             'status',
             'number',
             '状态非法',
-            self::MUST_VALIDATE
+            self::EXISTS_VALIDATE
         ],
         [
             'status',
@@ -96,7 +82,7 @@ class ProductModel extends RelationModel
                 self::STATUS_ACTIVE
             ],
             '状态的范围不正确',
-            self::MUST_VALIDATE,
+            self::EXISTS_VALIDATE,
             'in'
         ],
     ];
@@ -151,29 +137,35 @@ class ProductModel extends RelationModel
         'Brand' => [
             'mapping_type' => self::BELONGS_TO,
             'class_name' => 'Brand',
-            'parent_key' => 'brand_id',
+            'foreign_key' => 'brand_id',
             'mapping_name' => '_brand',
             'mapping_order' => 'sort desc',
             // 定义更多的关联属性
         ],
+        'Categorys' => [
+            'mapping_type' => self::HAS_MANY,
+            'class_name' => 'ProductCategory',
+            'foreign_key' => 'product_id',
+            'mapping_name' => '_categorys',
+        ]
     ];
 
     protected function _after_find(&$result, $options = '')
     {
         parent::_after_find($result, $options);
-        $result['_status'] = self::getStatusOptions()[$result['status']];
-        $result['_add_time'] = date(C('DATE_FORMAT'), $result['add_time']);
-        $result['_edit_time'] = date(C('DATE_FORMAT'), $result['edit_time']);
+//        $result['_status'] = self::getStatusOptions()[$result['status']];
+//        $result['_add_time'] = date(C('DATE_FORMAT'), $result['add_time']);
+//        $result['_edit_time'] = date(C('DATE_FORMAT'), $result['edit_time']);
     }
 
     protected function _after_select(&$result, $options = '')
     {
         parent::_after_select($result, $options);
-        foreach ($result as &$value) {
-            $value['_status'] = self::getStatusOptions()[$result['status']];
-            $value['_add_time'] = date(C('DATE_FORMAT'), $result['add_time']);
-            $value['_edit_time'] = date(C('DATE_FORMAT'), $result['edit_time']);
-        }
+//        foreach ($result as &$value) {
+//            $value['_status'] = self::getStatusOptions()[$result['status']];
+//            $value['_add_time'] = date(C('DATE_FORMAT'), $result['add_time']);
+//            $value['_edit_time'] = date(C('DATE_FORMAT'), $result['edit_time']);
+//        }
     }
 
     /**
@@ -263,10 +255,12 @@ class ProductModel extends RelationModel
      * @param string|array $fields 要查询的字段
      * @return null|array
      */
-    public static function get($id, $fields = '*')
+    public static function get($id, $fields = '*', $relation = [])
     {
         $id = intval($id);
-        return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
+        $relation = is_array($relation) ?: explode(',', $relation);
+        if (in_array('_categorys', $relation)) $_relation[] = '_categorys';
+        return $id ? self::getInstance()->relation($_relation)->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
     }
 
     /**
