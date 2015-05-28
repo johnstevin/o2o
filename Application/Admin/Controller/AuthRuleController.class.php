@@ -13,19 +13,8 @@ class AuthRuleController extends AdminController{
      * 用户组首页
      */
     public function index(){
-//        $list = $this->lists('AuthRule', array(''=>''), 'id asc');
-//        $list = int_to_string($list);
-//        $this->assign('_list', $list);
-//        $this->assign('_use_tip', true);
-//        $this->meta_title = '权限管理';
-//        $this->display();
-
         $tree = D('AuthRule')->getTree(0,'id,title,level,pid,status,url');
         $this->assign('_list', $tree);
-//        echo"<pre>";
-//        print_r($tree);
-//        echo"</pre>";
-        C('_SYS_GET_CATEGORY_TREE_', true); //标记系统获取分类树模板
         $this->meta_title = '用户组管理';
         $this->display();
     }
@@ -110,6 +99,11 @@ class AuthRuleController extends AdminController{
                 $this->resume('AuthRule');
                 break;
             case 'deleterule':
+//                //判断该分类下有没有子分类，有则不允许删除
+//                $child = M('AuthRule')->where(array('pid'=>$_REQUEST['id']))->field('id')->find();
+//                if(!empty($child)){
+//                    $this->error('请先删除该规则下的规则');
+//                }
                 $this->delete('AuthRule');
                 break;
             default:

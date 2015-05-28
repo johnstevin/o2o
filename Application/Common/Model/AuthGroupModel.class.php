@@ -83,7 +83,7 @@ class AuthGroupModel extends Model
         /* 获取所有分类 */
         $map = array('status' => array('gt', -1));
         $list = $this->field($field)->where($map)->order('id')->select();
-        $list = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = 'child', $root = $id);
+        $list = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = $id);
 
         /* 获取返回数据 */
         if (isset($info)) { //指定分类则返回当前分类极其子分类
@@ -116,5 +116,26 @@ class AuthGroupModel extends Model
         return $res;
     }
 
+    /**
+     * 保存区域
+     */
+    public function saveRegion($result){
+        /*保存区域*/
+        $region_id=0;
+        for($i=5;$i>0;$i--){
+            $temp=I('level'.$i);
+            if( $temp!= 0&&!empty($temp)){
+                $region_id=$temp;break;
+            }
+        }
+        if ($region_id == 0) {
+            //$this->error('请选择区域');
+            return false;
+        }
+        $GroupRegion = M('AuthGroupRegion');
+        $data['group_id'] = $result;
+        $data['region_id'] = $region_id;
+        return $GroupRegion->add($data);
+    }
 }
 

@@ -16,19 +16,9 @@ class GroupController extends AdminController
      */
     public function index()
     {
-//        $list = $this->lists('AuthGroup', array('id' => array('neq', AuthGroupModel::GROUP_ADMIN)), 'id asc');
-//        $list = int_to_string($list);
-//        $this->assign('_list', $list);
-//        $this->assign('_use_tip', true);
-//        $this->meta_title = '权限管理';
-//        $this->display();
 
         $tree = D('AuthGroup')->getTree(0, 'id,group_code,title,description,level,pid,status');
         $this->assign('_list', $tree);
-//        echo"<pre>";
-//        print_r($tree);
-//        echo"</pre>";
-//        C('_SYS_GET_CATEGORY_TREE_', true); //标记系统获取分类树模板
         $this->meta_title = '用户组管理';
         $this->display();
     }
@@ -51,24 +41,17 @@ class GroupController extends AdminController
     public function add($pid = 0)
     {
         $AuthGroup = D('AuthGroup');
-
+         //TODO  事物控制
         if (IS_POST) {
             $result = $AuthGroup->update();
             if (false !== $result) {
-                /*保存区域*/
-                $region_id = I('level5') != 0 ? I('level5') : I('level4') != 0 ? I('level4') : I('level3') != 0 ? I('level3') : I('level2') != 0 ? I('level2') : I('level1') != 0 ? I('level1') : 0;
-                if ($region_id == 0) {
-                    $this->error('请选择区域');
-                }
-                $GroupRegion = M('AuthGroupRegion');
-                $data['group_id'] = $result;
-                $data['region_id'] = $region_id;
+
                 /* 添加或更新数据 */
-                if ($GroupRegion->add($data)) {
+                if ($AuthGroup->saveRegion($result)) {
                     $this->success('新增成功！', U('index'));
                 } else {
-                    $error = $GroupRegion->getError();
-                    $this->error(empty($error) ? '未知错误！' : $error);
+                    $error = $AuthGroup->getError();
+                    $this->error(empty($error) ? '请选择区域' : $error);
                 }
             } else {
                 $error = $AuthGroup->getError();
@@ -150,6 +133,12 @@ class GroupController extends AdminController
                 $this->resume('AuthGroup');
                 break;
             case 'deletegroup':
+
+//                //判断该分类下有没有子分类，有则不允许删除
+//                $child = M('AuthGroup')->where(array('pid'=>$_REQUEST['id']))->field('id')->find();
+//                if(!empty($child)){
+//                    $this->error('请先删除该组织下的组织');
+//                }
                 $this->delete('AuthGroup');
                 break;
             default:
