@@ -238,7 +238,7 @@ class ProductController extends ApiController
 
     /**
      * 查询商家商品
-     * @param array|string $shopIds 商铺ID
+     * @param array|string $shopIds 商铺ID，多个用','隔开
      * @param null|string $categoryId 分类ID
      * @param null|int $brandId 品牌ID
      * @param null|int $normId 规格ID
@@ -248,8 +248,70 @@ class ProductController extends ApiController
      * @return mixed
      * @author  stevin WangJiang
      */
-    public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $status = ProductModel::STATUS_ACTIVE, $title = null, $pageSize = 10){
+    public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $title = null,$page = 0, $pageSize = 10){
         try{
+            empty($shopIds) and E('参数shopIds不能为空');
+            $pageSize > 50 and $pageSize=50;
+            $page*=$pageSize;
+
+            $shopIds=explode(',',$shopIds);
+            list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
+
+            $sql=M('MerchantDepot')
+                ->join('INNER JOIN sq_merchant_shop as shop on shop.id in ('.implode(',',$shopBindNames).') and shop.id=sq_merchant_depot.shop_id');
+
+            $sql_pro='INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id';
+
+            if(!empty($title)){
+                $sql_pro.=' and pro.title like :title';
+                $bindValues[':title']='%'.$title.'%';
+            }
+
+            if(!empty($brandId)){
+                //$sql->join('INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id and pro.brand_id=:brandId');
+                $sql_pro.=' and pro.brand_id=:brandId';
+                $bindValues[':brandId']=$brandId;
+            }
+
+            if(!empty($normId)){
+                //$sql->join('INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id and pro.brand_id=:brandId');
+                $sql_pro.=' and pro.norms_id=:normId';
+                $bindValues[':normId']=$normId;
+            }
+
+            $sql->join($sql_pro);
+
+            if(!empty($categoryId)) {
+                $sql->join('INNER JOIN sq_product_category as pc on pc.category_id=:cateId AND pc.product_id=pro.id');
+                $bindValues[':cateId']=$categoryId;
+            }
+
+            $sql->field(['sq_merchant_depot.id','pro.id as product_id'
+                ,'pro.title as product','sq_merchant_depot.price','shop.id as shop_id','shop.title as shop']);
+
+            $sql->bind($bindValues)->limit($page,$pageSize);
+
+            $data=$sql->select();
+
+            //print_r($sql->getLastSql());
+
+            $products=[];
+            foreach($data as $i){
+                $pid=$i['product_id'];
+                if(!isset($products[$pid]))
+                    $products[$pid]=$i;
+
+                if($products[$pid]['price']>$i['price'])
+                    $products[$pid]=$i;
+            }
+
+            $ret=[];
+            foreach($products as &$product){
+                $product['price'] = floatval($product['price']);
+                $ret[]=$product;
+            }
+
+            $this->apiSuccess(array('data'=>$ret));
 
         }catch (Exception $ex){
             $this->apiError(50005,$ex->getMessage());
