@@ -28,9 +28,6 @@ class MerchantShopModel extends AdvModel{
      */
     public function getList($lat, $lng, $range = 100,$words=null,$words_op='or',$type=0)
     {
-        //因为MySql5.6不支持ST_Distance_Sphere，自己实线该函数，但是精度和百度计算的距离有0.15的误差
-        $range = $range * 1.15;
-
         if (!is_numeric($lat) or !is_numeric($lng))
             //$this->error('坐标必须是数值', '', true);
             E('坐标必须是数值');
@@ -66,7 +63,7 @@ class MerchantShopModel extends AdvModel{
             ->bind(':lng', $lng)
             ->bind(':lat', $lat)
             ->bind(':dist', $range)
-            ->field(['id', 'title']);
+            ->field(['id', 'title','ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance']);
 
         return $sql->select();
     }
