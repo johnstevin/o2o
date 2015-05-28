@@ -287,7 +287,8 @@ class ProductController extends ApiController
             }
 
             $sql->field(['sq_merchant_depot.id','pro.id as product_id'
-                ,'pro.title as product','sq_merchant_depot.price','shop.id as shop_id','shop.title as shop']);
+                ,'pro.title as product','sq_merchant_depot.price'
+                ,'shop.id as shop_id','shop.title as shop']);
 
             $sql->bind($bindValues)->limit($page,$pageSize);
 
@@ -296,18 +297,28 @@ class ProductController extends ApiController
             //print_r($sql->getLastSql());
 
             $products=[];
+            $depots=[];
             foreach($data as $i){
+                $i['price'] = floatval($i['price']);
                 $pid=$i['product_id'];
                 if(!isset($products[$pid]))
                     $products[$pid]=$i;
+
+                $depots[$pid][]=$i;
 
                 if($products[$pid]['price']>$i['price'])
                     $products[$pid]=$i;
             }
 
             $ret=[];
-            foreach($products as &$product){
-                $product['price'] = floatval($product['price']);
+            foreach($products as $k=>$product){
+                $depot=$depots[$k];
+                $alters=[];
+                foreach($depot as $i){
+                    if($product['id']!==$i['id'])
+                        $alters[]=array('id'=>$i['id'],'price'=>$i['price'],'shop_id'=>$i['shop_id'],'shop'=>$i['shop']);
+                }
+                $product['alters']=$alters;
                 $ret[]=$product;
             }
 
