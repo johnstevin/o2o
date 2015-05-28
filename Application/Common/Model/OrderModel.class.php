@@ -89,6 +89,7 @@ class OrderModel extends RelationModel
         'pay_mode',
         'consignee',
         'pay_status',
+        'order_code',
         'address',
         'add_ip',
         'add_time',
@@ -97,6 +98,7 @@ class OrderModel extends RelationModel
         'deliveryman',
         'delivery_mode',
         'delivery_time',
+        '_autoinc' => true,
         '_type' => [
             'id' => 'int',
             'pid' => 'int',
@@ -107,11 +109,12 @@ class OrderModel extends RelationModel
             'user_id' => 'int',
             'consignee' => 'char',
             'pay_mode' => 'tinyint',
+            'order_code' => 'varchar',
             'pay_status' => 'tinyint',
             'address' => 'varchar',
-            'add_ip' => 'bigint',
+            'add_ip' => 'char',
             'add_time' => 'int',
-            'update_ip' => 'bigint',
+            'update_ip' => 'char',
             'update_time' => 'int',
             'deliveryman' => 'char',
             'delivery_mode' => 'tinyint',
@@ -177,10 +180,10 @@ class OrderModel extends RelationModel
         ],
         [
             'pid',
-            'check_order_exist',
-            '父级非法',
+            'checkOrderPidExist',
+            '父级ID非法',
             self::EXISTS_VALIDATE,
-            'function'
+            'callback'
         ],
         [
             'pay_status',
@@ -231,16 +234,6 @@ class OrderModel extends RelationModel
             self::MODEL_INSERT
         ],
         [
-            'pay_mode',
-            self::PAY_MODE_OFFLINE,
-            self::PAY_MODE_OFFLINE
-        ],
-        [
-            'delivery_mode',
-            self::DELIVERY_MODE_DELIVERY,
-            self::MODEL_INSERT
-        ],
-        [
             'add_time',
             'time',
             self::MODEL_INSERT,
@@ -265,14 +258,10 @@ class OrderModel extends RelationModel
             'function'
         ],
         [
-            'pid',
-            '',
-            self::MODEL_INSERT
-        ],
-        [
             'order_code',
             'create_order_code',
-            self::MODEL_INSERT
+            self::MODEL_INSERT,
+            'function'
         ]
     ];
 
@@ -294,8 +283,19 @@ class OrderModel extends RelationModel
      */
     public static function checkOrderExist($id)
     {
-        $id = trim($id);
+        $id = intval($id);
         return ($id !== '' && self::get($id, 'id')) ? true : false;
+    }
+
+    /**
+     * 检测父级ID是否合法
+     * @param int $id
+     * @return bool
+     */
+    public static function checkOrderPidExist($id)
+    {
+        $id = intval($id);
+        return ($id === 0 || self::checkOrderExist($id)) ? true : false;
     }
 
     /**
@@ -374,6 +374,7 @@ class OrderModel extends RelationModel
         } else {
             $where['status'] = ['NEQ', self::STATUS_DELETE];
         }
+        php://
         $relation = [];
         if ($getChilds) $relation[] = '_childs';
         if ($getProducts) $relation[] = '_products';
@@ -409,7 +410,7 @@ class OrderModel extends RelationModel
      * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getListsByUserId($userId, $status = null, $payStatus = null, $fields = true, $getProducts = true)
+    public static function getListsByUserId($userId, $status = null, $payStatus = null, $fields = '*', $getProducts = true)
     {
         return self::getLists(null, $userId, $status, $payStatus, $fields, $getProducts);
     }
@@ -425,7 +426,7 @@ class OrderModel extends RelationModel
      * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getListsByShopId($shopId, $status = null, $payStatus = null, $fields = true, $getProducts = true)
+    public static function getListsByShopId($shopId, $status = null, $payStatus = null, $fields = '*', $getProducts = true)
     {
         return self::getLists($shopId, null, $status, $payStatus, $fields, $getProducts);
     }
@@ -442,14 +443,14 @@ class OrderModel extends RelationModel
      * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = true, $getProducts = false)
+    public static function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = false)
     {
         $where = [
             'pid' => 0
         ];
         if (!empty($shopId)) $where['shop_id'] = intval($shopId);
         if (!empty($userId)) $where['user_id'] = intval($userId);
-        if (!empty($status) && in_array($status, array_keys(self::getStatusOptions()))) {
+        if ($status !== null && in_array($status, array_keys(self::getStatusOptions()))) {
             $where['status'] = $status;
         } else {
             $where['status'] = ['NEQ', self::STATUS_DELETE];
@@ -486,5 +487,172 @@ class OrderModel extends RelationModel
     {
         if (!$order = self::get($orderId, null, 'id', false, true)) return null;
         return $order['_products'];
+    }
+
+    /**
+     * 提交订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $userId 用户ID
+     * @param string|array $cart 购物车，可传json格式或者数组格式
+     * @param string $mobile 收货人联系电话
+     * @param string $consignee 收货人
+     * @param string $address 收货地址
+     * @param string $remark 订单备注
+     * @param int $payMode 支付方式
+     * @param int $deliveryMode 配送方式
+     * @param bool $split 是否需要拆单
+     * @return bool
+     */
+    public static function submitOrder($userId, $cart, $mobile, $consignee, $address, $remark, $payMode = self::PAY_MODE_OFFLINE, $deliveryMode = self::DELIVERY_MODE_DELIVERY, $split = true)
+    {
+        $userId = intval($userId);
+        if (!check_user_exist($userId)) E('用户：' . $userId . '不存在');
+        $cart = is_array($cart) ?: json_decode($cart, true);
+        $products = [];
+        if ($split) {
+            foreach ($cart as $product) {
+                $products[$product['shop_id']][] = $product;
+            }
+        } else {
+            $products = $cart;
+        }
+        $parentId = 0;
+        //判断购物车格式，如果二级数组的值还是数组，那么就是拆单的
+        if (is_array(current(current($products)))) {
+            $allPrice = [];
+            foreach ($products as $key => $product) {//取出所有价格字段
+                $allPrice[$key] = array_column($product, 'price');
+            }
+            $priceTotal = 0;
+            foreach ($allPrice as $price) {//循环累加获得总价
+                $priceTotal += array_sum($price);
+            }
+            $parentId = self::createEmptyParentOrder($userId, 0, $priceTotal, $payMode, $deliveryMode);
+            //TODO 这个要改为在当前方法做，方便使用事务
+            foreach ($products as $key => $item) {
+                self::createOrder($userId, $key, $item, $mobile, $consignee, $address, $parentId, $remark, $payMode, $deliveryMode);
+            }
+            return true;
+        } else {
+            return self::createOrder($userId, current($products)['shop_id'], $products, $mobile, $consignee, $address, $parentId, $remark, $payMode, $deliveryMode);
+        }
+    }
+
+    /**
+     * 创建一个空的父级订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $userId 用户ID
+     * @param int $shopId 商铺ID
+     * @param int $price 价格
+     * @param int $payMode 支付模式
+     * @param int $deliveryMode 配送模式
+     * @return int
+     */
+    public static function createEmptyParentOrder($userId, $shopId = 0, $price = 0, $payMode = self::PAY_MODE_OFFLINE, $deliveryMode = self::DELIVERY_MODE_DELIVERY)
+    {
+        $data['price'] = 0;
+        $data['pid'] = 0;
+        $data['remark'] = '';
+        $data['user_id'] = $userId;
+        $data['shop_id'] = $shopId;
+        $data['price'] = $price;
+        $data['pay_mode'] = $payMode;
+        $data['delivery_mode'] = $deliveryMode;
+        $model = self::getInstance();
+        if (!$model->create($data) || !$model->add()) E($model->getError());
+        return $model->getLastInsID();
+    }
+
+    /**
+     * 创建订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $userId 用户ID
+     * @param int $shopId 商铺ID
+     * @param array $products 订单的商品
+     * @param int|string $mobile 收货人联系方式
+     * @param string $consignee 收货人姓名
+     * @param string $address 收货人地址
+     * @param int $pid 父级ID
+     * @param string $remark 订单备注
+     * @param int $payMode 支付方式
+     * @param int $deliveryMode 配送方式
+     * @return bool
+     */
+    public static function createOrder($userId, $shopId, $products, $mobile, $consignee, $address, $pid, $remark, $payMode = self::PAY_MODE_OFFLINE, $deliveryMode = self::DELIVERY_MODE_DELIVERY)
+    {
+        $data['user_id'] = $userId;
+        $data['pid'] = $pid;
+        $data['shop_id'] = $shopId;
+        $data['pay_mode'] = $payMode;
+        $data['delivery_mode'] = $deliveryMode;
+        $data['mobile'] = $mobile;
+        $data['consignee'] = $consignee;
+        $data['address'] = $address;
+        $data['remark'] = $remark;
+        $allPrice = array_column($products, 'price');
+        $data['price'] = array_sum($allPrice);
+        $data['_products'] = $products;
+        $model = self::getInstance();
+        if (!$model->relation(true)->create($data)) E($model->getError());
+        return $orderId = $model->relation(true)->add();
+    }
+
+    /**
+     * 更新订单信息
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     * @param null|int $payMode 支付方式
+     * @param null|int $deliveryMode 配送方式
+     * @param null|int $deliveryTime 配送时间
+     * @param null|string|int $mobile 收货人联系方式
+     * @param null|string $address 收货地址
+     * @param null|string $consignee 收货人
+     * @return bool
+     */
+    public static function updateOrder($id, $payMode = null, $deliveryMode = null, $deliveryTime = null, $mobile = null, $address = null, $consignee = null)
+    {
+        $data = [];
+        if ($payMode !== null) $data['pay_mode'] = $payMode;
+        if ($deliveryMode !== null) $data['delivery_mode'] = $deliveryMode;
+        if (!empty($deliveryTime)) $data['delivery_time'] = $deliveryTime;
+        if (!empty($mobile)) $data['mobile'] = $mobile;
+        if (!empty($address)) $data['address'] = trim($address);
+        if (!empty($consignee)) $data['consignee'] = trim($consignee);
+        return self::getInstance()->where(['id' => intval($id)])->save($data);
+    }
+
+    /**
+     * 更新订单状态
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     * @param int $status 订单状态
+     * @return bool
+     */
+    public static function updateOrderStatus($id, $status)
+    {
+        return self::getInstance()->where(['id' => intval($id)])->save(['status' => intval($status)]);
+    }
+
+    /**
+     * 更新订单支付方式
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     * @param int $payMode 支付方式
+     * @return bool
+     */
+    public static function updateOrderPayMode($id, $payMode)
+    {
+        return self::getInstance()->where(['id' => intval($id)])->save(['pay_mode' => intval($payMode)]);
+    }
+
+    /**
+     * 更新订单的支付方式
+     * @param int $id 订单ID
+     * @param int $payStatus 支付状态
+     * @return bool
+     */
+    public static function updateOrderPayStatus($id, $payStatus)
+    {
+        return self::getInstance()->where(['id' => intval($id)])->save(['pay_status' => intval($payStatus)]);
     }
 }
