@@ -243,16 +243,19 @@ class ProductController extends ApiController
      * @param null|int $brandId 品牌ID
      * @param null|int $normId 规格ID
      * @param null|string $title 商品标题（模糊查询）
+     * @param string|true|false $returnAlters 是否返回'alters'属性
      * @param int $pageSize 页面大小
      * @param int|null $status 状态
      * @return mixed
      * @author  stevin WangJiang
      */
-    public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $title = null,$page = 0, $pageSize = 10){
+    public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $title = null,$returnAlters='true',$page = 0, $pageSize = 10){
         try{
             empty($shopIds) and E('参数shopIds不能为空');
             $pageSize > 50 and $pageSize=50;
             $page*=$pageSize;
+
+            $returnAlters=$returnAlters==='true';
 
             $shopIds=explode(',',$shopIds);
             list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
@@ -304,7 +307,8 @@ class ProductController extends ApiController
                 if(!isset($products[$pid]))
                     $products[$pid]=$i;
 
-                $depots[$pid][]=$i;
+                if($returnAlters)
+                    $depots[$pid][]=$i;
 
                 if($products[$pid]['price']>$i['price'])
                     $products[$pid]=$i;
@@ -312,13 +316,16 @@ class ProductController extends ApiController
 
             $ret=[];
             foreach($products as $k=>$product){
-                $depot=$depots[$k];
-                $alters=[];
-                foreach($depot as $i){
-                    if($product['id']!==$i['id'])
-                        $alters[]=array('id'=>$i['id'],'price'=>$i['price'],'shop_id'=>$i['shop_id'],'shop'=>$i['shop']);
+                if($returnAlters){
+                    $depot=$depots[$k];
+                    $alters=[];
+                    foreach($depot as $i){
+                        if($product['id']!==$i['id'])
+                            $alters[]=array('id'=>$i['id'],'price'=>$i['price'],'shop_id'=>$i['shop_id'],'shop'=>$i['shop']);
+                    }
+                    $product['alters']=$alters;
                 }
-                $product['alters']=$alters;
+
                 $ret[]=$product;
             }
 
