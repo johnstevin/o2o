@@ -20,15 +20,15 @@ function checkIpFormat($ip)
 function build_words_query($words, $words_op, $flds, &$map)
 {
     //TODO:奇葩问题，传入的参数是'or'时，TP会转换成'or '
-    $words_op=trim($words_op);
+    $words_op = trim($words_op);
 
     $nw = count($words);
     $nf = count($flds);
     $where_kws = null;
     for ($i = 0; $i < $nf; $i++) {
-        $val = array();
+        $val = [];
         for ($j = 0; $j < $nw; $j++) {
-            $val[] = array('like', '%' . $words[$j] . '%');
+            $val[] = ['like', '%' . $words[$j] . '%'];
         }
         $val[] = $words_op;
         //$val['_logic']='or';
@@ -106,7 +106,7 @@ function tree_to_list($tree, $child = '_child', $order = 'id', &$list = [])
  */
 function check_user_exist($id)
 {
-    return \Common\Model\UcenterMemberModel::checkUserExist($id);
+    return \Common\Model\MemberModel::checkUserExist($id);
 }
 
 /**
@@ -161,5 +161,5 @@ function check_category_exist($id)
 function create_order_code()
 {
     //TODO 没有代码。。。
-    return '';
+    return date("YmdHi") . time();
 }
