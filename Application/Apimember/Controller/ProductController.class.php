@@ -51,16 +51,16 @@ class ProductController extends ApiController
      * @param int $level 指定返回分类层级，为空则不限制分类
      * @param int $pid 指定上级分类，为空则忽略，如果设置了$level则忽略该参数
      * @param array|string $shopIds 商铺ID，可以通过getMerchantList获得，该参数可选
-     * @param true|false $return_brands_norms 返回相关品牌规格等
+     * @param string|true|false $returnMore 返回相关品牌规格等附带信息，
      * @return mixed
      * @author  stevin WangJiang
      */
-    public function getDepotCategory($level=null,$pid=null,$shopIds='',$return_brands_norms='false'){
+    public function getDepotCategory($level=null,$pid=null,$shopIds='',$returnMore='false'){
         //TODO:开发平台上测试的效率不理想，需要进一步优化，修改sq_merchant_depot_pro_category的数据，每次商品上架，该表必须保存指定分类以及他的所有上级节点
         try{
             empty($shopIds) and E('参数shopIds不能为空');
 
-            $return_brands_norms=$return_brands_norms==='true';
+            $returnMore=$returnMore==='true';
 
             $shopIds=explode(',',$shopIds);
             list($bindNames, $bindValues) = build_sql_bind($shopIds);
@@ -139,7 +139,7 @@ class ProductController extends ApiController
 
             $brands=[];
             $norms=[];
-            if($return_brands_norms and !empty($catIds)){
+            if($returnMore and !empty($catIds)){
                 //print_r($catIds);
                 list($bindNames, $bindValues) = build_sql_bind($catIds);
                 $sql=M()->table('sq_category_brand_norms as l')
@@ -164,9 +164,11 @@ class ProductController extends ApiController
                         $norms[]=array('id'=>$i['nid'],'title'=>$i['norm']);
                     }
                 }
+
+                $ret['brands']=$brands;
+                $ret['norms']=$norms;
             }
-            $ret['brands']=$brands;
-            $ret['norms']=$norms;
+
 
             $this->apiSuccess(array('data'=>$ret));
 
@@ -243,13 +245,17 @@ class ProductController extends ApiController
      * @param null|int $brandId 品牌ID
      * @param null|int $normId 规格ID
      * @param null|string $title 商品标题（模糊查询）
+     * @param string $priceMin 商品售价下限
+     * @param string $priceMax 商品售价上限
      * @param string|true|false $returnAlters 是否返回'alters'属性
      * @param int $pageSize 页面大小
      * @param int|null $status 状态
      * @return mixed
      * @author  stevin WangJiang
      */
-    public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $title = null,$returnAlters='true',$page = 0, $pageSize = 10){
+    public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $title = null
+        ,$priceMin=null,$priceMax=null
+        ,$returnAlters='true',$page = 0, $pageSize = 10){
         try{
             empty($shopIds) and E('参数shopIds不能为空');
             $pageSize > 50 and $pageSize=50;
@@ -268,6 +274,19 @@ class ProductController extends ApiController
             if(!empty($title)){
                 $sql_pro.=' and pro.title like :title';
                 $bindValues[':title']='%'.$title.'%';
+            }
+
+            $where='';
+            if(!is_null($priceMin)){
+                $where.='sq_merchant_depot.price>:priceMin';
+                $bindValues[':priceMin']=$priceMin;
+            }
+
+            if(!is_null($priceMax)){
+                if(!empty($where))
+                    $where=' and ';
+                $where.='sq_merchant_depot.price<:priceMax';
+                $bindValues[':priceMax']=$priceMax;
             }
 
             if(!empty($brandId)){
@@ -292,6 +311,9 @@ class ProductController extends ApiController
             $sql->field(['sq_merchant_depot.id','pro.id as product_id'
                 ,'pro.title as product','sq_merchant_depot.price'
                 ,'shop.id as shop_id','shop.title as shop']);
+
+            if(!empty($where))
+                $sql->where($where);
 
             $sql->bind($bindValues)->limit($page,$pageSize);
 
