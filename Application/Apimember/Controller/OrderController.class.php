@@ -66,9 +66,9 @@ class OrderController extends ApiController
 
     }
 
-    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = true, $getProducts = false)
+    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = false)
     {
-        $this->apiSuccess(['data' => OrderModel::getLists($shopId, $userId, $status, $payStatus, $fields, $getProducts)]);
+        $this->apiSuccess(OrderModel::getLists($shopId, $userId, $status, $payStatus, $fields, $getProducts));
     }
 
     /**
@@ -97,6 +97,25 @@ class OrderController extends ApiController
      */
     public function childLists($orderId, $fileds = '*', $getProducts = false, $status = null)
     {
-        $this->apiSuccess(['data' => OrderModel::get($orderId, $status, $fileds, false, $getProducts)['_childs']]);
+        $this->apiSuccess(OrderModel::get($orderId, $status, $fileds, false, $getProducts)['_childs']);
+    }
+
+    /**
+     * 提交订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $userId 用户ID
+     * @param string|array $cart
+     * @param $address
+     * @param $mobile
+     * @param $payMode
+     * @param $consignee
+     * @param $deliveryMode
+     * @param string $remark
+     * @param bool $split
+     */
+    public function submitOrder($userId, $cart, $address, $mobile, $payMode, $consignee, $deliveryMode, $remark = '', $split = false)
+    {
+        $this->apiSuccess(['data' => OrderModel::submitOrder($userId, $cart, $mobile, $consignee, $address, $remark, $payMode, $deliveryMode, $split)]);
     }
 }
