@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container">
+    <h2>{:isset($info['id'])?'编辑':'新增'}规格</h2>
+    <hr>
+    <form action="{:U()}" method="post">
+        <div class="form-horizontal">
+
+            <div class="form-group">
+                <label for="auth-title" class="control-label col-md-2">标题</label>
+
+                <div class="col-md-10">
+                    <input id="auth-title" type="text" name="title" class="form-control"
+                           value="{$info.title}"/>
+                </div>
+            </div>
+
+        </div>
+        <div class="footer">
+            <input type="hidden" name="id" value="{$info.id|default=''}">
+            <button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>
+            <button type="submit" class="btn btn-primary">确 定</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

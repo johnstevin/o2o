@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+    <script type="text/javascript" src="../../../Public/static/js/jquery.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div>
+        <h2>区域管理</h2>
+    </div>
+    <div>
+        <a id="add-group" class="btn btn-success" href="{:U('add')}">新 增</a>
+    </div>
+    <table class="table table-hover">
+        <tr id="table-header">
+            <th width="65">折叠</th>
+            <th width="100">ID</th>
+            <th>名称</th>
+            <th width="100">PID</th>
+            <th>状态</th>
+            <th>增加下辖区域</th>
+            <th width="200">操&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;作</th>
+        </tr>
+    </table>
+</div>
+</body>
+</html>
+<script>
+    var arrTree = jQuery.parseJSON('{$tree|json_encode}');
+    $(document).ready(function () {
+        var string = '';
+
+        function digui(list, level) {
+            var level = level ? level : 0,prefix = '';
+            for(i=0;i<level;i++){
+                if(i==0 && level == 1){
+                    prefix += '└——';
+                }else if(i==0 && level > 1){
+                    prefix += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|';
+                }else {
+                    prefix += '——';
+                }
+            }
+            $.each(list, function (k, v) {
+                string += '<tr>' +
+                '<td> + </td><td>' + v.id + '</td>' +
+                '<td>' + prefix+v.name + '</td>' +
+                '<td>' + v.pid + '</td>' +'<td>' + v.status + '</td>'+
+                '<td><a class="btn btn-xs btn-primary" href="{:U("add")}&pid='+ v.id+'">增加下辖区域</a> </td>'+
+                '<td>'+'<a class="btn btn-xs btn-warning" href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑</a>'+
+                '<a class="btn btn-xs btn-danger" href="{:U("Region/changeStatus")}&method=resumeregion&id='+ v.id+'">启用</a>'+
+                '<a class="btn btn-xs btn-danger" href="{:U("Region/changeStatus")}&method=forbidregion&id='+ v.id+'">禁用</a>'+
+                '<a class="btn btn-xs btn-danger" href="{:U("Region/changeStatus")}&method=deleteregion&id='+ v.id+'">删除</a>'+'</td>' +
+                '</tr>'
+                if (v._child) {
+                    digui(v._child, level + 1);
+                }
+            })
+        }
+        digui(arrTree);
+        $('#table-header').after(string)
+    });
+</script>
+
