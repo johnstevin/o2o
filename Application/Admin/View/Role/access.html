@@ -13,7 +13,7 @@
 
         <select id="group_pid" name="group" class="form-control">
             <volist name="auth_group" id="vo">
-                <option value="{:U('AuthManager/access',array('group_id'=>$vo['id'],'group_name'=>$vo['title']))}" <eq name="vo['id']" value="$this_group['id']">selected</eq> >{$vo.title}</option>
+                <option value="{:U('Role/access',array('group_id'=>$vo['id']))}" <eq name="vo['id']" value="$this_group['id']">selected</eq> >{$vo.title}</option>
             </volist>
         </select>
 
