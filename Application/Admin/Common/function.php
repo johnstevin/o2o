@@ -16,6 +16,7 @@ function list_to_tree($list, $pk='id', $pid = 'pid', $child = '_child', $root = 
         foreach ($list as $key => $data) {
             $refer[$data[$pk]] =& $list[$key];
         }
+        //print_r($refer);exit;
         foreach ($list as $key => $data) {
             // 判断是否存在parent
             $parentId =  $data[$pid];

@@ -7,10 +7,6 @@ class CategoryController extends AdminController {
     public function index(){
     //查询出所有的分类
         $tree=D("Category")->getTree(0,'id,sort,title,pid,status');
-//        var_dump($tree);
-        $tree=($tree);
-        print_r($tree);
-//        exit;
         $this->assign('tree',$tree);
         $this->display();
     }
@@ -64,13 +60,11 @@ class CategoryController extends AdminController {
             }
             /* 获取分类信息 */
             $info = $id ? $Category->info($id) : '';
-            $this->assign('info',       $info);
-            $this->assign('category',   $cate);
+            $this->assign('info',$info);
+            $this->assign('category',$cate);
             $this->display('edit');
         }
-
     }
-
     /**
      * 状态修改
      */
@@ -87,6 +81,11 @@ class CategoryController extends AdminController {
                 $this->resume('Category');
                 break;
             case 'deletecategory':
+                //判断该分类下有没有子分类，有则不允许删除
+                $child = M('Category')->where(array('pid'=>$_REQUEST['id'],'status'=>'1'))->select();
+                if(!empty($child)){
+                    $this->error('请先删除该分类下的子分类');
+                }
                 $this->delete('Category');
                 break;
             default:
