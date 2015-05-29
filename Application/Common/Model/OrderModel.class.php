@@ -379,7 +379,6 @@ class OrderModel extends RelationModel
         } else {
             $where['status'] = ['NEQ', self::STATUS_DELETE];
         }
-        php://
         $relation = [];
         if ($getChilds) $relation[] = '_childs';
         if ($getProducts) $relation[] = '_products';
