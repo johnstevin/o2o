@@ -26,14 +26,14 @@
                 }
                 $.each(list, function (k, v) {
                     str += '<tr>' +
-                    '<td><a href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">'+prefix+v.title+'</a></td>' +
+                    '<td>'+prefix+'<a href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">'+v.title+'</a></td>' +
                     '<td><a href="{:U("add")}&pid='+ v.id+'">添加子分类</a></td>' +
                     '<td>'+v.url+'</td>'+
                     '<td>'+v.status+'</td>'+
                     '<td><a href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑&nbsp;&nbsp;</a>'+
-                    '<a href="{:U("AuthRule/changeStatus")}&method=forbidRule&id='+ v.id+'">禁用&nbsp;&nbsp;</a>'+
-                    '<a href="{:U("AuthRule/changeStatus")}&method=resumeRule&id='+ v.id+'">启用&nbsp;&nbsp;</a>'+
-                    '<a href="{:U("AuthRule/changeStatus")}&method=deleteRule&id='+ v.id+'">删除&nbsp;&nbsp;</a></td>'+
+                    '<a href="{:U("Rule/changeStatus")}&method=forbid&id='+ v.id+'">禁用&nbsp;&nbsp;</a>'+
+                    '<a href="{:U("Rule/changeStatus")}&method=resume&id='+ v.id+'">启用&nbsp;&nbsp;</a>'+
+                    '<a href="{:U("Rule/changeStatus")}&method=delete&id='+ v.id+'">删除&nbsp;&nbsp;</a></td>'+
                     '</tr>';
                     if (v._child) {
                         digui(v._child, level + 1);

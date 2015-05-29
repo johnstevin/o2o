@@ -7,7 +7,7 @@ use Admin\Model\AuthRuleModel;
  * @package Admin\Controller
  * @author liuhui
  */
-class AuthRuleController extends AdminController{
+class RuleController extends AdminController{
 
     /**
      * 用户组首页
@@ -92,13 +92,13 @@ class AuthRuleController extends AdminController{
             $this->error('请选择要操作的数据!');
         }
         switch (strtolower($method)) {
-            case 'forbidrule':
+            case 'forbid':
                 $this->forbid('AuthRule');
                 break;
-            case 'resumerule':
+            case 'resume':
                 $this->resume('AuthRule');
                 break;
-            case 'deleterule':
+            case 'delete':
 //                //判断该分类下有没有子分类，有则不允许删除
 //                $child = M('AuthRule')->where(array('pid'=>$_REQUEST['id']))->field('id')->find();
 //                if(!empty($child)){

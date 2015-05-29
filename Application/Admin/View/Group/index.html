@@ -31,9 +31,9 @@
                     '<td>'+ v.description+'</td>' +
                     '<td>'+v.status+'</td>'+
                     '<td><a href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑&nbsp;&nbsp;</a>'+
-                    '<a href="{:U("AuthRule/changeStatus")}&method=forbidRule&id='+ v.id+'">禁用&nbsp;&nbsp;</a>'+
-                    '<a href="{:U("AuthRule/changeStatus")}&method=resumeRule&id='+ v.id+'">启用&nbsp;&nbsp;</a>'+
-                    '<a href="{:U("AuthRule/changeStatus")}&method=deleteRule&id='+ v.id+'">删除</a></td>'+
+                    '<a href="{:U("Group/changeStatus")}&method=forbid&id='+ v.id+'">禁用&nbsp;&nbsp;</a>'+
+                    '<a href="{:U("Group/changeStatus")}&method=resume&id='+ v.id+'">启用&nbsp;&nbsp;</a>'+
+                    '<a href="{:U("Group/changeStatus")}&method=delete&id='+ v.id+'">删除</a></td>'+
                     '</tr>';
                     if (v._child) {
                         digui(v._child, level + 1);

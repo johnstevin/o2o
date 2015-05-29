@@ -11,7 +11,7 @@ use Admin\Model\AuthGroupModel;
  * @package Admin\Controller
  * @author liuhui
  */
-class AuthManagerController extends AdminController
+class RoleController extends AdminController
 {
 
     /**
@@ -97,13 +97,13 @@ class AuthManagerController extends AdminController
             $this->error('请选择要操作的数据!');
         }
         switch (strtolower($method)) {
-            case 'forbidrole':
+            case 'forbid':
                 $this->forbid('AuthRole');
                 break;
-            case 'resumerole':
+            case 'resume':
                 $this->resume('AuthRole');
                 break;
-            case 'deleterole':
+            case 'delete':
                 $this->delete('AuthRole');
                 break;
             default:

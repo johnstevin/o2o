@@ -165,6 +165,26 @@ function create_order_code()
 }
 
 /**
+ * 检测当前用户是否为管理员
+ * @return boolean true-管理员，false-非管理员
+ */
+function is_administrator($uid = null){
+    $uid = is_null($uid) ? is_login() : $uid;
+    return $uid && (intval($uid) === C('USER_ADMINISTRATOR'));
+}
+
+
+/**
+ * 时间戳格式化
+ * @param int $time
+ * @return string 完整的时间显示
+ */
+function time_format($time = NULL,$format='Y-m-d H:i'){
+    $time = $time === NULL ? NOW_TIME : intval($time);
+    return date($format, $time);
+}
+
+/**
  * 数据签名认证
  * @param  array  $data 被认证的数据
  * @return string       签名
@@ -243,24 +263,4 @@ function generate_password( $pwd, $saltkey ) {
     $pwd = substr($pwd,4,24);
 
     return $pwd;
-}
-
-/**
- * 检测当前用户是否为管理员
- * @return boolean true-管理员，false-非管理员
- */
-function is_administrator($uid = null){
-    $uid = is_null($uid) ? is_login() : $uid;
-    return $uid && (intval($uid) === C('USER_ADMINISTRATOR'));
-}
-
-
-/**
- * 时间戳格式化
- * @param int $time
- * @return string 完整的时间显示
- */
-function time_format($time = NULL,$format='Y-m-d H:i'){
-    $time = $time === NULL ? NOW_TIME : intval($time);
-    return date($format, $time);
 }

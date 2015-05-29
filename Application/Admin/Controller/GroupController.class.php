@@ -129,13 +129,13 @@ class GroupController extends AdminController
             $this->error('请选择要操作的数据!');
         }
         switch (strtolower($method)) {
-            case 'forbidgroup':
+            case 'forbid':
                 $this->forbid('AuthGroup');
                 break;
-            case 'resumegroup':
+            case 'resume':
                 $this->resume('AuthGroup');
                 break;
-            case 'deletegroup':
+            case 'delete':
 
 //                //判断该分类下有没有子分类，有则不允许删除
 //                $child = M('AuthGroup')->where(array('pid'=>$_REQUEST['id']))->field('id')->find();
