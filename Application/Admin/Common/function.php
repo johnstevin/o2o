@@ -8,7 +8,6 @@
  *                                          '字段名2'=>array(映射关系数组),
  *                                           ......
  *                                       )
- * @author 朱亚杰 <zhuyajie@topthink.net>
  * @return array
  *
  *  array(

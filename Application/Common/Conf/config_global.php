@@ -1,13 +1,10 @@
 <?php
 return [
     /* 模块相关配置 */
-    'AUTOLOAD_NAMESPACE' => ['Addons' => ONETHINK_ADDON_PATH], //扩展模块列表
+    'AUTOLOAD_NAMESPACE' => ['Addons' => './Addons/'], //扩展模块列表
     'DEFAULT_MODULE' => 'Home',
     'MODULE_DENY_LIST' => ['Common', 'User', 'Admin', 'Install'],
     //'MODULE_ALLOW_LIST'  => array('Home','Admin'),
-
-    /* 系统数据加密设置 */
-    'DATA_AUTH_KEY' => 'n-)s}OmW=~!8u]UqQ|.c2BK&6lfMHLN1TzSjwxb7', //默认数据加密KEY
 
     /* 用户相关设置 */
     'USER_MAX_CACHE' => 1000, //最大缓存用户数
@@ -24,5 +21,22 @@ return [
 
     /* 文档模型配置 (文档模型核心配置，请勿更改) */
     'DOCUMENT_MODEL_TYPE' => [2 => '主题', 1 => '目录', 3 => '段落'],
-    'DATE_FORMAT' => 'Y-m-d H:i:s'
+    'DATE_FORMAT' => 'Y-m-d H:i:s',
+
+    /* 权限组配置 */
+    'AUTH_GROUP_ID' => array(
+        'MERCHANT_GROUP_ID' => 2,   //总商户组
+        'MEMBER_GROUP_ID'   => 3,   //总用户组
+        'ADMIN_GROUP_ID'    => 4,   //总管理员组
+        'CLIENT_GROUP_ID'   => 29,  //总用户组下级顾客组
+    ),
+    /* 权限角色配置 */
+    'AUTH_ROLE_ID' => array(
+        'CLIENT_ROLE_ID'         => 1,   //顾客组下的普通用户角色
+        'MERCHANT_COMMIT_INFO'   => 5,   //总商户组下的提交资料角色
+    ),
+
+    /* 店铺配置 */
+    'SHOP_TYPE'    => array(17 => '超市', 89 => '生鲜', 18 => '洗车', 90 => '送水'),  //键值为组id
+
 ];

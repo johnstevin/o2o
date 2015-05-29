@@ -9,5 +9,6 @@ namespace Apimerchant\Controller;
 class IndexController extends ApiController {
 	//TODO
     public function index(){
+        $this->display();
     }
 }

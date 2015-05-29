@@ -10,15 +10,9 @@
 
 <form action="?" method="post" name="form">
 
-    所属组织：<input type="text" name="group_id" id="group_id" value="7" />　<br /><!--成都市管理组-->
-    用户名：<input type="text" name="username" id="username" value="" />　<br />
     手机：<input type="text" name="mobile" id="mobile" value="" />　<br />
-    邮箱：<input type="text" name="email" id="email" value="" />　<br />
     密码：<input type="password" name="password" id="password" value="" />
-    验证码：<input type="" name="verify" id="verify" />
-           <img src="{:U('Public/verify')}" />
-        <input type="hidden" name="is_admin" value="1" />
-        <input type="button" value="提交" onclick="register()" />
+         <input type="button" value="提交" onclick="register()" />
 
 </form>
 <div id="msg"></div>
@@ -47,19 +41,19 @@ function register(){
 
     $.ajax({
         type: "POST",
-        url: '{:U('Public/register')}',
+        url: '{:U('User/register')}',
         dataType: "json",
         data: {"mobile":mobile,"password":password},
         beforeSend: function(){
             $('#msg').html("正在注册...");
         },
         success: function(json){
-            if(json.status==1){
+            if(json.success==1){
                 $('#msg').html("注册成功，正在跳转...");
                 alert('注册成功！');
-                location.href="{:U('Public/login')}";
+                location.href="{:U('User/login')}";
             }else{
-                $('#msg').html("注册失败！Error:"+json.info);
+                $('#msg').html("注册失败！Error:"+json.message);
                 return false;
             }
         }
