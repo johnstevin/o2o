@@ -32,7 +32,7 @@ class ProductController extends ApiController
     public function getMerchantList($lat, $lng, $range = 100,$words=null,$wordsOp='or',$type=0){
         try{
             $this->apiSuccess(array('data'=>(new MerchantShopModel())
-                ->getList($lat, $lng, $range,$words,$wordsOp,$type)));
+                ->getNearby($lat, $lng, $range,$words,$wordsOp,$type)));
         }catch (Exception $ex){
             $this->apiError(50002,$ex->getMessage());
         }
