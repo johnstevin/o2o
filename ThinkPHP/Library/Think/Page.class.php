@@ -89,8 +89,9 @@ class Page{
         /* 计算分页临时变量 */
         $now_cool_page      = $this->rollPage/2;
 		$now_cool_page_ceil = ceil($now_cool_page);
-		$this->lastSuffix && $this->config['last'] = $this->totalPages;
-
+        if($this->lastSuffix){
+            $this->config['last'] = $this->totalPages;
+        }
         //上一页
         $up_row  = $this->nowPage - 1;
         $up_page = $up_row > 0 ? '<a class="prev" href="' . $this->url($up_row) . '">' . $this->config['prev'] . '</a>' : '';
