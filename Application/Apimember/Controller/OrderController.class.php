@@ -66,6 +66,16 @@ class OrderController extends ApiController
 
     }
 
+    /**
+     * 获得订单列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param null|int $shopId 商铺ID
+     * @param null|int $userId 用户ID
+     * @param null|int $status 订单状态
+     * @param null|int $payStatus 支付状态
+     * @param string|array $fields 要查询的字段
+     * @param bool $getProducts 是否获取订单下的商品
+     */
     public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = false)
     {
         $this->apiSuccess(OrderModel::getLists($shopId, $userId, $status, $payStatus, $fields, $getProducts));
@@ -117,5 +127,64 @@ class OrderController extends ApiController
     public function submitOrder($userId, $cart, $address, $mobile, $payMode, $consignee, $deliveryMode, $remark = '', $split = false)
     {
         $this->apiSuccess(['data' => OrderModel::submitOrder($userId, $cart, $mobile, $consignee, $address, $remark, $payMode, $deliveryMode, $split)]);
+    }
+
+    /**
+     * 更新订单信息
+     * @param int $id
+     * @param null|int $payMode
+     * @param null|int $deliveryMode
+     * @param null|int $deliveryTime
+     * @param null|int|string $mobile
+     * @param null|string $address
+     * @param null|string $consignee
+     */
+    public function updateOrder($id, $payMode = null, $deliveryMode = null, $deliveryTime = null, $mobile = null, $address = null, $consignee = null)
+    {
+        $this->apiSuccess(['data' => OrderModel::updateOrder($id, $payMode, $deliveryMode, $deliveryTime, $mobile, $address, $consignee)]);
+    }
+
+    /**
+     * 更新订单状态
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $id 订单ID
+     * @param int $status 要更新为哪个状态
+     */
+    public function updateStatus($id, $status)
+    {
+        $this->apiSuccess(['data' => OrderModel::updateOrderStatus($id, $status)]);
+    }
+
+    /**
+     * 更新订单支付方式
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     * @param int $payMode 要更新为哪个支付方式
+     */
+    public function updatePayMode($id, $payMode)
+    {
+        $this->apiSuccess(['data' => OrderModel::updateOrderPayMode($id, $payMode)]);
+    }
+
+    /**
+     * 更新支付状态
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     * @param int $payStatus 要更新为哪个订单状态
+     */
+    public function updatePayStatus($id, $payStatus)
+    {
+        $this->apiSuccess(['data' => OrderModel::updateOrderPayStatus($id, $payStatus)]);
+    }
+
+    /**
+     * 取消订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     */
+    public function cancelOrder($id)
+    {
+        $this->apiSuccess(['data' => OrderModel::updateOrderStatus($id, OrderModel::STATUS_CANCEL)]);
     }
 }
