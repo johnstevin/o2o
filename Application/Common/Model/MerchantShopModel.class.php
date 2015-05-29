@@ -179,7 +179,7 @@ class MerchantShopModel extends AdvModel{
         $sql='INSERT INTO sq_merchant_shop('.implode(',',array_keys($data)).') VALUES('.implode(',',$vals).');';
 
         //print_r($sql);die;
-        $this->doTransaction($sql, $bind);
+        return $this->doTransaction($sql, $bind);
     }
 
     protected function _after_find(&$result,$options='') {
@@ -254,12 +254,15 @@ class MerchantShopModel extends AdvModel{
             $stmt->bindValue($k, $v);
         }
 
+        $newid=null;
         try {
             $dbh->beginTransaction();
             $stmt->execute();
+            $newid= $dbh->lastInsertId();
             //test for transaction
             //throw new Exception();
             $dbh->commit();
+            return $newid;
         } catch (Exception $e) {
             $dbh->rollBack();
             throw $e;

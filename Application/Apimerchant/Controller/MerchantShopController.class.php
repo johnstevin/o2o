@@ -19,6 +19,14 @@ class MerchantShopController extends ApiController {
     /**
      * 修改商铺信息
      * @author WangJiang
+     * @return json
+     POST apimchant.php?s=/MerchantShop/update
+     参数按照Form表单的格式提交
+    {
+    "success": true,
+    "error_code": 0,
+    "message": ""
+    }
      */
     public function update(){
         try{
@@ -30,7 +38,7 @@ class MerchantShopController extends ApiController {
                 $this->apiSuccess('');
             }else
                 E('非法调用');
-        }catch (Exception $ex){
+        }catch (\Exception $ex){
             $this->apiError(50020,$ex->getMessage());
         }
     }
@@ -38,6 +46,14 @@ class MerchantShopController extends ApiController {
     /**
      * 新增商铺信息
      * @author WangJiang
+     * @return json
+    POST apimchant.php?s=/MerchantShop/create
+    参数按照Form表单的格式提交
+    {
+    "success": true,
+    "error_code": 0,
+    "id": 100
+    }
      */
     public function create(){
         try{
@@ -45,11 +61,10 @@ class MerchantShopController extends ApiController {
                 $model = D('MerchantShop');
                 if(!$model->create())
                     E('参数传递失败');
-                $model->add();
-                $this->apiSuccess('');
+                $this->apiSuccess(null,null,['id'=>intval($model->add())]);
             }else
                 E('非法调用');
-        }catch (Exception $ex){
+        }catch (\Exception $ex){
             $this->apiError(50021,$ex->getMessage());
         }
     }
@@ -62,6 +77,60 @@ class MerchantShopController extends ApiController {
      * @param null $regionId 区域ID
      * @param string $type 商铺类型
      * @param null $title 标题，模糊查询
+     * @return json
+    GET apimchant.php?s=/MerchantShop/getList/groupId/2
+    {
+
+        "success": true,
+        "error_code": 0,
+        "data": [
+            {
+                "id": 2,
+                "title": "Walm",
+                "description": "",
+                "group_id": 2,
+                "status": 1,
+                "type": 1,
+                "open_status": 1,
+                "open_time_mode": 1,
+                "begin_open_time": 32400,
+                "end_open_time": 64800,
+                "delivery_range": 500,
+                "phone_number": "88982230",
+                "address": "",
+                "pid": 0,
+                "add_uid": 0,
+                "region_id": 0,
+                "lnglat": [
+                    106.457046,
+                    29.584817
+                ]
+            },
+            {
+                "id": 3,
+                "title": "西南政法大学7.5",
+                "description": "",
+                "group_id": 2,
+                "status": 1,
+                "type": 1,
+                "open_status": 1,
+                "open_time_mode": 1,
+                "begin_open_time": 32400,
+                "end_open_time": 64800,
+                "delivery_range": 500,
+                "phone_number": "88982231",
+                "address": "",
+                "pid": 0,
+                "add_uid": 0,
+                "region_id": 0,
+                "lnglat": [
+                    106.448422,
+                    29.573258
+                ]
+            }
+        ]
+
+    }
      */
     public function getList($groupId,$pid=null,$regionId=null,$type='0',$title=null){
         try{
@@ -95,7 +164,7 @@ class MerchantShopController extends ApiController {
                 $this->apiSuccess(null,null,['data'=>$data]);
             }else
                 E('非法调用');
-        }catch (Exception $ex){
+        }catch (\Exception $ex){
             $this->apiError(50022,$ex->getMessage());
         }
     }

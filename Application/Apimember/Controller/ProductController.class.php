@@ -16,8 +16,7 @@ use Common\Model\ProductModel;
  * Class ProductController
  * @package Api\Controller
  */
-class ProductController extends ApiController
-{
+class ProductController extends ApiController{
 
     /**
      * 根据经纬度获取附近商家信息接口
@@ -27,7 +26,33 @@ class ProductController extends ApiController
      * @param null|string|array words 关键字，w1,w2... 在title以及description字段中查找
      * @param string words_op  or|and，关键字组合方式
      * @param int $type 商家门店类型，可选0-所有类型，1-超市，2-生鲜，3-洗车，4-送水，缺省0
-     * @return mixed
+     * @return json
+        GET apimber.php?s=/Product/getMerchantList/lat/29.58733/lng/106.524311/range/6000
+        {
+            {
+            "success": true,
+            "error_code": 0,
+            "data": [
+                {
+                    "id": 4,
+                    "title": "石子山公园3.5",
+                    "distance": 3428.5691160108,
+                    "lnglat": [
+                        106.494415,
+                        29.603912
+                    ]
+                },
+                {
+                    "id": 6,
+                    "title": "重庆医科大学5.7",
+                    "distance": 5505.6004590446,
+                    "lnglat": [
+                        106.518562,
+                        29.53807
+                    ]
+                }
+            ]
+        }
      * @author  stevin WangJiang
      */
     public function getMerchantList($lat, $lng, $range = 100,$words=null,$wordsOp='or',$type=0){
@@ -53,7 +78,50 @@ class ProductController extends ApiController
      * @param int $pid 指定上级分类，为空则忽略，如果设置了$level则忽略该参数
      * @param array|string $shopIds 商铺ID，可以通过getMerchantList获得，该参数可选
      * @param string|true|false $returnMore 返回相关品牌规格等附带信息，
-     * @return mixed
+     * @return json
+        GET apimber.php?s=Product/getDepotCategory/shopIds/6,4,2/pid/2/returnMore/true
+        {
+
+            "success": true,
+            "error_code": 0,
+            "data": {
+            "categories": [
+                {
+                    "id": "17",
+                    "title": "调料",
+                    "pid": "2",
+                    "level": "0"
+                },
+                {
+                    "id": "25",
+                    "title": "零食",
+                    "pid": "2",
+                    "level": "0"
+                }
+            ],
+            "brands": [
+                {
+                    "id": "91",
+                    "title": "恒顺"
+                },
+                {
+                    "id": "215",
+                    "title": "王致和"
+                }
+            ],
+            "norms": [
+                {
+                    "id": "1",
+                    "title": "瓶"
+                },
+                {
+                    "id": "19",
+                    "title": "壶"
+                }
+                ]
+            }
+
+        }
      * @author  stevin WangJiang
      */
     public function getDepotCategory($level=null,$pid=null,$shopIds='',$returnMore='false'){
@@ -248,6 +316,98 @@ class ProductController extends ApiController
      * @param int $pageSize 页面大小
      * @param int|null $status 状态
      * @return json
+    GET apimber.php?s=/Product/getProductList/shopIds/2,4,6
+    {
+
+        "success": true,
+        "error_code": 0,
+        "data": [
+            {
+                "id": "38636",
+                "product_id": "1",
+                "product": "妮维雅凝水活才保湿眼霜",
+                "price": 91.59,
+                "shop_id": "2",
+                "shop": "磁器口6.3",
+                "alters": [ ]
+            },
+            {
+                "id": "38640",
+                "product_id": "2",
+                "product": "爱得利十字孔家居百货05奶嘴",
+                "price": 2.14,
+                "shop_id": "6",
+                "shop": "重庆医科大学5.7",
+                "alters": [ ]
+            },
+            {
+                "id": "38642",
+                "product_id": "3",
+                "product": "爱得利旋转把柄A17大奶瓶",
+                "price": 16.71,
+                "shop_id": "4",
+                "shop": "石子山公园3.5",
+                "alters": [
+                {
+                    "id": "38644",
+                    "price": 17.8,
+                    "shop_id": "6",
+                    "shop": "重庆医科大学5.7"
+                }
+                ]
+            },
+            {
+                "id": "38652",
+                "product_id": "5",
+                "product": "爱得利全自动奶瓶",
+                "price": 20.63,
+                "shop_id": "6",
+                "shop": "重庆医科大学5.7",
+                "alters": [
+                    {
+                        "id": "38648",
+                        "price": 23.3,
+                        "shop_id": "2",
+                        "shop": "磁器口6.3"
+                    },
+                    {
+                        "id": "38650",
+                        "price": 22.76,
+                        "shop_id": "4",
+                        "shop": "石子山公园3.5"
+                    }
+                ]
+            },
+            {
+                "id": "38655",
+                "product_id": "7",
+                "product": "爱得利360度全自动G02奶瓶双吸管",
+                "price": 6.98,
+                "shop_id": "2",
+                "shop": "磁器口6.3",
+                "alters": [ ]
+            },
+            {
+                "id": "38658",
+                "product_id": "8",
+                "product": "爱得利安抚C01奶嘴",
+                "price": 3.59,
+                "shop_id": "2",
+                "shop": "磁器口6.3",
+                "alters": [ ]
+            },
+            {
+                "id": "38660",
+                "product_id": "9",
+                "product": "爱得利F01奶瓶刷",
+                "price": 4.59,
+                "shop_id": "2",
+                "shop": "磁器口6.3",
+                "alters": [ ]
+            }
+        ]
+
+    }
      * @author  stevin WangJiang
      */
     public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $title = null

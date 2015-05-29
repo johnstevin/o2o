@@ -19,20 +19,27 @@ class OrderController extends ApiController
      * 设置购物车
      * @author WangJiang
      * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
-     * @param json [
-    {
-    "shop_id": 1,
-    "products":
+     * @param json
+     POST  apimber.php?s=/order/setcart/userId/0
     [
-    {
-    "id": 12323,
-    "total": 2,
-    "product_id": 1
-    }
-    ]
-    }
+        {
+        "shop_id": 1,
+        "products":
+            [
+                {
+                    "id": 12323,
+                    "total": 2,
+                    "product_id": 1
+                }
+            ]
+        }
     ]
      * @return json
+    {
+    "success": true,
+    "error_code": 0,
+    "message": "设置成功"
+    }
      */
     public function setCart($userId){
         try {
@@ -54,6 +61,20 @@ class OrderController extends ApiController
      * @author WangJiang
      * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
      * @return json
+     GET apimber.php?s=/order/getcart/userId/0
+    [
+    {
+    "shop_id": 1,
+    "products":
+    [
+    {
+    "id": 12323,
+    "total": 2,
+    "product_id": 1
+    }
+    ]
+    }
+    ]
      */
     public function getCart($userId){
         try {
