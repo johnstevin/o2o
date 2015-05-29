@@ -209,16 +209,38 @@ class MerchantDepotModel extends RelationModel
      */
     public static function getLists($merchantId, $pageSize = 10, $status = self::STATUS_ACTIVE)
     {
-        $where['id'] = intval($merchantId);
-        if (!$where['id'] || check_merchant_exist($where['id'])) return ['data' => [], 'pagination' => ''];
+        $where['shop_id'] = intval($merchantId);
+        if (!$where['shop_id'] || !check_merchant_exist($where['shop_id'])) return ['data' => [], 'pagination' => ''];
         if (!empty($status)) $where['status'] = in_array($status, array_keys(self::getStatusOptions())) ? $status : self::STATUS_ACTIVE;
         $pageSize = intval($pageSize);
         $model = self::getInstance();
         $total = $model->where($where)->count('id');
+        $result = [];
         $pagination = new Page($total, $pageSize);
-        $data = $model->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+        if ($total) {
+            $data = $model->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+            $productIds = [];
+            $depotProducts = [];
+            foreach ($data as $key => $product) {
+                $productIds[] = $product['product_id'];
+                $depotProducts[$product['product_id']] = $product;
+            }
+            $productIds = array_unique($productIds);
+            $products = ProductModel::getInstance()->where(['id' => ['IN', $productIds], 'status' => ProductModel::STATUS_ACTIVE])->select();
+            $_products = [];
+            foreach ($products as $key => $product) {
+                $_products[$product['id']] = $product;
+            }
+            foreach ($_products as $key => $product) {
+                if (isset($depotProducts[$key])) {
+                    $result[$key] = $product;
+                    $result[$key]['price'] = $depotProducts[$key]['price'];
+                    $result[$key]['remark'] = $depotProducts[$key]['remark'];
+                }
+            }
+        }
         return [
-            'data' => $data,
+            'data' => $result,
             'pagination' => $pagination->show()
         ];
     }
