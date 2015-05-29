@@ -82,7 +82,7 @@ class MerchantShopModel extends AdvModel{
     );
 
     /**
-     * 查询商家门店
+     * 查询周边商铺
      * @author  WangJiang
      * @param double $lat 查询中心维度，必须是百度坐标
      * @param double $lng 查询中心经度，必须是百度坐标
@@ -92,7 +92,7 @@ class MerchantShopModel extends AdvModel{
      * @param int $type 商家门店类型，可选0-所有类型，1-超市，2-生鲜，3-洗车，4-送水，缺省0
      * @return mixed
      */
-    public function getList($lat, $lng, $range = 100,$words=null,$words_op='or',$type=0)
+    public function getNearby($lat, $lng, $range = 100,$words=null,$words_op='or',$type=0)
     {
         if (!is_numeric($lat) or !is_numeric($lng))
             //$this->error('坐标必须是数值', '', true);
@@ -130,20 +130,20 @@ class MerchantShopModel extends AdvModel{
 
         $map['status&open_status']=1;
 
-        $sql = $this->where($map)
+        $this->where($map)
             ->bind(':lng', $lng)
             ->bind(':lat', $lat)
             ->bind(':dist', $range)
             ->bind(':seconds',$seconds)
-            ->field(['id', 'title','ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance']);
+            ->field(['id', 'title','ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance','st_astext(lnglat) as lnglat']);
 
-        return $sql->select();
+        return $this->select();
     }
 
     /**
-     * 根据ID获取商家信息
+     * 根据ID获取商铺信息
      * @author  WangJiang
-     * @param int $id 商家ID
+     * @param int $id 商铺ID
      * @return array|null
      */
     public function get($id)
@@ -151,7 +151,7 @@ class MerchantShopModel extends AdvModel{
         $id = intval($id);
         if (!$id) return null;
         return $this->field(['id', 'title', 'description', 'type', 'open_status', 'open_time_mode'
-            , 'begin_open_time', 'end_open_time', 'delivery_range', 'phone_number', 'address', 'group_id'])->find($id);
+            , 'begin_open_time', 'end_open_time', 'delivery_range', 'phone_number', 'address', 'st_astext(lnglat) as lnglat'])->find($id);
     }
 
     /**
@@ -180,6 +180,25 @@ class MerchantShopModel extends AdvModel{
 
         //print_r($sql);die;
         $this->doTransaction($sql, $bind);
+    }
+
+    protected function _after_find(&$result,$options='') {
+        parent::_after_select($result,$options);
+        $this->_after_query_row($result);
+        //echo '<pre>';
+        //print_r($result);
+    }
+
+    /**
+     * 处理point类型字段值
+     * @param $resultSet
+     * @param string $options
+     */
+    protected function _after_select(&$resultSet,$options) {
+        parent::_after_select($resultSet,$options);
+        foreach($resultSet as &$row){
+            $this->_after_query_row($row);
+        }
     }
 
     /**
@@ -246,6 +265,30 @@ class MerchantShopModel extends AdvModel{
             throw $e;
         } finally {
             unset($dbh);
+        }
+    }
+
+    /**
+     * @param $row
+     * @param $v
+     * @return array
+     */
+    protected function _after_query_row(&$row)
+    {
+        foreach ($row as $k => &$v) {
+            $type=$this->fields['_type'][$k];
+            if ($type == 'point') {
+                $lls = substr($v, 6, strlen($v) - 7);
+                $ll = explode(' ', $lls);
+                $v = [floatval($ll[0]), floatval($ll[1])];
+            }else if($type=='int'){
+                $v=intval($v);
+            }else if($type=='float'){
+                $v=floatval($v);
+            }
+            if($k=='distance'){
+                $v=floatval($v);
+            }
         }
     }
 
