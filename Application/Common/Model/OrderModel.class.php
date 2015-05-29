@@ -634,7 +634,7 @@ class OrderModel extends RelationModel
      */
     public static function updateOrderStatus($id, $status)
     {
-        return self::getInstance()->where(['id' => intval($id)])->save(['status' => intval($status)]);
+        return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['status' => intval($status)]);
     }
 
     /**
