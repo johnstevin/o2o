@@ -5,19 +5,39 @@
 // | Date: 2015-5-25
 // +----------------------------------------------------------------------
 namespace Admin\Controller;
-
 use Think\Controller;
 
-class AdminController extends Controller
-{
+class AdminController extends Controller{
 
-    public function _empty()
-    {
+    public function _empty(){
 
     }
 
-    protected function _initialize()
-    {
+    protected function _initialize(){
+        // 获取当前用户ID
+        if(defined('UID')) return ;
+        define('UID',is_admin_login());
+        if( !UID ){// 还没登录 跳转到登录页面
+            $this->redirect('Public/login');
+        }
+        /* 读取数据库中的配置 */
+        $config =   S('DB_CONFIG_DATA');
+        if(!$config){
+            $config =   api('Config/lists');
+            S('DB_CONFIG_DATA',$config);
+        }
+        C($config); //添加配置
+
+        // 是否是超级管理员
+        define('IS_ROOT',   is_administrator());
+        if(!IS_ROOT && C('ADMIN_ALLOW_IP')){
+            // 检查IP地址访问
+            if(!in_array(get_client_ip(),explode(',',C('ADMIN_ALLOW_IP')))){
+                $this->error('403:禁止访问');
+            }
+        }
+
+        
 
     }
 
@@ -35,13 +55,10 @@ class AdminController extends Controller
      *                              否则使用$order参数(如果$order参数,且模型也没有设定过order,则取主键降序);
      *
      * @param boolean $field 单表模型用不到该参数,要用在多表join时为field()方法指定参数
-     * @author 朱亚杰 <xcoolcc@gmail.com>
-     *
      * @return array|false
      * 返回数据集
      */
-    protected function lists($model, $where = array(), $order = '', $field = true)
-    {
+    protected function lists($model, $where = array(), $order = '', $field = true){
         $options = array();
         $REQUEST = (array)I('request.');
         if (is_string($model)) {
@@ -99,11 +116,8 @@ class AdminController extends Controller
      * @param array $where 查询时的where()方法的参数
      * @param array $msg 执行正确和错误的消息 array('success'=>'','error'=>'', 'url'=>'','ajax'=>false)
      *                     url为跳转页面,ajax是否ajax方式(数字则为倒数计时秒数)
-     *
-     * @author 朱亚杰  <zhuyajie@topthink.net>
      */
-    final protected function editRow($model, $data, $where, $msg)
-    {
+    final protected function editRow($model, $data, $where, $msg){
         $id = array_unique((array)I('id', 0));
         $id = is_array($id) ? implode(',', $id) : $id;
         //如存在id字段，则加入该条件
@@ -126,11 +140,8 @@ class AdminController extends Controller
      * @param array $where 查询时的 where()方法的参数
      * @param array $msg 执行正确和错误的消息,可以设置四个元素 array('success'=>'','error'=>'', 'url'=>'','ajax'=>false)
      *                     url为跳转页面,ajax是否ajax方式(数字则为倒数计时秒数)
-     *
-     * @author 朱亚杰  <zhuyajie@topthink.net>
      */
-    protected function forbid($model, $where = array(), $msg = array('success' => '状态禁用成功！', 'error' => '状态禁用失败！'))
-    {
+    protected function forbid($model, $where = array(), $msg = array('success' => '状态禁用成功！', 'error' => '状态禁用失败！')){
         $data = array('status' => 0);
         $this->editRow($model, $data, $where, $msg);
     }
@@ -141,8 +152,6 @@ class AdminController extends Controller
      * @param array $where 查询时的where()方法的参数
      * @param array $msg 执行正确和错误的消息 array('success'=>'','error'=>'', 'url'=>'','ajax'=>false)
      *                     url为跳转页面,ajax是否ajax方式(数字则为倒数计时秒数)
-     *
-     * @author 朱亚杰  <zhuyajie@topthink.net>
      */
     protected function resume($model, $where = array(), $msg = array('success' => '状态恢复成功！', 'error' => '状态恢复失败！'))
     {
@@ -156,7 +165,6 @@ class AdminController extends Controller
      * @param array $where 查询时的where()方法的参数
      * @param array $msg 执行正确和错误的消息 array('success'=>'','error'=>'', 'url'=>'','ajax'=>false)
      *                     url为跳转页面,ajax是否ajax方式(数字则为倒数计时秒数)
-     * @author huajie  <banhuajie@163.com>
      */
     protected function restore($model, $where = array(), $msg = array('success' => '状态还原成功！', 'error' => '状态还原失败！'))
     {
@@ -171,8 +179,6 @@ class AdminController extends Controller
      * @param array $where 查询时的where()方法的参数
      * @param array $msg 执行正确和错误的消息 array('success'=>'','error'=>'', 'url'=>'','ajax'=>false)
      *                     url为跳转页面,ajax是否ajax方式(数字则为倒数计时秒数)
-     *
-     * @author 朱亚杰  <zhuyajie@topthink.net>
      */
     protected function delete($model, $where = array(), $msg = array('success' => '删除成功！', 'error' => '删除失败！'))
     {
