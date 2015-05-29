@@ -1,18 +1,22 @@
 <?php
 
 namespace Admin\Controller;
-use Common\Model\AuthRoleModel;
-use Common\Model\AuthGroupModel;
+use Admin\Model\AuthRoleModel;
+use Admin\Model\AuthGroupModel;
 
 
 /**
  * 权限管理控制器
  * Class AuthController
  * @package Admin\Controller
+ * @author liuhui
  */
 class AuthManagerController extends AdminController
 {
 
+    /**
+     * 角色列表显示
+     */
     public function index()
     {
         $list = $this->lists('AuthRole', array('module' => 'admin'), 'id asc');
@@ -125,20 +129,6 @@ class AuthManagerController extends AdminController
         foreach ($auth_Groups as &$key) {
             $key['_roles'] = $AuthRole->where(array('group_id' => $key['id'], 'status' => '1'))->select();
         }
-//        $AuthAccess = M('AuthAccess');
-//        $user_roles = $AuthAccess->field('uid,group_id,role_id')->where(array('uid' => $uid))->group('group_id')->select();
-//        $roles = array();
-//        foreach ($user_roles as $val) {
-//            $roles[$val['group_id']] = $AuthAccess->field('role_id')->where(array('group_id' => $val['group_id']))->select();
-//        }
-//        echo "<pre>";
-//        print_r($roles);
-//        echo '</pre>';
-
-
-//        $nickname = D('Member')->getNickName($uid);
-//        $this->assign('nickname', $nickname);
-//        $this->assign('auth_roles', $auth_roles);
         $this->assign('user_roles', $hasAccess);
         $this->assign('node_list', $auth_Groups);
         $this->meta_title = '用户授权';
@@ -190,12 +180,7 @@ class AuthManagerController extends AdminController
         //$this->updateRules();
         $auth_group = M('AuthRole')->where(array('status' => array('egt', '0'), 'module' => 'admin', 'type' => AuthRoleModel::TYPE_ADMIN))
             ->getfield('id,title,group_id');
-//        //$node_list   = $this->returnNodes();
-//        $map = array('module' => 'admin', 'type' => AuthRuleModel::RULE_MAIN, 'status' => 1);
-//        $main_rules = M('AuthRule')->where($map)->getField('id');
-//        $map = array('module' => 'admin', 'type' => AuthRuleModel::RULE_URL, 'status' => 1);
-//        $child_rules = M('AuthRule')->where($map)->getField('id');
-//
+
         /*获取rule*/
         $tree = D('AuthRule')->getTree(0, 'id,title,level,pid,status');
 
@@ -206,12 +191,6 @@ class AuthManagerController extends AdminController
             $child_tree[] = $value['rule_id'];
         }
         $child_tree = is_array($child_tree) ? implode(',', $child_tree) : trim($child_tree, ',');
-//        echo"<pre>";
-//        print_r($tree);
-//        echo"</pre>";
-
-//        $this->assign('main_rules', $main_rules);
-//        $this->assign('auth_rules', $child_rules);
         $this->assign('node_list', $tree);
         $this->assign('child_list', $child_tree);
         $this->assign('auth_group', $auth_group);

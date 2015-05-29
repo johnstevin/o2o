@@ -1,6 +1,6 @@
 <?php
 
-namespace Common\Model;
+namespace Admin\Model;
 
 use Think\Model;
 
@@ -8,6 +8,7 @@ use Think\Model;
  * 用户角色模型类
  * Class AuthRoleModel
  * @package Common\Model
+ * @author liuhui
  */
 class AuthRoleModel extends Model
 {

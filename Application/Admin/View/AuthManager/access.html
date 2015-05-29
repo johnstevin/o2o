@@ -20,24 +20,7 @@
     <hr>
             <!-- 访问授权 -->
                 <form action="{:U('addToRule')}" method="POST" class="form-horizontal auth-form">
-                    <volist name="node_list" id="node" >
-                        <dl class="checkmod">
-                            <dt class="hd">
-                                <label class="checkbox"><input class="auth_rules rules_all" type="checkbox" name="rules[]" value="{$node.id}">{$node.title}</label>
-                            </dt>
-                            <dd class="bd">
-                                <present name="node['child']">
-                                    <volist name="node['child']" id="child" >
-                                        <div class="rule_check">
-                                            <div>
-                                                <input class="auth_rules rules_row" <notempty name="child['tip']">title='{$child.tip}'</notempty> type="checkbox" name="rules[]" value="{$child.id}"/>{$child.title}
-                                            </div>
-                                        </div>
-                                    </volist>
-                                </present>
-                            </dd>
-                        </dl>
-                    </volist>
+                    <ul id="tree"></ul>
 
                     <input type="hidden" name="role" value="{$this_group.id}" />
                     <input type="hidden" name="batch" value="true">
@@ -49,6 +32,20 @@
     <script type="text/javascript" src="__STATIC__/js/jquery.min.js"></script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
+            var arrTree = jQuery.parseJSON('{$node_list|json_encode}');
+            function recursionJSON(data,str) {
+                str += "　";
+                if(typeof(data) == "object") {
+                    $.each(data, function(i, n){
+                        $("#tree").append('<li>'+str+'<input type="checkbox" class="auth_rules rules_row" value="'+ n.id+'" name="rules[]" />'+n.title+'</li>');
+                        if(typeof(n._child) == "object") {
+                            recursionJSON(n._child,str+"　");
+                        }
+                    });
+                }
+            }
+
+            recursionJSON(arrTree,"");
             var rules = [{$child_list}];
         $('.auth_rules').each(function () {
             if ($.inArray(parseInt(this.value, 10), rules) > -1) {

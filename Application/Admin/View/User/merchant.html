@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{$meta_title}</title>
+    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container-fluid">
+    <!-- 标题栏 -->
+    <div>
+        <h2>{$meta_title}</h2>
+    </div>
+    <div>
+        <a id="add-group" class="btn btn-success" href="{:U('add')}">新 增</a>
+    </div>
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th><input class="check-all" type="checkbox"/></th>
+            <th>UID</th>
+            <th>昵称</th>
+            <th>积分</th>
+            <th>登录次数</th>
+            <th>最后登录时间</th>
+            <th>最后登录IP</th>
+            <th>状态</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <notempty name="_list">
+            <volist name="_list" id="vo">
+                <tr>
+                    <td><input type="checkbox" name="id[]" value="{$vo.uid}" /></td>
+                    <td>{$vo.uid} </td>
+                    <td>{$vo.nickname}</td>
+                    <td>{$vo.score}</td>
+                    <td>{$vo.login}</td>
+                    <td><span>{$vo.last_login_time|time_format}</span></td>
+                    <td><span>{:long2ip($vo['last_login_ip'])}</span></td>
+                    <td>{$vo.status_text}</td>
+                    <td>
+                        <a href="{:U('AuthManager/edit?uid='.$vo['uid'])}">编辑</a>
+                        <eq name="vo.status" value="1">
+                        <a href="{:U('User/changeStatus?method=forbidUser&id='.$vo['uid'])}">禁用</a>
+                        <else/>
+                        <a href="{:U('User/changeStatus?method=resumeUser&id='.$vo['uid'])}">启用</a>
+                    </eq>
+                        <a href="{:U('AuthManager/role?uid='.$vo['uid'])}">授权</a>
+                        <a href="{:U('User/changeStatus?method=deleteUser&id='.$vo['uid'])}">删除</a>
+                    </td>
+                </tr>
+            </volist>
+            <else/>
+            <td colspan="9" class="text-center"> aOh! 暂时还没有内容! </td>
+        </notempty>
+        </tbody>
+    </table>
+    <div class="page">
+        {$_page}
+    </div>
+</div>
+</body>
+</html>

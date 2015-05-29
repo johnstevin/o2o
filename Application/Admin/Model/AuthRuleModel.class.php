@@ -1,10 +1,11 @@
 <?php
 
 
-namespace Common\Model;
+namespace Admin\Model;
 use Think\Model;
 /**
  * 权限规则模型
+ * @author liuhui
  */
 class AuthRuleModel extends Model{
     
@@ -48,7 +49,7 @@ class AuthRuleModel extends Model{
         /* 获取所有分类 */
         $map  = array('status' => array('gt', -1));
         $list = $this->field($field)->where($map)->order('id')->select();
-        $list = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = 'child', $root = $id);
+        $list = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = $id);
 
         /* 获取返回数据 */
         if(isset($info)){ //指定分类则返回当前分类极其子分类
