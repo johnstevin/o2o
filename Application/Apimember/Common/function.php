@@ -14,7 +14,7 @@ function build_sql_bind($list,$prefix='bindName')
     $bindValues = [];
 
     foreach ($list as $i => $id) {
-        $name = ':'.$prefix . $i;
+        $name = ":$prefix" . $i;
         $bindNames[] = $name;
         $bindValues[$name] = $id;
     }
