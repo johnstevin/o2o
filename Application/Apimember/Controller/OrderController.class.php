@@ -15,6 +15,57 @@ use Common\Model\OrderModel;
  */
 class OrderController extends ApiController
 {
+    /**
+     * 设置购物车
+     * @author WangJiang
+     * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
+     * @param json [
+    {
+    "shop_id": 1,
+    "products":
+    [
+    {
+    "id": 12323,
+    "total": 2,
+    "product_id": 1
+    }
+    ]
+    }
+    ]
+     * @return json
+     */
+    public function setCart($userId){
+        try {
+            if (IS_POST) {
+                $data=json_decode(file_get_contents('php://input'));
+                if(F("user/cart/$userId",$data)!==false)
+                    $this->apiSuccess(null,'设置成功');
+                else
+                    E('设置购物车失败');
+            } else
+                E('非法调用');
+        }catch (\Exception $ex){
+            $this->apiError(50010,$ex->getMessage());
+        }
+    }
+
+    /**
+     * 获得购物车
+     * @author WangJiang
+     * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
+     * @return json
+     */
+    public function getCart($userId){
+        try {
+            $data=F("user/cart/$userId");
+            if($data!==false)
+                $this->apiSuccess(['data'=>$data]);
+            else
+                E('获得购物车失败');
+        }catch (\Exception $ex){
+            $this->apiError(50011,$ex->getMessage());
+        }
+    }
 
     /**
      * 加入购物车
