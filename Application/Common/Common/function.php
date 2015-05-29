@@ -193,6 +193,30 @@ function is_admin_login(){
 }
 
 /**
+ * @return int
+ */
+function is_merchant_login(){
+    $user = session('merchant_auth');
+    if (empty($user)) {
+        return 0;
+    } else {
+        return session('merchant_auth_sign') == data_auth_sign($user) ? $user['uid'] : 0;
+    }
+}
+
+/**
+ * @return int
+ */
+function is_member_login(){
+    $user = session('member_auth');
+    if (empty($user)) {
+        return 0;
+    } else {
+        return session('member_auth_sign') == data_auth_sign($user) ? $user['uid'] : 0;
+    }
+}
+
+/**
  * @param int $length
  * @return string
  */

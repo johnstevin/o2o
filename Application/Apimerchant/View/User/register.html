@@ -48,12 +48,12 @@ function register(){
             $('#msg').html("正在注册...");
         },
         success: function(json){
-            if(json.status==1){
+            if(json.success==1){
                 $('#msg').html("注册成功，正在跳转...");
                 alert('注册成功！');
                 location.href="{:U('User/login')}";
             }else{
-                $('#msg').html("注册失败！Error:"+json.info);
+                $('#msg').html("注册失败！Error:"+json.data);
                 return false;
             }
         }

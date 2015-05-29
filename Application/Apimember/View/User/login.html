@@ -12,8 +12,7 @@
 
     用户名/手机/邮箱：<input type="text" name="username" id="username" value="" />　<br />
     密码：<input type="password" name="password" id="password" value="" />
-    验证码：<input type="" name="verify" />
-           <img src="{:U('Public/verify')}" />
+
         <input type="button" value="提交" onclick="login()" />
 
 </form>
@@ -43,19 +42,19 @@
 
         $.ajax({
             type: "POST",
-            url: '{:U('Public/login')}',
+            url: '{:U('User/login')}',
             dataType: "json",
             data: {"username":username,"password":password},
             beforeSend: function(){
                $('#msg').html("正在登陆...");
             },
             success: function(json){
-            if(json.status==1){
+            if(json.success==1){
                 $('#msg').html("登陆成功，正在跳转...");
                 alert('登陆成功！');
                 location.href="{:U('Index/index')}";
             }else{
-                $('#msg').html("注册失败！Error:"+json.info);
+                $('#msg').html("注册失败！Error:"+json.message);
                 return false;
             }
         }

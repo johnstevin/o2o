@@ -57,8 +57,10 @@ abstract class ApiController extends Controller{
         if($this->isInternalCall) {
             throw new ReturnException($result);
         } else if($format == 'json') {
+            header('Content-Type:application/json; charset=utf-8');
             echo json_encode($result);
         } else if($format == 'xml') {
+            header('Content-Type:text/xml; charset=utf-8');
             echo xml_encode($result);
         } else {
             $_GET['format'] = 'json';
