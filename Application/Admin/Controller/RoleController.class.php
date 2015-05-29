@@ -11,7 +11,7 @@ use Admin\Model\AuthGroupModel;
  * @package Admin\Controller
  * @author liuhui
  */
-class AuthManagerController extends AdminController
+class RoleController extends AdminController
 {
 
     /**

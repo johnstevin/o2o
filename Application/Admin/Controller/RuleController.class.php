@@ -7,7 +7,7 @@ use Admin\Model\AuthRuleModel;
  * @package Admin\Controller
  * @author liuhui
  */
-class AuthRuleController extends AdminController{
+class RuleController extends AdminController{
 
     /**
      * 用户组首页

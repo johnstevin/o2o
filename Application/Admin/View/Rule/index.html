@@ -26,7 +26,7 @@
                 }
                 $.each(list, function (k, v) {
                     str += '<tr>' +
-                    '<td><a href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">'+prefix+v.title+'</a></td>' +
+                    '<td>'+prefix+'<a href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">'+v.title+'</a></td>' +
                     '<td><a href="{:U("add")}&pid='+ v.id+'">添加子分类</a></td>' +
                     '<td>'+v.url+'</td>'+
                     '<td>'+v.status+'</td>'+
