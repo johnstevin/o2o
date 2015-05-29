@@ -1,6 +1,6 @@
 <?php
 namespace Admin\Controller;
-use Common\Model\AuthRuleModel;
+use Admin\Model\AuthRuleModel;
 
 /**
  * Class 权限节点控制器

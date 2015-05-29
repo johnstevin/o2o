@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Common\Model;
+namespace Admin\Model;
 use Think\Model;
 /**
  * 权限规则模型

@@ -172,3 +172,14 @@ function is_administrator($uid = null){
     $uid = is_null($uid) ? is_login() : $uid;
     return $uid && (intval($uid) === C('USER_ADMINISTRATOR'));
 }
+
+
+/**
+ * 时间戳格式化
+ * @param int $time
+ * @return string 完整的时间显示
+ */
+function time_format($time = NULL,$format='Y-m-d H:i'){
+    $time = $time === NULL ? NOW_TIME : intval($time);
+    return date($format, $time);
+}

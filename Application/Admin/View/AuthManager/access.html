@@ -37,7 +37,7 @@
                 str += "　";
                 if(typeof(data) == "object") {
                     $.each(data, function(i, n){
-                        $("#tree").append('<li>'+str+'<input type="checkbox" class="auth_rules rules_row" value="'+ n.id+'" name="rule[]" />'+n.title+'</li>');
+                        $("#tree").append('<li>'+str+'<input type="checkbox" class="auth_rules rules_row" value="'+ n.id+'" name="rules[]" />'+n.title+'</li>');
                         if(typeof(n._child) == "object") {
                             recursionJSON(n._child,str+"　");
                         }

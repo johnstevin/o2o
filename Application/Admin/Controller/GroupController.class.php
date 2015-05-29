@@ -1,7 +1,7 @@
 <?php
 namespace Admin\Controller;
 
-use Common\Model\AuthGroupModel;
+use Admin\Model\AuthGroupModel;
 
 /**
  * Class 用户组控制器
@@ -46,6 +46,9 @@ class GroupController extends AdminController
             $result = $AuthGroup->update();
             if (false !== $result) {
 
+                if(2==$pid){ //TODO 商户组暂时定死为2
+                    $this->success('新增成功！', U('index'));
+                }
                 /* 添加或更新数据 */
                 if ($AuthGroup->saveRegion($result)) {
                     $this->success('新增成功！', U('index'));
@@ -76,7 +79,7 @@ class GroupController extends AdminController
             /* 获取分类信息 */
             $this->assign('info', null);
             $this->assign('category', $cate);
-            $this->assign('region', $region);
+            $this->assign('region', 2==$pid?null:$region);//TODO 商户组暂时定死为2
             $this->meta_title = '新增用户组';
             $this->display('edit');
         }
