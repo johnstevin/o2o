@@ -32,6 +32,8 @@ use Think\Page;
 class OrderModel extends RelationModel
 {
     protected static $model;
+    protected $autoinc = true;
+    protected $patchValidate = true;
 
     ## 状态常量
     const STATUS_DELETE = -1;//逻辑删除
@@ -60,7 +62,8 @@ class OrderModel extends RelationModel
             'class_name' => 'Order',
             'parent_key' => 'pid',
             'mapping_name' => '_childs',
-            'mapping_order' => 'id desc',
+            'mapping_order' => 'id',
+            'condition' => 'status !=' . self::STATUS_DELETE
             // 定义更多的关联属性
         ],
         'Products' => [
@@ -124,6 +127,8 @@ class OrderModel extends RelationModel
 
     protected $readonlyField = [
         'id',
+        'pid',
+        'shop_id',
         'add_time',
         'add_ip',
         'user_id',
@@ -268,7 +273,7 @@ class OrderModel extends RelationModel
     /**
      * 获取当前模型的实例
      * @author Fufeng Nie <niefufeng@gmail.com>
-     * @return CategoryModel
+     * @return OrderModel
      */
     public static function getInstance()
     {
