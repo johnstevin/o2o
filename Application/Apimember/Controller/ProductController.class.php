@@ -6,6 +6,7 @@
 // +----------------------------------------------------------------------
 namespace Apimember\Controller;
 use Common\Model\CategoryModel;
+use Common\Model\MerchantDepotModel;
 use Common\Model\MerchantShopModel;
 use Think\Exception;
 use Common\Model\ProductModel;
@@ -59,10 +60,9 @@ class ProductController extends ApiController
         //TODO:开发平台上测试的效率不理想，需要进一步优化，修改sq_merchant_depot_pro_category的数据，每次商品上架，该表必须保存指定分类以及他的所有上级节点
         try{
             empty($shopIds) and E('参数shopIds不能为空');
-
             $returnMore=$returnMore==='true';
-
             $shopIds=explode(',',$shopIds);
+
             list($bindNames, $bindValues) = build_sql_bind($shopIds);
 
             $sql=M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
@@ -84,8 +84,6 @@ class ProductController extends ApiController
 
                 foreach($data as $i){
                     //echo json_encode(CategoryModel::get($i['id']));
-
-
                     if($i['level']==$level) {
                         if(!in_array($i['id'],$topHint)){
                             $cats[] = $i;
@@ -169,7 +167,6 @@ class ProductController extends ApiController
                 $ret['norms']=$norms;
             }
 
-
             $this->apiSuccess(array('data'=>$ret));
 
         }catch (Exception $ex){
@@ -250,7 +247,7 @@ class ProductController extends ApiController
      * @param string|true|false $returnAlters 是否返回'alters'属性
      * @param int $pageSize 页面大小
      * @param int|null $status 状态
-     * @return mixed
+     * @return json
      * @author  stevin WangJiang
      */
     public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $title = null
@@ -260,99 +257,12 @@ class ProductController extends ApiController
             empty($shopIds) and E('参数shopIds不能为空');
             $pageSize > 50 and $pageSize=50;
             $page*=$pageSize;
-
             $returnAlters=$returnAlters==='true';
-
             $shopIds=explode(',',$shopIds);
-            list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
 
-            $sql=M('MerchantDepot')
-                ->join('INNER JOIN sq_merchant_shop as shop on shop.id in ('.implode(',',$shopBindNames).') and shop.id=sq_merchant_depot.shop_id');
-
-            $sql_pro='INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id';
-
-            if(!empty($title)){
-                $sql_pro.=' and pro.title like :title';
-                $bindValues[':title']='%'.$title.'%';
-            }
-
-            $where='';
-            if(!is_null($priceMin)){
-                $where.='sq_merchant_depot.price>:priceMin';
-                $bindValues[':priceMin']=$priceMin;
-            }
-
-            if(!is_null($priceMax)){
-                if(!empty($where))
-                    $where=' and ';
-                $where.='sq_merchant_depot.price<:priceMax';
-                $bindValues[':priceMax']=$priceMax;
-            }
-
-            if(!empty($brandId)){
-                //$sql->join('INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id and pro.brand_id=:brandId');
-                $sql_pro.=' and pro.brand_id=:brandId';
-                $bindValues[':brandId']=$brandId;
-            }
-
-            if(!empty($normId)){
-                //$sql->join('INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id and pro.brand_id=:brandId');
-                $sql_pro.=' and pro.norms_id=:normId';
-                $bindValues[':normId']=$normId;
-            }
-
-            $sql->join($sql_pro);
-
-            if(!empty($categoryId)) {
-                $sql->join('INNER JOIN sq_product_category as pc on pc.category_id=:cateId AND pc.product_id=pro.id');
-                $bindValues[':cateId']=$categoryId;
-            }
-
-            $sql->field(['sq_merchant_depot.id','pro.id as product_id'
-                ,'pro.title as product','sq_merchant_depot.price'
-                ,'shop.id as shop_id','shop.title as shop']);
-
-            if(!empty($where))
-                $sql->where($where);
-
-            $sql->bind($bindValues)->limit($page,$pageSize);
-
-            $data=$sql->select();
-
-            //print_r($sql->getLastSql());
-
-            $products=[];
-            $depots=[];
-            foreach($data as $i){
-                $i['price'] = floatval($i['price']);
-                $pid=$i['product_id'];
-                if(!isset($products[$pid]))
-                    $products[$pid]=$i;
-
-                if($returnAlters)
-                    $depots[$pid][]=$i;
-
-                if($products[$pid]['price']>$i['price'])
-                    $products[$pid]=$i;
-            }
-
-            $ret=[];
-            foreach($products as $k=>$product){
-                if($returnAlters){
-                    $depot=$depots[$k];
-                    $alters=[];
-                    foreach($depot as $i){
-                        if($product['id']!==$i['id'])
-                            $alters[]=array('id'=>$i['id'],'price'=>$i['price'],'shop_id'=>$i['shop_id'],'shop'=>$i['shop']);
-                    }
-                    $product['alters']=$alters;
-                }
-
-                $ret[]=$product;
-            }
-
-            $this->apiSuccess(array('data'=>$ret));
-
+            $this->apiSuccess(array('data'=>(new MerchantDepotModel())->getProductList($shopIds,$categoryId, $brandId,$normId, $title
+                ,$priceMin,$priceMax
+                ,$returnAlters,$page, $pageSize)));
         }catch (Exception $ex){
             $this->apiError(50005,$ex->getMessage());
         }
