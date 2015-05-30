@@ -1,0 +1,50 @@
+<extend name="Layout:layout" />
+<block name="body">
+    <!-- 标题栏 -->
+    <div class="main-title">
+        <h2>规格列表</h2>
+    </div>
+    <div class="cf">
+        <div class="fl">
+            <h3><a class="btn" href="{:U('Norms/add')}">新 增</a></h3>
+        </div>
+    </div>
+    <!-- 数据列表 -->
+    <div class="data-table table-striped">
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
+                <th class="">ID</th>
+                <th class="">标题</th>
+                <th class="">状态</th>
+                <th class="">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <notempty name="_list">
+                <volist name="_list" id="vo">
+                    <tr>
+                        <td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}" /></td>
+                        <td>{$vo.id} </td>
+                        <td>{$vo.title}</td>
+                        <td>{$vo.status}</td>
+                        <td>
+                            <a href="{:U('Norms/changeStatus?method=forbidnorms&id='.$vo['id'])}" class="ajax-get">禁用</a>
+                            <a href="{:U('Norms/changeStatus?method=resumenorms&id='.$vo['id'])}" class="ajax-get">启用</a>
+                            <a href="{:U('Norms/edit',['id'=>$vo['id']])}" class="confirm ajax-get">编辑</a>
+                            <a href="{:U('Norms/changeStatus?method=deletenorms&id='.$vo['id'])}" class="confirm ajax-get">删除</a>
+                        </td>
+                    </tr>
+                </volist>
+            </notempty>
+            </tbody>
+        </table>
+    </div>
+    <div class="page">
+        {$_page}
+    </div>
+</block>
+
+
+

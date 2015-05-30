@@ -165,8 +165,8 @@ class UcenterMemberModel extends Model{
      * @return void
      */
     public function logout(){
-        session('user_auth', null);
-        session('user_auth_sign', null);
+        session('admin_auth', null);
+        session('admin_auth_sign', null);
     }
 
 	/**

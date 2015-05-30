@@ -1,0 +1,34 @@
+<extend name="Layout:layout" />
+<block name="body">
+	<!-- 标题栏 -->
+	<div class="main-title">
+		<h2>商品分类品牌规格关联表</h2>
+	</div>
+    <!-- 数据列表 -->
+    <div class="data-table table-striped">
+	<table class="table table-hover table-striped">
+        <tr>
+		<th class="" >分类ID</th>
+        <th class="" >品牌ID</th>
+		<th class="" >规格ID</th>
+		</tr>
+    <tbody>
+		<notempty name="_list">
+		<volist name="_list" id="vo">
+		<tr>
+			<td>{$vo.category_id}</td>
+            <td>{$vo.brand_id}</td>
+            <td>{$vo.norms_id}</td>
+		</tr>
+		</volist>
+		</notempty>
+	</tbody>
+    </table>
+	</div>
+    <div class="page">
+        {$_page}
+    </div>
+</block>
+
+
+

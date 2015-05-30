@@ -3,7 +3,7 @@ return [
     /* 模块相关配置 */
     'AUTOLOAD_NAMESPACE' => ['Addons' => './Addons/'], //扩展模块列表
     'DEFAULT_MODULE' => 'Home',
-    'MODULE_DENY_LIST' => ['Common', 'User', 'Admin', 'Install'],
+    'MODULE_DENY_LIST' => ['Common', 'User', 'Admin'],
     //'MODULE_ALLOW_LIST'  => array('Home','Admin'),
 
     /* 用户相关设置 */
