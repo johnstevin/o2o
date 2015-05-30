@@ -62,7 +62,7 @@ class ProductController extends ApiController{
     {
         try {
             $this->apiSuccess(['data' => (new MerchantShopModel())
-                ->getList($lat, $lng, $range, $words, $wordsOp, $type)]);
+                ->getNearby($lat, $lng, $range, $words, $wordsOp, $type)]);
         } catch (Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
         }
