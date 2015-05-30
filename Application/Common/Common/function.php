@@ -121,6 +121,18 @@ function check_merchant_exist($id)
 }
 
 /**
+ * 检测商家是否存在
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @param int $id 商铺ID
+ * @todo 待完善
+ * @return bool
+ */
+function check_merchant_shop_exist($id)
+{
+    return true;
+}
+
+/**
  * 检测商品是否存在
  * @author Fufeng Nie <niefufeng@gmail.com>
  * @param int $id 商品ID
@@ -151,6 +163,12 @@ function check_order_exist($id)
 function check_category_exist($id)
 {
     return \Common\Model\CategoryModel::checkCategoryExist($id);
+}
+
+function check_region_exist($id)
+{
+    //TODO 等待region模型
+    return true;
 }
 
 /**
