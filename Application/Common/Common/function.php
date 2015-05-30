@@ -22,15 +22,15 @@ function checkIpFormat($ip)
 function build_words_query($words, $words_op, $flds, &$map)
 {
     //TODO:奇葩问题，传入的参数是'or'时，TP会转换成'or '
-    $words_op=trim($words_op);
+    $words_op = trim($words_op);
 
     $nw = count($words);
     $nf = count($flds);
     $where_kws = null;
     for ($i = 0; $i < $nf; $i++) {
-        $val = array();
+        $val = [];
         for ($j = 0; $j < $nw; $j++) {
-            $val[] = array('like', '%' . $words[$j] . '%');
+            $val[] = ['like', '%' . $words[$j] . '%'];
         }
         $val[] = $words_op;
         //$val['_logic']='or';
@@ -108,7 +108,7 @@ function tree_to_list($tree, $child = '_child', $order = 'id', &$list = [])
  */
 function check_user_exist($id)
 {
-    return \Common\Model\UcenterMemberModel::checkUserExist($id);
+    return \Common\Model\MemberModel::checkUserExist($id);
 }
 
 /**
@@ -120,6 +120,18 @@ function check_user_exist($id)
 function check_merchant_exist($id)
 {
     return \Common\Model\MerchantModel::checkMerchantExist($id);
+}
+
+/**
+ * 检测商家是否存在
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @param int $id 商铺ID
+ * @todo 待完善
+ * @return bool
+ */
+function check_merchant_shop_exist($id)
+{
+    return true;
 }
 
 /**
@@ -155,6 +167,12 @@ function check_category_exist($id)
     return \Common\Model\CategoryModel::checkCategoryExist($id);
 }
 
+function check_region_exist($id)
+{
+    //TODO 等待region模型
+    return true;
+}
+
 /**
  * 生成订单代码
  * @author Fufeng Nie <niefufeng@gmail.com>
@@ -163,7 +181,7 @@ function check_category_exist($id)
 function create_order_code()
 {
     //TODO 没有代码。。。
-    return '';
+    return date("YmdHi") . time();
 }
 
 /**

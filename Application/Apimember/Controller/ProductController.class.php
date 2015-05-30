@@ -5,6 +5,7 @@
 // | Date: 2015-5-25
 // +----------------------------------------------------------------------
 namespace Apimember\Controller;
+
 use Common\Model\CategoryModel;
 use Common\Model\MerchantDepotModel;
 use Common\Model\MerchantShopModel;
@@ -57,24 +58,22 @@ class ProductController extends ApiController{
      ```
      * @author  stevin WangJiang
      */
-    public function getMerchantList($lat, $lng, $range = 100,$words=null,$wordsOp='or',$type=0){
-        try{
-            $this->apiSuccess(array('data'=>(new MerchantShopModel())
-                ->getNearby($lat, $lng, $range,$words,$wordsOp,$type)));
-        }catch (Exception $ex){
-            $this->apiError(50002,$ex->getMessage());
+    public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or', $type = 0)
+    {
+        try {
+            $this->apiSuccess(['data' => (new MerchantShopModel())
+                ->getList($lat, $lng, $range, $words, $wordsOp, $type)]);
+        } catch (Exception $ex) {
+            $this->apiError(50002, $ex->getMessage());
         }
     }
 
-    /**
-     * @ignore
-     * @param $id
-     */
-    public function getMerchantDetail($id){
-        try{
-            $this->apiSuccess(array('data'=>(new MerchantShopModel())->get($id)));
-        }catch (Exception $ex){
-            $this->apiError(50003,$ex->getMessage());
+    public function getMerchantDetail($id)
+    {
+        try {
+            $this->apiSuccess(['data' => (new MerchantShopModel())->get($id)]);
+        } catch (Exception $ex) {
+            $this->apiError(50003, $ex->getMessage());
         }
     }
 
@@ -133,80 +132,80 @@ class ProductController extends ApiController{
      */
     public function getDepotCategory($level=null,$pid=null,$shopIds='',$returnMore='false'){
         //TODO:开发平台上测试的效率不理想，需要进一步优化，修改sq_merchant_depot_pro_category的数据，每次商品上架，该表必须保存指定分类以及他的所有上级节点
-        try{
+        try {
             empty($shopIds) and E('参数shopIds不能为空');
             $returnMore=$returnMore==='true';
             $shopIds=explode(',',$shopIds);
 
             list($bindNames, $bindValues) = build_sql_bind($shopIds);
 
-            $sql=M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
-                ->where('a.shop_id in ('.implode(',',$bindNames).') and a.category_id=b.id')
-                ->field(['b.id','b.title','b.pid','b.level'])
+            $sql = M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
+                ->where('a.shop_id in (' . implode(',', $bindNames) . ') and a.category_id=b.id')
+                ->field(['b.id', 'b.title', 'b.pid', 'b.level'])
                 ->bind($bindValues);
 
-            $data=$sql->select();
+            $data = $sql->select();
 
             //print_r($bindNames);
             //print_r($sql->getLastSql());
 
-            $ret=[];
-            $cats=[];
-            $topHint=[];
-            $catIds=[];
-            if(!is_null($level)){
+            $ret = [];
+            $cats = [];
+            $topHint = [];
+            $catIds = [];
+            if (!is_null($level)) {
                 //$begin = microtime(true);
 
-                foreach($data as $i){
+                foreach ($data as $i) {
                     //echo json_encode(CategoryModel::get($i['id']));
                     if($i['level']==$level) {
                         if(!in_array($i['id'],$topHint)){
                             $cats[] = $i;
-                            $topHint[]=$i['id'];
+                            $topHint[] = $i['id'];
                         }
-                        !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
-                    }else if($i['level']>=$level){
-                        $temp=[$i['id']];
-                        $top=$this->_find_level_top($i,$level,$temp);
-                        if(!is_null($top)) {
+                        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
+                    } else if ($i['level'] >= $level) {
+                        $temp = [$i['id']];
+                        $top = $this->_find_level_top($i, $level, $temp);
+                        if (!is_null($top)) {
                             if (!in_array($top['id'], $topHint)) {
                                 $cats[] = $top;
                                 $topHint[] = $top['id'];
                             }
-                            foreach($temp as $id){
-                                !in_array($id,$catIds) and $catIds[]=$id;
+                            foreach ($temp as $id) {
+                                !in_array($id, $catIds) and $catIds[] = $id;
                             }
                         }
                     }
                 }
                 //echo (microtime(true) - $begin);die;
-            }else if(!is_null($pid)){
-                foreach($data as $i){
+            } else if (!is_null($pid)) {
+                foreach ($data as $i) {
                     //echo json_encode(CategoryModel::get($i['id']));
-                    if($i['pid']==$pid) {
-                        if(!in_array($i['id'],$topHint)){
+                    if ($i['pid'] == $pid) {
+                        if (!in_array($i['id'], $topHint)) {
                             $cats[] = $i;
-                            $topHint[]=$i['id'];
+                            $topHint[] = $i['id'];
                         }
-                        !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
-                    }else if($i['pid']>0){
-                        $temp=[$i['id']];
-                        $top=$this->_find_parent_top($i,$pid,$temp);
-                        if(!is_null($top)){
-                            if(!in_array($top['id'],$topHint)){
+                        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
+                    } else if ($i['pid'] > 0) {
+                        $temp = [$i['id']];
+                        $top = $this->_find_parent_top($i, $pid, $temp);
+                        if (!is_null($top)) {
+                            if (!in_array($top['id'], $topHint)) {
                                 $cats[] = $top;
-                                $topHint[]=$top['id'];
+                                $topHint[] = $top['id'];
                             }
-                            foreach($temp as $id){
-                                !in_array($id,$catIds) and $catIds[]=$id;
+                            foreach ($temp as $id) {
+                                !in_array($id, $catIds) and $catIds[] = $id;
                             }
                         }
                     }
                 }
-            }else
+            } else
                 E('参数level或pid不能全部为空');
 
-            $ret['categories']=$cats;
+            $ret['categories'] = $cats;
 
             //print_r($catIds);
 
@@ -215,56 +214,57 @@ class ProductController extends ApiController{
             if($returnMore and !empty($catIds)){
                 //print_r($catIds);
                 list($bindNames, $bindValues) = build_sql_bind($catIds);
-                $sql=M()->table('sq_category_brand_norms as l')
-                    ->field(['sq_brand.id as bid','sq_brand.title as brand','sq_norms.id as nid','sq_norms.title as norm'])
+                $sql = M()->table('sq_category_brand_norms as l')
+                    ->field(['sq_brand.id as bid', 'sq_brand.title as brand', 'sq_norms.id as nid', 'sq_norms.title as norm'])
                     ->join('LEFT JOIN sq_norms on sq_norms.id=l.norms_id')
                     ->join('left JOIN sq_brand on sq_brand.id=l.brand_id')
-                    ->where('l.category_id in ('.implode(',',$bindNames).')')
+                    ->where('l.category_id in (' . implode(',', $bindNames) . ')')
                     ->bind($bindValues);
 
-                $temp=$sql->select();
+                $temp = $sql->select();
 
-                $bidHint=[];
-                $nidHint=[];
-                foreach($temp as $i){
-                    if(!in_array($i['bid'],$bidHint)){
-                        $bidHint[]=$i['bid'];
-                        $brands[]=array('id'=>$i['bid'],'title'=>$i['brand']);
+                $bidHint = [];
+                $nidHint = [];
+                foreach ($temp as $i) {
+                    if (!in_array($i['bid'], $bidHint)) {
+                        $bidHint[] = $i['bid'];
+                        $brands[] = ['id' => $i['bid'], 'title' => $i['brand']];
                     }
 
-                    if(!in_array($i['nid'],$nidHint)){
-                        $nidHint[]=$i['nid'];
-                        $norms[]=array('id'=>$i['nid'],'title'=>$i['norm']);
+                    if (!in_array($i['nid'], $nidHint)) {
+                        $nidHint[] = $i['nid'];
+                        $norms[] = ['id' => $i['nid'], 'title' => $i['norm']];
                     }
                 }
 
                 $ret['brands']=$brands;
                 $ret['norms']=$norms;
             }
+            $this->apiSuccess(['data' => $ret]);
 
-            $this->apiSuccess(array('data'=>$ret));
-
-        }catch (Exception $ex){
-            $this->apiError(50004,$ex->getMessage());
+        } catch (Exception $ex) {
+            $this->apiError(50004, $ex->getMessage());
         }
     }
 
-    private function _find_parent_top($i,$pid,&$catIds){
-        $i=CategoryModel::get($i['pid']);
-        !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
-        if($i['pid']==$pid)
+    private function _find_parent_top($i, $pid, &$catIds)
+    {
+        $i = CategoryModel::get($i['pid']);
+        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
+        if ($i['pid'] == $pid)
             return $i;
-        if($i['pid']<=0)
+        if ($i['pid'] <= 0)
             return null;
-        return $this->_find_parent_top($i,$pid,$catIds);
+        return $this->_find_parent_top($i, $pid, $catIds);
     }
 
-    private function _find_level_top($i,$level,&$catIds){
-        $i=CategoryModel::get($i['pid']);
-        !in_array($i['id'],$catIds) and $catIds[]=$i['id'];
-        if($i['level']==$level)
+    private function _find_level_top($i, $level, &$catIds)
+    {
+        $i = CategoryModel::get($i['pid']);
+        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
+        if ($i['level'] == $level)
             return $i;
-        return $this->_find_level_top($i,$level,$catIds);
+        return $this->_find_level_top($i, $level, $catIds);
     }
 
     /**
@@ -276,27 +276,28 @@ class ProductController extends ApiController{
      * @author  stevin WangJiang
      * @deprecated 统一到getDepotCategory中
      */
-    public function getDepotBrand($shopIds,$categoryId){
-        try{
+    public function getDepotBrand($shopIds, $categoryId)
+    {
+        try {
             empty($shopIds) and E('参数shopIds不能为空');
             empty($categoryId) and E('参数categoryId不能为空');
 
-            $shopIds=explode(',',$shopIds);
+            $shopIds = explode(',', $shopIds);
             list($bindNames, $bindValues) = build_sql_bind($shopIds);
 
-            $bindValues[':categoryId']=$categoryId;
+            $bindValues[':categoryId'] = $categoryId;
 
-            $sql=M()->table('sq_merchant_depot_pro_category as a,sq_category as b,sq_category_brand_norms as c,sq_brand as d')
-                ->where('a.shop_id in ('.implode(',',$bindNames).') and a.category_id=b.id and b.id=:categoryId and a.category_id=c.category_id and d.id=c.brand_id')
-                ->field(['b.id','b.title','d.title as brand'])
+            $sql = M()->table('sq_merchant_depot_pro_category as a,sq_category as b,sq_category_brand_norms as c,sq_brand as d')
+                ->where('a.shop_id in (' . implode(',', $bindNames) . ') and a.category_id=b.id and b.id=:categoryId and a.category_id=c.category_id and d.id=c.brand_id')
+                ->field(['b.id', 'b.title', 'd.title as brand'])
                 ->bind($bindValues);
 
-            $this->apiSuccess(array('data'=>$sql->select()));
+            $this->apiSuccess(['data' => $sql->select()]);
 
             //print_r($sql->getLastSql());
 
-        }catch (Exception $ex){
-            $this->apiError(50004,$ex->getMessage());
+        } catch (Exception $ex) {
+            $this->apiError(50004, $ex->getMessage());
         }
     }
 
@@ -463,7 +464,43 @@ class ProductController extends ApiController{
      * @param int $pagesize 页面大小
      * @param int|null $status 状态
      * @param string|array $relation 是否进行关联查询
-     * @return json
+     * @return string
+     * ``` JSON
+     * {
+     *      "success": true,
+     *      "error_code": 0,
+     *      "data": [
+     *          {
+     *               "id": "1",
+     *               "title": "妮维雅凝水活才保湿眼霜",
+     *               "brand_id": "36",
+     *               "norms_id": "1",
+     *               "price": "88.00",
+     *               "detail": null,
+     *               "add_time": "0",
+     *               "add_ip": "0",
+     *               "edit_time": "0",
+     *               "edit_ip": "0",
+     *               "status": "1",
+     *               "number": "4005808847013"
+     *          },
+     *          {
+     *               "id": "2",
+     *               "title": "爱得利十字孔家居百货05奶嘴",
+     *               "brand_id": "37",
+     *               "norms_id": "2",
+     *               "price": "1.80",
+     *               "detail": "",
+     *               "add_time": "0",
+     *               "add_ip": "0",
+     *               "edit_time": "0",
+     *               "edit_ip": "0",
+     *               "status": "1",
+     *               "number": "4711602010330"
+     *          }
+     *      ]
+     * }
+     * ```
      */
     public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE, $relation = [])
     {
@@ -476,7 +513,24 @@ class ProductController extends ApiController{
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id
      * @param bool|string|array $fields 要查询的字段
-     * @return json|xml
+     * @return string
+     * ``` JSON
+     * {
+     *      "success": true,
+     *      "error_code": 0,
+     *      "data": {
+     *           "id": "1",
+     *           "title": "妮维雅凝水活才保湿眼霜",
+     *           "brand_id": "36",
+     *           "price": "88.00",
+     *           "detail": null,
+     *           "add_time": "0",
+     *           "add_ip": "0",
+     *           "edit_time": "0",
+     *           "status": "1"
+     *       }
+     * }
+     * ```
      */
     public function find($id, $fields = true)
     {

@@ -12,7 +12,7 @@ class UcenterMemberModel extends AdvModel
     /**
      * 获取当前模型实例
      * @author Fufeng Nie <niefufeng@gmail.com>
-     * @return UserModel
+     * @return UcenterMemberModel
      */
     public static function getInstance()
     {
@@ -41,6 +41,6 @@ class UcenterMemberModel extends AdvModel
     public static function get($id, $fileds = '*')
     {
         $id = intval($id);
-        return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->filed($fileds)->find() : null;
+        return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fileds)->find() : null;
     }
 }
