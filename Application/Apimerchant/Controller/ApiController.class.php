@@ -53,7 +53,7 @@ abstract class ApiController extends Controller{
         }
 
         //将返回信息进行编码
-        $format = $_REQUEST['format'] ? $_REQUEST['format'] : 'json';//返回值格式，默认json
+        $format = isset($_REQUEST['format']) ? $_REQUEST['format'] : 'json';//返回值格式，默认json
         if($this->isInternalCall) {
             throw new ReturnException($result);
         } else if($format == 'json') {
