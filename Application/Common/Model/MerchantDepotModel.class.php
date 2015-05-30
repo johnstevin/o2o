@@ -249,16 +249,17 @@ class MerchantDepotModel extends RelationModel
         }
 
         if(!empty($brandId)){
-            //$sql->join('INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id and pro.brand_id=:brandId');
             $sql_pro.=' and pro.brand_id=:brandId';
             $bindValues[':brandId']=$brandId;
         }
 
         if(!empty($normId)){
-            //$sql->join('INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id and pro.brand_id=:brandId');
             $sql_pro.=' and pro.norms_id=:normId';
             $bindValues[':normId']=$normId;
         }
+
+        $sql_pro.=' LEFT JOIN sq_brand as brand on brand.id=pro.brand_id';
+        $sql_pro.=' LEFT JOIN sq_norms as norm on norm.id=pro.norms_id';
 
         $this->join($sql_pro);
 
@@ -269,7 +270,7 @@ class MerchantDepotModel extends RelationModel
 
         $this->field(['sq_merchant_depot.id','pro.id as product_id'
             ,'pro.title as product','sq_merchant_depot.price'
-            ,'shop.id as shop_id','shop.title as shop']);
+            ,'shop.id as shop_id','shop.title as shop','brand.title as brand','norm.title as norm']);
 
         if(!empty($where))
             $this->where($where);
