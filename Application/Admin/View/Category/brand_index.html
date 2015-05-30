@@ -1,0 +1,57 @@
+<extend name="Layout:layout" />
+<block name="body">
+    <!-- 标题栏 -->
+    <div class="main-title">
+        <h2>品牌列表</h2>
+    </div>
+    <div class="cf">
+        <div class="fl">
+            <h7><a class="btn" href="{:U('Brand/add')}">新 增</a></h7>
+        </div>
+    </div>
+    <!-- 数据列表 -->
+    <div class="data-table table-striped">
+        <table class="table table-hover table-striped">
+            <tr>
+                <th class="row-selected row-selected" width="35"><input class="check-all" type="checkbox"/></th>
+                <th class="" >ID</th>
+                <th class="" >排序</th>
+                <th class="">标题</th>
+                <th class="">状态</th>
+                <th class="">操&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;作</th>
+            </tr>
+            <tbody>
+            <notempty name="_list">
+                <volist name="_list" id="vo">
+                    <tr>
+                        <td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}" /></td>
+                        <td>{$vo.id} </td>
+                        <td>{$vo.sort} </td>
+                        <td>{$vo.title}</td>
+                        <td>{$vo.status}</td>
+                        <td>
+                            <a href="{:U('Brand/changeStatus?method=forbidBrand&id='.$vo['id'])}" class="ajax-get ">禁用</a>
+                            <a href="{:U('Brand/changeStatus?method=resumeBrand&id='.$vo['id'])}" class="ajax-get ">启用</a>
+                            <a href="{:U('Brand/edit',['id'=>$vo['id']])}" class="confirm ajax-get">编辑</a>
+                            <a href="{:U('Brand/changeStatus?method=deleteBrand&id='.$vo['id'])}" class="confirm ajax-get">删除</a>
+                        </td>
+                    </tr>
+                </volist>
+            </notempty>
+            </tbody>
+        </table>
+    </div>
+    <div class="page">
+        {$_page}
+    </div>
+    <div>
+        <a href="{:U('Category/norms_index')}" class="ajax-get">
+            <input type="Submit" name="Submit" value="确定关联" /></a>
+
+        <a href="{:U('Category/index')}">
+            <input type="Submit" name="Submit" value="返回" /></a>
+    </div>
+</block>
+
+
+
