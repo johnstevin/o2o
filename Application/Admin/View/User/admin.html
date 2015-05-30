@@ -47,7 +47,7 @@
                         <else/>
                         <a href="{:U('User/changeStatus?method=resumeUser&id='.$vo['uid'])}">启用</a>
                     </eq>
-                        <a href="{:U('AuthManager/role?uid='.$vo['uid'])}">授权</a>
+                        <a href="{:U('role/role?uid='.$vo['id'])}">授权</a>
                         <a href="{:U('User/changeStatus?method=deleteUser&id='.$vo['uid'])}">删除</a>
                     </td>
                 </tr>

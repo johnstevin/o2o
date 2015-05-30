@@ -26,9 +26,8 @@ class AdminController extends Controller{
             $config =   api('Config/lists');
             S('DB_CONFIG_DATA',$config);
         }
-        C($config); //添加配置
+        C($config);
 
-        // 是否是超级管理员
         define('IS_ROOT',   is_administrator());
         if(!IS_ROOT && C('ADMIN_ALLOW_IP')){
             // 检查IP地址访问
@@ -88,7 +87,7 @@ class AdminController extends Controller{
      * @param string  $mode    check模式
      * @return boolean
      */
-    final protected function checkRule($rule, $type=AuthRuleModel::RULE_URL, $mode='url'){
+    final protected function checkRule($rule, $type, $mode='url'){
         static $Auth    =   null;
         if (!$Auth) {
             $Auth       =   new \Think\Auth();
@@ -183,6 +182,7 @@ class AdminController extends Controller{
         if (in_array('id', $fields) && !empty($id)) {
             $where = array_merge(array('id' => array('in', $id)), (array)$where);
         }
+        // 是否是超级管理员
 
         $msg = array_merge(array('success' => '操作成功！', 'error' => '操作失败！', 'url' => '', 'ajax' => IS_AJAX), (array)$msg);
         if (M($model)->where($where)->save($data) !== false) {
