@@ -92,7 +92,7 @@ class MerchantDepotModel extends RelationModel
         ],
         [
             'shop_id',
-            'check_merchant_exist',
+            'check_merchant_shop_exist',
             '有非法商家ID',
             self::EXISTS_VALIDATE,
             'function'
