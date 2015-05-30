@@ -204,4 +204,113 @@ class MerchantDepotModel extends RelationModel
         $id = intval($id);
         return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
     }
+
+    /**
+     * 查询商家商品
+     * @author  WangJiang
+     * @param array|string $shopIds 商铺ID，多个用','隔开
+     * @param null|string $categoryId 分类ID
+     * @param null|int $brandId 品牌ID
+     * @param null|int $normId 规格ID
+     * @param null|string $title 商品标题（模糊查询）
+     * @param string $priceMin 商品售价下限
+     * @param string $priceMax 商品售价上限
+     * @param string|true|false $returnAlters 是否返回'alters'属性
+     * @param int $pageSize 页面大小
+     * @param int|null $status 状态
+     * @return array
+     */
+    public function getProductList($shopIds,$categoryId, $brandId,$normId, $title
+        ,$priceMin,$priceMax
+        ,$returnAlters,$page, $pageSize){
+
+        list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
+
+        $this->join('INNER JOIN sq_merchant_shop as shop on shop.id in ('.implode(',',$shopBindNames).') and shop.id=sq_merchant_depot.shop_id');
+
+        $sql_pro='INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id';
+
+        if(!empty($title)){
+            $sql_pro.=' and pro.title like :title';
+            $bindValues[':title']='%'.$title.'%';
+        }
+
+        $where='';
+        if(!is_null($priceMin)){
+            $where.='sq_merchant_depot.price>:priceMin';
+            $bindValues[':priceMin']=$priceMin;
+        }
+
+        if(!is_null($priceMax)){
+            if(!empty($where))
+                $where=' and ';
+            $where.='sq_merchant_depot.price<:priceMax';
+            $bindValues[':priceMax']=$priceMax;
+        }
+
+        if(!empty($brandId)){
+            $sql_pro.=' and pro.brand_id=:brandId';
+            $bindValues[':brandId']=$brandId;
+        }
+
+        if(!empty($normId)){
+            $sql_pro.=' and pro.norms_id=:normId';
+            $bindValues[':normId']=$normId;
+        }
+
+        $sql_pro.=' LEFT JOIN sq_brand as brand on brand.id=pro.brand_id';
+        $sql_pro.=' LEFT JOIN sq_norms as norm on norm.id=pro.norms_id';
+
+        $this->join($sql_pro);
+
+        if(!empty($categoryId)) {
+            $this->join('INNER JOIN sq_product_category as pc on pc.category_id=:cateId AND pc.product_id=pro.id');
+            $bindValues[':cateId']=$categoryId;
+        }
+
+        $this->field(['sq_merchant_depot.id','pro.id as product_id'
+            ,'pro.title as product','sq_merchant_depot.price'
+            ,'shop.id as shop_id','shop.title as shop','brand.title as brand','norm.title as norm']);
+
+        if(!empty($where))
+            $this->where($where);
+
+        $this->bind($bindValues)->limit($page,$pageSize);
+
+        $data=$this->select();
+
+        //print_r($sql->getLastSql());
+
+        $products=[];
+        $depots=[];
+        foreach($data as $i){
+            $i['price'] = floatval($i['price']);
+            $pid=$i['product_id'];
+            if(!isset($products[$pid]))
+                $products[$pid]=$i;
+
+            if($returnAlters)
+                $depots[$pid][]=$i;
+
+            if($products[$pid]['price']>$i['price'])
+                $products[$pid]=$i;
+        }
+
+        $ret=[];
+        foreach($products as $k=>$product){
+            if($returnAlters){
+                $depot=$depots[$k];
+                $alters=[];
+                foreach($depot as $i){
+                    if($product['id']!==$i['id'])
+                        $alters[]=array('id'=>$i['id'],'price'=>$i['price'],'shop_id'=>$i['shop_id'],'shop'=>$i['shop']);
+                }
+                $product['alters']=$alters;
+            }
+
+            $ret[]=$product;
+        }
+
+        return $ret;
+    }
 }

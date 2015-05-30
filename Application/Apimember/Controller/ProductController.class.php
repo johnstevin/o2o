@@ -6,6 +6,7 @@
 // +----------------------------------------------------------------------
 namespace Apimember\Controller;
 use Common\Model\CategoryModel;
+use Common\Model\MerchantDepotModel;
 use Common\Model\MerchantShopModel;
 use Think\Exception;
 use Common\Model\ProductModel;
@@ -15,8 +16,7 @@ use Common\Model\ProductModel;
  * Class ProductController
  * @package Api\Controller
  */
-class ProductController extends ApiController
-{
+class ProductController extends ApiController{
 
     /**
      * 根据经纬度获取附近商家信息接口
@@ -26,18 +26,50 @@ class ProductController extends ApiController
      * @param null|string|array words 关键字，w1,w2... 在title以及description字段中查找
      * @param string words_op  or|and，关键字组合方式
      * @param int $type 商家门店类型，可选0-所有类型，1-超市，2-生鲜，3-洗车，4-送水，缺省0
-     * @return mixed
+     * @return json
+      调用样例 GET apimber.php?s=/Product/getMerchantList/lat/29.58733/lng/106.524311/range/6000
+     * ``` json
+     *   {
+     *       {
+     *       "success": true,
+     *       "error_code": 0,
+     *       "data": [
+     *           {
+     *               "id": 4,
+     *               "title": "石子山公园3.5",
+     *               "distance": 3428.5691160108,
+     *               "lnglat": [
+     *                   106.494415,
+     *                   29.603912
+     *               ]
+     *           },
+     *           {
+     *               "id": 6,
+     *               "title": "重庆医科大学5.7",
+     *               "distance": 5505.6004590446,
+     *               "lnglat": [
+     *                   106.518562,
+     *                   29.53807
+     *               ]
+     *           }
+     *       ]
+     *   }
+     ```
      * @author  stevin WangJiang
      */
     public function getMerchantList($lat, $lng, $range = 100,$words=null,$wordsOp='or',$type=0){
         try{
             $this->apiSuccess(array('data'=>(new MerchantShopModel())
-                ->getList($lat, $lng, $range,$words,$wordsOp,$type)));
+                ->getNearby($lat, $lng, $range,$words,$wordsOp,$type)));
         }catch (Exception $ex){
             $this->apiError(50002,$ex->getMessage());
         }
     }
 
+    /**
+     * @ignore
+     * @param $id
+     */
     public function getMerchantDetail($id){
         try{
             $this->apiSuccess(array('data'=>(new MerchantShopModel())->get($id)));
@@ -51,18 +83,61 @@ class ProductController extends ApiController
      * @param int $level 指定返回分类层级，为空则不限制分类
      * @param int $pid 指定上级分类，为空则忽略，如果设置了$level则忽略该参数
      * @param array|string $shopIds 商铺ID，可以通过getMerchantList获得，该参数可选
-     * @param true|false $return_brands_norms 返回相关品牌规格等
-     * @return mixed
+     * @param string|true|false $returnMore 返回相关品牌规格等附带信息，
+     * @return json
+
+        调用样例 GET apimber.php?s=Product/getDepotCategory/shopIds/6,4,2/pid/2/returnMore/true
+    ``` json
+     *   {
+     *       "success": true,
+     *       "error_code": 0,
+     *       "data": {
+     *       "categories": [
+     *           {
+     *               "id": "17",
+     *               "title": "调料",
+     *               "pid": "2",
+     *               "level": "0"
+     *           },
+     *           {
+     *               "id": "25",
+     *              "title": "零食",
+     *               "pid": "2",
+     *               "level": "0"
+     *           }
+     *       ],
+     *       "brands": [
+     *           {
+     *               "id": "91",
+     *               "title": "恒顺"
+     *           },
+     *           {
+     *               "id": "215",
+     *               "title": "王致和"
+     *           }
+     *       ],
+     *       "norms": [
+     *           {
+     *               "id": "1",
+     *               "title": "瓶"
+     *           },
+     *           {
+     *               "id": "19",
+     *               "title": "壶"
+     *           }
+     *           ]
+     *       }
+     *   }
+     ```
      * @author  stevin WangJiang
      */
-    public function getDepotCategory($level=null,$pid=null,$shopIds='',$return_brands_norms='false'){
+    public function getDepotCategory($level=null,$pid=null,$shopIds='',$returnMore='false'){
         //TODO:开发平台上测试的效率不理想，需要进一步优化，修改sq_merchant_depot_pro_category的数据，每次商品上架，该表必须保存指定分类以及他的所有上级节点
         try{
             empty($shopIds) and E('参数shopIds不能为空');
-
-            $return_brands_norms=$return_brands_norms==='true';
-
+            $returnMore=$returnMore==='true';
             $shopIds=explode(',',$shopIds);
+
             list($bindNames, $bindValues) = build_sql_bind($shopIds);
 
             $sql=M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
@@ -84,8 +159,6 @@ class ProductController extends ApiController
 
                 foreach($data as $i){
                     //echo json_encode(CategoryModel::get($i['id']));
-
-
                     if($i['level']==$level) {
                         if(!in_array($i['id'],$topHint)){
                             $cats[] = $i;
@@ -139,7 +212,7 @@ class ProductController extends ApiController
 
             $brands=[];
             $norms=[];
-            if($return_brands_norms and !empty($catIds)){
+            if($returnMore and !empty($catIds)){
                 //print_r($catIds);
                 list($bindNames, $bindValues) = build_sql_bind($catIds);
                 $sql=M()->table('sq_category_brand_norms as l')
@@ -164,9 +237,10 @@ class ProductController extends ApiController
                         $norms[]=array('id'=>$i['nid'],'title'=>$i['norm']);
                     }
                 }
+
+                $ret['brands']=$brands;
+                $ret['norms']=$norms;
             }
-            $ret['brands']=$brands;
-            $ret['norms']=$norms;
 
             $this->apiSuccess(array('data'=>$ret));
 
@@ -194,12 +268,13 @@ class ProductController extends ApiController
     }
 
     /**
+     * @ignore
      * 根据获取的商家仓库的商品获取商品品牌接口
      * @param array|string $shopIds 商铺ID，可以通过getMerchantList获得
      * @param int $categoryId 分类ID
      * @return mixed
      * @author  stevin WangJiang
-     * @Deprecated 统一到getDepotCategory中
+     * @deprecated 统一到getDepotCategory中
      */
     public function getDepotBrand($shopIds,$categoryId){
         try{
@@ -226,10 +301,11 @@ class ProductController extends ApiController
     }
 
     /**
+     * @ignore
      * 根据获取的商家仓库的商品获取商品规格接口
      * @param
      * @author  stevin WangJiang
-     * @Deprecated 统一到getDepotCategory中
+     * @deprecated 统一到getDepotCategory中
      */
     public function getDepotNorms()
     {
@@ -237,17 +313,126 @@ class ProductController extends ApiController
     }
 
     /**
-     * 根据分类（品牌、规格）获取商品信息接口
+     * 查询商家商品
+     * @param array|string $shopIds 商铺ID，多个用','隔开
      * @param null|string $categoryId 分类ID
      * @param null|int $brandId 品牌ID
+     * @param null|int $normId 规格ID
      * @param null|string $title 商品标题（模糊查询）
+     * @param string $priceMin 商品售价下限
+     * @param string $priceMax 商品售价上限
+     * @param string|true|false $returnAlters 是否返回'alters'属性
+     * @param int $page 指定页号
      * @param int $pageSize 页面大小
      * @param int|null $status 状态
-     * @return mixed
+     * @return json
+     调用样例  GET apimber.php?s=/Product/getProductList/shopIds/2,4,6
+     ``` json
+    *{
+    *    "success": true,
+    *    "error_code": 0,
+    *    "data": [
+    *        {
+    *            "id": "38636",
+    *            "product_id": "1",
+    *            "product": "妮维雅凝水活才保湿眼霜",
+    *            "price": 91.59,
+    *            "shop_id": "2",
+    *            "shop": "磁器口6.3",
+    *            "alters": [ ]
+    *        },
+    *        {
+    *            "id": "38640",
+    *            "product_id": "2",
+    *            "product": "爱得利十字孔家居百货05奶嘴",
+    *            "price": 2.14,
+    *            "shop_id": "6",
+    *            "shop": "重庆医科大学5.7",
+    *            "alters": [ ]
+    *        },
+    *        {
+    *            "id": "38642",
+    *            "product_id": "3",
+    *            "product": "爱得利旋转把柄A17大奶瓶",
+    *            "price": 16.71,
+    *            "shop_id": "4",
+    *            "shop": "石子山公园3.5",
+    *            "alters": [
+    *            {
+    *                "id": "38644",
+    *                "price": 17.8,
+    *                "shop_id": "6",
+    *                "shop": "重庆医科大学5.7"
+    *            }
+    *            ]
+    *        },
+    *        {
+    *            "id": "38652",
+    *            "product_id": "5",
+    *            "product": "爱得利全自动奶瓶",
+    *            "price": 20.63,
+    *            "shop_id": "6",
+    *            "shop": "重庆医科大学5.7",
+    *            "alters": [
+    *                {
+    *                    "id": "38648",
+    *                    "price": 23.3,
+    *                    "shop_id": "2",
+    *                    "shop": "磁器口6.3"
+    *                },
+    *                {
+    *                    "id": "38650",
+    *                    "price": 22.76,
+    *                    "shop_id": "4",
+    *                    "shop": "石子山公园3.5"
+    *                }
+    *            ]
+    *        },
+    *        {
+    *            "id": "38655",
+    *            "product_id": "7",
+    *            "product": "爱得利360度全自动G02奶瓶双吸管",
+    *            "price": 6.98,
+    *            "shop_id": "2",
+    *            "shop": "磁器口6.3",
+    *            "alters": [ ]
+    *        },
+    *        {
+    *            "id": "38658",
+    *            "product_id": "8",
+    *            "product": "爱得利安抚C01奶嘴",
+    *            "price": 3.59,
+    *            "shop_id": "2",
+    *            "shop": "磁器口6.3",
+    *            "alters": [ ]
+    *        },
+    *        {
+    *            "id": "38660",
+    *            "product_id": "9",
+    *            "product": "爱得利F01奶瓶刷",
+    *            "price": 4.59,
+    *            "shop_id": "2",
+    *           "shop": "磁器口6.3",
+    *            "alters": [ ]
+    *        }
+    *    ]
+    *}
+     * ```
      * @author  stevin WangJiang
      */
-    public function getProductList($categoryId = null, $brandId = null, $status = ProductModel::STATUS_ACTIVE, $title = null, $pageSize = 10){
+    public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $title = null
+        ,$priceMin=null,$priceMax=null
+        ,$returnAlters='true',$page = 0, $pageSize = 10){
         try{
+            empty($shopIds) and E('参数shopIds不能为空');
+            $pageSize > 50 and $pageSize=50;
+            $page*=$pageSize;
+            $returnAlters=$returnAlters==='true';
+            $shopIds=explode(',',$shopIds);
+
+            $this->apiSuccess(array('data'=>(new MerchantDepotModel())->getProductList($shopIds,$categoryId, $brandId,$normId, $title
+                ,$priceMin,$priceMax
+                ,$returnAlters,$page, $pageSize)));
         }catch (Exception $ex){
             $this->apiError(50005,$ex->getMessage());
         }
@@ -259,12 +444,17 @@ class ProductController extends ApiController
      * @return mixed
      * @author  stevin WangJiang
      */
-    public function getProductDetail()
+    public function getProductDetail($id)
     {
-
+        try{
+            $this->apiSuccess(['data' => ProductModel::get($id)]);
+        }catch (Exception $ex){
+            $this->apiError(50006,$ex->getMessage());
+        }
     }
 
     /**
+     * @ignore
      * 活取列表
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param null|string $categoryId 分类ID
@@ -281,6 +471,7 @@ class ProductController extends ApiController
     }
 
     /**
+     * @ignore
      * 根据ID查找单条记录
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id
