@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>{$meta_title}</title>
     <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+    <script type="text/javascript" src="__STATIC__/js/jquery.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -15,42 +16,28 @@
                 <label for="category" class="control-label col-md-2">分类</label>
 
                 <div class="col-md-10" id="category">
-                    <div class="col-md-2">
-                        <select id="level1" name="level1" class="form-control level">
-                            <option value="0">省份</option>
-                            <volist name="region" id="levei1">
-                                <option value="{$levei1.id}">{$levei1.name}</option>
+                    <div class="col-md-4">
+                        <select id="category1" name="category1[]" multiple="multiple" size="7"
+                                class="form-control category">
+                            <!--<option value="0">一级大类</option>-->
+                            <volist name="list_category" id="cg">
+                                <option value="{$cg['id']|default='无'}" <in name="cg['id']" value="$this_category['selected']">selected</in> >{$cg.title}</option>
                             </volist>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select id="level2" name="level2" class="form-control level">
-                            <option value="0">城市</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select id="level3" name="level3" class="form-control level">
-                            <option value="0">区域</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select id="level4" name="level4" class="form-control level">
-                            <option value="0">街道</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select id="level5" name="level5" class="form-control level">
-                            <option value="0">社区</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="title" class="control-label col-md-2">名称</label>
 
-                <div class="col-md-10">
-                    <input id="title" type="text" name="title" class="form-control"
-                           value="{$info.title|default=''}"/>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="category2" name="category2[]" multiple="multiple" size="7"
+                                class="form-control category">
+                            <option value="0">二级大类</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="category3" name="category3[]" multiple="multiple" size="7"
+                                class="form-control category">
+                            <option value="0">三级大类</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="form-group">
@@ -79,6 +66,14 @@
                             >{$nm.title}</option>
                         </volist>
                     </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="title" class="control-label col-md-2">名称</label>
+
+                <div class="col-md-10">
+                    <input id="title" type="text" name="title" class="form-control"
+                           value="{$info.title|default=''}"/>
                 </div>
             </div>
             <div class="form-group">
@@ -112,5 +107,73 @@
         </div>
     </form>
 </div>
+<script>
+    $(document).ready(function () {
+
+    });
+    $('#category1').change(function () {
+        // alert($(this).val());
+
+        var val = $(this).val();
+        var B = document.getElementById("brand");
+        var N = document.getElementById("norm");
+        var C2 = document.getElementById("category2");
+        $.get("{:U('Product/getBrandAndNorms')}&pid=" + val, function (result) {
+            //移除以前的选项
+            B.options.length = 0;
+            N.options.length = 0;
+            C2.options.length = 0;
+            //添加选项
+            $.each(result, function (key, item) {
+                B.add(new Option(item.brand_title, item.brand_id));
+                N.add(new Option(item.norms_title, item.norms_id));
+                C2.add(new Option(item.brand_title, item.category_id));
+            });
+            //obj.options[0].selected = true;
+
+        });
+    });
+    $('#category2').change(function () {
+        // alert($(this).val());
+
+        var val = $(this).val();
+        var B = document.getElementById("brand");
+        var N = document.getElementById("norm");
+        var C3 = document.getElementById("category3");
+        $.get("{:U('Product/getBrandAndNorms')}&pid=" + val, function (result) {
+            //移除以前的选项
+            B.options.length = 0;
+            N.options.length = 0;
+            C3.options.length = 0;
+            //添加选项
+            $.each(result, function (key, item) {
+                B.add(new Option(item.brand_title, item.brand_id));
+                N.add(new Option(item.norms_title, item.norms_id));
+                C3.add(new Option(item.brand_title, item.category_id));
+            });
+            //obj.options[0].selected = true;
+
+        });
+    });
+    $('#category3').change(function () {
+        // alert($(this).val());
+
+        var val = $(this).val();
+        var B = document.getElementById("brand");
+        var N = document.getElementById("norm");
+        $.get("{:U('Product/getBrandAndNorms')}&pid=" + val, function (result) {
+            //移除以前的选项
+            B.options.length = 0;
+            N.options.length = 0;
+            //添加选项
+            $.each(result, function (key, item) {
+                B.add(new Option(item.brand_title, item.brand_id));
+                N.add(new Option(item.norms_title, item.norms_id));
+            });
+            //obj.options[0].selected = true;
+
+        });
+    });
+</script>
 </body>
 </html>

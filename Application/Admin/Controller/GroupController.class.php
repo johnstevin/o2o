@@ -54,7 +54,7 @@ class GroupController extends AdminController
                     $this->success('新增成功！', U('index'));
                 } else {
                     $error = $AuthGroup->getError();
-                    $this->error(empty($error) ? '请选择区域' : $error);
+                    $this->error(empty($error) ? '未知错误' : $error);
                 }
             } else {
                 $error = $AuthGroup->getError();

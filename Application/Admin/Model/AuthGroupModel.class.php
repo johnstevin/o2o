@@ -129,7 +129,7 @@ class AuthGroupModel extends Model
             }
         }
         if ($region_id == 0) {
-            //$this->error('请选择区域');
+            $this->error='请选择区域';
             return false;
         }
         $GroupRegion = M('AuthGroupRegion');
