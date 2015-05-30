@@ -101,7 +101,6 @@ class OrderModel extends RelationModel
         'deliveryman',
         'delivery_mode',
         'delivery_time',
-        '_autoinc' => true,
         '_type' => [
             'id' => 'int',
             'pid' => 'int',
@@ -380,7 +379,7 @@ class OrderModel extends RelationModel
             $where['status'] = ['NEQ', self::STATUS_DELETE];
         }
         $relation = [];
-        if ($getChilds) $relation[] = '_childs';
+        if ((bool)$getChilds) $relation[] = '_childs';
         if ($getProducts) $relation[] = '_products';
         if ($getParent) $relation[] = '_parent';
         $data = self::getInstance()->relation($relation)->field($fields)->where($where)->find();
@@ -646,7 +645,7 @@ class OrderModel extends RelationModel
      */
     public static function updateOrderPayMode($id, $payMode)
     {
-        return self::getInstance()->where(['id' => intval($id)])->save(['pay_mode' => intval($payMode)]);
+        return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['pay_mode' => intval($payMode)]);
     }
 
     /**
@@ -657,6 +656,6 @@ class OrderModel extends RelationModel
      */
     public static function updateOrderPayStatus($id, $payStatus)
     {
-        return self::getInstance()->where(['id' => intval($id)])->save(['pay_status' => intval($payStatus)]);
+        return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['pay_status' => intval($payStatus)]);
     }
 }
