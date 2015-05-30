@@ -19,27 +19,29 @@ class OrderController extends ApiController
      * 设置购物车
      * @author WangJiang
      * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
-     * @param json
-     POST  apimber.php?s=/order/setcart/userId/0
-    [
-        {
-        "shop_id": 1,
-        "products":
-            [
-                {
-                    "id": 12323,
-                    "total": 2,
-                    "product_id": 1
-                }
-            ]
-        }
-    ]
      * @return json
+     * <pre>
+    调用样例 POST  apimber.php?s=/order/setcart/userId/0
+    POST 数据：
+    [
     {
+    "shop_id": 1,
+    "products":
+    [
+    {
+    "id": 12323,
+    "total": 2,
+    "product_id": 1
+    }
+    ]
+    }
+    ]
+     * 返回
+     *     {
     "success": true,
     "error_code": 0,
     "message": "设置成功"
-    }
+    }</pre>
      */
     public function setCart($userId){
         try {
@@ -61,7 +63,9 @@ class OrderController extends ApiController
      * @author WangJiang
      * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
      * @return json
-     GET apimber.php?s=/order/getcart/userId/0
+     * <pre>
+    调用样例 GET apimber.php?s=/order/getcart/userId/0
+    返回
     [
     {
     "shop_id": 1,
@@ -74,7 +78,7 @@ class OrderController extends ApiController
     }
     ]
     }
-    ]
+    ]</pre>
      */
     public function getCart($userId){
         try {
@@ -89,6 +93,7 @@ class OrderController extends ApiController
     }
 
     /**
+     * @ignore
      * 加入购物车
      * @param
      * @author  stevin
@@ -99,6 +104,7 @@ class OrderController extends ApiController
     }
 
     /**
+     * @ignore
      * 我的购物车列表
      * @param
      * @author  stevin
@@ -109,6 +115,7 @@ class OrderController extends ApiController
     }
 
     /**
+     * @ignore
      * 购物车删除
      * @param
      * @author  stevin
@@ -119,6 +126,7 @@ class OrderController extends ApiController
     }
 
     /**
+     * @ignore
      * 支付接口
      * @param
      * @author  stevin
@@ -129,6 +137,7 @@ class OrderController extends ApiController
     }
 
     /**
+     * @ignore
      * 订单处理
      * @param
      * @author  stevin
@@ -138,12 +147,22 @@ class OrderController extends ApiController
 
     }
 
+    /**
+     * @ignore
+     * @param null $shopId
+     * @param null $userId
+     * @param null $status
+     * @param null $payStatus
+     * @param bool $fields
+     * @param bool $getProducts
+     */
     public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = true, $getProducts = false)
     {
         $this->apiSuccess(['data' => OrderModel::getLists($shopId, $userId, $status, $payStatus, $fields, $getProducts)]);
     }
 
     /**
+     * @ignore
      * 根据ID获取单个订单
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
@@ -159,6 +178,7 @@ class OrderController extends ApiController
     }
 
     /**
+     * @ignore
      * 获取子订单列表
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
