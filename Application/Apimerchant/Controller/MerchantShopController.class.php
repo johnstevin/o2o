@@ -37,9 +37,9 @@ class MerchantShopController extends ApiController {
      * int pid 0-总店,>0分店
      * int add_uid 添加用户id
      * int region_id 区域id
+     * <pre>
      * @author WangJiang
      * @return json
-     ``` json
      调用样例
      POST apimchant.php?s=/MerchantShop/update
      返回样例
@@ -48,7 +48,7 @@ class MerchantShopController extends ApiController {
      "error_code": 0,
      "message": ""
      }
-     ```
+     * </pre>
      */
     public function update(){
         try{
