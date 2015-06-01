@@ -10,14 +10,4 @@ class IndexController extends AdminController {
 
     }
 
-    /**
-     * 获取菜单
-     */
-    public function Menus()
-    {
-        //TODO 筛选菜单，url还没处理
-        $m=array();
-        $this-> ajaxReturn($m);
-    }
-
 }

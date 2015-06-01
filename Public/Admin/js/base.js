@@ -8,11 +8,6 @@
 $(document).ready(function () {
     changeMainPanelHeight(true);
     // 加载导航
-    $.ajax({
-        url: "index.php?m=Admin&c=index&a=menus",
-        async: true,
-        type: "POST",
-        success: function (result) {
             result='' +
             '[{"id":"01","fid":null,"text":"商家","iconCls":null,"EnglishTitle":"System Manage","url":"/SysMgr/Default/Index",' +
             '"children":[{"id":"0101","fid":"01","text":"教师管理","EnglishTitle":"Teacher","url":"/SysMgr/Teachers/Index","iconCls":null},' +
@@ -112,20 +107,6 @@ $(document).ready(function () {
                 //打开默认功能
                 showFun(rootMenuIndex, -1);
             }
-        },
-        error: function (data) {
-            $('body').layout('panel', 'west').panel({
-                content: "<h4 style='color:red'>菜单加载失败,请检查你的网络</h4>"
-            });
-            return false;
-        }
-    });
-    /*$('#rg-container-fun').panel({
-     href: 'Sysmgr/Teachers/Index'
-     });
-     $('#rg-container-fun').panel({
-     href: 'Sysmgr/Teachers/Index'
-     });*/
 });
 
 function showSubMenu(rootI, isFast) {
@@ -243,7 +224,8 @@ function showFun(rootI, subI) {
         //加载功能
         if (menuJson[rootI].url != "" && menuJson[rootI].url != null) {//有路由地址
             //更新面板内容
-            $('#rg-container-fun').panel({
+            //TODO liuhui
+            $('#rg-container-fun').html({
                 href: menuJson[rootI].url
             });
         }
@@ -276,7 +258,8 @@ function showFun(rootI, subI) {
         changeMainPanelHeight(false);
         if (menuJson[rootI].children[subI].url != "" && menuJson[rootI].children[subI].url != null) {//有路由地址
             //更新面板内容
-            $('#rg-container-fun').panel({
+            //TODO liuhui
+            $('#rg-container-fun').html({
                 href: menuJson[rootI].children[subI].url,
                 onLoadError: function () {
                     $('#rg-container-fun').html('<h3>出错了......</h3>');
