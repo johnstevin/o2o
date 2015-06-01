@@ -277,7 +277,7 @@ class UcenterMemberModel extends Model{
     public function userList($method){
         switch (strtolower($method)) {
             case 'admin':
-             
+
                 break;
             case'member':
                 break;
