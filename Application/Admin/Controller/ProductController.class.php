@@ -54,14 +54,14 @@ class ProductController extends AdminController
             /*获取分类信息*/
             $category = M('category')->where(array('status' => array('egt', 1),'pid'=>'0'))->order('title asc')->select();
             /* 获取品牌信息 */
-            $brands = M('Brand')->where(array('status' => array('egt', 1)))->order('title asc')->select();
+           // $brands = M('Brand')->where(array('status' => array('egt', 1)))->order('title asc')->select();
             /*获取规格信息*/
-            $norms=M('Norms')->select();
+           // $norms=M('Norms')->select();
             /* 获取分类信息 */
             $this->assign('info', null);
-            $this->assign('list_brand', $brands);
+            $this->assign('list_brand', null);
             $this->assign('list_category', $category);
-            $this->assign('list_norm',$norms);
+            $this->assign('list_norm',null);
             $this->assign('category',null);
             $this->meta_title = '新增用户组';
             $this->display('edit');
@@ -74,6 +74,7 @@ class ProductController extends AdminController
      */
     public function getBrandAndNorms($pid=array(0)){
         $Category_Info = D('Product')->getBrandAndNorms($pid);
+        //print_r($Category_Info);die;
         $this->ajaxReturn($Category_Info);
     }
 
@@ -104,17 +105,26 @@ class ProductController extends AdminController
             $category = M('category')->where(array('status' => array('egt', -1),'pid'=>'0'))->order('title asc')->select();
             $product_category=$Product->CategoryInfo($id);
             /* 获取品牌信息 */
-            $brands = M('Brand')->where(array('status' => array('egt', -1)))->order('title asc')->select();
+          //  $brands = M('Brand')->where(array('status' => array('egt', -1)))->order('title asc')->select();
+
             /*获取规格信息*/
-            $norms=M('Norms')->select();
+            //$norms=M('Norms')->select();
             /* 获取商品信息 */
             $info = $id ? $Product->info($id) : '';
 
+            $temp=M('ProductCategory')->field('category_id')->where(array('product_id'=>$id))->select();
+            $ids=array();
+            foreach($temp as &$k){
+                $ids[]=$k['category_id'];
+            }
+            $ids_str= is_array($ids)?implode(',',$ids):trim($ids,',');
+            $brandAndNorms =$Product->BrandandNorms($ids_str);
+
             $this->assign('info', $info);
-            $this->assign('list_brand', $brands);
-            $this->assign('list_norm',$norms);
+            $this->assign('brandAndNorms', $brandAndNorms);
+            //$this->assign('list_norm',$norms);
             $this->assign('list_category', $category);
-            //print_r($product_category['selected']);die;
+            //print_r($product_category['level3']);die;
             $this->assign('this_category',$product_category);
             $this->meta_title = '编辑用户组';
             $this->display();
