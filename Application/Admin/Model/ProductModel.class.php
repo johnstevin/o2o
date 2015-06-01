@@ -15,6 +15,7 @@ class ProductModel extends Model
     const NORMS         = 'norms'; // 规格关系表
     const CATEGORY_BRAND_NORMS ='category_brand_norms';//商品品牌规格关系表
     const PRODUCT_CATEGORY='product_category';// 商品分类关联表
+    const CATEGORY='category';//分类表
     /**
      * 自动验证
      * @var array
@@ -122,19 +123,43 @@ class ProductModel extends Model
     public function getBrandAndNorms($category_id=array(0), $where = array())
     {
         $category_id = is_array($category_id) ? implode(',', $category_id) : trim($category_id, ',');
-        $map = array('a.category_id' => array('in', $category_id),'g.status'=>'1');
+        $map = array('q.pid' => array('in', $category_id),'q.status'=>'1');
         $map = array_merge($map, $where);
         $prefix = C('DB_PREFIX');
+        $result=array();
         $BrandNorms = M()
-            ->field('a.category_id,a.brand_id,a.norms_id,g.title brand_title,m.title norms_title')
-            ->table($prefix.self::CATEGORY_BRAND_NORMS.' a')
-            ->join ($prefix.self::BRAND." g on a.brand_id=g.id")
-            ->join ($prefix.self::NORMS." m on a.norms_id=m.id")
+            ->field('q.pid,q.id,q.title')
+            ->table($prefix.self::CATEGORY.' q')
+            //->join ($prefix.self::CATEGORY_BRAND_NORMS." a on q.id = a.category_id" )
+//            ->join ($prefix.self::BRAND." g on a.brand_id=g.id")
+//            ->join ($prefix.self::NORMS." m on a.norms_id=m.id")
             ->where($map)
             ->select();
-        return $BrandNorms;
+        $result['data']=$BrandNorms;
+        $result['other']=$this->BrandandNorms($category_id);
+        return $result;
     }
 
+    public function BrandandNorms($category_id=array(0)){
+        $category_id = is_array($category_id) ? implode(',', $category_id) : trim($category_id, ',');
+        $prefix = C('DB_PREFIX');
+        $result=array();
+        $result['Brand']=M()
+            ->field('a.brand_id,g.title brand_title')
+            ->table($prefix.self::CATEGORY_BRAND_NORMS.' a')
+            ->join ($prefix.self::BRAND." g on a.brand_id=g.id")
+            ->where(array('a.category_id'=> array('in', $category_id),'g.status'=>'1'))
+            ->distinct(true)
+            ->select();
+        $result['Norms']=M()
+            ->field('a.norms_id,m.title norms_title')
+            ->table($prefix.self::CATEGORY_BRAND_NORMS.' a')
+            ->join ($prefix.self::NORMS." m on a.norms_id=m.id")
+            ->where(array('a.category_id'=> array('in', $category_id)))
+            ->distinct(true)
+            ->select();
+        return $result;
+    }
     /**
      * 保存分类
      */
@@ -194,12 +219,65 @@ class ProductModel extends Model
      */
     public function CategoryInfo($id){
         $category=array();
-        $product_category= M(self::PRODUCT_CATEGORY)->field('category_id')->where(array('product_id'=>$id))->select();
-        $category['level2']="";
-        $category['level3']="";
+        $product_category= M(self::PRODUCT_CATEGORY)->where(array('product_id'=>$id))->select();
         $category_arr=array();
         foreach($product_category as &$v){
             $category_arr[]=$v['category_id'];
+        }
+
+        $category['level2']=array();
+        $category['level3']=array();
+        $Category=M('Category');
+        $info=$Category->field('id,level,pid')->where(array('id'=>array('in',$category_arr)))->select();
+        $pids=array();
+        $ids=array();
+        foreach($info as &$k){
+            $pids[]=$k['pid'];
+            $ids[]=$k['id'];
+        }
+        $pids_str= is_array($pids)?implode(',',$pids):trim($pids,',');
+        $ids_str=is_array($ids)?implode(',',$ids):trim($ids,',');
+        if($info[0]['level']==0){
+            $category['level2']=$Category->field('id,title')->where(array('pid'=>array('in',$ids_str)))->select();
+            $lthreepids=array();
+            foreach($category['level2'] as &$k){
+                $lthreepids[]=$k['id'];
+            }
+            $lthreepids= is_array($lthreepids)?implode(',',$lthreepids):trim($lthreepids,',');
+           if(!empty($lthreepids)){
+            $category['level3']=$Category->field('id,title')->where(array('pid'=>array('in', $lthreepids)))->select();
+           }else{$category['level3']=array();}
+
+
+        }
+        if($info[0]['level']==1){
+            $pids_arrs = is_array($pids_str)?$pids_str:explode( ',',trim($pids_str,',') );
+            $category_arr=array_merge($category_arr,$pids_arrs);
+            $category['level2']=$Category->field('id,title')->where(array('pid'=>array('in',$pids_str)))->select();
+            $lthreepids=array();
+            foreach($category['level2'] as &$k){
+                $lthreepids[]=$k['id'];
+            }
+            $lthreepids= is_array($lthreepids)?implode(',',$lthreepids):trim($lthreepids,',');
+            $category['level3']=$Category->field('id,title')->where(array('pid'=>array('in', $lthreepids)))->select();
+
+        }
+        if($info[0]['level']==2){
+            $pid=$Category->field('id,pid')->where(array('id'=>array('in',$pids_str)))->select();
+            $two=array();
+            foreach($pid as &$k){
+                $two[]=$k['pid'];
+                $category_arr[]=$k['id'];
+            }
+            $twos= is_array($two)?implode(',',$two):trim($two,',');
+            $one=$Category->field('id,title')->where(array('id'=>array('in',$twos)))->select();
+            foreach($one as &$k){
+                $category_arr[]=$k['id'];
+            }
+            $category['level2']=$Category->field('id,title')->where(array('pid'=>array('in',$twos)))->select();
+            //print_r($category['level2']);die;
+            $category['level3']=$Category->field('id,title')->where(array('pid'=>array('in', $pids_str)))->select();
+
         }
         $category_str= is_array($category_arr)?implode(',',$category_arr):trim($category_arr,',');
         $category['selected']=$category_str;

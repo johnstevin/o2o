@@ -29,13 +29,19 @@
                     <div class="col-md-4">
                         <select id="category2" name="category2[]" multiple="multiple" size="7"
                                 class="form-control category">
-                            <option value="0">二级大类</option>
+                            <!--<option value="0">二级大类</option>-->
+                            <volist name="this_category['level2']" id="l2">
+                                <option value="{$l2['id']|default='无'}" <in name="l2['id']" value="$this_category['selected']">selected</in> >{$l2.title}</option>
+                            </volist>
                         </select>
                     </div>
                     <div class="col-md-4">
                         <select id="category3" name="category3[]" multiple="multiple" size="7"
                                 class="form-control category">
-                            <option value="0">三级大类</option>
+                            <!--<option value="0">三级大类</option>-->
+                            <volist name="this_category['level3']" id="l3">
+                                <option value="{$l3['id']|default='无'}" <in name="l3['id']" value="$this_category['selected']">selected</in> >{$l3.title}</option>
+                            </volist>
                         </select>
                     </div>
                 </div>
@@ -46,10 +52,10 @@
                 <div class="col-md-10">
                     <select id="brand" class="form-control" name="brand_id">
                         <!--<option value="0">--请选择--</option>-->
-                        <volist name="list_brand" id="vo">
-                            <option value="{$vo['id']|default='无'}"
-                            <eq name="vo['id']" value="$info.brand_id">selected</eq>
-                            >{$vo.title}</option>
+                        <volist name="brandAndNorms['Brand']" id="vo">
+                            <option value="{$vo['brand_id']|default='无'}"
+                            <eq name="vo['brand_id']" value="$info.brand_id">selected</eq>
+                            >{$vo.brand_title}</option>
                         </volist>
                     </select>
                 </div>
@@ -60,10 +66,10 @@
                 <div class="col-md-10">
                     <select id="norm" class="form-control" name="norms_id">
                         <!--<option value="0">--请选择--</option>-->
-                        <volist name="list_norm" id="nm">
-                            <option value="{$nm['id']|default='无'}"
-                            <eq name="nm['id']" value="$info.norms_id">selected</eq>
-                            >{$nm.title}</option>
+                        <volist name="brandAndNorms['Norms']" id="nm">
+                            <option value="{$nm['norms_id']|default='无'}"
+                            <eq name="nm['norms_id']" value="$info.norms_id">selected</eq>
+                            >{$nm.norms_title}</option>
                         </volist>
                     </select>
                 </div>
@@ -118,18 +124,28 @@
         var B = document.getElementById("brand");
         var N = document.getElementById("norm");
         var C2 = document.getElementById("category2");
+        var C3 = document.getElementById("category3");
         $.get("{:U('Product/getBrandAndNorms')}&pid=" + val, function (result) {
             //移除以前的选项
             B.options.length = 0;
             N.options.length = 0;
             C2.options.length = 0;
+            C3.options.length = 0;
             //添加选项
-            $.each(result, function (key, item) {
-                B.add(new Option(item.brand_title, item.brand_id));
-                N.add(new Option(item.norms_title, item.norms_id));
-                C2.add(new Option(item.brand_title, item.category_id));
+            $.each(result.data, function (key, item) {
+//                B.add(new Option(item.brand_title, item.brand_id));
+//                N.add(new Option(item.norms_title, item.norms_id));
+                C2.add(new Option(item.title, item.id));
             });
             //obj.options[0].selected = true;
+            $.each(result.other.Brand, function (k, v) {
+                B.add(new Option(v.brand_title, v.brand_id));
+               // N.add(new Option(v.norms_title, v.norms_id));
+            });
+            $.each(result.other.Norms, function (k, v) {
+                //B.add(new Option(v.brand_title, v.brand_id));
+                N.add(new Option(v.norms_title, v.norms_id));
+            });
 
         });
     });
@@ -146,12 +162,17 @@
             N.options.length = 0;
             C3.options.length = 0;
             //添加选项
-            $.each(result, function (key, item) {
-                B.add(new Option(item.brand_title, item.brand_id));
-                N.add(new Option(item.norms_title, item.norms_id));
-                C3.add(new Option(item.brand_title, item.category_id));
+            $.each(result.data, function (key, item) {
+                C3.add(new Option(item.title, item.id));
             });
-            //obj.options[0].selected = true;
+            $.each(result.other.Brand, function (k, v) {
+                B.add(new Option(v.brand_title, v.brand_id));
+                //N.add(new Option(v.norms_title, v.norms_id));
+            });
+            $.each(result.other.Norms, function (k, v) {
+                //B.add(new Option(v.brand_title, v.brand_id));
+                N.add(new Option(v.norms_title, v.norms_id));
+            });
 
         });
     });
@@ -166,11 +187,14 @@
             B.options.length = 0;
             N.options.length = 0;
             //添加选项
-            $.each(result, function (key, item) {
-                B.add(new Option(item.brand_title, item.brand_id));
-                N.add(new Option(item.norms_title, item.norms_id));
+            $.each(result.other.Brand, function (k, v) {
+                B.add(new Option(v.brand_title, v.brand_id));
+               // N.add(new Option(v.norms_title, v.norms_id));
             });
-            //obj.options[0].selected = true;
+            $.each(result.other.Norms, function (k, v) {
+                //B.add(new Option(v.brand_title, v.brand_id));
+                N.add(new Option(v.norms_title, v.norms_id));
+            });
 
         });
     });
