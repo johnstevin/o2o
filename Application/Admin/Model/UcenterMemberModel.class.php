@@ -270,4 +270,23 @@ class UcenterMemberModel extends Model{
         return true;
     }
 
+    /**
+     * 获取用户列表
+     * @param 条件：admin 管理员，member 普通用户，merchant 商户
+     */
+    public function userList($method){
+        switch (strtolower($method)) {
+            case 'admin':
+             
+                break;
+            case'member':
+                break;
+            case'merchant':
+                break;
+            default:
+                $this->error('参数错误');
+                break;
+        }
+
+    }
 }

@@ -224,7 +224,7 @@ class ProductModel extends Model
         foreach($product_category as &$v){
             $category_arr[]=$v['category_id'];
         }
-
+        //TODO  待优化
         $category['level2']=array();
         $category['level3']=array();
         $Category=M('Category');
