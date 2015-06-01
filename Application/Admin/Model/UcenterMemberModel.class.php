@@ -275,9 +275,13 @@ class UcenterMemberModel extends Model{
      * @param 条件：admin 管理员，member 普通用户，merchant 商户
      */
     public function userList($method){
+        $UserInfo=array();
         switch (strtolower($method)) {
             case 'admin':
-
+                $UserInfo=$this
+                    ->field('')
+                    ->join('LEFT JOIN __UCENTER_ADMIN__ ON __ADMIN__.login = __UCENTER_ADMIN__.id')
+                    ->select();
                 break;
             case'member':
                 break;

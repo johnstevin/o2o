@@ -21,7 +21,9 @@
                                 class="form-control category">
                             <!--<option value="0">一级大类</option>-->
                             <volist name="list_category" id="cg">
-                                <option value="{$cg['id']|default='无'}" <in name="cg['id']" value="$this_category['selected']">selected</in> >{$cg.title}</option>
+                                <option value="{$cg['id']|default='无'}"
+                                <in name="cg['id']" value="$this_category['selected']">selected</in>
+                                >{$cg.title}</option>
                             </volist>
 
                         </select>
@@ -31,7 +33,9 @@
                                 class="form-control category">
                             <!--<option value="0">二级大类</option>-->
                             <volist name="this_category['level2']" id="l2">
-                                <option value="{$l2['id']|default='无'}" <in name="l2['id']" value="$this_category['selected']">selected</in> >{$l2.title}</option>
+                                <option value="{$l2['id']|default='无'}"
+                                <in name="l2['id']" value="$this_category['selected']">selected</in>
+                                >{$l2.title}</option>
                             </volist>
                         </select>
                     </div>
@@ -40,7 +44,9 @@
                                 class="form-control category">
                             <!--<option value="0">三级大类</option>-->
                             <volist name="this_category['level3']" id="l3">
-                                <option value="{$l3['id']|default='无'}" <in name="l3['id']" value="$this_category['selected']">selected</in> >{$l3.title}</option>
+                                <option value="{$l3['id']|default='无'}"
+                                <in name="l3['id']" value="$this_category['selected']">selected</in>
+                                >{$l3.title}</option>
                             </volist>
                         </select>
                     </div>
@@ -52,7 +58,7 @@
                 <div class="col-md-10">
                     <select id="brand" class="form-control" name="brand_id">
                         <!--<option value="0">--请选择--</option>-->
-                        <volist name="brandAndNorms['Brand']" id="vo">
+                        <volist name="list_brand['Brand']" id="vo">
                             <option value="{$vo['brand_id']|default='无'}"
                             <eq name="vo['brand_id']" value="$info.brand_id">selected</eq>
                             >{$vo.brand_title}</option>
@@ -66,7 +72,7 @@
                 <div class="col-md-10">
                     <select id="norm" class="form-control" name="norms_id">
                         <!--<option value="0">--请选择--</option>-->
-                        <volist name="brandAndNorms['Norms']" id="nm">
+                        <volist name="list_norm" id="nm">
                             <option value="{$nm['norms_id']|default='无'}"
                             <eq name="nm['norms_id']" value="$info.norms_id">selected</eq>
                             >{$nm.norms_title}</option>
@@ -125,7 +131,7 @@
         var N = document.getElementById("norm");
         var C2 = document.getElementById("category2");
         var C3 = document.getElementById("category3");
-        $.get("{:U('Product/getBrandAndNorms')}&pid=" + val, function (result) {
+        $.get("{:U('Product/getCategoryChild')}&pid=" + val, function (result) {
             //移除以前的选项
             B.options.length = 0;
             N.options.length = 0;
@@ -140,13 +146,23 @@
             //obj.options[0].selected = true;
             $.each(result.other.Brand, function (k, v) {
                 B.add(new Option(v.brand_title, v.brand_id));
-               // N.add(new Option(v.norms_title, v.norms_id));
+                // N.add(new Option(v.norms_title, v.norms_id));
             });
-            $.each(result.other.Norms, function (k, v) {
-                //B.add(new Option(v.brand_title, v.brand_id));
-                N.add(new Option(v.norms_title, v.norms_id));
-            });
+//            $.each(result.other.Norms, function (k, v) {
+//                //B.add(new Option(v.brand_title, v.brand_id));
+//                N.add(new Option(v.norms_title, v.norms_id));
+//            });
+            if($('#brand').val()!=""&&$('#brand').val()!=null){
+            $.get("{:U('Product/getNorms')}&pid=" + val + '&brand=' + $('#brand').val(), function (result) {
+                //移除以前的选项
+                N.options.length = 0;
+                //添加选项
+                $.each(result, function (k, v) {
+                    N.add(new Option(v.norms_title, v.norms_id));
+                });
 
+            });
+            }
         });
     });
     $('#category2').change(function () {
@@ -156,7 +172,7 @@
         var B = document.getElementById("brand");
         var N = document.getElementById("norm");
         var C3 = document.getElementById("category3");
-        $.get("{:U('Product/getBrandAndNorms')}&pid=" + val, function (result) {
+        $.get("{:U('Product/getCategoryChild')}&pid=" + val, function (result) {
             //移除以前的选项
             B.options.length = 0;
             N.options.length = 0;
@@ -169,10 +185,17 @@
                 B.add(new Option(v.brand_title, v.brand_id));
                 //N.add(new Option(v.norms_title, v.norms_id));
             });
-            $.each(result.other.Norms, function (k, v) {
-                //B.add(new Option(v.brand_title, v.brand_id));
-                N.add(new Option(v.norms_title, v.norms_id));
-            });
+            if($('#brand').val()!=""&&$('#brand').val()!=null){
+                $.get("{:U('Product/getNorms')}&pid=" + val + '&brand=' + $('#brand').val(), function (result) {
+                    //移除以前的选项
+                    N.options.length = 0;
+                    //添加选项
+                    $.each(result, function (k, v) {
+                        N.add(new Option(v.norms_title, v.norms_id));
+                    });
+
+                });
+            }
 
         });
     });
@@ -182,22 +205,59 @@
         var val = $(this).val();
         var B = document.getElementById("brand");
         var N = document.getElementById("norm");
-        $.get("{:U('Product/getBrandAndNorms')}&pid=" + val, function (result) {
+        $.get("{:U('Product/getCategoryChild')}&pid=" + val, function (result) {
             //移除以前的选项
             B.options.length = 0;
             N.options.length = 0;
             //添加选项
             $.each(result.other.Brand, function (k, v) {
                 B.add(new Option(v.brand_title, v.brand_id));
-               // N.add(new Option(v.norms_title, v.norms_id));
+                // N.add(new Option(v.norms_title, v.norms_id));
             });
-            $.each(result.other.Norms, function (k, v) {
-                //B.add(new Option(v.brand_title, v.brand_id));
+            if($('#brand').val()!=""&&$('#brand').val()!=null){
+                $.get("{:U('Product/getNorms')}&pid=" + val + '&brand=' + $('#brand').val(), function (result) {
+                    //移除以前的选项
+                    N.options.length = 0;
+                    //添加选项
+                    $.each(result, function (k, v) {
+                        N.add(new Option(v.norms_title, v.norms_id));
+                    });
+
+                });
+            }
+        });
+    });
+    $('#brand').change(function () {
+        var val = $(this).val();
+        var pidval = "";
+        if ($('#category3').val() != "" && $('#category3').val() != null) {
+            pidval = $('#category3').val();
+
+        }
+        else if ($('#category2').val() != "" && $('#category2').val() != null) {
+            pidval = $('#category2').val();
+        }
+        else if ($('#category1').val() != "" && $('#category1').val() != null) {
+            pidval = $('#category1').val();
+        }
+        else {
+            return false;
+        }
+        if (pidval == "") {
+            return false;
+        }
+        var N = document.getElementById("norm");
+        $.get("{:U('Product/getNorms')}&pid=" + pidval + '&brand=' + val, function (result) {
+            //移除以前的选项
+            N.options.length = 0;
+            //添加选项
+            $.each(result, function (k, v) {
                 N.add(new Option(v.norms_title, v.norms_id));
             });
 
         });
     });
+
 </script>
 </body>
 </html>

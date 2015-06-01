@@ -120,7 +120,7 @@ class ProductModel extends Model
      * @param array $where $where 查询条件
      * @return mixed
      */
-    public function getBrandAndNorms($category_id=array(0), $where = array())
+    public function getCategoryChild($category_id=array(0), $where = array())
     {
         $category_id = is_array($category_id) ? implode(',', $category_id) : trim($category_id, ',');
         $map = array('q.pid' => array('in', $category_id),'q.status'=>'1');
@@ -136,11 +136,11 @@ class ProductModel extends Model
             ->where($map)
             ->select();
         $result['data']=$BrandNorms;
-        $result['other']=$this->BrandandNorms($category_id);
+        $result['other']=$this->getBrand($category_id);
         return $result;
     }
 
-    public function BrandandNorms($category_id=array(0)){
+    public function getBrand($category_id=array(0)){
         $category_id = is_array($category_id) ? implode(',', $category_id) : trim($category_id, ',');
         $prefix = C('DB_PREFIX');
         $result=array();
@@ -151,11 +151,24 @@ class ProductModel extends Model
             ->where(array('a.category_id'=> array('in', $category_id),'g.status'=>'1'))
             ->distinct(true)
             ->select();
-        $result['Norms']=M()
+//        $result['Norms']=M()
+//            ->field('a.norms_id,m.title norms_title')
+//            ->table($prefix.self::CATEGORY_BRAND_NORMS.' a')
+//            ->join ($prefix.self::NORMS." m on a.norms_id=m.id")
+//            ->where(array('a.category_id'=> array('in', $category_id)))
+//            ->distinct(true)
+//            ->select();
+        return $result;
+    }
+
+    public function getNorms($category_id=array(0),$brand){
+        $category_id = is_array($category_id) ? implode(',', $category_id) : trim($category_id, ',');
+        $prefix = C('DB_PREFIX');
+        $result=M()
             ->field('a.norms_id,m.title norms_title')
             ->table($prefix.self::CATEGORY_BRAND_NORMS.' a')
             ->join ($prefix.self::NORMS." m on a.norms_id=m.id")
-            ->where(array('a.category_id'=> array('in', $category_id)))
+            ->where(array('a.category_id'=> array('in', $category_id),'a.brand_id'=>array('eq',$brand)))
             ->distinct(true)
             ->select();
         return $result;

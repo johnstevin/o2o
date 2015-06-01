@@ -72,10 +72,20 @@ class ProductController extends AdminController
      * 返回所有上级等于pid的数据
      * @param array $pid 要查询的上级pid的数组
      */
-    public function getBrandAndNorms($pid=array(0)){
-        $Category_Info = D('Product')->getBrandAndNorms($pid);
+    public function getCategoryChild($pid=array(0)){
+        $Category_Info = D('Product')->getCategoryChild($pid);
         //print_r($Category_Info);die;
         $this->ajaxReturn($Category_Info);
+    }
+
+    /**
+     * 返回所有上级等于pid的数据
+     * @param array $pid 要查询的上级pid的数组
+     */
+    public function getNorms($pid=array(0),$brand){
+        $Norms_Info = D('Product')->getNorms($pid,$brand);
+        //print_r($Category_Info);die;
+        $this->ajaxReturn($Norms_Info);
     }
 
     /**
@@ -118,15 +128,16 @@ class ProductController extends AdminController
                 $ids[]=$k['category_id'];
             }
             $ids_str= is_array($ids)?implode(',',$ids):trim($ids,',');
-            $brandAndNorms =$Product->BrandandNorms($ids_str);
-
+            $brand =$Product->getBrand($ids_str);
+            $norm=$Product->getNorms($ids_str,$info['brand_id']);
             $this->assign('info', $info);
-            $this->assign('brandAndNorms', $brandAndNorms);
+            $this->assign('list_brand', $brand);
+            $this->assign('list_norm', $norm);
             //$this->assign('list_norm',$norms);
             $this->assign('list_category', $category);
             //print_r($product_category['level3']);die;
             $this->assign('this_category',$product_category);
-            $this->meta_title = '编辑用户组';
+            $this->meta_title = '编辑商品';
             $this->display();
         }
     }
