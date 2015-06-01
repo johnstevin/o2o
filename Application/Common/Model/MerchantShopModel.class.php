@@ -14,6 +14,9 @@ use Think\Model\AdvModel;
  * @author  WangJiang
  */
 class MerchantShopModel extends AdvModel{
+    ## 状态常量
+    const STATUS_ACTIVE = 1;//正常
+    const STATUS_CLOSE = 0;//关闭
 
     /**
      * @author  WangJiang
@@ -78,7 +81,7 @@ class MerchantShopModel extends AdvModel{
         [
             'phone_number','',self::MODEL_INSERT
         ],
-        ['status',1,self::MODEL_INSERT]
+        ['status',self::STATUS_ACTIVE,self::MODEL_INSERT]
     );
 
     /**
