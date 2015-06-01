@@ -99,6 +99,15 @@ class AdminController extends Controller{
     }
 
     /**
+     * 检测是否是需要动态判断的权限
+     * @return boolean|null
+     *      返回true则表示当前访问有权限
+     *      返回false则表示当前访问无权限
+     *      返回null，则表示权限不明
+     */
+    protected function checkDynamic(){}
+
+    /**
      * 通用分页列表数据集获取方法
      *
      *  可以通过url参数传递where条件,例如:  index.html?name=param
