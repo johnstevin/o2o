@@ -1,115 +1,4 @@
-﻿var menuJson = "",
-    rootMenuIndex = -1/*显示的菜单*/,
-    subMenuIndex = -1/*运行的功能*/,
-    haveSubMenu = 0,
-    cssEasing = "easeOutBounce",//
-    cssDelay = 500;
-
-$(document).ready(function () {
-    changeMainPanelHeight(true);
-    // 加载导航
-            result='' +
-            '[{"id":"01","fid":null,"text":"商家","iconCls":null,"EnglishTitle":"System Manage","url":"/SysMgr/Default/Index",' +
-            '"children":[{"id":"0101","fid":"01","text":"教师管理","EnglishTitle":"Teacher","url":"/SysMgr/Teachers/Index","iconCls":null},' +
-            '{"id":"0102","fid":"01","text":"分校管理","EnglishTitle":"Branch","url":"/SysMgr/Branches/Index","iconCls":null},' +
-            '{"id":"0103","fid":"01","text":"校区管理","EnglishTitle":"Campu","url":"/SysMgr/Campus/Index","iconCls":null}]},' +
-
-
-            '{"id":"02","fid":null,"text":"用户","iconCls":null,"EnglishTitle":"Permission","url":"/PermissionMgr/Default/Index",' +
-            '"children":[{"id":"0201","fid":"02","text":"权限分配","EnglishTitle":"Permission","url":"/PermissionMgr/Permissions/Index","iconCls":null},' +
-            '{"id":"0202","fid":"02","text":"权限模板","EnglishTitle":"Permission Template","url":"/PermissionMgr/Tpl/Index","iconCls":null}]},' +
-
-
-            '{"id":"03","fid":null,"text":"商品","iconCls":null,"EnglishTitle":"Basic Info","url":"/BasicInfo/Default/Index",' +
-            '"children":[{"id":"0301","fid":"03","text":"字典类别","EnglishTitle":"Dictionary","url":"/BasicInfo/DataItems/List","iconCls":null},' +
-            '{"id":"0302","fid":"03","text":"字典值","EnglishTitle":null,"url":"/BasicInfo/DataItemValues/Index","iconCls":null},' +
-            '{"id":"0303","fid":"03","text":"客户级别","EnglishTitle":null,"url":"/BasicInfo/ClientLevels/Index","iconCls":null},' +
-            '{"id":"0304","fid":"03","text":"上课效果","EnglishTitle":null,"url":"/BasicInfo/Effects/Index","iconCls":null}]},' +
-
-            '{"id":"04","fid":null,"text":"系统","iconCls":null,"EnglishTitle":"Student","url":"/StudentMgr/Default/Index",' +
-            '"children":[{"id":"0401","fid":"04","text":"学生信息","EnglishTitle":"Student Info","url":"/StudentMgr/Student/Index","iconCls":null},' +
-            '{"id":"0402","fid":"04","text":"课程管理","EnglishTitle":null,"url":"/StudentMgr/StudentProduct/Index","iconCls":null}]},' +
-
-
-
-            '{"id":"05","fid":null,"text":"产品管理","iconCls":null,"EnglishTitle":"Product","url":"/ProductMgr/Default/Index",' +
-            '"children":[{"id":"0501","fid":"05","text":"产品信息","EnglishTitle":"Product Infomation","url":"/ProductMgr/Product/Index","iconCls":null}]},' +
-
-
-
-            '{"id":"06","fid":null,"text":"个人绩效","iconCls":null,"EnglishTitle":"Enrollment","url":"/EnrollmentMgr/Default/Index",' +
-            '"children":[{"id":"0601","fid":"06","text":"跟进记录","EnglishTitle":"Track","url":"/EnrollmentMgr/Tracks/Index","iconCls":null},' +
-            '{"id":"0602","fid":"06","text":"跟进计划","EnglishTitle":"Plan","url":"/EnrollmentMgr/TrackPlans/Index","iconCls":null},' +
-            '{"id":"0604","fid":"06","text":"跟进客户分配","EnglishTitle":null,"url":"/EnrollmentMgr/TrackStudents/Index","iconCls":null},' +
-            '{"id":"0605","fid":"06","text":"统计表","EnglishTitle":null,"url":"/EnrollmentMgr/StatisticalList/Index","iconCls":null},' +
-            '{"id":"0606","fid":"06","text":"统计图","EnglishTitle":null,"url":"/EnrollmentMgr/StatisticalChart/Index","iconCls":null}]}]';
-            var navStr = "";
-            menuJson = $.parseJSON(result);
-            //首页每个人都有，所以不需要权限判断，直接在这里加上
-            var indexObj =
-            {
-                'id': "00",
-                "fid": null,
-                "text": "主页",
-                "iconCls": "",
-                "url": "/AppHome/Entrance",
-                //"url": "Entrance",
-                "children": ""
-            };
-            menuJson.unshift(indexObj);
-            //生成nav菜单
-            var i = 0
-            for (i = 1; i < menuJson.length; i++) {
-                navStr += '<li id="nav-root-li-' + i + '"><a href=\"#\" onclick="showSubMenu(' + i + ',false)">' + menuJson[i].text + '</a></li>';
-            }
-            $('#nav-root-ul').html(navStr);
-            //恢复或初始化subnav
-            if (getCookie(cookiesPrefix + "rootMenuId") != null) {//有cookies记录显示的列表
-
-                for (i = 0; i < menuJson.length; i++) {
-                    if (menuJson[i].id == getCookie(cookiesPrefix + "rootMenuId")) {
-                        break;
-                    }
-                }
-                if (i < menuJson.length) {//记录的cookies有匹配的
-                    showSubMenu(i, true);
-                }
-                else {//记录的cookies没有匹配的
-                    showSubMenu(0, true);
-                }
-            }
-            else {//显示列表初始化
-                showSubMenu(0, true);
-            }
-
-            //恢复或初始化功能
-            if (menuJson[rootMenuIndex].children != null && menuJson[rootMenuIndex].children != "") {//当前显示的功能有下级功能。
-                if (getCookie(cookiesPrefix + "subMenuId") != null) {//有cookies记录当前功能
-                    for (var i = 0; i < menuJson[rootMenuIndex].children.length; i++) {
-                        if (menuJson[rootMenuIndex].children[i].id == getCookie(cookiesPrefix + "subMenuId")) {
-                            break;
-                        }
-                    }
-                    if (i < menuJson[rootMenuIndex].children.length) {//记录的cookies有匹配的
-                        showFun(rootMenuIndex, i);
-                    }
-                    else {//记录的cookies没有匹配的
-                        //打开默认功能
-                        showFun(rootMenuIndex, -1);
-                    }
-                }
-                else {//没有cookies记录
-                    //打开默认功能
-                    showFun(rootMenuIndex, -1);
-                }
-            }
-            else {//没有cookies记录
-                //打开默认功能
-                showFun(rootMenuIndex, -1);
-            }
-});
-
-function showSubMenu(rootI, isFast) {
+﻿function showSubMenu(rootI, isFast) {
     var cssChangeDelay = isFast ? 0 : cssDelay;
     if (rootMenuIndex == rootI && subMenuIndex == -1) {//相同的功能
         return;
@@ -213,6 +102,7 @@ function showSubMenu(rootI, isFast) {
     //点击一级按钮生成导航栏
     showRootPosition(rootI);
 }
+
 function showFun(rootI, subI) {
     if (subI == -1) {//一级菜单功能
         //一级功能的地址导航在显示菜单的地方生成，不在这里（显示功能）生成
@@ -292,10 +182,10 @@ function showRootPosition(rootI) {//在点击一级菜单时使用，因为一�
 
 //写cookies
 function setCookie(name, value) {
-    var Days = 30;
-    var exp = new Date();
-    exp.setTime(exp.getTime() + Days * 24 * 60 * 60 * 1000);
-    document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString();
+    //var Days = 30;
+    //var exp = new Date();
+    //exp.setTime(exp.getTime() + Days * 24 * 60 * 60 * 1000);
+    //document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString();
 }
 
 //读取cookies 
