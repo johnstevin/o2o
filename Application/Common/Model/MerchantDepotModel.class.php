@@ -1,6 +1,7 @@
 <?php
 namespace Common\Model;
 
+use Think\Exception;
 use Think\Model\RelationModel;
 use Think\Page;
 
@@ -24,6 +25,7 @@ class MerchantDepotModel extends RelationModel
 {
     protected static $model;
     ## 状态常量
+    const STATUS_DELETE = -1;//逻辑删除
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
 
@@ -119,6 +121,7 @@ class MerchantDepotModel extends RelationModel
         [
             'status',
             [
+                self::STATUS_DELETE,
                 self::STATUS_CLOSE,
                 self::STATUS_ACTIVE
             ],
@@ -183,6 +186,7 @@ class MerchantDepotModel extends RelationModel
     public static function getStatusOptions()
     {
         return [
+            self::STATUS_DELETE => '逻辑删除',
             self::STATUS_CLOSE => '关闭',
             self::STATUS_ACTIVE => '正常'
         ];
@@ -274,9 +278,9 @@ class MerchantDepotModel extends RelationModel
      * @param int|null $status 状态
      * @return array
      */
-    public function getProductList($shopIds,$categoryId, $brandId,$normId, $title
-        ,$priceMin,$priceMax
-        ,$returnAlters,$page, $pageSize)
+    public function getProductList($shopIds, $categoryId, $brandId, $normId, $title
+        , $priceMin, $priceMax
+        , $returnAlters, $page, $pageSize)
     {
 
         list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
@@ -358,7 +362,7 @@ class MerchantDepotModel extends RelationModel
                 $alters = [];
                 foreach ($depot as $i) {
                     if ($product['id'] !== $i['id'])
-                        $alters[] = array('id' => $i['id'], 'price' => $i['price'], 'shop_id' => $i['shop_id'], 'shop' => $i['shop']);
+                        $alters[] = ['id' => $i['id'], 'price' => $i['price'], 'shop_id' => $i['shop_id'], 'shop' => $i['shop']];
                 }
                 $product['alters'] = $alters;
             }
@@ -403,6 +407,7 @@ class MerchantDepotModel extends RelationModel
      */
     public static function addDepot($shopId, $productId, $price = null, $remark = '')
     {
+        //如果在已关闭的数据里，则重新开启这个商品
         if ($depot = self::get($shopId, $productId, self::STATUS_CLOSE)) {
             $data['id'] = $depot['id'];
             $data['status'] = self::STATUS_ACTIVE;
@@ -410,12 +415,37 @@ class MerchantDepotModel extends RelationModel
         $data['shop_id'] = intval($shopId);
         $data['product_id'] = intval($productId);
         $data['remark'] = trim($remark);
+        //获取产品信息和所属分类
         $product = ProductModel::get($productId, ['price', 'id'], '_categorys');
         $data['price'] = empty($price) && $product ? (float)$product['price'] : (float)$price;
         $model = self::getInstance();
+        $model->startTrans();//启动事务
+        $depotCategoryModel = M('merchant_depot_pro_category');
+        $ids = is_array($product['_categorys']) ?: explode(',', $product['_categorys']);
+        $ids = array_unique($ids);
+        foreach ($ids as $id) {
+            //如果没有找到相应的分类才添加
+            if (!$depotCategoryModel->where(['shop_id' => $shopId, 'category_id' => $id])->find()) {
+                $categorys[] = [
+                    'shop_id' => $shopId,
+                    'category_id' => $id
+                ];
+            }
+        }
         if (!$model->create($data))
-            E($model->getError());
-        return isset($data['id']) ? $model->where(['id' => $data['id']])->save() : $model->add() && self::addMerchantDepotCategory($shopId, $product['_categorys']);
+            E(current($model->getError()));
+        try {
+            isset($data['id']) ? $status = $model->where(['id' => $data['id']])->save() : $status = $model->add();
+            if ($status && $depotCategoryModel->addAll($categorys)) {
+                $model->commit();//提交事务
+                return $model->getLastInsID();
+            } else {
+                E('添加或更新商品失败');
+            }
+        } catch (Exception $e) {
+            $model->rollback();//回滚事务
+            return false;
+        }
     }
 
     /**
@@ -436,18 +466,21 @@ class MerchantDepotModel extends RelationModel
         if (!empty($status) && in_array($status, array_keys(self::getStatusOptions()))) $data['status'] = $status;
         if (!empty($price)) $data['status'] = $price;
         if (!empty($remark)) $data['remark'] = $remark;
-        if ($model->create() && $model->save()) return true;
-        E($model->getError());
+        if (!empty($productId)) $data['product_id'] = intval($productId);
+        if (!$model->create($data)) E($model->getError());
+        return $model->save();
     }
 
     /**
      * 添加商家商品的分类
+     * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $shopId 商家ID
      * @param int|string $categoryId 分类ID
      * @return bool
      */
     public static function addMerchantDepotCategory($shopId, $categoryId)
     {
+        //TODO 这个方法暂时没有地方调用它，可酌情删除
         $model = M('merchant_depot_pro_category');
         $ids = is_array($categoryId) ?: explode(',', $categoryId);
         $ids = array_unique($ids);
@@ -466,9 +499,13 @@ class MerchantDepotModel extends RelationModel
      * @param int $id
      * @return bool|void
      */
-    public static function deleteDepot($id)
+    public static function deleteDepot($id, $logic = true)
     {
         $id = intval($id);
-        return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->save(['status' => self::STATUS_CLOSE]) : E('仓库商品ID非法');
+        if (!$id) E('仓库商品ID非法');
+        if ($logic) {
+            return self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->save(['status' => self::STATUS_CLOSE]);
+        }
+        return self::getInstance()->delete($id);
     }
 }
