@@ -1,6 +1,7 @@
 <?php
 namespace Common\Model;
 
+use Think\Exception;
 use Think\Model\RelationModel;
 use Think\Page;
 
@@ -183,13 +184,6 @@ class OrderModel extends RelationModel
             'in'
         ],
         [
-            'pid',
-            'checkOrderPidExist',
-            '父级ID非法',
-            self::EXISTS_VALIDATE,
-            'callback'
-        ],
-        [
             'pay_status',
             [
                 self::PAY_STATUS_FALSE,
@@ -200,24 +194,24 @@ class OrderModel extends RelationModel
             'in'
         ],
         [
-            'add_ip',
-            'checkIpFormat',
-            'IP格式非法',
-            self::EXISTS_VALIDATE,
-            'function'
-        ],
-        [
-            'update_ip',
-            'checkIpFormat',
-            'IP格式非法',
-            self::EXISTS_VALIDATE,
-            'function'
-        ],
-        [
             'order_code',
             'unique',
             '订单代码已经存在',
             self::EXISTS_VALIDATE
+        ],
+        [
+            'user_id',
+            'check_user_exist',
+            '用户ID非法',
+            self::EXISTS_VALIDATE,
+            'function'
+        ],
+        [
+            'shop_id',
+            'check_shop_exist',
+            '商铺ID非法',
+            self::EXISTS_VALIDATE,
+            'function'
         ]
     ];
 
@@ -444,9 +438,10 @@ class OrderModel extends RelationModel
      * @param null|int $payStatus 支付状态
      * @param bool|array|string $fields 要查询的字段，按照TP模型规则来，如果自定义，必须要包括pid字段
      * @param bool $getProducts 是否查询订单下的商品列表
+     * @param int $pageSize 分页大小
      * @return array|null
      */
-    public static function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = false)
+    public static function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = false, $pageSize = 10)
     {
         $where = [
             'pid' => 0
@@ -461,7 +456,7 @@ class OrderModel extends RelationModel
         if (!empty($payStatus) && in_array($payStatus, array_keys(self::getPayStatusOptions()))) $where['pay_status'] = $payStatus;
         $model = self::getInstance();
         $total = $model->where($where)->count('id');
-        $pagination = new Page($total);
+        $pagination = new Page($total, $pageSize);
         $data = $model->relation('_childs')->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->field($fields)->select();
         if ($getProducts) {
             foreach ($data as &$value) {
@@ -519,25 +514,112 @@ class OrderModel extends RelationModel
         } else {
             $products = $cart;
         }
-        $parentId = 0;
+        $model = self::getInstance();
+        $orderItemModel = M('order_item');
+        $model->startTrans();//启动事务
+        $orderItemModel->startTrans();
         //判断购物车格式，如果二级数组的值还是数组，那么就是拆单的
-        if (is_array(current(current($products)))) {
-            $allPrice = [];
-            foreach ($products as $key => $product) {//取出所有价格字段
-                $allPrice[$key] = array_column($product, 'price');
-            }
+        if (is_array(current(current($products))) && count($products) > 1) {
+            $data = [];
+            $prices = [];
             $priceTotal = 0;
-            foreach ($allPrice as $price) {//循环累加获得总价
-                $priceTotal += array_sum($price);
+            $parentId = intval(self::createEmptyParentOrder($userId, 0, $priceTotal, $payMode, $deliveryMode));
+            if (!$parentId) {
+                E('父级订单添加失败');
             }
-            $parentId = self::createEmptyParentOrder($userId, 0, $priceTotal, $payMode, $deliveryMode);
-            //TODO 这个要改为在当前方法做，方便使用事务
-            foreach ($products as $key => $item) {
-                self::createOrder($userId, $key, $item, $mobile, $consignee, $address, $parentId, $remark, $payMode, $deliveryMode);
+            foreach ($products as $key => $product) {
+                $prices[$key] = array_column($product, 'price');
+                $totals[$key] = array_column($product, 'total');
+                $productTotal = array_combine($prices[$key], $totals[$key]);
+                $prices[$key] = 0;
+                foreach ($productTotal as $k => $v) {
+                    $prices[$key] += ($k * $v);
+                }
+                $priceTotal += $prices[$key];
+                $data[] = [
+                    'user_id' => $userId,
+                    'pid' => $parentId,
+                    'shop_id' => (int)$key,
+                    'pay_mode' => (int)$payMode,
+                    'delivery_mode' => (int)$deliveryMode,
+                    'mobile' => $mobile,
+                    'consignee' => $consignee,
+                    'address' => $address,
+                    'remark' => $remark,
+                    'price' => $prices[$key],
+                ];
             }
-            return true;
+            try {
+                while ($next = array_shift($data)) {//获取单条子订单数据
+                    if (!$model->create($next)) {
+                        E(current($model->getError()));
+                    }
+                    $itemData = [];
+                    if ($lastId = intval($model->add())) {//如果子订单添加成功
+                        foreach ($products[$next['shop_id']] as $product) {//组合每条子订单的商品信息
+                            $itemData[] = [
+                                'order_id' => $lastId,
+                                'product_id' => $product['product_id'],
+                                'price' => $product['price'],
+                                'total' => $product['total']
+                            ];
+                        }
+                        if (!$status = $orderItemModel->addAll($itemData)) {//如果子订单的商品列表添加失败
+                            E('订单商品添加失败');
+                        }
+                    } else {//如果子订单添加失败，则回滚事务
+                        E('订单添加失败');
+                    }
+                }
+                //如果以上都通过了，则提交事务
+                $model->commit();
+                return $parentId;
+            } catch (Exception $e) {
+                $model->rollback();//回滚事务
+                E($e->getMessage());
+            }
         } else {
-            return self::createOrder($userId, current($products)['shop_id'], $products, $mobile, $consignee, $address, $parentId, $remark, $payMode, $deliveryMode);
+            $data['user_id'] = $userId;
+            $data['pid'] = 0;
+            $data['shop_id'] = current(current($products))['shop_id'];
+            $data['pay_mode'] = intval($payMode);
+            $data['delivery_mode'] = intval($deliveryMode);
+            $data['mobile'] = $mobile;
+            $data['consignee'] = $consignee;
+            $data['address'] = $address;
+            $data['remark'] = $remark;
+            $prices = array_column(current($products), 'price');
+            $totals = array_column(current($products), 'total');
+            $productTotal = array_combine($prices, $totals);
+            $priceTotal = 0;
+            foreach ($productTotal as $price => $total) {
+                $priceTotal += ($price * $total);
+            }
+            $data['price'] = $priceTotal;
+            try {
+                if (!$model->create($data)) {
+                    E(current($model->getError()));
+                }
+                if ($lastId = $model->add($data)) {
+                    $itemData = [];
+                    foreach (current($products) as $product) {
+                        $itemData[] = [
+                            'order_id' => $lastId,
+                            'product_id' => $product['product_id'],
+                            'price' => $product['price'],
+                            'total' => $product['total']
+                        ];
+                    }
+                    if (!$orderItemModel->addAll($itemData)) {
+                        E('订单商品添加失败');
+                    }
+                    $model->commit();
+                    return $lastId;
+                }
+            } catch (Exception $e) {
+                $model->rollback();
+                return false;
+            }
         }
     }
 
@@ -556,14 +638,16 @@ class OrderModel extends RelationModel
         $data['price'] = 0;
         $data['pid'] = 0;
         $data['remark'] = '';
-        $data['user_id'] = $userId;
-        $data['shop_id'] = $shopId;
+        $data['user_id'] = intval($userId);
+        $data['shop_id'] = intval($shopId);
         $data['price'] = $price;
-        $data['pay_mode'] = $payMode;
-        $data['delivery_mode'] = $deliveryMode;
+        $data['pay_mode'] = intval($payMode);
+        $data['delivery_mode'] = intval($deliveryMode);
         $model = self::getInstance();
-        if (!$model->create($data) || !$model->add()) E($model->getError());
-        return $model->getLastInsID();
+        if (!$model->create($data)) {
+            E($model->getError());
+        }
+        return $model->add();
     }
 
     /**
