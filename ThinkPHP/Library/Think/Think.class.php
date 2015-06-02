@@ -283,6 +283,13 @@ class Think {
      */
     static public function halt($error) {
         $e = array();
+        if( API_MODE ) {
+            $error_page = C('ERROR_PAGE');
+            if (!empty($error_page)) {
+                echo '<script>location.href="'.$error_page.'";</script>';
+                exit;
+            }
+        }
         if (APP_DEBUG || IS_CLI) {
             //调试模式下输出错误信息
             if (!is_array($error)) {
