@@ -39,16 +39,16 @@
                     <td>{$vo.reg_time|time_format}</td>
                     <td><span>{$vo.last_login_time|time_format}</span></td>
                     <td><span>{:long2ip($vo['last_login_ip'])}</span></td>
-                    <td>{$vo.status_text}</td>
+                    <td>{$vo.status_text|default='----'}</td>
                     <td>
                         <a href="{:U('User/edit?uid='.$vo['uid'])}">编辑</a>
                         <eq name="vo.status" value="1">
-                        <a href="{:U('User/changeStatus?method=forbidUser&id='.$vo['uid'])}">禁用</a>
+                        <a href="{:U('User/changeStatus?method=forbidUser&id='.$vo['id'])}">禁用</a>
                         <else/>
-                        <a href="{:U('User/changeStatus?method=resumeUser&id='.$vo['uid'])}">启用</a>
+                        <a href="{:U('User/changeStatus?method=resumeUser&id='.$vo['id'])}">启用</a>
                     </eq>
                         <a href="{:U('role/role?uid='.$vo['id'])}">授权</a>
-                        <a href="{:U('User/changeStatus?method=deleteUser&id='.$vo['uid'])}">删除</a>
+                        <a href="{:U('User/changeStatus?method=deleteUser&id='.$vo['id'])}">删除</a>
                     </td>
                 </tr>
             </volist>

@@ -273,24 +273,41 @@ class UcenterMemberModel extends Model{
     /**
      * 获取用户列表
      * @param 条件：admin 管理员，member 普通用户，merchant 商户
+     * @param $method
+     * @return array|string
      */
-    public function userList($method){
+     public function userList($method){
         $UserInfo=array();
         switch (strtolower($method)) {
             case 'admin':
                 $UserInfo=$this
-                    ->field('')
-                    ->join('LEFT JOIN __UCENTER_ADMIN__ ON __ADMIN__.login = __UCENTER_ADMIN__.id')
+                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                    ->table('__UCENTER_MEMBER__ a')
+                    ->join('__ADMIN__ b ON  a.id = b.login','LEFT')
+                    ->where(array('a.is_admin'=>array('eq', '1')))
                     ->select();
                 break;
             case'member':
+                $UserInfo=$this
+                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                    ->table('__UCENTER_MEMBER__ a')
+                    ->join('__MEMBER__ b ON  a.id = b.login','LEFT')
+                    ->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('neq', '1'),'a.is_member'=>array('eq', '1')))
+                    ->select();
                 break;
             case'merchant':
+                $UserInfo=$this
+                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                    ->table('__UCENTER_MEMBER__ a')
+                    ->join('__MERCHANT__ b ON  a.id = b.login','LEFT')
+                    ->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('eq', '1')))
+                    ->select();
                 break;
             default:
                 $this->error('参数错误');
                 break;
         }
+        return $UserInfo;
 
     }
 }
