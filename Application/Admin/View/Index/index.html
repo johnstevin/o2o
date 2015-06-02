@@ -1,24 +1,95 @@
 <!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>{:C('WEB_SITE_TITLE')}</title>
+
+<html lang="zh-CN">
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="renderer" content="webkit">
+    <title>{$meta_title}|管理平台</title>
+
+    <link rel="stylesheet" type="text/css" href="__STATIC__/bootstrap/css/bootstrap.min.css" media="all">
+    <link rel="stylesheet" type="text/css" href="__CSS__/site.css" media="all">
+    <!--<link rel="stylesheet" type="text/css" href="__STATIC__/jquery-ui/jquery-ui.min.css" media="all">-->
+
+    <script type="text/javascript" src="__STATIC__/js/jquery.min.js"></script>
+
+    <script type="text/javascript" src="__STATIC__/bootstrap/js/bootstrap.min.js" ></script>
+    <script type="text/javascript" src="__STATIC__/jquery-ui/jquery-ui.min.js" ></script>
+    <script type="text/javascript" src="__JS__/base.js" ></script>
+
+    <script>
+        //cookies前缀
+        var cookiesPrefix = "d19550f3-1ace-4529-83d5-8844cd26535d";
+        var rootPath = 'http://www.o2o.com/';
+    </script>
 
 </head>
-<body>
 
-<h5>
-    <a href="#">分类列表</a> |
-    <a href="#">分类添加</a> |
-    <a href="#">分类编辑</a> |
-    <a href="#">分类删除</a> |
-    <a href="{:U('Public/login')}">管理员登陆</a> |
-    <a href="{:U('Public/register')}">管理员注册</a> |
-    <a href="{:U('Public/logout')}">管理员退出</a> |
-    <a href="{:U('Apimerchant/User/login')}">商家登陆</a> |
-    <a href="{:U('Apimerchant/User/register')}">商家注册</a> |
-    <a href="{:U('Apimerchant/User/logout')}">商家退出</a> |
-</h5>
+<body>
+<header>
+    <nav class="navbar navbar-default navbar-fixed-top navbar-inverse">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#" onclick="showSubMenu(0, false)">CRM系统</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav" id="nav-root-ul">
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">你好，<em title="{:session('user_auth.username')}">{:session('user_auth.username')}</em><span class="caret"></span></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <!--<li class="manager">你好，<em title="{:session('user_auth.username')}">{:session('user_auth.username')}</em></li>-->
+                            <li><a href="{:U('User/updatePassword')}">修改密码</a></li>
+                            <li><a href="{:U('User/updateNickname')}">修改昵称</a></li>
+                            <li><a href="{:U('Public/logout')}">退出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div><!-- /.container-fluid -->
+    </nav>
+</header>
+
+<div class="container" id="rg-container-main">
+    <div class="row">
+        <div id="rg-col-nav-sub" class="rg-hidden">
+            <ol class="breadcrumb rg-header-title">
+                <li class="active" id="rg-title-nav-sub"></li>
+            </ol>
+            <div class="list-group rg-header-title" id="rg-menu-nav-sub"></div>
+        </div>
+        <div class="col-sm-12 col-md-12 col-lg-12" id="rg-col-main">
+            <ol class="breadcrumb rg-header-title" id="rg-position">
+                <li></li>
+            </ol>
+            <div border="false" id="rg-container-fun">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer id="rg-footer">
+    <p>&copy; 云南海仕首创科技有限公司</p>
+</footer>
+
+<div class="modal fade bs-example-modal-lg" id="DlgModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content"><div class="rg-loading"></div>
+        </div>
+    </div>
+</div>
 
 
 </body>

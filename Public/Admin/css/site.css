@@ -1,0 +1,77 @@
+﻿body {
+    padding-top: 65px;
+}
+
+.panel {
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0);
+}
+
+.datagrid-toolbar .toolbar-right {
+    padding-top: 1px;
+    float: right;
+    margin-right: 5px;
+}
+
+.datagrid-toolbar .toolbar-left {
+    padding-top: 1px;
+}
+
+.rg-hidden {
+    display: none;
+}
+
+.rg-header-title {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+#rg-position span {
+    color: #999;
+    font-style: italic;
+}
+
+#rg-container-fun { /* 真实的功能面板，因为easyui布局面板右侧的特殊性，右侧要多16个像素 */
+    padding: 0;
+}
+
+@media (min-width: 768px) { /*宽度大于等于768px,采用如下样式*/
+    footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+    }
+}
+
+@media (max-width: 767px) { /*宽度小于768px,采用如下样式*/
+    #rg-container-fun {
+        height: 1000px !important;
+    }
+}
+
+footer {
+    margin-top: 15px;
+    height: 30px;
+    line-height: 30px;
+    background-color: #488fce;
+    text-align: center;
+    color: #ffffff;
+    width: 100%;
+}
+
+#DlgModal .modal-body { /*模态框内容*/
+    overflow-y: auto;
+}
+
+#DlgModal .rg-loading { /*加载框*/
+    height: 123px;/*modal-header高56加1的下边框，modal-footer高65加1的上边框，加起来123*/
+    background-image: url(../images/loading3.gif);
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+.combo-arrow {
+    background-color: #F2F2F2 !important;
+}
+
+.rg-padding-right {/*弹出框左移80像素*/
+    padding-right: 80px;
+}
