@@ -1,4 +1,5 @@
 <?php
+namespace Addons\Sms\Driver;
 
 /**
  * Created by PhpStorm.

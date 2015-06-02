@@ -7,8 +7,30 @@
  */
 
 namespace Addons\Sms\Driver;
+use Addons\Sms\SmsServer;
 
+/**
+ * Class YunZhiXun 云之讯短信服务
+ * @package Addons\Sms\Driver
+ * @author WangJiang
+ */
+class YunZhiXun  implements SmsServer{
 
-class YunZhiXun {
+    private $_peer;
+    private $_templateId;
+    private $_appId;
 
+    public function  __construct($options){
+        $this->_peer=new Ucpaas($options);
+        $this->_templateId=$options['templateId'];
+        $this->_appId=$options['appId'];
+    }
+
+    public function sendMessage(array $targets,$message){
+
+        foreach($targets as $i){
+            $this->_peer->templateSMS($this->_appId,$i,$this->_templateId,$message);
+        }
+
+    }
 }
