@@ -341,7 +341,7 @@ function int_to_string(&$data,$map=array('status'=>array(1=>'正常',-1=>'删除
  * @param array $bindNames
  * @param array $bindValues
  * @param string $prefix 参数名称前缀
- * @return array $bindNames 参数名称, $bindValues参数绑定用于bind调用
+ * @return array [$bindNames,$bindValues] $bindNames 参数名称, $bindValues参数绑定用于bind调用
  */
 function build_sql_bind($list,$bindValues=[],$prefix='bindName')
 {
