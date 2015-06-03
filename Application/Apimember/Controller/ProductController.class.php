@@ -147,7 +147,7 @@ class ProductController extends ApiController{
             $data = $sql->select();
 
             //print_r($bindNames);
-            //print_r($sql->getLastSql());
+            //print_r($sql->getLastSql());die;
 
             $ret = [];
             $cats = [];
@@ -155,7 +155,6 @@ class ProductController extends ApiController{
             $catIds = [];
             if (!is_null($level)) {
                 //$begin = microtime(true);
-
                 foreach ($data as $i) {
                     //echo json_encode(CategoryModel::get($i['id']));
                     if($i['level']==$level) {
@@ -178,6 +177,7 @@ class ProductController extends ApiController{
                         }
                     }
                 }
+
                 //echo (microtime(true) - $begin);die;
             } else if (!is_null($pid)) {
                 foreach ($data as $i) {
@@ -207,7 +207,7 @@ class ProductController extends ApiController{
 
             $ret['categories'] = $cats;
 
-            //print_r($catIds);
+            //print_r($catIds);die;
 
             $brands=[];
             $norms=[];

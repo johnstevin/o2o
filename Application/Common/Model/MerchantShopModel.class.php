@@ -85,6 +85,54 @@ class MerchantShopModel extends AdvModel{
     );
 
     /**
+     * 验证规则
+     * @author WangJiang
+     * @var array
+     */
+    protected $_validate = [
+        [
+            'group_id',
+            'is_null',
+            '不允许修改group_id',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+        [
+            'type',
+            'is_null',
+            '不允许修改type',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+        [
+            'pid',
+            'is_null',
+            '不允许修改pid',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+        [
+            'add_uid',
+            'is_null',
+            '不允许修改add_uid',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+        [
+            'region_id',
+            'is_null',
+            '不允许修改region_id',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+    ];
+
+    /**
      * 查询周边商铺
      * @author  WangJiang
      * @param double $lat 查询中心维度，必须是百度坐标

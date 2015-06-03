@@ -23,10 +23,8 @@ class MerchantShopController extends ApiController {
      * int id 商铺ID，必需提供
      * string title 店面名称
      * string description 店面介绍
-     * int group_id 所属组织id(商家id)
      * int status -1软删除,0-待审核,1-审核通过,2-审核中,3-审核未通过
      * string lnglat 格式为'lng lat'，店面坐标，采用百度地图经纬度
-     * int type 店面类别：1-超市，2-生鲜，3-洗车，4-送水
      * int open_status 营业状态：0-关闭，1-开放
      * int open_time_mode 营业时间模式，1-有时间段，2-7X24小时
      * int begin_open_time 营业开始时间，24小时内，单位秒,缺省9点
@@ -34,9 +32,6 @@ class MerchantShopController extends ApiController {
      * int delivery_range 免费送货距离:单位米
      * string phone_number 店面电话，客户可以直接联系
      * string address 店面地址，供客户参考
-     * int pid 0-总店,>0分店
-     * int add_uid 添加用户id
-     * int region_id 区域id
      * <pre>
      * @author WangJiang
      * @return json
