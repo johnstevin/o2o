@@ -64,7 +64,7 @@
             //设置菜单
             var sunMenuStr = '';
             for (var i = 0; i < menuJson[rootI].children.length; i++) {
-                sunMenuStr += '<a href="#" class="list-group-item" id="nav-sub-a-' + rootI + '-' + i + '" onclick="showFun(' + rootI + ',' + i + ')">　' + menuJson[rootI].children[i].text + '</a>';
+                sunMenuStr += '<a href="'+menuJson[rootI].children[i].url+'" class="list-group-item pjax" id="nav-sub-a-' + rootI + '-' + i + '">　' + menuJson[rootI].children[i].text + '</a>';
             }
             $('#rg-menu-nav-sub').html(sunMenuStr);
             //设置选中状态样式
@@ -104,64 +104,56 @@
 }
 
 function showFun(rootI, subI) {
-    if (subI == -1) {//一级菜单功能
-        //一级功能的地址导航在显示菜单的地方生成，不在这里（显示功能）生成
-        //设置当前参数
-        subMenuIndex = subI;
-        setCookie(cookiesPrefix + "subMenuId", menuJson[rootI].id);
-        //更新面板高度
-        changeMainPanelHeight(false);
-        //加载功能
-        if (menuJson[rootI].url != "" && menuJson[rootI].url != null) {//有路由地址
-            //更新面板内容
-            //TODO liuhui
-            $('#rg-container-fun').html({
-                href: menuJson[rootI].url
-            });
-        }
-        else {//没有地址
-            //更新面板内容
-            $('#rg-container-fun').html('<h3>地址错误</h3>');
-        }
-    }
-    else {
-        if (subMenuIndex != subI) {//不是本功能
-            //取消激活的sub导航的选中状态
-            $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).removeClass("active", 400);
-            //设置当前激活功能索引
-            subMenuIndex = subI;
-            setCookie(cookiesPrefix + "subMenuId", menuJson[rootI].children[subMenuIndex].id);
-            //取消激活的sub导航的选中状态
-            $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).addClass("active", 400);
-        }
-        else {//本功能
-            return;
-        }
-        //设置位置导航
-        if (menuJson[rootI].children[subI].EnglishTitle != null && menuJson[rootI].children[subI].EnglishTitle != "") {
-            $('#rg-position').html('<li><a href="#" onclick="showSubMenu(0,false)">主页</a></li><li><a href="#" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '<span>' + menuJson[rootI].children[subI].EnglishTitle + '</span></li>');
-        }
-        else {
-            $('#rg-position').html('<li><a href="#" onclick="showSubMenu(0,false)">主页</a></li><li><a href="#" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '</li>');
-        }
-        //更新面板高度
-        changeMainPanelHeight(false);
-        if (menuJson[rootI].children[subI].url != "" && menuJson[rootI].children[subI].url != null) {//有路由地址
-            //更新面板内容
-            //TODO liuhui
-            $('#rg-container-fun').html({
-                href: menuJson[rootI].children[subI].url,
-                onLoadError: function () {
-                    $('#rg-container-fun').html('<h3>出错了......</h3>');
-                    // alert("错误");
-                }
-            });
-        }
-        else {//没有地址
-            //更新面板内容
-            $('#rg-container-fun').html('<h3>地址错误</h3>');
-        }
-    }
+    //if (subI == -1) {//一级菜单功能
+    //    //一级功能的地址导航在显示菜单的地方生成，不在这里（显示功能）生成
+    //    //设置当前参数
+    //    subMenuIndex = subI;
+    //    setCookie(cookiesPrefix + "subMenuId", menuJson[rootI].id);
+    //    //更新面板高度
+    //    changeMainPanelHeight(false);
+    //    //加载功能
+    //    if (menuJson[rootI].url != "" && menuJson[rootI].url != null) {//有路由地址
+    //        //更新面板内容
+    //        //TODO liuhui
+    //        //loadContent(menuJson[rootI].children[subI].url);
+    //    }
+    //    else {//没有地址
+    //        //更新面板内容
+    //        $('#rg-container-fun').html('<h3>地址错误</h3>');
+    //    }
+    //}
+    //else {
+    //    if (subMenuIndex != subI) {//不是本功能
+    //        //取消激活的sub导航的选中状态
+    //        $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).removeClass("active", 400);
+    //        //设置当前激活功能索引
+    //        subMenuIndex = subI;
+    //        setCookie(cookiesPrefix + "subMenuId", menuJson[rootI].children[subMenuIndex].id);
+    //        //取消激活的sub导航的选中状态
+    //        $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).addClass("active", 400);
+    //    }
+    //    else {//本功能
+    //        return;
+    //    }
+    //    //设置位置导航
+    //    if (menuJson[rootI].children[subI].EnglishTitle != null && menuJson[rootI].children[subI].EnglishTitle != "") {
+    //        $('#rg-position').html('<li><a href="#" onclick="showSubMenu(0,false)">主页</a></li><li><a href="#" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '<span>' + menuJson[rootI].children[subI].EnglishTitle + '</span></li>');
+    //    }
+    //    else {
+    //        $('#rg-position').html('<li><a href="#" onclick="showSubMenu(0,false)">主页</a></li><li><a href="#" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '</li>');
+    //    }
+    //    //更新面板高度
+    //    changeMainPanelHeight(false);
+    //    if (menuJson[rootI].children[subI].url != "" && menuJson[rootI].children[subI].url != null) {//有路由地址
+    //        //更新面板内容
+    //        //TODO liuhui
+    //        //loadContent(menuJson[rootI].children[subI].url);
+    //    }
+    //    else {//没有地址
+    //        //更新面板内容
+    //        $('#rg-container-fun').html('<h3>地址错误</h3>');
+    //    }
+    //}
 }
 
 //一级功能显示地址栏
@@ -326,3 +318,26 @@ function onSuccess(data) {
         showType: 'slide'
     });
 }
+
+//function loadContent(url){
+    //$('#rg-container-fun').html();
+    //$.ajax({
+    //    type: "GET",
+    //    url: url,
+    //    //dataType: "json",
+    //    beforeSend: function(){
+    //        $('#rg-container-fun').html("正在加载...");
+    //    },
+    //    success: function(json){
+    //        $('#rg-container-fun').html(json);
+    //        //if(json.status==1){
+    //        //    $('#rg-container-fun').html(json);
+    //        //}else{
+    //        //    $('#rg-container-fun').html(json.msg);
+    //        //    return false;
+    //        //}
+    //        //return false;
+    //    }
+    //});
+    //return false;
+//}

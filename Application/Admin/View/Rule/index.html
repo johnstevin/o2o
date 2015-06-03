@@ -1,15 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>{$meta_title}</title>
-    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
-    <script type="text/javascript" src="__STATIC__/js/jquery.min.js"></script>
-    <script>
-        var arrTree = jQuery.parseJSON('{$_list|json_encode}');
-        $(document).ready(function () {
-            var str = '';
 
+    <script>
+        var arrTree = $.parseJSON('{$_list|json_encode}');
+            var str = '';
             function digui(list, level) {
                 var level = level ? level : 0,prefix = '';
                 for(i=0;i<level;i++){
@@ -42,15 +34,9 @@
             }
             digui(arrTree);
             $('#tree').after(str)
-        });
     </script>
-</head>
-<body>
-<div class="container-fluid">
-    <!-- 标题栏 -->
-    <div>
-        <h2>权限节点管理</h2>
-    </div>
+
+
     <!-- 操作  -->
     <div>
         <a id="add-group" class="btn btn-success" href="{:U('add')}">新 增</a>
@@ -72,6 +58,3 @@
             </ul>
         </nav>
     </div>
-</div>
-</body>
-</html>

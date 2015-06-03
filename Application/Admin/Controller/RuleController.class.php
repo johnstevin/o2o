@@ -27,7 +27,7 @@ class RuleController extends AdminController{
         $AuthRule = D('AuthRule');
         if (IS_POST) {
             if(false !== $AuthRule->update()){
-                $this->success('新增成功！', U('index'));
+                $this->success('新增成功！');
             } else {
                 $error = $AuthRule->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
@@ -58,7 +58,7 @@ class RuleController extends AdminController{
 
         if(IS_POST){ //提交表单
             if(false !== $AuthRule->update()){
-                $this->success('编辑成功！', U('index'));
+                $this->success('编辑成功！');
             } else {
                 $error = $AuthRule->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
