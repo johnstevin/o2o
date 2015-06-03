@@ -32,7 +32,7 @@ class MerchantShopController extends ApiController {
      * int delivery_range 免费送货距离:单位米
      * string phone_number 店面电话，客户可以直接联系
      * string address 店面地址，供客户参考
-     * <pre>
+     * </pre>
      * @author WangJiang
      * @return json
      调用样例
