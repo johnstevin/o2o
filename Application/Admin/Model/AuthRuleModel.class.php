@@ -161,4 +161,13 @@ class AuthRuleModel extends Model{
         }
     }
 
+    /**
+     * @param array 条件
+     * @return  获取菜单
+     */
+    public function getMenus($where=array()){
+        $menu=$this->where($where)->order('sort asc')->field('id,title as text,pid as fid,url')->select();
+        return  list_to_tree($menu,'id','fid','children');
+    }
+
 }

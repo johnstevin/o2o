@@ -2,24 +2,6 @@
     padding-top: 65px;
 }
 
-.panel {
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0);
-}
-
-.datagrid-toolbar .toolbar-right {
-    padding-top: 1px;
-    float: right;
-    margin-right: 5px;
-}
-
-.datagrid-toolbar .toolbar-left {
-    padding-top: 1px;
-}
-
-.rg-hidden {
-    display: none;
-}
-
 .rg-header-title {
     font-weight: bold;
     font-size: 16px;
@@ -31,6 +13,7 @@
 }
 
 #rg-container-fun { /* 真实的功能面板，因为easyui布局面板右侧的特殊性，右侧要多16个像素 */
+    overflow: auto;
     padding: 0;
 }
 
@@ -67,11 +50,4 @@ footer {
     background-image: url(../images/loading3.gif);
     background-position: center center;
     background-repeat: no-repeat;
-}
-.combo-arrow {
-    background-color: #F2F2F2 !important;
-}
-
-.rg-padding-right {/*弹出框左移80像素*/
-    padding-right: 80px;
 }

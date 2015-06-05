@@ -122,7 +122,7 @@ class AuthGroupModel extends Model
     public function saveRegion($result){
         /*保存区域*/
         $region_id=0;
-        for($i=5;$i>0;$i--){
+        for($i=6;$i>0;$i--){
             $temp=I('level'.$i);
             if( $temp!= 0&&!empty($temp)){
                 $region_id=$temp;break;

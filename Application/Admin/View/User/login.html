@@ -3,21 +3,38 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title>{:C('WEB_SITE_TITLE')}</title>
+    <link rel="stylesheet" type="text/css" href="__STATIC__/bootstrap/css/bootstrap.min.css" media="all">
     <script src="__STATIC__/js/jquery.min.js"></script>
     <script src="__STATIC__/js/jquery.md5.js"></script>
 </head>
 <body>
 
-<form action="?" method="post" name="form">
 
-    用户名/手机/邮箱：<input type="text" name="username" id="username" value="" />　<br />
-    密码：<input type="password" name="password" id="password" value="" />
-    验证码：<input type="" name="verify" />
-           <img src="{:U('Public/verify')}" />
-        <input type="button" value="提交" onclick="login()" />
+<div class="container">
+    <h3>用户登录</h3>
+    <hr>
+    <div class="row">
+        <div class="col-md-6 ">
+<form action="?"  method="post" name="form">
+    <div class="form-group">
+        <label class="control-label" for="username">用户名</label>
+        <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名/手机/邮箱">
+    </div>
+    <div class="form-group">
+        <label class="control-label" for="password">密码</label>
+        <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码">
+    </div>
+    <div>  <label class="control-label" for="vf">验证码</label></div>
+    <div class="form-group">
 
+        <img id="vf" src="{:U('Public/verify')}" />
+    </div>
+    <button type="submit" class="btn btn-default" onclick="login()">登录</button>
 </form>
-<div id="msg"></div>
+        </div>
+    </div>
+<div class = "text-danger" id="msg"></div>
+</div>
 </body>
 </html>
 <script>

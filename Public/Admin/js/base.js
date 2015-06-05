@@ -1,103 +1,119 @@
-﻿function showSubMenu(rootI, isFast) {
-    var cssChangeDelay = isFast ? 0 : cssDelay;
+﻿
+$(document).ready(function () {
+    $("#DlgModal").on("hidden.bs.modal", function () {
+        $(this).removeData("bs.modal");
+    });
+    $("#DlgModal").on("loaded.bs.modal", function () {
+        if ($(".modal-body").height() > ($("#DlgModal").height() - 300)) {
+            //高度超标
+            $('.modal-body').height($("#DlgModal").height() - 290);
+        }
+    });
+    // 加载导航
+    var navStr = "";
+    menuJson = $.parseJSON(result);
+    //首页每个人都有，所以不需要权限判断，直接在这里加上
+    var indexObj =
+    {
+        'id': "00",
+        "fid": null,
+        "text": "主页",
+        "iconCls": "",
+        "url": "admin.php?m=admin&c=group&a=index",
+        "children": ""
+    };
+    menuJson.unshift(indexObj);
+    //生成nav菜单
+    var i = 0;
+    for (i = 1; i < menuJson.length; i++) {
+        navStr += '<li id="nav-root-li-' + i + '"><a href="javascript:void(0)" onclick="showSubMenu(' + i + ',false)">' + menuJson[i].text + '</a></li>';
+    }
+    $('#nav-root-ul').html(navStr);
+
+    //恢复或初始化subnav
+    if (getCookie(cookiesPrefix + "rootMenuId") != null) {
+        //有cookies记录显示的列表
+        for (i = 0; i < menuJson.length; i++) {
+            if (menuJson[i].id == getCookie(cookiesPrefix + "rootMenuId")) {
+                break;
+            }
+        }
+        if (i < menuJson.length) {
+            //记录的cookies有匹配的
+            showSubMenu(i, true);
+        }
+        else {
+            //记录的cookies没有匹配的
+            showSubMenu(0, true);
+        }
+    } else {
+        //显示列表初始化
+        showSubMenu(0, true);
+    }
+
+    //恢复或初始化功能
+    if (menuJson[rootMenuIndex].children != null && menuJson[rootMenuIndex].children != "") {
+        //当前显示的功能有下级功能。
+        if (getCookie(cookiesPrefix + "subMenuId") != null) {
+            //有cookies记录当前功能
+            for (var i = 0; i < menuJson[rootMenuIndex].children.length; i++) {
+                if (menuJson[rootMenuIndex].children[i].id == getCookie(cookiesPrefix + "subMenuId")) {
+                    break;
+                }
+            }
+            if (i < menuJson[rootMenuIndex].children.length) {
+                //记录的cookies有匹配的
+                showFun(rootMenuIndex, i);
+            }
+            else {
+                //记录的cookies没有匹配的
+                //打开默认功能
+                showFun(rootMenuIndex, -1);
+            }
+        }
+        else {
+            //没有cookies记录
+            //打开默认功能
+            showFun(rootMenuIndex, -1);
+        }
+    }
+    else {
+        //没有cookies记录
+        //打开默认功能
+        showFun(rootMenuIndex, -1);
+    }
+});
+
+function showSubMenu(rootI, isFast) {
     if (rootMenuIndex == rootI && subMenuIndex == -1) {//相同的功能
         return;
     }
-    if (menuJson[rootI].children == null || menuJson[rootI].children == "") {//没有下级功能
-        if (rootI == 0) {//现在是首页
-            if (rootMenuIndex != -1) {//且不是初始状态
-                //取消选中状态样式
-                $('#nav-root-li-' + rootMenuIndex).removeClass("active", cssChangeDelay);
-            }
-        }
-        else {//现在不是首页
-            if (rootMenuIndex != 0) {//且之前不是首页
-                //取消选中样式
-                $('#nav-root-li-' + rootMenuIndex).removeClass("active", cssChangeDelay);
-            }
-            //设置选中状态样式
-            $('#nav-root-li-' + rootI).addClass("active", cssChangeDelay);
+    //subMenu的处理
+    if (rootMenuIndex != rootI) {//点击的是不同的root功能
+        if (rootMenuIndex != 0) {//之前不是首页（如果不是首页，也有下级功能，那就一定初始化过了）
+            //取消选中样式
+            $('#nav-root-li-' + rootMenuIndex).removeClass("active");
         }
         //修改参数记录
         rootMenuIndex = rootI;
         setCookie(cookiesPrefix + "rootMenuId", menuJson[rootMenuIndex].id);
-        if (haveSubMenu) {//是左右结构
-            haveSubMenu = 0;
-            //变化布局之前需要清空面板，否则原先内容会显示到变化结束才刷新新的功能
-            $('#rg-container-fun').html('<div class="panel-loading"></div>');
-            //变更布局样式
-            $("#rg-col-nav-sub").addClass("rg-hidden", 0);
-            $("#rg-container-main").switchClass("container-fluid", "container", cssChangeDelay, cssEasing);
-            $("#rg-col-nav-sub").removeClass("col-sm-3 col-md-2 col-lg-2", cssChangeDelay, cssEasing);
-            //布局改变之后需要加载功能，在回调里边已经运行加载
-            $("#rg-col-main").switchClass("col-sm-9 col-md-10 col-lg-10", "col-sm-12 col-md-12 col-lg-12", cssChangeDelay, cssEasing, function () {
-                //变化完毕，加载功能
-                if (!isFast) {//不是快速启动，快速启动是刷新，刷新在显示顶级菜单之时不加载功能
-                    showFun(rootI, -1);
-                }
-            });
-
-            //没有下级的功能就没有sub导航，删除sub导航菜单
-            $('#rg-title-nav-sub').html("");
-            $('#rg-menu-nav-sub').html("");
+        //设置菜单标题
+        $('#rg-title-nav-sub').html(menuJson[rootI].text + "功能");
+        //设置菜单
+        var sunMenuStr = '';
+        for (var i = 0; i < menuJson[rootI].children.length; i++) {
+            sunMenuStr += '<a href="javascript:void(0)" class="list-group-item" id="nav-sub-a-' + rootI + '-' + i + '" onclick="showFun(' + rootI + ',' + i + ')">　' + menuJson[rootI].children[i].text + '</a>';
         }
-        else {
-            //加载功能
-            //变化完毕，加载功能
-            if (!isFast) {//不是快速启动，快速启动是刷新，刷新在显示顶级菜单之后不加载功能
-                showFun(rootI, -1);
-            }
-        }
+        $('#rg-menu-nav-sub').html(sunMenuStr);
+        //设置选中状态样式
+        $('#nav-root-li-' + rootI).addClass("active");
     }
-    else {//有下级功能，显示列表
-        //subMenu的处理
-        if (rootMenuIndex != rootI) {//点击的是不同的root功能
-            if (rootMenuIndex != 0) {//之前不是首页（如果不是首页，也有下级功能，那就一定初始化过了）
-                //取消选中样式
-                $('#nav-root-li-' + rootMenuIndex).removeClass("active", cssChangeDelay);
-            }
-            //修改参数记录
-            rootMenuIndex = rootI;
-            setCookie(cookiesPrefix + "rootMenuId", menuJson[rootMenuIndex].id);
-            //设置菜单标题
-            $('#rg-title-nav-sub').html(menuJson[rootI].text + "功能");
-            //设置菜单
-            var sunMenuStr = '';
-            for (var i = 0; i < menuJson[rootI].children.length; i++) {
-                sunMenuStr += '<a href="#" class="list-group-item" id="nav-sub-a-' + rootI + '-' + i + '" onclick="showFun(' + rootI + ',' + i + ')">　' + menuJson[rootI].children[i].text + '</a>';
-            }
-            $('#rg-menu-nav-sub').html(sunMenuStr);
-            //设置选中状态样式
-            $('#nav-root-li-' + rootI).addClass("active", cssChangeDelay);
-        }
-        else {//点击的是相同的root功能
-            //取消subMenu的选中状态。现在显示的是相同的root不同的sub功能，点击root功能按钮只需要回到默认功能，取消sub按钮的激活状态，不需要更新菜单
-            $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).removeClass("active", 400);
-        }
-        //加载功能处理，必须放在subMenu处理的后边。因为subMenu处理中会用到已经激活的subMenuIndex，如果加载放在前边，这个参数会变成现在需要激活的
-        if (!haveSubMenu) {//不是是左右结构
-            haveSubMenu = 1;
-            //变化布局之前需要清空面板，否则原先内容会显示到变化结束才刷新新的功能
-            $('#rg-container-fun').html('<div class="panel-loading"></div>');
-            //变更布局样式
-            $("#rg-col-main").switchClass("col-sm-12 col-md-12 col-lg-12", "col-sm-9 col-md-10 col-lg-10", cssChangeDelay, cssEasing, function () {
-                $("#rg-col-nav-sub").removeClass("rg-hidden", 0);
-                $("#rg-col-nav-sub").addClass("col-sm-3 col-md-2 col-lg-2", 0);
-                $("#rg-container-main").switchClass("container", "container-fluid", cssChangeDelay, cssEasing, function () {
-                    //变化完毕，加载功能
-                    if (!isFast) {//不是快速启动，快速启动是刷新，刷新在显示顶级菜单之后不加载功能
-                        showFun(rootI, -1);
-                    }
-                });
-            });
-        }
-        else {
-            //加载功能
-            //变化完毕，加载功能
-            if (!isFast) {//不是快速启动，快速启动是刷新，刷新在显示顶级菜单之后不加载功能
-                showFun(rootI, -1);
-            }
-        }
+    else {//点击的是相同的root功能
+        //取消subMenu的选中状态。现在显示的是相同的root不同的sub功能，点击root功能按钮只需要回到默认功能，取消sub按钮的激活状态，不需要更新菜单
+        $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).removeClass("active", 400);
+    }
+    if (!isFast) {//不是快速启动，快速启动是刷新，刷新在显示顶级菜单之后不加载功能
+        showFun(rootI, -1);
     }
     //点击一级按钮生成导航栏
     showRootPosition(rootI);
@@ -110,56 +126,83 @@ function showFun(rootI, subI) {
         subMenuIndex = subI;
         setCookie(cookiesPrefix + "subMenuId", menuJson[rootI].id);
         //更新面板高度
-        changeMainPanelHeight(false);
+        changeMainPanelHeight();
         //加载功能
         if (menuJson[rootI].url != "" && menuJson[rootI].url != null) {//有路由地址
             //更新面板内容
-            //TODO liuhui
-            $('#rg-container-fun').html({
-                href: menuJson[rootI].url
+            $('#rg-container-fun').load(menuJson[rootI].url,function(response,status,xhr){
+
+                if (status=="success")
+                {
+                    $('#rg-container-fun').html(response);
+                }
+                else
+                {
+                    $('#rg-container-fun').html("An error occured: <br/>" + xhr.status + " " + xhr.statusText)
+                }
+
+
+
+
+
+
+                //alert(status);
             });
         }
         else {//没有地址
             //更新面板内容
-            $('#rg-container-fun').html('<h3>地址错误</h3>');
+            $('#rg-container-fun').html('<div class="alert alert-danger" role="alert">地址解析错误！</div>');
         }
     }
     else {
         if (subMenuIndex != subI) {//不是本功能
             //取消激活的sub导航的选中状态
-            $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).removeClass("active", 400);
+            $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).removeClass("active");
             //设置当前激活功能索引
             subMenuIndex = subI;
             setCookie(cookiesPrefix + "subMenuId", menuJson[rootI].children[subMenuIndex].id);
             //取消激活的sub导航的选中状态
-            $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).addClass("active", 400);
+            $('#nav-sub-a-' + rootMenuIndex + '-' + subMenuIndex).addClass("active");
         }
         else {//本功能
             return;
         }
         //设置位置导航
         if (menuJson[rootI].children[subI].EnglishTitle != null && menuJson[rootI].children[subI].EnglishTitle != "") {
-            $('#rg-position').html('<li><a href="#" onclick="showSubMenu(0,false)">主页</a></li><li><a href="#" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '<span>' + menuJson[rootI].children[subI].EnglishTitle + '</span></li>');
+            $('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(0,false)">主页</a></li><li><a href="javascript:void(0)" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '<span>' + menuJson[rootI].children[subI].EnglishTitle + '</span></li>');
         }
         else {
-            $('#rg-position').html('<li><a href="#" onclick="showSubMenu(0,false)">主页</a></li><li><a href="#" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '</li>');
+            $('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(0,false)">主页</a></li><li><a href="javascript:void(0)" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '</li>');
         }
         //更新面板高度
-        changeMainPanelHeight(false);
+        changeMainPanelHeight();
         if (menuJson[rootI].children[subI].url != "" && menuJson[rootI].children[subI].url != null) {//有路由地址
             //更新面板内容
-            //TODO liuhui
-            $('#rg-container-fun').html({
-                href: menuJson[rootI].children[subI].url,
-                onLoadError: function () {
-                    $('#rg-container-fun').html('<h3>出错了......</h3>');
-                    // alert("错误");
+            $('#rg-container-fun').load(menuJson[rootI].children[subI].url,function(response,status,xhr){
+
+
+
+
+                if (status=="success")
+                {
+                    $('#rg-container-fun').html(response);
                 }
+                else
+                {
+                    $('#rg-container-fun').html("An error occured: <br/>" + xhr.status + " " + xhr.statusText)
+                }
+
+
+
+
+
+
+                //alert(status);
             });
         }
         else {//没有地址
             //更新面板内容
-            $('#rg-container-fun').html('<h3>地址错误</h3>');
+            $('#rg-container-fun').html('<div class="alert alert-danger" role="alert">地址解析错误！</div>');
         }
     }
 }
@@ -172,20 +215,20 @@ function showRootPosition(rootI) {//在点击一级菜单时使用，因为一�
     }
     else {//非主页
         if (menuJson[rootI].EnglishTitle != null && menuJson[rootI].EnglishTitle != "") {
-            $('#rg-position').html('<li><a href="#" onclick="showSubMenu(0,false)">主页</a></li><li class="active">' + menuJson[rootI].text + '<span>' + menuJson[rootI].EnglishTitle + '</span></li>');
+            $('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(0,false)">主页</a></li><li class="active">' + menuJson[rootI].text + '<span>' + menuJson[rootI].EnglishTitle + '</span></li>');
         }
         else {
-            $('#rg-position').html('<li><a href="#" onclick="showSubMenu(0,false)">主页</a></li><li class="active">' + menuJson[rootI].text + '</li>');
+            $('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(0,false)">主页</a></li><li class="active">' + menuJson[rootI].text + '</li>');
         }
     }
 }
 
 //写cookies
 function setCookie(name, value) {
-    //var Days = 30;
-    //var exp = new Date();
-    //exp.setTime(exp.getTime() + Days * 24 * 60 * 60 * 1000);
-    //document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString();
+    var Days = 30;
+    var exp = new Date();
+    exp.setTime(exp.getTime() + Days * 24 * 60 * 60 * 1000);
+    document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString();
 }
 
 //读取cookies 
@@ -208,21 +251,15 @@ function delCookie(name) {
         document.cookie = name + "=" + cval + ";expires=" + exp.toGMTString();
 }
 
-function changeMainPanelHeight(isFirst) {
+function changeMainPanelHeight() {
     if (window.innerWidth >= 768) {//非手机版本
         //更新面板高度
-        if (isFirst) {
-            //设置面板高度
-            $("#rg-container-fun").height(window.innerHeight - 165);
-        }
-        else {
-            $("#rg-container-fun").height(window.innerHeight - 230);
-        }
+        $("#rg-container-fun").height(window.innerHeight - 174);
     }
 }
 
 window.onresize = function () {
-    changeMainPanelHeight(false);
+    changeMainPanelHeight();
     //alert("改变大小");
     /*
      var s = "网页可见区域宽 ：" + document.body.clientWidth;
@@ -241,88 +278,27 @@ window.onresize = function () {
      alert(s);*/
 }
 
-function JsonDateTimeToDateTime(jsondate) {
-    if (jsondate == null) {
-        return null;
-    }
-    var date = new Date(parseInt(jsondate.replace("/Date(", "").replace(")/", ""), 10));
-    return getDateTime(date);
-}
 
-function getDateTime(date) {
-    if (date == null) { return null; }
-    var year = date.getFullYear();
-    var month = date.getMonth() + 1;
-    var day = date.getDate();
-    var hh = date.getHours();
-    var mm = date.getMinutes();
-    var ss = date.getSeconds();
-    return year + "-" + ('00' + month).slice(-2) + "-" + ('00' + day).slice(-2) + " " + ('00' + hh).slice(-2) + ":" + ('00' + mm).slice(-2) + ":" + ('00' + ss).slice(-2);
-}
-
-function JSONDateToDate(jsondate) {
-    if (jsondate == null) {
-        return null;
-    }
-    var date = new Date(parseInt(jsondate.replace("/Date(", "").replace(")/", ""), 10));
-    return getDate(date);
-}
-
-function JSONDateToDateTime(jsondate) {
-    if (jsondate == null) {
-        return null;
-    }
-    var date = new Date(parseInt(jsondate.replace("/Date(", "").replace(")/", ""), 10));
-    return getDateTime(date);
-}
-
-function getDate(date) {
-    if (date == null) { return null; }
-    var year = date.getFullYear();
-    var month = date.getMonth() + 1;
-    var day = date.getDate();
-    return year + "-" + ('00' + month).slice(-2) + "-" + ('00' + day).slice(-2);
-}
-
-function getDateAddDays(date, days) {
-    if (date == null) { return null; }
-    var d = date;
-    d.setDate(d.getDate() + days);
-    var day = d.getDate();
-    var month = d.getMonth() + 1;
-    var year = d.getFullYear();
-    return year + "-" + ('00' + month).slice(-2) + "-" + ('00' + day).slice(-2);
-}
-
-function ChangePassword() {
-    $('#DlgModal').modal({
-        backdrop: false,
-        remote: rootPath + "Manage/ChangePassword"
-    });
-    //$('#xgmm').dialog({
-    //    title: "更改密码",
-    //    closed: false,
-    //    href: rootPath + "Manage/ChangePassword"
-    //});
-}
-
-function ConfirmChangePassword() {
-    $('#fm').submit();
-}
-
-function onSuccess(data) {
-    var result = $.parseJSON(data);
-    if (result.rslt) {
-        // $('#xgmm').dialog('close');
+function onSuccess(result) {
+    if (result.status) {
         $('#DlgModal').modal('hide');
-        // $("#dg").datagrid("reload");
+        //更新面板内容
+       // alert();
+       // alert(menuJson[rootI].url);
+       // $('#rg-container-fun').load(menuJson[rootI].url,function(response,status,xhr){
+       //
+       //
+       //
+       //
+       //
+       //
+       //
+       //
+       //
+       //
+       //
+       //     //alert(status);
+       //});
     }
-
-    window.top.$.messager.show({
-        title: '提示',
-        msg: result.msg,
-        height: 140,
-        timeout: 10000,
-        showType: 'slide'
-    });
+    alert(result.info);
 }
