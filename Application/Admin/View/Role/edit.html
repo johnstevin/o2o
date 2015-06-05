@@ -1,15 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>{:C('WEB_SITE_TITLE')}</title>
-    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
-</head>
-<body>
-<div class="container">
-    <h2>{:isset($info['id'])?'编辑':'新增'}用户组</h2>
-    <hr>
-    <form action="{:U()}" method="post">
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title"><h2>{:isset($info['id'])?'编辑':'新增'}用户组</h2></h4>
+</div>
+<div class="modal-body">
+    <form id="fm">
         <div class="form-horizontal">
             <div class="form-group">
                 <label for="group_pid" class="control-label col-md-2">组织</label>
@@ -39,7 +34,7 @@
 
                 <div class="col-md-10">
                     <input id="role_code" type="text" name="role_code" class="form-control"
-                           value="{$info.group_code|default=''}"/>
+                           value="{$info.role_code|default=''}"/>
                 </div>
             </div>
             <div class="form-group">
@@ -63,13 +58,29 @@
                     <textarea id="role-description" rows="4" type="text" name="description" class="form-control">{$info.description|default=''}</textarea>
                 </div>
             </div>
-        </div>
-        <div class="footer">
-            <input type="hidden" name="id" value="{$info.id|default=''}">
-            <button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>
-            <button type="submit" class="btn btn-primary">确 定</button>
+            <div class="footer">
+                <input type="hidden" name="id" value="{$info.id|default=''}">
+            </div>
         </div>
     </form>
 </div>
-</body>
-</html>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+    <button type="button" class="btn btn-primary" onclick="Save()">保存</button>
+</div>
+<script>
+    function Save(){
+        $.ajax({
+            type:'POST',
+            url:"{:U()}",
+            data:$('#fm').serialize(),
+            dataType:'json',
+            success:function(data) {
+                onSuccess(data);
+            },
+            error : function() {
+                alert("异常！");
+            }
+        })
+    }
+</script>

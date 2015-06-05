@@ -1,16 +1,11 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>{:C('WEB_SITE_TITLE')}</title>
-    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
-    <script type="text/javascript" src="__STATIC__/js/jquery.min.js"></script>
-</head>
-<body>
-<div class="container">
-    <h2>{:isset($info['id'])?'编辑':'新增'}用户组</h2>
-    <hr>
-    <form action="{:U()}" method="post">
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title"><h2>{:isset($info['id'])?'编辑':'新增'}用户组</h2></h4>
+</div>
+<div class="modal-body">
+
+    <form id="fm">
         <div class="form-horizontal">
             <notempty name="region">
                 <div class="form-group">
@@ -105,12 +100,30 @@
             <input type="hidden" name="type" value="1">
             <input type="hidden" name="level" value="{$category['level']|default=''}"/>
             <input type="hidden" name="pid" value="{:isset($category['id'])?$category['id']:$info['pid']}">
-            <button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>
-            <button type="submit" class="btn btn-primary">确 定</button>
+            <!--<button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>-->
+            <!--<button type="submit" class="btn btn-primary">确 定</button>-->
         </div>
     </form>
 </div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+    <button type="button" class="btn btn-primary" onclick="Save()">保存</button>
+</div>
 <script>
+    function Save(){
+        $.ajax({
+            type:'POST',
+            url:"{:U()}",
+            data:$('#fm').serialize(),
+            dataType:'json',
+            success:function(data) {
+                onSuccess(data);
+            },
+            error : function() {
+                alert("异常！");
+            }
+        })
+    }
     //    $(document).ready(function(){
     $('#level1').change(function () {
         var level = this.value;
@@ -262,5 +275,3 @@
     });
     //    });
 </script>
-</body>
-</html>
