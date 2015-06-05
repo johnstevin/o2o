@@ -189,4 +189,58 @@ class MerchantShopController extends ApiController {
         }
     }
 
+//    /**
+//     * <pre>
+//     * 设置店铺临时状态
+//     * POST临时参数如下：
+//     * </pre>
+//     * ``` json
+//     * {
+//     *      "delay_time":<延时开店时间，单位秒，可选>,
+//     *      "open_status":<临时关闭状态，1-打开，0-关闭，可选>
+//     * }
+//     * ```
+//     * @author WangJiang
+//     * @param $shopId 店铺ID
+//     * @return json
+//     */
+//    public function setTemporary($shopId){
+//        try{
+//            if(IS_GET)
+//                E('非法操作');
+//            $content=json_decode(file_get_contents('php://input'));
+//            if(isset($content['open_status']))
+//                F('shop_temporary_open_status_'.$shopId,$content['open_status']);
+//            if(isset($content['delay_time'])) {
+//                $close_time = time() + $content['delay_time'];
+//                F('shop_temporary_close_time_' . $shopId, $close_time);
+//            }
+//            $this->apiSuccess(null);
+//        }catch (\Exception $ex){
+//            $this->apiError(50023,$ex->getMessage());
+//        }
+//    }
+//
+//    /**
+//     * 获取店铺临时状态
+//     * @author WangJiang
+//     * @param $shopId
+//     */
+//    public function getTemporary($shopId){
+//        try{
+//            if(IS_POST)
+//                E('非法操作');
+//            $ret=['shop_id'=>$shopId];
+//            $open_status=F('shop_temporary_open_status_'.$shopId);
+//            if($open_status!==false)
+//                $ret['open_status']=$open_status;
+//            $close_time=F('shop_temporary_close_time_'.$shopId);
+//            if($close_time!==false)
+//                $ret['close_time']=$close_time;
+//            $this->apiSuccess(['data'=>$ret]);
+//        }catch (\Exception $ex){
+//            $this->apiError(50023,$ex->getMessage());
+//        }
+//    }
+
 }

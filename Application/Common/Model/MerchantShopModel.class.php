@@ -188,7 +188,9 @@ class MerchantShopModel extends AdvModel{
             ->bind(':seconds',$seconds)
             ->field(['id', 'title','ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance','st_astext(lnglat) as lnglat']);
 
-        return $this->select();
+        $ret= $this->select();
+        #print_r($this->getLastSql());
+        return $ret;
     }
 
     /**
