@@ -63,6 +63,7 @@ class MerchantController extends AdminController {
             $this->success('成功');
 
         }else{
+
             $shop_id = is_numeric(I('get.shop_id')) ? I('get.shop_id') : 0;
             $shop_id !== 0 ? : $this->error('禁止操作');
             $result  = D('MerchantShop')->info($shop_id, '*');
