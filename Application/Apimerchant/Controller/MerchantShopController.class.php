@@ -7,6 +7,7 @@
  */
 
 namespace Apimerchant\Controller;
+
 use Common\Model\MerchantShopModel;
 
 /**
@@ -14,10 +15,11 @@ use Common\Model\MerchantShopModel;
  * @package Apimerchant\Controller
  * @author WangJiang
  */
-class MerchantShopController extends ApiController {
+class MerchantShopController extends ApiController
+{
 
     /**
-     <pre>
+     * <pre>
      * 修改商铺信息
      * 参数按照Form表单的格式提交，参数列表：
      * int id 商铺ID，必需提供
@@ -29,34 +31,43 @@ class MerchantShopController extends ApiController {
      * int open_time_mode 营业时间模式，1-有时间段，2-7X24小时
      * int begin_open_time 营业开始时间，24小时内，单位秒,缺省9点
      * int end_open_time 营业结束时间，24小时内，单位秒，缺省18点
-     * int delivery_range 免费送货距离:单位米
      * string phone_number 店面电话，客户可以直接联系
      * string address 店面地址，供客户参考
+     * pay_delivery_time 付费送货开始时间，24小时内，单位秒，缺省0点，即不设置,
+     * delivery_time_cost 送货时间加价金额:单位元,
+     * delivery_distance_limit 送货范围上限:单位米,
+     * free_delivery_distance 免费送货距离:单位米,
+     * pay_delivery_distance 付费送货距离:单位米,
+     * delivery_distance_cost 送货距离加价金额:单位元,
+     * pay_delivery_amount 免费送货总金额:单位元,
+     * delivery_amount_cost 送货总金额加价金额:单位元,
+     * pay_delivery_mode 送货加价模式：1-总金额优先，2-距离优先，3-时间段优先,
      * </pre>
      * @author WangJiang
      * @return json
-     调用样例
-     POST apimchant.php?s=/MerchantShop/update
-     返回样例
-     {
-     "success": true,
-     "error_code": 0,
-     "message": ""
-     }
+    调用样例
+     * POST apimchant.php?s=/MerchantShop/update
+     * 返回样例
+     * {
+     * "success": true,
+     * "error_code": 0,
+     * "message": ""
+     * }
      * </pre>
      */
-    public function update(){
-        try{
-            if(IS_POST){
+    public function update()
+    {
+        try {
+            if (IS_POST) {
                 $model = D('MerchantShop');
-                if(!$model->create())
+                if (!$model->create())
                     E('参数传递失败');
                 $model->save();
-                $this->apiSuccess(null,'');
-            }else
+                $this->apiSuccess(null, '');
+            } else
                 E('非法调用');
-        }catch (\Exception $ex){
-            $this->apiError(50020,$ex->getMessage());
+        } catch (\Exception $ex) {
+            $this->apiError(50020, $ex->getMessage());
         }
     }
 
@@ -68,24 +79,25 @@ class MerchantShopController extends ApiController {
      * @return json
      * <pre>
      * 调用样例 POST apimchant.php?s=/MerchantShop/create
-    参数按照Form表单的格式提交
-    {
-    "success": true,
-    "error_code": 0,
-    "id": 100
-    }</pre>
+     * 参数按照Form表单的格式提交
+     * {
+     * "success": true,
+     * "error_code": 0,
+     * "id": 100
+     * }</pre>
      */
-    public function create(){
-        try{
-            if(IS_POST) {
+    public function create()
+    {
+        try {
+            if (IS_POST) {
                 $model = D('MerchantShop');
-                if(!$model->create())
+                if (!$model->create())
                     E('参数传递失败');
-                $this->apiSuccess(['id'=>intval($model->add())]);
-            }else
+                $this->apiSuccess(['id' => intval($model->add())]);
+            } else
                 E('非法调用');
-        }catch (\Exception $ex){
-            $this->apiError(50021,$ex->getMessage());
+        } catch (\Exception $ex) {
+            $this->apiError(50021, $ex->getMessage());
         }
     }
 
@@ -99,7 +111,7 @@ class MerchantShopController extends ApiController {
      * @param null $title 标题，模糊查询
      * @return json
     调用样例 GET apimchant.php?s=/MerchantShop/getList/groupId/2
-    ``` json
+     * ''' json
      *{
      *  "success": true,
      *  "error_code": 0,
@@ -149,20 +161,21 @@ class MerchantShopController extends ApiController {
      *           ]
      *       }
      *   ]
-    *}
-    ```
+     *}
+     * '''
      */
-    public function getList($groupId,$pid=null,$regionId=null,$type='0',$title=null){
-        try{
-            if(IS_GET){
+    public function getList($groupId, $pid = null, $regionId = null, $type = '0', $title = null)
+    {
+        try {
+            if (IS_GET) {
                 $model = D('MerchantShop');
 
-                $where['group_id']=$groupId;
-                !is_null($pid) and $where['pid']=$pid;
-                !is_null($regionId) and $where['region_id']=$regionId;
-                $type!=='0' and $where['type']=$type;
-                !is_null($title) and $where['title']=['like',"%$title%"];
-                $data=$model->field(['id',
+                $where['group_id'] = $groupId;
+                !is_null($pid) and $where['pid'] = $pid;
+                !is_null($regionId) and $where['region_id'] = $regionId;
+                $type !== '0' and $where['type'] = $type;
+                !is_null($title) and $where['title'] = ['like', "%$title%"];
+                $data = $model->field(['id',
                     'title',
                     'description',
                     'group_id',
@@ -172,20 +185,29 @@ class MerchantShopController extends ApiController {
                     'open_time_mode',
                     'begin_open_time',
                     'end_open_time',
-                    'delivery_range',
                     'phone_number',
                     'address',
                     'pid',
                     'add_uid',
-                    'region_id','st_astext(lnglat) as lnglat'])
+                    'region_id',
+                    'pay_delivery_time',
+                    'delivery_time_cost',
+                    'delivery_distance_limit',
+                    'free_delivery_distance',
+                    'pay_delivery_distance',
+                    'delivery_distance_cost',
+                    'pay_delivery_amount',
+                    'delivery_amount_cost',
+                    'pay_delivery_mode',
+                    'st_astext(lnglat) as lnglat'])
                     ->where($where)->select();
                 //print_r($model->getLastSql());
                 //print_r($data);
-                $this->apiSuccess(['data'=>$data]);
-            }else
+                $this->apiSuccess(['data' => $data]);
+            } else
                 E('非法调用');
-        }catch (\Exception $ex){
-            $this->apiError(50022,$ex->getMessage());
+        } catch (\Exception $ex) {
+            $this->apiError(50022, $ex->getMessage());
         }
     }
 
@@ -194,12 +216,12 @@ class MerchantShopController extends ApiController {
 //     * 设置店铺临时状态
 //     * POST临时参数如下：
 //     * </pre>
-//     * ``` json
+//     * ''' json
 //     * {
 //     *      "delay_time":<延时开店时间，单位秒，可选>,
 //     *      "open_status":<临时关闭状态，1-打开，0-关闭，可选>
 //     * }
-//     * ```
+//     * '''
 //     * @author WangJiang
 //     * @param $shopId 店铺ID
 //     * @return json
