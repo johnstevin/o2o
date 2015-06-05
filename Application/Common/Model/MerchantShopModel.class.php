@@ -18,6 +18,7 @@ class MerchantShopModel extends AdvModel{
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
 
+
     /**
      * @author  WangJiang
      * @var array
