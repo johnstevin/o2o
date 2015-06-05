@@ -12,8 +12,12 @@ class IndexController extends HomeController {
 	//系统首页
     public function index(){
 
-        echo '正常';
+        echo '<a href="'.U('Index/login').'">login</a>';
 
+    }
+
+    public function login(){
+        echo '<a href="'.U('Index/index').'">index</a>';
     }
 
 }

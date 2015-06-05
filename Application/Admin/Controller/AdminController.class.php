@@ -282,6 +282,19 @@ class AdminController extends Controller{
         }
     }
 
-
+    /**
+     * AJAX模板返回
+     * @param  string      $templete 渲染后的模板
+     * @param  string      $info	   反馈信息
+     * @param  int         $status   状态 1-成功，0-失败
+     * @return json
+     * @author Stevin.John <stevin.john@qq.com>
+     */
+    private function ajaxTempReturn( $templete='',$info='',$status=0 ){
+        $data['data'] = $templete;
+        $data['info'] = $info;
+        $data['status'] = $status;
+        $this->ajaxReturn($data);
+    }
 
 }

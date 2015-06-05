@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{:C('WEB_SITE_TITLE')}|商户列表</title>
+    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container-fluid">
+    <!-- 标题栏 -->
+    <div>
+        <h2>{$_meta_title}</h2>
+    </div>
+    <!-- 操作  -->
+    <div>
+        <!--<a id="add" class="btn btn-success" href="{:U('add')}">新 增</a>-->
+    </div>
+    <table class="table table-striped table-hover">
+        <thead>
+        <!--
+        id int(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '店面id',
+  title varchar(100) NOT NULL COMMENT '店面名称',
+  description varchar(255) NOT NULL COMMENT '店面介绍',
+  group_id int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '所属组织id(商家id)',
+  status tinyint(2) NOT NULL DEFAULT 0 COMMENT '-1软删除,0-待审核,1-审核通过,2-审核中,3-审核未通过',
+  lnglat point DEFAULT NULL COMMENT '店面坐标，采用百度地图经纬度',
+  type tinyint(4) NOT NULL COMMENT '店面类别：1-超市，2-生鲜，3-洗车，4-送水',
+  open_status tinyint(4) NOT NULL DEFAULT 1 COMMENT '营业状态：0-关闭，1-开放',
+  open_time_mode tinyint(4) NOT NULL DEFAULT 1 COMMENT '营业时间模式，1-有时间段，2-7X24小时',
+  begin_open_time int(11) NOT NULL DEFAULT 32400 COMMENT '营业开始时间，24小时内，单位秒,缺省9点',
+  end_open_time int(11) NOT NULL DEFAULT 64800 COMMENT '营业结束时间，24小时内，单位秒，缺省18点',
+  delivery_range int(11) NOT NULL DEFAULT 500 COMMENT '免费送货距离:单位米',
+  phone_number char(15) NOT NULL COMMENT '店面电话，客户可以直接联系',
+  address varchar(128) DEFAULT '' COMMENT '店面地址，供客户参考',
+  pid int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '0-总店,>0分店',
+  add_uid int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '添加用户id',
+  region_id int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '区域id',
+        -->
+        <tr>
+            <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
+            <th>ID</th>
+            <th>商铺名称</th>
+            <th>所属组织</th>
+            <th>商铺类型</th>
+            <th>营业状态</th>
+            <th>电话</th>
+            <th>是否总店</th>
+            <th>添加用户</th>
+            <th>区域</th>
+            <th>状态</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <notempty name="_list">
+            <volist name="_list" id="vo">
+            <tr>
+                <td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}"/></td>
+                <td>{$vo.id}</td>
+                <td>{$vo.title}</td>
+                <td>{$vo.group_id|getGroupById='title'}</td>
+                <td>{$vo.type|getShopType}</td>
+                <td>{$vo.open_status}</td>
+                <td>{$vo.phone_number}</td>
+                <td>{$vo.pid}</td>
+                <td>{$vo.add_uid}</td>
+                <td>{$vo.region_id}</td>
+                <td>{$vo.status|getShopStatus}</td>
+                <td><a href="{:U('checkInfo','shop_id='.$vo['id'])}">商户审核</a></td>
+            </tr>
+            </volist>
+            <else/>
+            <td colspan="11" class="text-center"> aOh! 暂时还没有商铺!</td>
+        </notempty>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

@@ -2,36 +2,120 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-    <title>{:C('WEB_SITE_TITLE')}</title>
+    <title>{:C('WEB_SITE_TITLE')}|商户列表</title>
     <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
+    <script src="__STATIC__/js/jquery.min.js"></script>
 </head>
 <body>
 <div class="container-fluid">
     <!-- 标题栏 -->
     <div>
-        <h2>{$meta_title}</h2>
+        <h2>{$_meta_title}</h2>
     </div>
     <!-- 操作  -->
     <div>
-        <a id="add" class="btn btn-success" href="{:U('add')}">新 增</a>
+        <!--<a id="add" class="btn btn-success" href="{:U('add')}">新 增</a>-->
     </div>
+    <!--
+    id int(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '店面id',
+  title varchar(100) NOT NULL COMMENT '店面名称',
+  description varchar(255) NOT NULL COMMENT '店面介绍',
+  group_id int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '所属组织id(商家id)',
+  status tinyint(2) NOT NULL DEFAULT 0 COMMENT '-1软删除,0-待审核,1-审核通过,2-审核中,3-审核未通过',
+  lnglat point DEFAULT NULL COMMENT '店面坐标，采用百度地图经纬度',
+  type tinyint(4) NOT NULL COMMENT '店面类别：1-超市，2-生鲜，3-洗车，4-送水',
+  open_status tinyint(4) NOT NULL DEFAULT 1 COMMENT '营业状态：0-关闭，1-开放',
+  open_time_mode tinyint(4) NOT NULL DEFAULT 1 COMMENT '营业时间模式，1-有时间段，2-7X24小时',
+  begin_open_time int(11) NOT NULL DEFAULT 32400 COMMENT '营业开始时间，24小时内，单位秒,缺省9点',
+  end_open_time int(11) NOT NULL DEFAULT 64800 COMMENT '营业结束时间，24小时内，单位秒，缺省18点',
+  delivery_range int(11) NOT NULL DEFAULT 500 COMMENT '免费送货距离:单位米',
+  phone_number char(15) NOT NULL COMMENT '店面电话，客户可以直接联系',
+  address varchar(128) DEFAULT '' COMMENT '店面地址，供客户参考',
+  pid int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '0-总店,>0分店',
+  add_uid int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '添加用户id',
+  region_id int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT '区域id',
+    -->
     <table class="table table-striped table-hover">
         <thead>
         <tr>
-            <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
-            <th>商品id</th>
+            <th width="10%">名称</th>
+            <th>信息</th>
 
         </tr>
         </thead>
         <tbody>
 
             <tr>
-                <td><input class="ids" type="checkbox" name="id[]" value=""/></td>
-                <td>sd</td>
+                <td>店铺ID</td>
+                <td>{$_info.id}</td>
             </tr>
+            <tr>
+                <td>店铺名称</td>
+                <td>{$_info.title}</td>
+            </tr>
+            <tr>
+                <td>店铺介绍</td>
+                <td>{$_info.description}</td>
+            </tr>
+            <tr>
+                <td>所属组织</td>
+                <td>{$_info.group_id|getGroupById='title'}</td>
+            </tr>
+            <tr>
+                <td>店铺类型</td>
+                <td>{$_info.type|getShopType}</td>
+            </tr>
+            <tr>
+                <td>是否总店</td>
+                <td>{$_info.pid}</td>
+            </tr>
+            <tr>
+                <td>添加用户</td>
+                <td>{$_info.id}</td>
+            </tr>
+            <tr>
+                <td>区域</td>
+                <td>{$_info.id}</td>
+            </tr>
+            <tr>
+                <td>店铺状态</td>
+                <td>{$_info.status|getShopStatus}</td>
+            </tr>
+
 
         </tbody>
     </table>
+    <div>
+        <a class="btn btn-pass" href="javascript:void(0)">审核通过</a>　
+        <a class="btn btn-refuse" href="javascript:void(0)">审核通过</a>
+    </div>
+    <div class="msg"></div>
 </div>
 </body>
 </html>
+<script>
+$(document).ready(function(){
+    var shop_id = {$_info.id};
+    $(".btn-pass").click(function(){
+        $.ajax({
+            type: "POST",
+            url: "{:U('checkinfo')}",
+            dataType: "json",
+            data: {"shop_id":shop_id,"status":1},
+            beforeSend: function(){
+                $('.msg').html("正在处理...");
+            },
+            success: function(json){
+            if(json.status==1){
+                $('.msg').html("处理成功，正在跳转...");
+                alert('处理成功！');
+                location.href="{:U('lists')}";
+            }else{
+                $('.msg').html("处理失败！Error:"+json.info);
+                return false;
+            }
+            }
+        });
+    });
+});
+</script>
