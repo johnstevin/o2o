@@ -21,40 +21,41 @@ class OrderController extends ApiController
      * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
      * @return json
      * <pre>
-    调用样例 POST  apimber.php?s=/order/setcart/userId/0
-    POST 数据：
-    [
-    {
-    "shop_id": 1,
-    "products":
-    [
-    {
-    "id": 12323,
-    "total": 2,
-    "product_id": 1
-    }
-    ]
-    }
-    ]
+     * 调用样例 POST  apimber.php?s=/order/setcart/userId/0
+     * POST 数据：
+     * [
+     * {
+     * "shop_id": 1,
+     * "products":
+     * [
+     * {
+     * "id": 12323,
+     * "total": 2,
+     * "product_id": 1
+     * }
+     * ]
+     * }
+     * ]
      * 返回
      *     {
-    "success": true,
-    "error_code": 0,
-    "message": "设置成功"
-    }</pre>
+     * "success": true,
+     * "error_code": 0,
+     * "message": "设置成功"
+     * }</pre>
      */
-    public function setCart($userId){
+    public function setCart($userId)
+    {
         try {
             if (IS_POST) {
-                $data=json_decode(file_get_contents('php://input'));
-                if(F("user/cart/$userId",$data)!==false)
-                    $this->apiSuccess(null,'设置成功');
+                $data = json_decode(file_get_contents('php://input'));
+                if (F("user/cart/$userId", $data) !== false)
+                    $this->apiSuccess(null, '设置成功');
                 else
                     E('设置购物车失败');
             } else
                 E('非法调用');
-        }catch (\Exception $ex){
-            $this->apiError(50010,$ex->getMessage());
+        } catch (\Exception $ex) {
+            $this->apiError(50010, $ex->getMessage());
         }
     }
 
@@ -64,31 +65,32 @@ class OrderController extends ApiController
      * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
      * @return json
      * <pre>
-    调用样例 GET apimber.php?s=/order/getcart/userId/0
-    返回
-    [
-    {
-    "shop_id": 1,
-    "products":
-    [
-    {
-    "id": 12323,
-    "total": 2,
-    "product_id": 1
-    }
-    ]
-    }
-    ]</pre>
+     * 调用样例 GET apimber.php?s=/order/getcart/userId/0
+     * 返回
+     * [
+     * {
+     * "shop_id": 1,
+     * "products":
+     * [
+     * {
+     * "id": 12323,
+     * "total": 2,
+     * "product_id": 1
+     * }
+     * ]
+     * }
+     * ]</pre>
      */
-    public function getCart($userId){
+    public function getCart($userId)
+    {
         try {
-            $data=F("user/cart/$userId");
-            if($data!==false)
-                $this->apiSuccess(['data'=>$data]);
+            $data = F("user/cart/$userId");
+            if ($data !== false)
+                $this->apiSuccess(['data' => $data]);
             else
                 E('获得购物车失败');
-        }catch (\Exception $ex){
-            $this->apiError(50011,$ex->getMessage());
+        } catch (\Exception $ex) {
+            $this->apiError(50011, $ex->getMessage());
         }
     }
 
@@ -211,9 +213,28 @@ class OrderController extends ApiController
      * }
      * ```
      */
-    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = false)
+    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = true)
     {
-        $this->apiSuccess(OrderModel::getLists($shopId, $userId, $status, $payStatus, $fields, $getProducts));
+        $lists = OrderModel::getLists($shopId, $userId, $status, $payStatus, $fields, $getProducts);
+        //我滴个神啊，那些做手机端开发的非要只取两条产品信息-_-!
+        if ($getProducts) {
+            foreach ($lists['data'] as &$data) {
+                if (!empty($data['_products'])) {
+                    $data['_products_total'] = count($data['_products']);
+                    if ($data['_products_total'] > 2) {
+                        $data['_products'] = array_slice($data['_products'], 0, 2);
+                    }
+                } else {
+                    foreach ($data['_childs'] as &$child) {
+                        $child['_products_total'] = count($child['_products']);
+                        if ($child['_products_total'] > 2) {
+                            $child['_products'] = array_slice($child['_products'], 0, 2);
+                        }
+                    }
+                }
+            }
+        }
+        $this->apiSuccess($lists);
     }
 
     /**
@@ -331,14 +352,14 @@ class OrderController extends ApiController
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param int $userId 用户ID
-     * @param string|array $cart
-     * @param $address
-     * @param $mobile
-     * @param $payMode
-     * @param $consignee
-     * @param $deliveryMode
-     * @param string $remark
-     * @param bool $split
+     * @param string|array $cart 购物车
+     * @param string $address 联系地址
+     * @param string|int $mobile 联系方式
+     * @param int $payMode 支付方式
+     * @param string $consignee 收货人
+     * @param int $deliveryMode 配送方式
+     * @param string $remark 订单备注
+     * @param bool $split 是否需要系统拆单
      */
     public function submitOrder($userId, $cart, $address, $mobile, $payMode, $consignee, $deliveryMode, $remark = '', $split = false)
     {
