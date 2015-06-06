@@ -19,7 +19,7 @@ $(document).ready(function () {
         "fid": null,
         "text": "主页",
         "iconCls": "",
-        "url": "admin.php?m=admin&c=group&a=index",
+        "url": "admin.php/Index/index",
         "children": ""
     };
     menuJson.unshift(indexObj);
@@ -178,7 +178,8 @@ function showFun(rootI, subI) {
         changeMainPanelHeight();
         if (menuJson[rootI].children[subI].url != "" && menuJson[rootI].children[subI].url != null) {//有路由地址
             //更新面板内容
-            $('#rg-container-fun').load(menuJson[rootI].children[subI].url,function(response,status,xhr){
+            //$('#rg-container-fun').load(menuJson[rootI].children[subI].url,function(response,status,xhr){
+            $('#rg-container-fun').load('/admin.php/'+menuJson[rootI].children[subI].url,function(response,status,xhr){
 
 
 
