@@ -77,4 +77,19 @@ class NormsController extends AdminController
         }
     }
 
+   /* 绑定品牌*/
+    public function bindNorms(){
+        //一、将分类信息和品牌信息分别显示在下拉菜单中
+        $abnmodel = M("Category_brand_norms");
+
+
+        //查询出所有的规格
+        $list = $this->lists('Norms');
+        int_to_string($list);
+        $this->assign('_list', $list);
+        $this->display();
+        //将选中的所有规格进行关联并存入数据库
+
+    }
+
 }
