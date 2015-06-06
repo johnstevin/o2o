@@ -92,42 +92,4 @@ class CategoryController extends AdminController {
                 $this->error($method . '参数非法');
         }
     }
-
-
-    /*根据选择的分类增加所属品牌*/
-    public function add_brand(){
-        //  实例化sq_category_brand_norms表
-        //将数据压入sq_category_brand_norms表
-        $this->display("brand_index");
-    }
-
-    /*关联品牌*/
-    public function brand_index(){
-        //查询出所有的品牌
-        $list = $this->lists('Brand');
-        int_to_string($list);
-        $this->assign('_list', $list);
-        $this->display();
-    }
-
-    /*根据选择的分类以及品牌增加所属规格型号*/
-    public function add_norms(){
-        //  实例化sq_category_brand_norms表
-        //将数据压入sq_category_brand_norms表
-        $this->display("norms_index");
-    }
-
-    /**
-     * 关联规格
-     * @author 麦当苗儿 <zuojiazi@vip.qq.com>
-     */
-    public function norms_index()
-    {
-        //查询出所有的规格
-        $list = $this->lists('Norms');
-        int_to_string($list);
-        $this->assign('_list', $list);
-        $this->display();
-    }
-
 }
