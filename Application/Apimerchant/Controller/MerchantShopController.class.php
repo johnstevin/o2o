@@ -193,7 +193,6 @@ class MerchantShopController extends ApiController
                     'pay_delivery_time',
                     'delivery_time_cost',
                     'delivery_distance_limit',
-                    'free_delivery_distance',
                     'pay_delivery_distance',
                     'delivery_distance_cost',
                     'pay_delivery_amount',

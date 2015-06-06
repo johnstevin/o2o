@@ -106,7 +106,9 @@ class StatisticController extends ApiController
 
                 $where['shop_id'] = $shopId;
                 $where['add_time'] = ['between', $time1 . ',' . $time2];
+
                 $sales = $model->where($where)->sum('price');
+
                 #print_r($model->getLastSql());
                 $monthly[] = ['month' => $m, 'sales' => $sales ? intval($sales) : 0];
             }
@@ -114,6 +116,38 @@ class StatisticController extends ApiController
         }
         $this->apiSuccess(['data' => ['shop_id' => $shopId,'years'=>$list]]);
     }
+
+//    public function monthlyProductSales($shopId, $beginYear, $endYear = null){
+//        if (is_null($endYear))
+//            $endYear = $beginYear;
+//
+//        $model = D('OrderItem');
+//        for ($y = $beginYear; $y <= $endYear; ++$y) {
+//            for ($m = 1; $m <= 12; ++$m) {
+//
+//                $time1 = strtotime($y . '/' . $m . '/1');
+//                if ($m < 12)
+//                    $time2 = strtotime($y . '/' . ($m + 1) . '/1');
+//                else
+//                    $time2 = strtotime(($y + 1) . '/1/1');
+//
+//                $bind[':shopId']=$shopId;
+//                $bind[':time1']=$time1;
+//                $bind[':time2']=$time2;
+//                $model
+//                    ->join('INNER JOIN sq_order ON sq_order.id=sq_order_item.order_id and sq_order.shop_id=:shopId and add_time BETWEEN :time1 and :time2')
+//                    ->field(['sum(sq_order_item.price) as sales','product_id','count(depot_id) as number'])
+//                    ->bind($bind)
+//                    ->group('product_id');
+//
+//                $sales = $model->select();
+//
+//                $monthly[] = ['month' => $m, 'sales' => $sales];
+//            }
+//            $list[] = [ 'year' => intval($y), 'months' => $monthly];
+//        }
+//        $this->apiSuccess(['data' => ['shop_id' => $shopId,'years'=>$list]]);
+//    }
 
     /**
      * 按天统计销售量
