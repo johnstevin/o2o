@@ -7,7 +7,6 @@
     <script type="text/javascript" src="../../../Public/static/js/jquery.min.js"></script>
 </head>
 <body>
-<div class="container">
     <div>
         <h2>分类管理</h2>
     </div>
@@ -24,12 +23,8 @@
             <th>状态</th>
             <th>增加子类</th>
             <th width="200">操&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;作</th>
-            <th>关联品牌</th>
         </tr>
     </table>
-</div>
-</body>
-</html>
 <script>
     var arrTree = jQuery.parseJSON('{$tree|json_encode}');
     $(document).ready(function () {
@@ -54,10 +49,10 @@
                 '<td>' + v.pid + '</td>' +'<td>' + v.status + '</td>'+
                 '<td><a class="btn btn-xs btn-primary" href="{:U("add")}&pid='+ v.id+'">增加子类</a> </td>'+
                 '<td>'+'<a class="btn btn-xs btn-warning" href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑</a>'+
-                '<a class="btn btn-xs btn-danger" href="{:U("Category/changeStatus")}&method=resumecategory&id='+ v.id+'">启用</a>'+
+                '<a class="btn btn-xs btn-danger" href="{:U("Category/changeStatus")}&method=resumecategory&id='+v.id+'">启用</a>'+
                 '<a class="btn btn-xs btn-danger" href="{:U("Category/changeStatus")}&method=forbidcategory&id='+ v.id+'">禁用</a>'+
                 '<a class="btn btn-xs btn-danger" href="{:U("Category/changeStatus")}&method=deletecategory&id='+ v.id+'">删除</a>'+'</td>' +
-                '<td><a class="btn btn-xs btn-primary" href="{:U("Category/brand_index")}&id='+ v.id+'">关联品牌</a> </td>'+
+                '<input class="ids" type="hidden" name="category_id" value="'+ v.id+'"/>'+
                 '</tr>'
                 if (v._child) {
                     digui(v._child, level + 1);
@@ -68,4 +63,7 @@
         $('#table-header').after(string)
     });
 </script>
+</body>
+</html>
+
 

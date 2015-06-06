@@ -6,6 +6,7 @@
 	</div>
     <!-- 数据列表 -->
     <div class="data-table table-striped">
+        <form action="{:U()}" method="POST">
 	<table class="table table-hover table-striped">
         <tr>
 		<th class="" >分类ID</th>
@@ -16,17 +17,24 @@
 		<notempty name="_list">
 		<volist name="_list" id="vo">
 		<tr>
-			<td>{$vo.category_id}</td>
-            <td>{$vo.brand_id}</td>
+<!--            <input class="id" type="text" name="category_id" value="{$vo.category_id}"/>
+            <input class="id" type="text" name="brand_id" value="{$vo.brand_id}"/>-->
+			<td><input class="id" type="text" name="category_id" value="{$vo.category_id}"/>{$vo.category_id}</td>
+            <td><input class="id" type="text" name="brand_id" value="{$vo.brand_id}"/>{$vo.brand_id}</td>
             <td>{$vo.norms_id}</td>
 		</tr>
 		</volist>
 		</notempty>
 	</tbody>
     </table>
+            </form>
 	</div>
     <div class="page">
         {$_page}
+    </div>
+    <div>
+    <a href="{:U('Norms/bindNorms_index')}">
+        <input type="Submit" name="Submit" value="返回" /></a>
     </div>
 </block>
 
