@@ -213,9 +213,28 @@ class OrderController extends ApiController
      * }
      * ```
      */
-    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = false)
+    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = true)
     {
-        $this->apiSuccess(OrderModel::getLists($shopId, $userId, $status, $payStatus, $fields, $getProducts));
+        $lists = OrderModel::getLists($shopId, $userId, $status, $payStatus, $fields, $getProducts);
+        //我滴个神啊，那些做手机端开发的非要只取两条产品信息-_-!
+        if ($getProducts) {
+            foreach ($lists['data'] as &$data) {
+                if (!empty($data['_products'])) {
+                    $data['_products_total'] = count($data['_products']);
+                    if ($data['_products_total'] > 2) {
+                        $data['_products'] = array_slice($data['_products'], 0, 2);
+                    }
+                } else {
+                    foreach ($data['_childs'] as &$child) {
+                        $child['_products_total'] = count($child['_products']);
+                        if ($child['_products_total'] > 2) {
+                            $child['_products'] = array_slice($child['_products'], 0, 2);
+                        }
+                    }
+                }
+            }
+        }
+        $this->apiSuccess($lists);
     }
 
     /**
