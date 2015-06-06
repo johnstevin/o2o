@@ -30,6 +30,12 @@ class MerchantDepotModel extends RelationModel
     const STATUS_CLOSE = 0;//关闭
 
     protected $_link = [
+        'Product' => [
+            'mapping_type' => self::BELONGS_TO,
+            'class_name' => 'Product',
+            'foreign_key' => 'product_id',
+            'mapping_name' => '_product',
+        ]
     ];
 
     /**
@@ -37,6 +43,7 @@ class MerchantDepotModel extends RelationModel
      * @var array
      */
     protected $fields = [
+        'id',
         'shop_id',
         'product_id',
         'status',
@@ -47,6 +54,7 @@ class MerchantDepotModel extends RelationModel
         'update_time',
         'update_ip',
         '_type' => [
+            'id' => 'int',
             'shop_id' => 'int',
             'product_id' => 'int',
             'price' => 'double',
@@ -497,7 +505,8 @@ class MerchantDepotModel extends RelationModel
     /**
      * 逻辑删除商品
      * @param int $id
-     * @return bool|void
+     * @param bool $logic 是否逻辑删除
+     * @return bool|int
      */
     public static function deleteDepot($id, $logic = true)
     {
@@ -507,5 +516,25 @@ class MerchantDepotModel extends RelationModel
             return self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->save(['status' => self::STATUS_CLOSE]);
         }
         return self::getInstance()->delete($id);
+    }
+
+    /**
+     * 根据ID获取列表
+     * @param string|array $ids
+     * @param string|array $fields 要查询的字段
+     * @return null|array
+     */
+    public function getListsByIds($ids, $fields = '*')
+    {
+        $ids = is_array($ids) ? $ids : explode(',', $ids);
+        $ids = array_unique($ids);
+        $model = self::getInstance();
+        $where = [
+            'id' => [
+                'IN',
+                $ids
+            ],
+        ];
+        return $model->relation('_product')->where($where)->field($fields)->select();
     }
 }
