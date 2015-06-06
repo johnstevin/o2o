@@ -104,6 +104,9 @@
     var shop_id = '{$_info.id}';
     var status='{$_info.status}';
        function pass(){
+           if(!confirm("我已确定该商户在系统中不存在？")){
+             return false;
+           }
         $.ajax({
             type: "POST",
             url: "{:U('checkinfo')}",
