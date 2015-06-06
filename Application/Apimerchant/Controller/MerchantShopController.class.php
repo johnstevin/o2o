@@ -93,7 +93,7 @@ class MerchantShopController extends ApiController
                 $model = D('MerchantShop');
                 if (!$model->create())
                     E('参数传递失败');
-                $this->apiSuccess(['id' => intval($model->add())]);
+                $this->apiSuccess(['id' => intval($model->add())],'');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {
