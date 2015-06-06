@@ -70,6 +70,7 @@ class AuthRoleModel extends Model
      * 把用户添加到用户组,支持批量添加用户到用户组
      *
      * 示例: 把uid=1的用户添加到group_id为1,2的组 `AuthGroupModel->addToGroup(1,'1,2');`
+     * $gid array(array())二位数组
      */
     public function addToRole($uid, $gid)
     {
@@ -89,10 +90,10 @@ class AuthRoleModel extends Model
         if ($del !== false) {
             foreach ($uid_arr as $u) {
                 //判断用户id是否合法
-                if (M('Member')->getFieldByUid($u, 'uid') == false) {
-                    $this->error = "编号为{$u}的用户不存在！";
-                    return false;
-                }
+//                if (M('Member')->getFieldByUid($u, 'uid') == false) {
+//                    $this->error = "编号为{$u}的用户不存在！";
+//                    return false;
+//                }
                 foreach ($gid as $k => $val) {
                     foreach ($val as $g) {
                         if (is_numeric($u) && is_numeric($g)) {
