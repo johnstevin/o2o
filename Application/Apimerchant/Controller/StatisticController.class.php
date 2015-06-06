@@ -11,7 +11,6 @@ namespace Apimerchant\Controller;
 
 class StatisticController extends ApiController
 {
-
     /**
      * 按月统计销售额
      * @author WangJiang
