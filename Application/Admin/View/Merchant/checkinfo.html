@@ -86,22 +86,29 @@
         </tbody>
     </table>
     <div>
-        <a class="btn btn-pass" href="javascript:void(0)">审核通过</a>　
-        <a class="btn btn-refuse" href="javascript:void(0)">不通过</a>
+        <button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>
+        <a class="btn btn-success btn-pass" href="javascript:void(0)" onclick="pass()">通&nbsp;&nbsp;&nbsp;过</a>　
+        <div class="msg"></div>
     </div>
-    <div class="msg"></div>
+    <hr>
+    <div>
+        <label for="reason" class="control-label">如果不通过请填写原因</label>
+        <textarea  id="reason" class="form-control" rows="4" placeholder="不通过原因"></textarea>
+        <a class="btn btn-warning btn-refuse" href="javascript:void(0)" onclick="refuse()">不通过</a>
+    </div>
+
 </div>
 </body>
 </html>
 <script>
-$(document).ready(function(){
-    var shop_id = {$_info.id};
-    $(".btn-pass").click(function(){
+    var shop_id = '{$_info.id}';
+    var status='{$_info.status}';
+       function pass(){
         $.ajax({
             type: "POST",
             url: "{:U('checkinfo')}",
             dataType: "json",
-            data: {"shop_id":shop_id,"status":1},
+            data: {"shop_id":shop_id,"status":status,"method":'pass'},
             beforeSend: function(){
                 $('.msg').html("正在处理...");
             },
@@ -111,11 +118,31 @@ $(document).ready(function(){
                 alert('处理成功！');
                 location.href="{:U('lists')}";
             }else{
-                $('.msg').html("处理失败！Error:"+json.info);
+                $('.msg').html("处理失败！<br>错误原因:"+json.info);
                 return false;
             }
             }
         });
-    });
-});
+    };
+  function refuse(){
+        $.ajax({
+            type: "POST",
+            url: "{:U('checkinfo')}",
+            dataType: "json",
+            data: {"shop_id":shop_id,"status":status,"method":'UnPass',"reason":$("#reason").val()},
+            beforeSend: function(){
+                $('.msg').html("正在提交...");
+            },
+            success: function(json){
+                if(json.status==1){
+                    $('.msg').html("处理成功，正在跳转...");
+                    alert('处理成功！');
+                    location.href="{:U('lists')}";
+                }else{
+                    $('.msg').html("处理失败！<br>错误原因:"+json.info);
+                    return false;
+                }
+            }
+        });
+    };
 </script>
