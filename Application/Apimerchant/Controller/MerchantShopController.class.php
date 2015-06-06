@@ -195,9 +195,10 @@ class MerchantShopController extends ApiController
                     'delivery_distance_limit',
                     'pay_delivery_distance',
                     'delivery_distance_cost',
+                    'free_delivery_amount',
                     'pay_delivery_amount',
                     'delivery_amount_cost',
-                    'pay_delivery_mode',
+                    #'pay_delivery_mode',
                     'st_astext(lnglat) as lnglat'])
                     ->where($where)->select();
                 //print_r($model->getLastSql());
