@@ -24,6 +24,6 @@ return array(
     'TMPL_EXCEPTION_FILE'   =>  MODULE_PATH.'View/Public/exception.html',// 异常页面的模板文件
 
     /* URL配置 */
-    'URL_MODEL'             =>  1,
+//    'URL_MODEL'             =>  1,
 
 );

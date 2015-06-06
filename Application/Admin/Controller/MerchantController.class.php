@@ -54,13 +54,15 @@ class MerchantController extends AdminController {
             $shop_id = is_numeric(I('post.shop_id')) ? I('post.shop_id') : 0;
             $status  = is_numeric(I('post.status')) ? I('post.status') : 0;
             ($shop_id !== 0 || $status !== 0) ? : $this->error('禁止操作');
-            //检查商户是否存在
-            $info  = D('MerchantShop')->info($shop_id, '*');
-            if(empty($info))
-                $this->error('没有此商铺');
 
-
-            $this->success('成功');
+            //保存数据
+            $MerchantShop= D('MerchantShop');
+            if(false!==$MerchantShop->saveCheckInfo($shop_id)){
+                $this->success('保存成功');
+            }else{
+                $error = $MerchantShop->getError();
+                $this->error(empty($error) ? '未知错误' : $error);
+            };
 
         }else{
 
