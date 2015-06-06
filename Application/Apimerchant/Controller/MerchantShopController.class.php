@@ -211,6 +211,28 @@ class MerchantShopController extends ApiController
         }
     }
 
+    /**
+     * 获得所有店铺类型
+     * @return json
+     * 调用样例 GET apimchant.php?s=MerchantShop/getTypes
+     * ``` json
+     * {
+     *      "success": true,
+     *      "error_code": 0,
+     *      "data":
+     *      {
+     *          "17": "超市",
+     *          "18": "洗车",
+     *          "89": "生鲜",
+     *          "90": "送水"
+     *      }
+     * }
+     * ```
+     */
+    public function getTypes(){
+        $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
+    }
+
 //    /**
 //     * <pre>
 //     * 设置店铺临时状态
