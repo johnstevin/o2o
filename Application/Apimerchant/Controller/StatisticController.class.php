@@ -19,75 +19,32 @@ class StatisticController extends ApiController
      * @param int $beginYear 开始年份
      * @param null|int $endYear 结束年份，不提供则只按$beginYear一年统计
      * @return json
-     * 样例 GET apimchant.php?s=Statistic/monthlySales/shopId/6/beginYear/2015
      * ``` json
      * {
-     *
      *      "success": true,
      *      "error_code": 0,
-     *      "data":
-     *
-     *      [
-     *      {
-     *      "shop_id": "6",
-     *      "year": 2015,
-     *      "monthly":
-     *      [
-     *
-     *          {
-     *              "month": 1,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 2,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 3,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 4,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 5,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 6,
-     *              "sales": 8895
-     *          },
-     *          {
-     *              "month": 7,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 8,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 9,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 10,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 11,
-     *              "sales": 0
-     *          },
-     *          {
-     *              "month": 12,
-     *              "sales": 0
-     *          }
+     *      "data":{
+     *          "shop_id":<shop id>,
+     *          "years": [
+     *              {
+     *                  "year": <年份，如2014>,
+     *                  "months":[
+     *                      {
+     *                          "month":<月份，如1>,
+     *                          "sales": [
+     *                              {
+     *                                  "sales": <销售额,单位元>,
+     *                                  "pay_mode": <支付模式，目前有0-在线，1-线下>
+     *                              }...
+     *                          ]
+     *                      }...
+     *                  ]
+     *              }...
      *          ]
-     *          }
-     *      ]
-     *
+     *      }
      * }
      * ```
+     * 样例 GET apimchant.php?s=Statistic/monthlySales/shopId/6/beginYear/2015
      */
     public function monthlySales($shopId, $beginYear, $endYear = null)
     {
@@ -174,7 +131,12 @@ class StatisticController extends ApiController
      *                  "sales":[
      *                      {
      *                          "day":<day,例如5>,
-     *                          "sales":<销售额，单位元>
+     *                          "sales":[
+     *                              {
+     *                                  "sales": <销售额,单位元>,
+     *                                  "pay_mode": <支付模式，目前有0-在线，1-线下>
+     *                              }...
+     *                          ]
      *                      },...
      *                  ]
      *              },...
@@ -218,7 +180,7 @@ class StatisticController extends ApiController
                 #print_r($model->getLastSql());
                 $list[] = ['day' => $d, 'sales' => $sales];
             }
-            $months[]=['month'=>$m,'sales'=>$list];
+            $months[]=['month'=>$m,'days'=>$list];
         }
 
         $this->apiSuccess(['data' => ['shop_id' => $shopId,'year'=>$year,'months'=>$months]]);
