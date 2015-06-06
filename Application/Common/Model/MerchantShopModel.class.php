@@ -14,6 +14,10 @@ use Think\Model\AdvModel;
  * @author  WangJiang
  */
 class MerchantShopModel extends AdvModel{
+    ## 状态常量
+    const STATUS_ACTIVE = 1;//正常
+    const STATUS_CLOSE = 0;//关闭
+
 
     /**
      * @author  WangJiang
@@ -78,8 +82,56 @@ class MerchantShopModel extends AdvModel{
         [
             'phone_number','',self::MODEL_INSERT
         ],
-        ['status',1,self::MODEL_INSERT]
+        ['status',self::STATUS_ACTIVE,self::MODEL_INSERT]
     );
+
+    /**
+     * 验证规则
+     * @author WangJiang
+     * @var array
+     */
+    protected $_validate = [
+        [
+            'group_id',
+            'is_null',
+            '不允许修改group_id',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+        [
+            'type',
+            'is_null',
+            '不允许修改type',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+        [
+            'pid',
+            'is_null',
+            '不允许修改pid',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+        [
+            'add_uid',
+            'is_null',
+            '不允许修改add_uid',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+        [
+            'region_id',
+            'is_null',
+            '不允许修改region_id',
+            self::MUST_VALIDATE,
+            'function',
+            self::MODEL_UPDATE
+        ],
+    ];
 
     /**
      * 查询周边商铺
@@ -137,7 +189,9 @@ class MerchantShopModel extends AdvModel{
             ->bind(':seconds',$seconds)
             ->field(['id', 'title','ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance','st_astext(lnglat) as lnglat']);
 
-        return $this->select();
+        $ret= $this->select();
+        #print_r($this->getLastSql());
+        return $ret;
     }
 
     /**
