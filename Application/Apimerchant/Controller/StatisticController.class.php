@@ -11,6 +11,7 @@ namespace Apimerchant\Controller;
 
 class StatisticController extends ApiController
 {
+
     /**
      * 按月统计销售额
      * @author WangJiang
@@ -106,10 +107,14 @@ class StatisticController extends ApiController
                 $where['shop_id'] = $shopId;
                 $where['add_time'] = ['between', $time1 . ',' . $time2];
 
-                $sales = $model->where($where)->sum('price');
+                $sales = $model
+                    ->where($where)
+                    ->field(['sum(price) as sales','pay_mode'])
+                    ->group('pay_mode')
+                    ->select();
 
                 #print_r($model->getLastSql());
-                $monthly[] = ['month' => $m, 'sales' => $sales ? intval($sales) : 0];
+                $monthly[] = ['month' => $m, 'sales' => $sales];
             }
             $list[] = [ 'year' => intval($y), 'months' => $monthly];
         }
@@ -206,9 +211,12 @@ class StatisticController extends ApiController
 
                 $where['shop_id'] = $shopId;
                 $where['add_time'] = ['between', $time1 . ',' . $time2];
-                $sales = $model->where($where)->sum('price');
+                $sales = $model->where($where)
+                    ->field(['sum(price) as sales','pay_mode'])
+                    ->group('pay_mode')
+                    ->select();
                 #print_r($model->getLastSql());
-                $list[] = ['day' => $d, 'sales' => $sales ? intval($sales) : 0];
+                $list[] = ['day' => $d, 'sales' => $sales];
             }
             $months[]=['month'=>$m,'sales'=>$list];
         }
