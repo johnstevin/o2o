@@ -65,7 +65,7 @@ class MerchantDepotModel extends RelationModel
             'update_ip' => 'char'
         ]
     ];
-    protected $pk     = 'id';
+    protected $pk = 'id';
     /**
      * 只读字段
      * @author Fufeng Nie <niefufeng@gmail.com>
@@ -287,22 +287,23 @@ class MerchantDepotModel extends RelationModel
      * @param $groupIds
      * @return array 过滤后的shopIds
      */
-    private function _filter_shops($shopIds,$groupIds){
+    private function _filter_shops($shopIds, $groupIds)
+    {
 
-        if(empty($groupIds))
+        if (empty($groupIds))
             return $shopIds;
 
-        list($shopBindNames, $bindValues) = build_sql_bind($shopIds,[],'shopName');
-        list($groupBindNames, $bindValues) = build_sql_bind($groupIds,$bindValues,'groupName');
+        list($shopBindNames, $bindValues) = build_sql_bind($shopIds, [], 'shopName');
+        list($groupBindNames, $bindValues) = build_sql_bind($groupIds, $bindValues, 'groupName');
 
-        $mdl=M('MerchantShop')
+        $mdl = M('MerchantShop')
             ->where('group_id in (' . implode(',', $groupBindNames) . ') and id in (' . implode(',', $shopBindNames) . ')')
             ->field(['id'])
             ->bind($bindValues);
 
-        $ret= array_map(function($i){
+        $ret = array_map(function ($i) {
             return $i['id'];
-        },$mdl->select());
+        }, $mdl->select());
         //print_r($mdl->getLastSql());die;
         return $ret;
     }
@@ -324,11 +325,11 @@ class MerchantDepotModel extends RelationModel
      * @param array $groupIds 登录用户分组，用来检查用户对shopIds的访问权限，为空则不检查。
      * @return array
      */
-    public function getProductList($shopIds,$categoryId, $brandId,$normId, $title
-        ,$priceMin,$priceMax
-        ,$returnAlters,$page, $pageSize,$status=self::STATUS_ACTIVE,$groupIds=[])
+    public function getProductList($shopIds, $categoryId, $brandId, $normId, $title
+        , $priceMin, $priceMax
+        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = [])
     {
-        $shopIds=$this->_filter_shops($shopIds,$groupIds);
+        $shopIds = $this->_filter_shops($shopIds, $groupIds);
         //print_r($shopIds);die;
 
         list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
@@ -342,21 +343,21 @@ class MerchantDepotModel extends RelationModel
             $bindValues[':title'] = '%' . $title . '%';
         }
 
-        $where='';
-        if(array_key_exists($status,self::getStatusOptions())) {
+        $where = '';
+        if (array_key_exists($status, self::getStatusOptions())) {
             $where = 'sq_merchant_depot.status=:statusName';
             $bindValues[':statusName'] = $status;
         }
 
         if (!is_null($priceMin)) {
-            if(!empty($where))
+            if (!empty($where))
                 $where = ' and ';
             $where .= 'sq_merchant_depot.price>:priceMin';
             $bindValues[':priceMin'] = $priceMin;
         }
 
         if (!is_null($priceMax)) {
-            if(!empty($where))
+            if (!empty($where))
                 $where = ' and ';
             $where .= 'sq_merchant_depot.price<:priceMax';
             $bindValues[':priceMax'] = $priceMax;
@@ -383,9 +384,9 @@ class MerchantDepotModel extends RelationModel
         }
 
         $this->field(['sq_merchant_depot.id', 'pro.id as product_id'
-            , 'pro.title as product', 'sq_merchant_depot.price','sq_merchant_depot.add_time'
+            , 'pro.title as product', 'sq_merchant_depot.price', 'sq_merchant_depot.add_time'
             , 'shop.id as shop_id', 'shop.title as shop', 'brand.id as brand_id'
-            ,'brand.title as brand', 'norm.id as norm_id','norm.title as norm']);
+            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm']);
 
         if (!empty($where))
             $this->where($where);
@@ -472,7 +473,7 @@ class MerchantDepotModel extends RelationModel
         $data['product_id'] = intval($productId);
         $data['remark'] = trim($remark);
         //获取产品信息和所属分类
-        $product = ProductModel::get($productId, ['price', 'id'], '_categorys');
+        $product = ProductModel::get($productId, ['price', 'id'], true);
         $data['price'] = empty($price) && $product ? (float)$product['price'] : (float)$price;
         $model = self::getInstance();
         $model->startTrans();//启动事务
