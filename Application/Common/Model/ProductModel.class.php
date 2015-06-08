@@ -143,10 +143,12 @@ class ProductModel extends RelationModel
             // 定义更多的关联属性
         ],
         'Categorys' => [
-            'mapping_type' => self::HAS_MANY,
-            'class_name' => 'ProductCategory',
+            'mapping_type' => self::MANY_TO_MANY,
+            'class_name' => 'Category',
             'foreign_key' => 'product_id',
+            'relation_foreign_key' => 'category_id',
             'mapping_name' => '_categorys',
+            'relation_table' => 'sq_product_category'
         ]
     ];
 
@@ -161,11 +163,11 @@ class ProductModel extends RelationModel
     protected function _after_select(&$result, $options = '')
     {
         parent::_after_select($result, $options);
-//        foreach ($result as &$value) {
-//            $value['_status'] = self::getStatusOptions()[$result['status']];
+        foreach ($result as &$value) {
+//            $value['_status'] = self::getStatusOptions()[$value['status']];
 //            $value['_add_time'] = date(C('DATE_FORMAT'), $result['add_time']);
 //            $value['_edit_time'] = date(C('DATE_FORMAT'), $result['edit_time']);
-//        }
+        }
     }
 
     /**
@@ -201,14 +203,17 @@ class ProductModel extends RelationModel
      * @param null|int $status 状态，可传null或数字
      * @param null|string $title 商品标题，用于模糊搜索，可传NULL
      * @param int $pageSize 分页大小，默认为10
-     * @param array|string $relation 要进行关联查询的表，用逗号分割或者直接数组，可关联category、brand
+     * @param bool $getCategorys 是否关联查询分类
+     * @param bool $getBrand 是否关联查询品牌
      * @return array
      */
-    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $relation = [])
+    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $getCategorys = false, $getBrand = false)
     {
         $where = [];
         $productIds = null;
-        $relation = is_array($relation) ? $relation : explode(',', $relation);
+        $relation = [];
+        if ($getCategorys) $relation[] = '_categorys';
+        if ($getBrand) $relation[] = '_brand';
         if (!empty($categoryIds)) {//如果分类ID不为空，则先查询出分类下所有的商品ID
             $categoryIds = is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds);
             $categoryIds = array_unique($categoryIds);
@@ -229,19 +234,17 @@ class ProductModel extends RelationModel
         }
         if (!empty($status)) $where['status'] = in_array($status, array_keys(self::getStatusOptions())) ? $status : self::STATUS_ACTIVE;
         if (!empty($title)) $where['title'] = ['LIKE', trim($title)];
-        $model = self::getInstance()->alias('p');
+        $model = self::getInstance();
         if ($productIds) {
             $subSql = $model->where(['id' => ['IN', $productIds]])->buildSql();
             $total = $model->table($subSql . ' sub')->where($where)->count('id');
             $pagination = new Page($total, $pageSize);
-            $data = $model->table($subSql . ' sub')->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+            $data = $model->relation($relation)->table($subSql . ' sub')->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
         } else {
             $total = $model->where($where)->count('id');
             $pagination = new Page($total, $pageSize);
-            $data = $model->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+            $data = $model->relation($relation)->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
         }
-        if (array_search('category', $relation) !== false) self::relationCategory($data);//关联分类
-        if (array_search('brand', $relation) !== false) self::relationBrand($data);//关联品牌
         return [
             'data' => $data,
             'pagination' => $pagination->show()
@@ -253,75 +256,36 @@ class ProductModel extends RelationModel
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id ID
      * @param string|array $fields 要查询的字段
+     * @param bool $getCategory 是否关联获取分类信息
+     * @param bool $getBrand 是否关联获取品牌信息
      * @return null|array
      */
-    public static function get($id, $fields = '*', $relation = [])
+    public static function get($id, $fields = '*', $getCategory = false, $getBrand = false)
     {
         $id = intval($id);
-        $relation = is_array($relation) ?: explode(',', $relation);
-        if (in_array('_categorys', $relation)) $_relation[] = '_categorys';
-        return $id ? self::getInstance()->relation($_relation)->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
+        $relation = [];
+        if ($getCategory) $relation[] = '_categorys';
+        if ($getBrand) $relation[] = '_brand';
+        return $id ? self::getInstance()->relation($relation)->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
     }
-
-    /**
-     * 关联分类
-     * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param array $data 查询出来的数组
-     * @param bool $isList 是否是多个产品
-     */
-    public static function relationCategory(&$data, $isList = true)
-    {
-        $categoryModel = CategoryModel::getInstance();
-        $productCategoryModel = M('product_category');
-        if ($isList) {
-            foreach ($data as &$value) {
-                $categorys = $productCategoryModel->field('category_id')->where(['product_id' => $value['id']])->select();
-                $categoryIds = array_map(function ($category) {
-                    return $category['category_id'];
-                }, $categorys);
-                $value['categorys'] = $categoryModel->where(['id' => ['IN', $categoryIds]])->select();
-            }
-        } else {
-            $categorys = $productCategoryModel->field('category_id')->where(['product_id' => $data['id']])->select();
-            $categoryIds = array_map(function ($category) {
-                return $category['category_id'];
-            }, $categorys);
-            $data['categorys'] = $categoryModel->where(['id' => ['IN', $categoryIds]]);
-        }
-    }
-
-    /**
-     * 关联品牌
-     * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param array $data 查询出来的产品数组
-     * @param bool $isList 是否有多个产品
-     */
-    public static function relationBrand(&$data, $isList = true)
-    {
-        $brandModel = BrandModel::getInstance();
-        if ($isList) {
-            foreach ($data as &$value) {
-                $value['brand'] = $brandModel->find($value['brand_id']);
-            }
-        } else {
-            $data['brand'] = $brandModel->find($data['brand_id']);;
-        }
-    }
-
 
     /**
      * 根据ID查询商品列表
      * @param string|array $ids 多个商品ID
      * @param bool $fields 要查询的字段，默认为所有
      * @param bool $getBrand 是否获得品牌信息
+     * @param bool $getCategory 是否关联获取分类信息
      * @return mixed
      */
-    public static function getListsByProductIds($ids, $fields = true, $getBrand = false)
+    public static function getListsByProductIds($ids, $fields = true, $getBrand = false, $getCategory = false)
     {
         $ids = is_array($ids) ? $ids : explode(',', $ids);
         $ids = array_unique($ids);
         $where['id'] = ['IN', $ids];
         $where['status'] = self::STATUS_ACTIVE;
-        return self::getInstance()->relation($getBrand ? '_brand' : false)->field($fields)->where($where)->select();
+        $relation = [];
+        if ($getBrand) $relation[] = '_brand';
+        if ($getCategory) $relation[] = '_categorys';
+        return self::getInstance()->relation($relation)->field($fields)->where($where)->select();
     }
 }
