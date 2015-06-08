@@ -45,6 +45,7 @@ class Auth{
         if (!$this->_config['AUTH_ON'])
             return true;
         $authList = $this->getAuthList($uid,$type);
+        //print_r($authList);exit;
         if (is_string($name)) {
             $name = strtolower($name);
             if (strpos($name, ',') !== false) {
@@ -95,7 +96,6 @@ class Auth{
         if( $this->_config['AUTH_TYPE']==2 && isset($_SESSION['_AUTH_LIST_'.$uid.$t])){
             return $_SESSION['_AUTH_LIST_'.$uid.$t];
         }
-
         $groups = $this->getGroups($uid);
         $roles = array();
         foreach($groups as $gro){
@@ -177,7 +177,7 @@ class Auth{
         $roles = implode(',',$roles);
         $map['role_id'] = array('in',$roles);
         $user_rules = M()
-            ->table($this->_config['AUTH_ROLE_RULE'] . ' a')
+            ->table($this->_config['AUTH_ROLE_RULE'])
             ->where($map)
             ->field('rule_id')->select();
         foreach($user_rules as $rule){
