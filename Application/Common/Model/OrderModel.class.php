@@ -677,40 +677,6 @@ class OrderModel extends RelationModel
     }
 
     /**
-     * 创建订单
-     * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param int $userId 用户ID
-     * @param int $shopId 商铺ID
-     * @param array $products 订单的商品
-     * @param int|string $mobile 收货人联系方式
-     * @param string $consignee 收货人姓名
-     * @param string $address 收货人地址
-     * @param int $pid 父级ID
-     * @param string $remark 订单备注
-     * @param int $payMode 支付方式
-     * @param int $deliveryMode 配送方式
-     * @return bool
-     */
-    public static function createOrder($userId, $shopId, $products, $mobile, $consignee, $address, $pid, $remark, $payMode = self::PAY_MODE_OFFLINE, $deliveryMode = self::DELIVERY_MODE_DELIVERY)
-    {
-        $data['user_id'] = $userId;
-        $data['pid'] = $pid;
-        $data['shop_id'] = $shopId;
-        $data['pay_mode'] = $payMode;
-        $data['delivery_mode'] = $deliveryMode;
-        $data['mobile'] = $mobile;
-        $data['consignee'] = $consignee;
-        $data['address'] = $address;
-        $data['remark'] = $remark;
-        $allPrice = array_column($products, 'price');
-        $data['price'] = array_sum($allPrice);
-        $data['_products'] = $products;
-        $model = self::getInstance();
-        if (!$model->relation(true)->create($data)) E($model->getError());
-        return $orderId = $model->relation(true)->add();
-    }
-
-    /**
      * 更新订单信息
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 订单ID
