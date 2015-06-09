@@ -39,17 +39,21 @@ class OrderModel extends RelationModel
     ## 状态常量
     const STATUS_DELETE = -1;//逻辑删除
     const STATUS_CANCEL = 0;//取消的订单
-    const STATUS_ACTIVE = 1;//正常
-    const STATUS_DELIVERY = 2;//正在配送
-    const STATUS_COMPLETE = 3;//已经完成
-    const STATUS_ABNORMAL = 4;//异常的订单
+    const STATUS_MERCHANT_CONFIRM = 1;//等待商家确定
+    const STATUS_USER_CONFIRM = 2;//用户确定（商家的修改）
+    const STATUS_DELIVERY = 3;//正在配送
+    const STATUS_COMPLETE = 4;//已经完成
+    const STATUS_REFUND = 5;//申请退款
+    const STATUS_REFUND_COMPLETE = 6;//退款完成
 
     ## 支付模式
     const PAY_MODE_ONLINE = 0;//在线支付
     const PAY_MODE_OFFLINE = 1;//线下支付
+
     ## 支付状态
     const PAY_STATUS_TRUE = 1;//以支付
     const PAY_STATUS_FALSE = 0;//未支付
+
     ## 配送模式
     const DELIVERY_MODE_PICKEDUP = 0;//自提
     const DELIVERY_MODE_DELIVERY = 1;//配送
@@ -179,9 +183,12 @@ class OrderModel extends RelationModel
             [
                 self::STATUS_DELETE,
                 self::STATUS_CANCEL,
-                self::STATUS_ACTIVE,
+                self::STATUS_MERCHANT_CONFIRM,
+                self::STATUS_USER_CONFIRM,
                 self::STATUS_DELIVERY,
-                self::STATUS_COMPLETE
+                self::STATUS_COMPLETE,
+                self::STATUS_REFUND,
+                self::STATUS_REFUND_COMPLETE,
             ],
             '状态非法',
             self::EXISTS_VALIDATE,
@@ -227,7 +234,7 @@ class OrderModel extends RelationModel
     protected $_auto = [
         [
             'status',
-            self::STATUS_ACTIVE,
+            self::STATUS_MERCHANT_CONFIRM,
             self::MODEL_INSERT
         ],
         [
@@ -308,11 +315,14 @@ class OrderModel extends RelationModel
     public static function getStatusOptions()
     {
         return [
-            self::STATUS_DELETE => '逻辑删除',
+            self::STATUS_DELETE => '删除',
             self::STATUS_CANCEL => '取消',
-            self::STATUS_ACTIVE => '正常',
+            self::STATUS_MERCHANT_CONFIRM => '商家确认',
+            self::STATUS_USER_CONFIRM => '用户确认',
             self::STATUS_DELIVERY => '配送中',
-            self::STATUS_COMPLETE => '已完成'
+            self::STATUS_COMPLETE => '已完成',
+            self::STATUS_REFUND => '申请退款',
+            self::STATUS_REFUND_COMPLETE => '退款完成',
         ];
     }
 
@@ -726,6 +736,7 @@ class OrderModel extends RelationModel
 
     /**
      * 更新订单的支付方式
+     * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 订单ID
      * @param int $payStatus 支付状态
      * @return bool
@@ -733,5 +744,60 @@ class OrderModel extends RelationModel
     public static function updateOrderPayStatus($id, $payStatus)
     {
         return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['pay_status' => intval($payStatus)]);
+    }
+
+    /**
+     * 商家确认订单，必须要状态为【商家确定】的订单才能执行本方法！如果确定，则更新订单为正在配送，否则更新订单为已取消
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     * @param bool $confirm 是否确认订单
+     * @return bool|int
+     */
+    public static function MerchantConfirmOrder($id, $confirm = true)
+    {
+        $id = intval($id);
+        if (!$id) E('ID非法');
+        $model = self::getInstance()->where(['id' => $id, 'status' => self::STATUS_MERCHANT_CONFIRM]);
+        if ($confirm) {
+            return $model->save(['status' => self::STATUS_DELIVERY]);
+        }
+        return $model->save(['status' => self::STATUS_USER_CONFIRM]);
+    }
+
+    /**
+     * 用户确认订单，必须要状态为【用户确定】的订单才能执行本方法！如果确定，则更新订单为正在配送，否则更新订单为取消
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     * @param bool $confirm 是否确认订单
+     * @return bool|int
+     */
+    public static function UserConfirmOrder($id, $confirm = true)
+    {
+        $id = intval($id);
+        if (!$id) E('ID非法');
+        $model = self::getInstance()->where(['id' => $id, 'status' => self::STATUS_USER_CONFIRM]);
+        if ($confirm) {
+            return $model->save(['status' => self::STATUS_DELIVERY]);
+        }
+        return $model->save(['status' => self::STATUS_CANCEL]);
+    }
+
+    /**
+     * 完成订单，必须要状态为【正在配送】的订单才能执行本方法！
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     * @return bool|int
+     */
+    public static function CompleteOrder($id)
+    {
+        $id = intval($id);
+        if (!$id) E('ID非法');
+        return self::getInstance()->where(['id' => $id, 'status' => self::STATUS_DELIVERY])->save(['status' => self::STATUS_COMPLETE]);
+    }
+
+    public static function CancelOrder($id)
+    {
+        if (!$id = intval($id)) E('ID非法');
+
     }
 }
