@@ -246,12 +246,12 @@ function is_merchant_login($token){
 /**
  * @return int
  */
-function is_member_login(){
-    $user = session('member_auth');
+function is_member_login($token){
+    $user = session('member_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('member_auth_sign') == data_auth_sign($user) ? $user['uid'] : 0;
+        return session('member_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
 }
 
