@@ -48,7 +48,7 @@ class CategoryModel extends AdvModel
             'replay' => 'tinyint',
             'check' => 'tinyint',
             'extend' => 'longtext',
-            'level'=>'tinyint',
+            'level' => 'tinyint',
             'create_time' => 'int',
             'update_time' => 'int',
             'status' => 'tinyint',
@@ -255,6 +255,21 @@ class CategoryModel extends AdvModel
     public static function getLists($fields = '*')
     {
         return self::getInstance()->where(['status' => self::STATUS_ACTIVE])->field($fields)->order(['sort'])->select();
+    }
+
+    /**
+     * 根据ID获取分类列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string|array $ids IDs
+     * @param string|array $fields 要查询的字段
+     * @return null|array
+     */
+    public static function getListsByIds($ids, $fields = '*')
+    {
+        $ids = is_array($ids) ? $ids : explode(',', $ids);
+        $ids = array_unique($ids);
+        return self::getInstance()->field($fields)->where(['status' => self::STATUS_ACTIVE, 'id' => ['IN', $ids]])->select();
     }
 
     /**

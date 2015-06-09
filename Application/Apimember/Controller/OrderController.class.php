@@ -9,17 +9,16 @@ namespace Apimember\Controller;
 use Common\Model\OrderModel;
 
 /**
- * 订单
- * Class OrderController
- * @package Api\Controller
+ * 订单控制器
+ * @package Apimember\Controller
  */
 class OrderController extends ApiController
 {
     /**
      * 设置购物车
      * @author WangJiang
-     * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
-     * @return json
+     * @param int $userId 用户ID，注意：该参数在权限验证完成应该由验证方法提供
+     * @return string
      * <pre>
      * 调用样例 POST  apimber.php?s=/order/setcart/userId/0
      * POST 数据：
@@ -62,8 +61,8 @@ class OrderController extends ApiController
     /**
      * 获得购物车
      * @author WangJiang
-     * @param $userId  用户ID，注意：该参数在权限验证完成应该由验证方法提供
-     * @return json
+     * @param int $userId 用户ID，注意：该参数在权限验证完成应该由验证方法提供
+     * @return string
      * <pre>
      * 调用样例 GET apimber.php?s=/order/getcart/userId/0
      * 返回
