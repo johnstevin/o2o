@@ -17,11 +17,9 @@
 		<notempty name="_list">
 		<volist name="_list" id="vo">
 		<tr>
-<!--            <input class="id" type="text" name="category_id" value="{$vo.category_id}"/>
-            <input class="id" type="text" name="brand_id" value="{$vo.brand_id}"/>-->
-			<td><input class="id" type="text" name="category_id" value="{$vo.category_id}"/>{$vo.category_id}</td>
-            <td><input class="id" type="text" name="brand_id" value="{$vo.brand_id}"/>{$vo.brand_id}</td>
-            <td>{$vo.norms_id}</td>
+			<td><input class="id" type="hidden" name="category_id" value="{$vo.category_id}"/>{$vo.category_id}</td>
+            <td><input class="id" type="hidden" name="brand_id" value="{$vo.brand_id}"/>{$vo.brand_id}</td>
+            <td><input class="id" type="hidden" name="norms_id" value="{$vo.norms_id}"/>{$vo.norms_id}</td>
 		</tr>
 		</volist>
 		</notempty>
@@ -33,7 +31,7 @@
         {$_page}
     </div>
     <div>
-    <a href="{:U('Norms/bindNorms_index')}">
+    <a href="{:U('Norms/bindNorms')}">
         <input type="Submit" name="Submit" value="返回" /></a>
     </div>
 </block>

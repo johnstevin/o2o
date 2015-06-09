@@ -184,7 +184,7 @@ class AdminController extends Controller
         unset($REQUEST['_order'], $REQUEST['_field']);
 
         if (empty($where)) {
-            $where = array('status' => array('egt', 0));
+            $where = array('status' => array('egt', -1));
         }
         if (!empty($where)) {
             $options['where'] = $where;

@@ -4,55 +4,41 @@
         <h4>分类及品牌选择</h4>
     </div>
     <!-- 标题栏 -->
+    <form action="{:U('Norms/bindNorms')}" method="POST">
     <table>
         <tr>
             <td>
-                <select id="category1" name="category1">
+                <select id="category1" name="category_1">
                     <option value="0">-请选一级分类-</option>
-                    <volist name="category_1" id="category_1">
-                        <option  value="{$category_1['id']}">{$category_1['title']}</option>
-                    </volist>
+                        <option  value="{$category_1['id']}" >{$category_1['title']}</option>
                 </select>
             </td>
 
             <td>
-                <select id="category2" name="category2">
-                    <option value="0" pid="0">-请选二级分类-</option>
-                    <volist name="category_2" id="category_2">
-                        <option value="{$category_2['id']}" pid="{$category_2['pid']}">{$category_2['title']}</option>
-                    </volist>
+                <select id="category2" name="category_2">
+                    <option value="0" >-请选二级分类-</option>
+                        <option value="{$category_2['id']}" >{$category_2['title']?$category_2['title']:'无'}</option>
                 </select>
             </td>
 
             <td>
-                <select id="category3" name="category3">
+                <select id="category3" name="category_3">
                     <option value="0" pid="0">-请选三级分类-</option>
-                    <volist name="category_3" id="category_3">
-                        <option value="{$category_3['id']}" pid="{$category_3['pid']}">{$category_3['title']}</option>
-                    </volist>
+                        <option value="{$category_3['id']}" >{$category_3['title']?$category_3['title']:'无'}</option>
                 </select>
             </td>
 
             <td>
-                <select id="category4" name="category4">
-                    <option value="0" pid="0">-请选品牌-</option>
-                    <volist name="category_4" id="category_4">
-                        <option value="{$category_4['id']}" pid="{$category_4['pid']}">{$category_4['title']}</option>
-                    </volist>
+                <select id="brand" name="brand[]">
+                    <option value="0" >-请选品牌-</option>
+                            <volist name="brand" id="brand">
+                        <option value="{$brand['id']}">{$brand['title']}</option>
+                            </volist>
                 </select>
             </td>
         <tr>
-
-    <volist name="$data" id="data">
-    <tr>
-        <td>
-             <select>
-            <option value="$date['brand_id']">请选品牌</option>
-             </select>
-        </td>
-    <tr>
-        </volist>
     </table>
+
     <div class="main-title">
         <h4>规格列表</h4>
     </div>
@@ -62,7 +48,6 @@
         </div>
     </div>
     <!-- 数据列表 -->
-    <form action="{:U('Category/addBrandNorms')}" method="POST">
     <div class="data-table table-striped">
         <table class="table table-hover">
             <thead>
@@ -98,9 +83,6 @@
         {$_page}
     </div>
     <div>
-        <!--<a href="{:U('Categorybrandnorms/index')}" class="ajax-get"></a>-->
-            <input name="category_id" type="hidden" value="{$category_id}"/>
-            <input name="brand_id" type="hidden" value="{$brand_id}"/>
             <input type="Submit" value="确定关联" />
     </div>
     </form>
