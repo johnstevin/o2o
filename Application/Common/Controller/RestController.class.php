@@ -27,8 +27,17 @@ abstract class RestController  extends Controller{
         $this->apiError(404, "找不到该接口");
     }
 
-    public function _initialize() {
+    protected function getUserId(){
+        echo $_SERVER;die;
+        if(defined('UID')) return ;
+        $token=I('token');
+        define('UID',is_merchant_login($token));
+        if( !UID )
+            E('用户未登录，不能访问该方法。');
+        return UID;
+    }
 
+    public function _initialize() {
     }
 
     public function setInternalCallApi($value=true) {
