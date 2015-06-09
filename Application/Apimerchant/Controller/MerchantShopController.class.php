@@ -93,7 +93,7 @@ class MerchantShopController extends ApiController
                 $model = D('MerchantShop');
                 if (!$model->create())
                     E('参数传递失败');
-                $this->apiSuccess(['id' => intval($model->add())]);
+                $this->apiSuccess(['id' => intval($model->add())],'');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {
@@ -209,6 +209,28 @@ class MerchantShopController extends ApiController
         } catch (\Exception $ex) {
             $this->apiError(50022, $ex->getMessage());
         }
+    }
+
+    /**
+     * 获得所有店铺类型
+     * @return json
+     * 调用样例 GET apimchant.php?s=MerchantShop/getTypes
+     * ``` json
+     * {
+     *      "success": true,
+     *      "error_code": 0,
+     *      "data":
+     *      {
+     *          "17": "超市",
+     *          "18": "洗车",
+     *          "89": "生鲜",
+     *          "90": "送水"
+     *      }
+     * }
+     * ```
+     */
+    public function getTypes(){
+        $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
     }
 
 //    /**

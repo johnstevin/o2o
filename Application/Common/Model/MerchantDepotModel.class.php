@@ -416,10 +416,21 @@ class MerchantDepotModel extends RelationModel
             if ($returnAlters) {
                 $depot = $depots[$k];
                 $alters = [];
+                $minPrice=null;
+                $maxPrice=null;
                 foreach ($depot as $i) {
                     if ($product['id'] !== $i['id'])
                         $alters[] = ['id' => $i['id'], 'price' => $i['price'], 'shop_id' => $i['shop_id'], 'shop' => $i['shop']];
+                    if(is_null($minPrice))
+                        $minPrice=$i['price'];
+                    else
+                        $minPrice=min($minPrice,$i['price']);
+                    if(is_null($maxPrice))
+                        $maxPrice=$i['price'];
+                    else
+                        $maxPrice=max($maxPrice,$i['price']);
                 }
+                $product['price_range']=[$minPrice,$maxPrice];
                 $product['alters'] = $alters;
             }
 

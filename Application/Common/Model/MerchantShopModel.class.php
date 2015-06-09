@@ -15,9 +15,11 @@ use Think\Model\AdvModel;
  */
 class MerchantShopModel extends AdvModel{
     ## 状态常量
-    const STATUS_ACTIVE = 1;//正常
-    const STATUS_CLOSE = 0;//关闭
-
+    const STATUS_DELETE=-1;//软删除
+    const STATUS_CLOSE = 0;//待审核,关闭
+    const STATUS_ACTIVE = 1;//审核通过,正常
+    const STATUS_CHECKING = 2;//审核中
+    const STATUS_DENIED = 3;//审核未通过
 
     /**
      * @author  WangJiang
@@ -73,65 +75,65 @@ class MerchantShopModel extends AdvModel{
      * @var array
      */
     protected $_auto = array (
-        [
-            'description','',self::MODEL_INSERT
+        [##禁止客户端修改该值
+            'group_id',
+            '_default_group_id',
+            self::MODEL_BOTH,
+            'callback'
         ],
-        [
-            'type',1,self::MODEL_INSERT
-        ],
-        [
-            'phone_number','',self::MODEL_INSERT
-        ],
-        ['status',self::STATUS_ACTIVE,self::MODEL_INSERT]
+        ['status',self::STATUS_CLOSE,self::MODEL_INSERT]
     );
+
+    protected function _default_group_id(){
+        return C('AUTH_GROUP_ID.MERCHANT_GROUP_ID');
+    }
+
+    protected $readonlyField=[
+        'type',
+        'pid',
+        'add_uid',
+        'region_id',
+    ];
 
     /**
      * 验证规则
      * @author WangJiang
      * @var array
      */
-    protected $_validate = [
-        [
-            'group_id',
-            'is_null',
-            '不允许修改group_id',
-            self::MUST_VALIDATE,
-            'function',
-            self::MODEL_UPDATE
-        ],
-        [
-            'type',
-            'is_null',
-            '不允许修改type',
-            self::MUST_VALIDATE,
-            'function',
-            self::MODEL_UPDATE
-        ],
-        [
-            'pid',
-            'is_null',
-            '不允许修改pid',
-            self::MUST_VALIDATE,
-            'function',
-            self::MODEL_UPDATE
-        ],
-        [
-            'add_uid',
-            'is_null',
-            '不允许修改add_uid',
-            self::MUST_VALIDATE,
-            'function',
-            self::MODEL_UPDATE
-        ],
-        [
-            'region_id',
-            'is_null',
-            '不允许修改region_id',
-            self::MUST_VALIDATE,
-            'function',
-            self::MODEL_UPDATE
-        ],
-    ];
+//    protected $_validate = [
+//        [
+//            'type',
+//            'is_null',
+//            '不允许修改type',
+//            self::MUST_VALIDATE,
+//            'function',
+//            self::MODEL_UPDATE
+//        ],
+//        [
+//            'pid',
+//            'is_null',
+//            '不允许修改pid',
+//            self::MUST_VALIDATE,
+//            'function',
+//            self::MODEL_UPDATE
+//        ],
+//        [
+//            'add_uid',
+//            'is_null',
+//            '不允许修改add_uid',
+//            self::MUST_VALIDATE,
+//            'function',
+//            self::MODEL_UPDATE
+//        ],
+//        [
+//            'region_id',
+//            'is_null',
+//            '不允许修改region_id',
+//            self::MUST_VALIDATE,
+//            'function',
+//            self::MODEL_UPDATE
+//        ],
+//    ];
 
     /**
      * 查询周边商铺
@@ -163,6 +165,9 @@ class MerchantShopModel extends AdvModel{
             //$this->error('非法查询范围', '', true);
             E('非法查询范围');
 
+        $range=floatval($range);
+        $range+=$range*0.15;
+
         //当前时间，秒
         $seconds=time()-strtotime("00:00:00");//8*3600;
 
@@ -170,9 +175,9 @@ class MerchantShopModel extends AdvModel{
 
         $type=intval($type);
 
-        if (!in_array($type, [0, 1, 2, 3, 4]))
+        if (!in_array($type, C('SHOP_TYPE')))
             //$this->error('非法店面类型，可选项：0-所有类型，1-超市，2-生鲜，3-洗车，4-送水', '', true);
-            E('非法店面类型，可选项：0-所有类型，1-超市，2-生鲜，3-洗车，4-送水');
+            E('非法店面类型，可选项：0-所有类型，17 => 超市, 89 => 生鲜, 18 => 洗车, 90 => 送水');
 
         if ($type != 0)
             $map['type'] = $type;
@@ -190,7 +195,7 @@ class MerchantShopModel extends AdvModel{
             ->field(['id', 'title','ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance','st_astext(lnglat) as lnglat']);
 
         $ret= $this->select();
-        #print_r($this->getLastSql());
+        //print_r($this->getLastSql());
         return $ret;
     }
 
