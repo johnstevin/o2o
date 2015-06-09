@@ -148,7 +148,6 @@ class ProductModel extends RelationModel
             'foreign_key' => 'product_id',
             'relation_foreign_key' => 'category_id',
             'mapping_name' => '_categorys',
-            'relation_table' => 'sq_product_category'
         ]
     ];
 
@@ -163,11 +162,11 @@ class ProductModel extends RelationModel
     protected function _after_select(&$result, $options = '')
     {
         parent::_after_select($result, $options);
-        foreach ($result as &$value) {
+//        foreach ($result as &$value) {
 //            $value['_status'] = self::getStatusOptions()[$value['status']];
 //            $value['_add_time'] = date(C('DATE_FORMAT'), $result['add_time']);
 //            $value['_edit_time'] = date(C('DATE_FORMAT'), $result['edit_time']);
-        }
+//        }
     }
 
     /**
