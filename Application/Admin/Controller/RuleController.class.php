@@ -71,6 +71,7 @@ class RuleController extends AdminController{
                 if(!($cate && 1 == $cate['status'])){
                     $this->error('指定的上级用户组不存在或被禁用！');
                 }
+                ++$cate['level'];
             }
 
             /* 获取分类信息 */

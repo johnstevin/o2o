@@ -26,7 +26,7 @@
                 <td>{$vo.group}</td>
                 <td><span>{:mb_strimwidth($vo['description'],0,60,"...","utf-8")}</span></td>
                 <td>
-                    <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('Role/access?group_id='.$vo['id'])}">访问授权</a>
+                    <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('Access/index?group_id='.$vo['id'])}">访问授权</a>
                 </td>
                 <td><span>{$vo.public_text}</span></td>
                 <td>{$vo.status_text}</td>

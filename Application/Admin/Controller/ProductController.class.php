@@ -79,7 +79,7 @@ class ProductController extends AdminController
     }
 
     /**
-     * 返回所有上级等于pid的数据
+     * 返回所有上级等于pid的规格
      * @param array $pid 要查询的上级pid的数组
      */
     public function getNorms($pid=array(0),$brand){

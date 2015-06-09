@@ -19,7 +19,7 @@ $(document).ready(function () {
         "fid": null,
         "text": "主页",
         "iconCls": "",
-        "url": "admin.php/Index/index",
+        "url": "",
         "children": ""
     };
     menuJson.unshift(indexObj);

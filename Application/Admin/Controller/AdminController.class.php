@@ -5,58 +5,92 @@
 // | Date: 2015-5-25
 // +----------------------------------------------------------------------
 namespace Admin\Controller;
+
 use Think\Controller;
 
-class AdminController extends Controller{
+class AdminController extends Controller
+{
 
-    public function _empty(){
+    public function _empty()
+    {
 
     }
 
-    protected function _initialize(){
+    protected function _initialize()
+    {
         // 获取当前用户ID
-        if(defined('UID')) return ;
-        define('UID',is_admin_login());
-        if( !UID ){// 还没登录 跳转到登录页面
+        if (defined('UID')) return;
+        define('UID', is_admin_login());
+        if (!UID) {// 还没登录 跳转到登录页面
             $this->redirect('Public/login');
         }
         /* 读取数据库中的配置 */
-        $config =   S('DB_CONFIG_DATA');
-        if(!$config){
-            $config =   api('Config/lists');
-            S('DB_CONFIG_DATA',$config);
+        $config = S('DB_CONFIG_DATA');
+        if (!$config) {
+            $config = api('Config/lists');
+            S('DB_CONFIG_DATA', $config);
         }
         C($config);
 
-        define('IS_ROOT',   is_administrator());
-        if(!IS_ROOT && C('ADMIN_ALLOW_IP')){
+        define('IS_ROOT', is_administrator());
+        if (!IS_ROOT && C('ADMIN_ALLOW_IP')) {
             // 检查IP地址访问
-            if(!in_array(get_client_ip(),explode(',',C('ADMIN_ALLOW_IP')))){
+            if (!in_array(get_client_ip(), explode(',', C('ADMIN_ALLOW_IP')))) {
                 $this->error('403:禁止访问');
             }
         }
 
         // 检测系统权限
-        if(!IS_ROOT){
-            $access =   $this->accessControl();
-            if ( false === $access ) {
+        if (!IS_ROOT) {
+            $access = $this->accessControl();
+            if (false === $access) {
                 $this->error('403:禁止访问');
-            }elseif(null === $access ){
+            } elseif (null === $access) {
                 //检测访问权限
-                $rule  = strtolower(MODULE_NAME.'/'.CONTROLLER_NAME.'/'.ACTION_NAME);
-                if ( !$this->checkRule($rule,array('in','1,2')) ){
+                $rule = strtolower(MODULE_NAME . '/' . CONTROLLER_NAME . '/' . ACTION_NAME);
+                if (!$this->checkRule($rule, array('in', '1,2'))) {
                     $this->error('未授权访问!');
-                }else{
+                } else {
                     // 检测分类及内容有关的各项动态权限
-                    $dynamic    =   $this->checkDynamic();
-                    if( false === $dynamic ){
+                    $dynamic = $this->checkDynamic();
+                    if (false === $dynamic) {
                         $this->error('未授权访问!');
                     }
                 }
             }
         }
 
+        $this->assign('menu_list', json_encode($this->getMenus()));
+    }
 
+    /**
+     * @param array array 条件
+     * @return array  获取菜单
+     */
+    public function getMenus($where = array())
+    {
+        $menus = session('ADMIN_MENU_LIST');
+        if (empty($menus)) {
+            $AuthRule = D('AuthRule');
+            $map = array('status' => '1', 'hide' => '1','level'=>array('ELT',1));
+            $map = array_merge($map, $where);
+            $AuthList=$_SESSION['_AUTH_LIST_'.UID.'in,1,2'];
+//           echo '<pre>';
+//            print_r($AuthList);
+            $menus = $AuthRule->where($map)->order('sort asc')->field('id,title as text,pid as fid,url')->select();
+            //print_r($menus);
+            foreach($menus as $key => $item){
+                //  检测菜单权限
+                if (!IS_ROOT && !(in_array(strtolower($item['url']), $AuthList))) {
+                    unset($menus[$key]);
+                }
+            }
+           // print_r($menus);
+
+            $menus= list_to_tree($menus, 'id', 'fid', 'children');
+            session('ADMIN_MENU_LIST', $menus);
+        }
+        return $menus;
     }
 
 
@@ -69,14 +103,15 @@ class AdminController extends Controller{
      *   返回 **true**, 允许任何管理员访问,无需执行节点权限检测
      *   返回 **null**, 需要继续执行节点权限检测决定是否允许访问
      */
-    final protected function accessControl(){
+    final protected function accessControl()
+    {
         $allow = C('ALLOW_VISIT');
-        $deny  = C('DENY_VISIT');
-        $check = strtolower(CONTROLLER_NAME.'/'.ACTION_NAME);
-        if ( !empty($deny)  && in_array_case($check,$deny) ) {
+        $deny = C('DENY_VISIT');
+        $check = strtolower(CONTROLLER_NAME . '/' . ACTION_NAME);
+        if (!empty($deny) && in_array_case($check, $deny)) {
             return false;//非超管禁止访问deny中的方法
         }
-        if ( !empty($allow) && in_array_case($check,$allow) ) {
+        if (!empty($allow) && in_array_case($check, $allow)) {
             return true;
         }
         return null;//需要检测节点权限
@@ -84,16 +119,17 @@ class AdminController extends Controller{
 
     /**
      * 权限检测
-     * @param string  $rule    检测的规则
-     * @param string  $mode    check模式
+     * @param string $rule 检测的规则
+     * @param string $mode check模式
      * @return boolean
      */
-    final protected function checkRule($rule, $type, $mode='url'){
-        static $Auth    =   null;
+    final protected function checkRule($rule, $type, $mode = 'url')
+    {
+        static $Auth = null;
         if (!$Auth) {
-            $Auth       =   new \Think\Auth();
+            $Auth = new \Think\Auth();
         }
-        if(!$Auth->check($rule,UID,$type,$mode)){
+        if (!$Auth->check($rule, UID, $type, $mode)) {
             return false;
         }
         return true;
@@ -106,7 +142,9 @@ class AdminController extends Controller{
      *      返回false则表示当前访问无权限
      *      返回null，则表示权限不明
      */
-    protected function checkDynamic(){}
+    protected function checkDynamic()
+    {
+    }
 
     /**
      * 通用分页列表数据集获取方法
@@ -125,7 +163,8 @@ class AdminController extends Controller{
      * @return array|false
      * 返回数据集
      */
-    protected function lists($model, $where = array(), $order = '', $field = true){
+    protected function lists($model, $where = array(), $order = '', $field = true)
+    {
         $options = array();
         $REQUEST = (array)I('request.');
         if (is_string($model)) {
@@ -184,7 +223,8 @@ class AdminController extends Controller{
      * @param array $msg 执行正确和错误的消息 array('success'=>'','error'=>'', 'url'=>'','ajax'=>false)
      *                     url为跳转页面,ajax是否ajax方式(数字则为倒数计时秒数)
      */
-    final protected function editRow($model, $data, $where, $msg){
+    final protected function editRow($model, $data, $where, $msg)
+    {
         $id = array_unique((array)I('id', 0));
         $id = is_array($id) ? implode(',', $id) : $id;
         //如存在id字段，则加入该条件
@@ -209,7 +249,8 @@ class AdminController extends Controller{
      * @param array $msg 执行正确和错误的消息,可以设置四个元素 array('success'=>'','error'=>'', 'url'=>'','ajax'=>false)
      *                     url为跳转页面,ajax是否ajax方式(数字则为倒数计时秒数)
      */
-    protected function forbid($model, $where = array(), $msg = array('success' => '状态禁用成功！', 'error' => '状态禁用失败！')){
+    protected function forbid($model, $where = array(), $msg = array('success' => '状态禁用成功！', 'error' => '状态禁用失败！'))
+    {
         $data = array('status' => 0);
         $this->editRow($model, $data, $where, $msg);
     }
@@ -285,13 +326,14 @@ class AdminController extends Controller{
 
     /**
      * AJAX模板返回
-     * @param  string      $templete 渲染后的模板
-     * @param  string      $info	   反馈信息
-     * @param  int         $status   状态 1-成功，0-失败
+     * @param  string $templete 渲染后的模板
+     * @param  string $info 反馈信息
+     * @param  int $status 状态 1-成功，0-失败
      * @return json
      * @author Stevin.John <stevin.john@qq.com>
      */
-    private function ajaxTempReturn( $templete='',$info='',$status=0 ){
+    private function ajaxTempReturn($templete = '', $info = '', $status = 0)
+    {
         $data['data'] = $templete;
         $data['info'] = $info;
         $data['status'] = $status;

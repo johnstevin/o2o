@@ -24,9 +24,9 @@
                     '<td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("add")}&pid='+ v.id+'">添加子分类</a></td>' +
                     '<td>'+ v.description+'</td>' +
                     '<td>'+v.status+'</td>'+
-                    '<td><a href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑&nbsp;&nbsp;</a>'+
-                    '<a href="{:U("Group/changeStatus")}&method=forbid&id='+ v.id+'">禁用&nbsp;&nbsp;</a>'+
-                    '<a href="{:U("Group/changeStatus")}&method=resume&id='+ v.id+'">启用&nbsp;&nbsp;</a>'+
+                    '<td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑</a>&nbsp;&nbsp;'+
+                    '<a href="{:U("Group/changeStatus")}&method=forbid&id='+ v.id+'">禁用</a>&nbsp;&nbsp;'+
+                    '<a href="{:U("Group/changeStatus")}&method=resume&id='+ v.id+'">启用</a>&nbsp;&nbsp;'+
                     '<a href="{:U("Group/changeStatus")}&method=delete&id='+ v.id+'">删除</a></td>'+
                     '</tr>';
                     if (v._child) {
