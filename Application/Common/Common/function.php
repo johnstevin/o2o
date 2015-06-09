@@ -234,12 +234,12 @@ function is_admin_login(){
 /**
  * @return int
  */
-function is_merchant_login(){
-    $user = session('merchant_auth');
+function is_merchant_login($token){
+    $user = session('merchant_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('merchant_auth_sign') == data_auth_sign($user) ? $user['uid'] : 0;
+        return session('merchant_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
 }
 

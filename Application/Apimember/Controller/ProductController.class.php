@@ -218,7 +218,7 @@ class ProductController extends ApiController{
                     ->field(['sq_brand.id as bid', 'sq_brand.title as brand', 'sq_norms.id as nid', 'sq_norms.title as norm'])
                     ->join('LEFT JOIN sq_norms on sq_norms.id=l.norms_id')
                     ->join('left JOIN sq_brand on sq_brand.id=l.brand_id')
-                    ->where('l.category_id in (' . implode(',', $bindNames) . ')')
+                    ->where('l.norms_id<>0 and l.category_id in (' . implode(',', $bindNames) . ')')
                     ->bind($bindValues);
 
                 $temp = $sql->select();

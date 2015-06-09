@@ -24,13 +24,12 @@ class UserController extends ApiController {
             $password = I('post.password');
 
             $Ucenter  = D('UcenterMember');
-            $uid = $Ucenter->login($username, $password, 5);
-            if(0 < $uid){
-
-                $this->apiSuccess('登录成功！');
-
+            $token = $Ucenter->login($username, $password, 5);
+            if(0 < $token){
+                $this->apiSuccess(['token'=>$token]);
             } else {
-                switch($uid) {
+                switch($token) {
+                    case 0:$error = '参数错误！'; break; //系统级别禁用
                     case -1: $error = '用户不存在或被禁用！'; break; //系统级别禁用
                     case -2: $error = '密码错误！'; break;
                     case -3: $error = '插入或更新管理员信息失败'; break;

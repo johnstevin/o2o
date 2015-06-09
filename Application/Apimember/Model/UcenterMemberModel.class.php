@@ -156,10 +156,14 @@ class UcenterMemberModel extends AdvModel {
             'last_login_time' => $data['last_login_time'],
         );
 
-        session('member_auth', $auth);
-        session('member_auth_sign', data_auth_sign($auth));
+        $token=md5(uniqid($user['id']));
 
-        return $user['id'];
+        session('merchant_auth'.$token, $auth);
+        session('merchant_auth_sign'.$token, data_auth_sign($auth));
+
+        $user['token']=$token;
+
+        return $token;
     }
 
     /**
