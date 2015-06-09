@@ -10,13 +10,13 @@
     <div class="form-group">
         <div id="auth_roles">
 
-            <form action="{:U('addToRole')}" method="POST" class="form-horizontal auth-form">
+            <form id="fm"  method="POST" class="form-horizontal auth-form">
                 <volist name="node_list" id="node">
                     <notempty name="node['_roles']">
                         <dl class="checkmod group">
                             <dt class="hd">
                                 <!--<label class="checkbox"><input class="auth_rules rules_all" type="checkbox"-->
-                                                               <!--name="group[]" value="$node.id}">$node.title}</label>-->
+                                <!--name="group[]" value="$node.id}">$node.title}</label>-->
                                 <label class="checkbox">{$node.title}</label>
                             </dt>
                             <dd class="bd">
@@ -59,7 +59,7 @@
     function Save(){
         $.ajax({
             type:'POST',
-            url:"{:U()}",
+            url:"{:U('addToRole')}",
             data:$('#fm').serialize(),
             dataType:'json',
             success:function(data) {

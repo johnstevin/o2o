@@ -45,75 +45,8 @@ class AuthRoleModel extends Model
         return $this->where($map)->select();
     }
 
-    /**
-     * 返回用户所属角色信息
-     * @param  int $uid 用户id
-     * @return array  用户所属的角色 array(uid'=>'用户id','roles'=>'角色id','rules'=>'用户组拥有的规则id,多个,号隔开')
-     */
-    static public function getUserRole($uid)
-    {
-        static $roles = array();
-        if (isset($roles[$uid]))
-            return $roles[$uid];
-        $prefix = C('DB_PREFIX');
-        $user_roles = M()
-            ->field('uid,roles,rules')
-            ->table($prefix . self::AUTH_ACCESS . ' a')
-            ->where("a.uid='$uid'")
-            ->find();
-        $roles[$uid] = $user_roles ? $user_roles : array();
-        return $roles[$uid];
-    }
 
 
-    /**
-     * 把用户添加到用户组,支持批量添加用户到用户组
-     *
-     * 示例: 把uid=1的用户添加到group_id为1,2的组 `AuthGroupModel->addToGroup(1,'1,2');`
-     * $gid array(array())二位数组
-     */
-    public function addToRole($uid, $gid)
-    {
-
-        $uid = is_array($uid) ? implode(',', $uid) : trim($uid, ',');
-        $gid = is_array($gid) ? $gid : explode(',', trim($gid, ','));
-
-        $Access = M(self::AUTH_ACCESS);
-        if (isset($_REQUEST['batch'])) {
-            //为单个用户批量添加用户组时,先删除旧数据
-            $del = $Access->where(array('uid' => array('in', $uid)))->delete();
-        }
-
-        $uid_arr = explode(',', $uid);
-        $uid_arr = array_diff($uid_arr, array(C('USER_ADMINISTRATOR')));
-        $add = array();
-        if ($del !== false) {
-            foreach ($uid_arr as $u) {
-                //判断用户id是否合法
-//                if (M('Member')->getFieldByUid($u, 'uid') == false) {
-//                    $this->error = "编号为{$u}的用户不存在！";
-//                    return false;
-//                }
-                foreach ($gid as $k => $val) {
-                    foreach ($val as $g) {
-                        if (is_numeric($u) && is_numeric($g)) {
-                            $add[] = array('group_id' => $k, 'uid' => $u, 'role_id' => $g,'status'=>'1');
-                        }
-                    }
-                }
-            }
-            $Access->addAll($add);
-        }
-        if ($Access->getDbError()) {
-            if (count($uid_arr) == 1 && count($gid) == 1) {
-                //单个添加时定制错误提示
-                $this->error = "不能重复添加";
-            }
-            return false;
-        } else {
-            return true;
-        }
-    }
 
     /**
      * 更新角色信息
@@ -178,7 +111,7 @@ class AuthRoleModel extends Model
      * @param  milit $id 分类ID或标识
      * @param  boolean $field 查询字段
      * @return array     分类信息
-     * @author 麦当苗儿 <zuojiazi@vip.qq.com>
+     * @author liuhui
      */
     public function info($id, $field = true)
     {

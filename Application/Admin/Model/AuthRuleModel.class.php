@@ -20,7 +20,7 @@ class AuthRuleModel extends Model{
      * @param  milit   $id 分类ID或标识
      * @param  boolean $field 查询字段
      * @return array     分类信息
-     * @author 麦当苗儿 <zuojiazi@vip.qq.com>
+     * @author liuhui
      */
     public function info($id, $field = true){
         /* 获取分类信息 */
@@ -159,15 +159,6 @@ class AuthRuleModel extends Model{
         }else{
             return true;
         }
-    }
-
-    /**
-     * @param array 条件
-     * @return  获取菜单
-     */
-    public function getMenus($where=array()){
-        $menu=$this->where($where)->order('sort asc')->field('id,title as text,pid as fid,url')->select();
-        return  list_to_tree($menu,'id','fid','children');
     }
 
 }

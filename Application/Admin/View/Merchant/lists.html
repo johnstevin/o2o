@@ -66,7 +66,7 @@
                 <td>{$vo.add_uid}</td>
                 <td>{$vo.region_id}</td>
                 <td>{$vo.status|getShopStatus}</td>
-                <td><a href="{:U('checkInfo','shop_id='.$vo['id'])}">商户审核</a></td>
+                <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('checkInfo','shop_id='.$vo['id'])}">商户审核</a></td>
             </tr>
             </volist>
             <else/>

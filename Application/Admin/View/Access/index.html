@@ -11,7 +11,7 @@
 
         <select id="group_pid" name="group" class="form-control">
             <volist name="auth_group" id="vo">
-                <option value="{:U('Role/access',array('group_id'=>$vo['id']))}"
+                <option value="{:U('Access/index',array('group_id'=>$vo['id']))}"
                 <eq name="vo['id']" value="$this_group['id']">selected</eq>
                 >{$vo.title}</option>
             </volist>
@@ -19,7 +19,7 @@
 
         <hr>
         <!-- 访问授权 -->
-        <form action="{:U('addToRule')}" method="POST" class="form-horizontal auth-form">
+        <form id="fm"  method="POST" class="form-horizontal auth-form">
             <ul id="tree"></ul>
 
             <input type="hidden" name="role" value="{$this_group.id}"/>
