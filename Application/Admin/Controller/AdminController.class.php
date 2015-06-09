@@ -36,18 +36,16 @@ class AdminController extends Controller{
             }
         }
 
-        // 检测系统权限
         if(!IS_ROOT){
             $access =   $this->accessControl();
             if ( false === $access ) {
                 $this->error('403:禁止访问');
             }elseif(null === $access ){
-                //检测访问权限
-                $rule  = strtolower(MODULE_NAME.'/'.CONTROLLER_NAME.'/'.ACTION_NAME);
-                if ( !$this->checkRule($rule,array('in','1,2')) ){
+                $rule  = strtolower(CONTROLLER_NAME.'/'.ACTION_NAME);
+                $checkType = array('in','1,2');  //TODO
+                if ( !$this->checkRule($rule,$checkType) ){
                     $this->error('未授权访问!');
                 }else{
-                    // 检测分类及内容有关的各项动态权限
                     $dynamic    =   $this->checkDynamic();
                     if( false === $dynamic ){
                         $this->error('未授权访问!');

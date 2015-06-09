@@ -45,7 +45,6 @@ class Auth{
         if (!$this->_config['AUTH_ON'])
             return true;
         $authList = $this->getAuthList($uid,$type);
-        //print_r($authList);exit;
         if (is_string($name)) {
             $name = strtolower($name);
             if (strpos($name, ',') !== false) {
@@ -122,7 +121,6 @@ class Auth{
             ->table($this->_config['AUTH_RULE'])
             ->where($map)
             ->field('title,module,url')->select();
-
         $authList = array();
         foreach ($rules as $rule) {
             if (!empty($rule['condition'])) {
