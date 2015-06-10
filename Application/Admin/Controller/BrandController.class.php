@@ -87,9 +87,9 @@ class BrandController extends AdminController
             $abnmodel = M("Category_brand_norms");
             $categoryId = "";
             //1.判断并确定三个下拉框中的分类id值并对应其标题（当二三级分类不存在的时候、默认选择一级分类；当三级分类不存在的时候、默认选择三级分类）
-            if ($_POST['category3'] != 0 & $_POST['category2'] != 0  & $_POST['category1'] != 0) {
+            if ($_POST['category3'] != 0 && $_POST['category2'] != 0  && $_POST['category1'] != 0) {
                 $categoryId = $_POST['category3'];
-            } else if ($_POST['category2'] != 0  & $_POST['category1'] != 0) {
+            } else if ($_POST['category2'] != 0  && $_POST['category1'] != 0) {
                 $categoryId = $_POST['category2'];
             } else if ($_POST['category1'] != 0) {
                 $categoryId = $_POST['category1'];
@@ -102,6 +102,7 @@ class BrandController extends AdminController
             } elseif ($_POST['category1'] ==0 and $_POST['category2'] ==0 and $_POST['category3'] !=0) {
                 $this->error('请选择二级分类', U(Brand / bindBrand));
             }
+
             //3.通过遍历将一对多的数组转换成多对多的数组
             foreach ($_POST['brand_id'] as $brand) {
                 $data[] = [
@@ -109,7 +110,14 @@ class BrandController extends AdminController
                     'brand_id' => $brand,
                 ];
             }
-            $result = $abnmodel->addAll($data);
+            $b=implode(",",$_POST[brand_id]);
+//            var_dump($b);die;
+          $result = $abnmodel->addAll($data);
+            $b_id=$abnmodel->field('category_id,brand_id')->select();
+
+            $cid=array_column($b_id,'category_id');
+            $bid=array_column($b_id,'brand_id');
+
             //4.以数组的方式传递三级分类及关联品牌的数据到bindNorms_index页面
             $bdata=array(
                 'category_1'=>$_POST['category1'],
@@ -117,7 +125,18 @@ class BrandController extends AdminController
                 'category_3'=>!empty($_POST['category3'])?$_POST['category3']:'无',
                 'brand'=>$_POST['brand_id'],
             );
-            if (is_int($result)) {
+
+          /* if(in_array($_POST['category1'],$cid)){
+                $result = $abnmodel->addAll($data);
+                if (is_int($result)) {
+                    $this->redirect('Norms/bindNorms', $bdata, 3, '关联成功,页面跳转中...');
+                } else {
+                    $this->error('对不起，关联失败！', U('bindBrand'));}
+            }else{
+                $this->error('对不起，存在相同记录！', U('bindBrand'));
+            }*/
+
+        if (is_int($result)) {
                 $this->redirect('Norms/bindNorms', $bdata, 3, '关联成功,页面跳转中...');
             } else {
                 $this->error('对不起，关联失败！', U('bindBrand'));
@@ -155,7 +174,7 @@ class BrandController extends AdminController
             $list = $this->lists('Brand');
             int_to_string($list);
             $this->assign('_list', $list);
-            $this->display("bindBrand_index");
+            $this->display("bindBrandIndex");
         }
     }
 }

@@ -17,7 +17,8 @@ use Common\Model\ProductModel;
  * Class ProductController
  * @package Api\Controller
  */
-class ProductController extends ApiController{
+class ProductController extends ApiController
+{
 
     /**
      * 根据经纬度获取附近商家信息接口
@@ -73,7 +74,7 @@ class ProductController extends ApiController{
      *           }
      *       ]
      *   }
-     ```
+     * ```
      * @author  stevin WangJiang
      */
     public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or', $type = 0)
@@ -172,15 +173,16 @@ class ProductController extends ApiController{
      *           ]
      *       }
      *   }
-     ```
+     * ```
      * @author  stevin WangJiang
      */
-    public function getDepotCategory($level=null,$pid=null,$shopIds='',$returnMore='false'){
+    public function getDepotCategory($level = null, $pid = null, $shopIds = '', $returnMore = 'false')
+    {
         //TODO:开发平台上测试的效率不理想，需要进一步优化，修改sq_merchant_depot_pro_category的数据，每次商品上架，该表必须保存指定分类以及他的所有上级节点
         try {
             empty($shopIds) and E('参数shopIds不能为空');
-            $returnMore=$returnMore==='true';
-            $shopIds=explode(',',$shopIds);
+            $returnMore = $returnMore === 'true';
+            $shopIds = explode(',', $shopIds);
 
             list($bindNames, $bindValues) = build_sql_bind($shopIds);
 
@@ -202,8 +204,8 @@ class ProductController extends ApiController{
                 //$begin = microtime(true);
                 foreach ($data as $i) {
                     //echo json_encode(CategoryModel::get($i['id']));
-                    if($i['level']==$level) {
-                        if(!in_array($i['id'],$topHint)){
+                    if ($i['level'] == $level) {
+                        if (!in_array($i['id'], $topHint)) {
                             $cats[] = $i;
                             $topHint[] = $i['id'];
                         }
@@ -254,9 +256,9 @@ class ProductController extends ApiController{
 
             //print_r($catIds);die;
 
-            $brands=[];
-            $norms=[];
-            if($returnMore and !empty($catIds)){
+            $brands = [];
+            $norms = [];
+            if ($returnMore and !empty($catIds)) {
                 //print_r($catIds);
                 list($bindNames, $bindValues) = build_sql_bind($catIds);
                 $sql = M()->table('sq_category_brand_norms as l')
@@ -282,8 +284,8 @@ class ProductController extends ApiController{
                     }
                 }
 
-                $ret['brands']=$brands;
-                $ret['norms']=$norms;
+                $ret['brands'] = $brands;
+                $ret['norms'] = $norms;
             }
             $this->apiSuccess(['data' => $ret]);
 
@@ -489,21 +491,22 @@ class ProductController extends ApiController{
      * ```
      * @author  stevin WangJiang
      */
-    public function getProductList($shopIds=null,$categoryId = null, $brandId = null,$normId=null, $title = null
-        ,$priceMin=null,$priceMax=null
-        ,$returnAlters='true',$page = 0, $pageSize = 10){
-        try{
+    public function getProductList($shopIds = null, $categoryId = null, $brandId = null, $normId = null, $title = null
+        , $priceMin = null, $priceMax = null
+        , $returnAlters = 'true', $page = 0, $pageSize = 10)
+    {
+        try {
             empty($shopIds) and E('参数shopIds不能为空');
-            $pageSize > 50 and $pageSize=50;
-            $page*=$pageSize;
-            $returnAlters=$returnAlters==='true';
-            $shopIds=explode(',',$shopIds);
+            $pageSize > 50 and $pageSize = 50;
+            $page *= $pageSize;
+            $returnAlters = $returnAlters === 'true';
+            $shopIds = explode(',', $shopIds);
 
-            $this->apiSuccess(array('data'=>(new MerchantDepotModel())->getProductList($shopIds,$categoryId, $brandId,$normId, $title
-                ,$priceMin,$priceMax
-                ,$returnAlters,$page, $pageSize)));
-        }catch (Exception $ex){
-            $this->apiError(50005,$ex->getMessage());
+            $this->apiSuccess(['data' => (new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
+                , $priceMin, $priceMax
+                , $returnAlters, $page, $pageSize)]);
+        } catch (Exception $ex) {
+            $this->apiError(50005, $ex->getMessage());
         }
     }
 
@@ -515,10 +518,10 @@ class ProductController extends ApiController{
      */
     public function getProductDetail($id)
     {
-        try{
+        try {
             $this->apiSuccess(['data' => ProductModel::get($id)]);
-        }catch (Exception $ex){
-            $this->apiError(50006,$ex->getMessage());
+        } catch (Exception $ex) {
+            $this->apiError(50006, $ex->getMessage());
         }
     }
 
@@ -531,7 +534,8 @@ class ProductController extends ApiController{
      * @param null|string $title 商品标题（模糊查询）
      * @param int $pagesize 页面大小
      * @param int|null $status 状态
-     * @param string|array $relation 是否进行关联查询
+     * @param bool $getCategorys 是否关联查询分类
+     * @param bool $getBrand 是否关联查询品牌
      * @return string
      * ``` JSON
      * {
@@ -570,9 +574,9 @@ class ProductController extends ApiController{
      * }
      * ```
      */
-    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE, $relation = [])
+    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE, $getCategorys = false, $getBrand = false)
     {
-        $this->apiSuccess(['data' => ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize, $relation)['data']]);
+        $this->apiSuccess(['data' => ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize, $getCategorys, $getBrand)['data']]);
     }
 
     /**

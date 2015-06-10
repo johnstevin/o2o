@@ -19,7 +19,7 @@ $(document).ready(function () {
         "fid": null,
         "text": "主页",
         "iconCls": "",
-        "url": "admin.php/Index/index",
+        "url": "",
         "children": ""
     };
     menuJson.unshift(indexObj);
@@ -130,7 +130,7 @@ function showFun(rootI, subI) {
         //加载功能
         if (menuJson[rootI].url != "" && menuJson[rootI].url != null) {//有路由地址
             //更新面板内容
-            $('#rg-container-fun').load(menuJson[rootI].url,function(response,status,xhr){
+            $('#rg-container-fun').load('/admin.php/'+menuJson[rootI].url,function(response,status,xhr){
 
                 if (status=="success")
                 {

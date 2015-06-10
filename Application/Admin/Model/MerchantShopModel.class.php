@@ -58,7 +58,7 @@ class MerchantShopModel extends AdvModel
 
 
         $Group = D('AuthGroup');
-        $pidGroup = $Group->info($info['group_id']);
+        $pidGroup = $Group->info($info['type']);
         if (empty($pidGroup)) {
             $this->error = '未找到上级商铺';
             M()->rollback();
@@ -67,10 +67,10 @@ class MerchantShopModel extends AdvModel
         $data['title'] = $info['title'];
         $data['description'] = $info['description'];
         $data['level'] = $pidGroup['level'] + 1;
-        $data['pid'] = $info['group_id'];
+        $data['pid'] = $info['type'];
         $data['public'] = 1;
         $data['status'] = 1;
-        $data['type'] = $info['type'];
+        $data['type'] = 2;
         $Group->create($data);
 
         // 保存组织
@@ -88,9 +88,9 @@ class MerchantShopModel extends AdvModel
                 //保存角色、组织和权限关系
                 $arr[$res][] = $info['role_id'];
                 //$arrs = is_array($arr) ? $arr : explode(',', trim($arr, ','));
-                $AuthRole = D('AuthRole');
+                $AuthAccess = D('AuthAccess');
 
-                if (false !== $AuthRole->addToRole($info['add_uid'], $arr)) {
+                if (false !== $AuthAccess->addToRole($info['add_uid'], $arr)) {
                     //修改状态
                     $info['status'] = 1;
                     if (false !== $this->save($info)) {
@@ -139,7 +139,7 @@ class MerchantShopModel extends AdvModel
     public function saveGroupAndAuth($info)
     {
         $Group = D('AuthGroup');
-        $pidGroup = $Group->info($info['group_id']);
+        $pidGroup = $Group->info($info['type']);
         if (empty($pidGroup)) {
             $this->error = '未找到上级商铺';
             return false;
@@ -147,7 +147,7 @@ class MerchantShopModel extends AdvModel
         $data['title'] = $info['title'];
         $data['description'] = $info['description'];
         $data['level'] = ($pidGroup['level'] + 1);
-        $data['pid'] = $info['group_id'];
+        $data['pid'] = $info['type'];
         $data['public'] = 1;
         $data['status'] = 1;
         $data['type'] = $info['type'];
@@ -170,9 +170,9 @@ class MerchantShopModel extends AdvModel
                 //保存角色、组织和权限关系
                 $arr[$res][] = $info['role_id'];
                 //$arrs = is_array($arr) ? $arr : explode(',', trim($arr, ','));
-                $AuthRole = D('AuthRole');
+                $AuthAccess = D('AuthAccess');
 
-                return $AuthRole->addToRole($info['add_uid'], $arr);
+                return $AuthAccess->addToRole($info['add_uid'], $arr);
             } else {
                 $this->error = '保存区域失败';
                 return false;

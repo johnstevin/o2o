@@ -9,9 +9,8 @@ namespace Apimember\Controller;
 use Common\Model\OrderModel;
 
 /**
- * 订单
- * Class OrderController
- * @package Api\Controller
+ * 订单控制器
+ * @package Apimember\Controller
  */
 class OrderController extends ApiController
 {

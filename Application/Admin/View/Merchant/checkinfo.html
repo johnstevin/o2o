@@ -1,19 +1,14 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>{:C('WEB_SITE_TITLE')}|商户列表</title>
-    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
-    <script src="__STATIC__/js/jquery.min.js"></script>
-</head>
-<body>
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title"> <h2><h2>{$_meta_title}</h2></h2></h4>
+</div>
+<div class="modal-body">
 <div class="container-fluid">
-    <!-- 标题栏 -->
-    <div>
-        <h2>{$_meta_title}</h2>
-    </div>
+
     <!-- 操作  -->
     <div>
+        <div class="msg"></div>
         <!--<a id="add" class="btn btn-success" href="{:U('add')}">新 增</a>-->
     </div>
     <!--
@@ -85,28 +80,32 @@
 
         </tbody>
     </table>
-    <div>
-        <button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>
-        <a class="btn btn-success btn-pass" href="javascript:void(0)" onclick="pass()">通&nbsp;&nbsp;&nbsp;过</a>　
-        <div class="msg"></div>
-    </div>
+    <!--<div>-->
+        <!--&lt;!&ndash;<button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>&ndash;&gt;-->
+        <!--&lt;!&ndash;<a class="btn btn-success btn-pass" href="javascript:void(0)" onclick="pass()">通&nbsp;&nbsp;&nbsp;过</a>　&ndash;&gt;-->
+        <!--<div class="msg"></div>-->
+    <!--</div>-->
     <hr>
     <div>
         <label for="reason" class="control-label">如果不通过请填写原因</label>
         <textarea  id="reason" class="form-control" rows="4" placeholder="不通过原因"></textarea>
-        <a class="btn btn-warning btn-refuse" href="javascript:void(0)" onclick="refuse()">不通过</a>
+        <!--<a class="btn btn-warning btn-refuse" href="javascript:void(0)" onclick="refuse()">不通过</a>-->
     </div>
 
 </div>
-</body>
-</html>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">取&nbsp;&nbsp;&nbsp;消</button>
+    <button type="button" class="btn btn-warning btn-refuse" onclick="refuse()">不通过</button>
+    <button type="button" class="btn btn-success" onclick="pass()">通&nbsp;&nbsp;&nbsp;过</button>
+</div>
 <script>
     var shop_id = '{$_info.id}';
     var status='{$_info.status}';
        function pass(){
-           if(!confirm("我已确定该商户在系统中不存在？")){
-             return false;
-           }
+//           if(!confirm("我已确定该商户在系统中不存在？")){
+//             return false;
+//           }
         $.ajax({
             type: "POST",
             url: "{:U('checkinfo')}",
@@ -121,7 +120,7 @@
                 alert('处理成功！');
                 location.href="{:U('lists')}";
             }else{
-                $('.msg').html("处理失败！<br>错误原因:"+json.info);
+                $('.msg').html("处理失败！错误原因:"+json.info);
                 return false;
             }
             }
