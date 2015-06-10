@@ -352,3 +352,23 @@ function build_sql_bind($list,$bindValues=[],$prefix='bindName')
     }
     return array($bindNames, $bindValues);
 }
+
+/**
+ * 加密token
+ * @author WangJiang
+ * @param string $token
+ * @return string
+ */
+function encode_token($token){
+    return $token;
+}
+
+/**
+ * 解密token
+ * @author WangJiang
+ * @param string $token
+ * @return string
+ */
+function decode_token($token){
+    return $token;
+}

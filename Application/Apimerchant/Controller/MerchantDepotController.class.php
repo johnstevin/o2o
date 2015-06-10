@@ -10,6 +10,13 @@ use Common\Model\MerchantDepotModel;
  */
 class MerchantDepotController extends ApiController
 {
+    /**
+     * @ignore
+     * @param $shopId
+     * @param $productId
+     * @param null $price
+     * @param string $remark
+     */
     public function addDepot($shopId, $productId, $price = null, $remark = '')
     {
         $this->apiSuccess(['data' => MerchantDepotModel::addDepot($shopId, $productId, $price, $remark)]);
@@ -40,6 +47,8 @@ class MerchantDepotController extends ApiController
     {
         try {
             if (IS_POST) {
+                //TODO 验证用户权限
+                //$this->getUserId();
                 $shopId = I('shop_id');
                 $productId = I('product_id');
                 $price = I('price');
@@ -79,7 +88,9 @@ class MerchantDepotController extends ApiController
     {
         try {
             if (IS_POST) {
-                //print_r($_POST);die;
+                //TODO 验证用户权限
+                //$this->getUserId();
+
                 $model = D('MerchantDepot');
                 if (!$model->create())
                     E('参数传递失败');
@@ -144,6 +155,10 @@ class MerchantDepotController extends ApiController
         try {
             if (!IS_GET)
                 E('非法调用，请用GET调用该方法');
+
+            //TODO 验证用户权限
+            //$this->getUserId();
+
             $shopIds = explode(',', $shopIds);
             //print_r($shopIds);die;
             $this->apiSuccess(['data' => (new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title

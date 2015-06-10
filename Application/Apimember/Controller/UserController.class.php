@@ -108,11 +108,9 @@ class UserController extends ApiController {
      * 退出登陆
      */
     public function logout(){
-        if(is_member_login()){
-            D('UcenterMember')->logout();
-            session('[destroy]');
-            $this->apiSuccess('退出成功！');
-        }
+        D('UcenterMember')->logout();
+        session('[destroy]');
+        $this->apiSuccess(null,'退出成功！');
     }
 
     /**

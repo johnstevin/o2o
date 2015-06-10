@@ -28,6 +28,24 @@ class ProductController extends ApiController{
      * @param string words_op  or|and，关键字组合方式
      * @param int $type 商家门店类型，可选0-所有类型，1-超市，2-生鲜，3-洗车，4-送水，缺省0
      * @return json
+     * ``` json
+     *   {
+     *       {
+     *       "success": true,
+     *       "error_code": 0,
+     *       "data": [
+     *           {
+     *               "id": <商铺ID，shop id>,
+     *               "title": "<商铺名称>",
+     *               "distance": <当前距离，米>,
+     *               "lnglat": [
+     *                   <经度>,
+     *                   <纬度>
+     *               ]
+     *           }...
+     *       ]
+     *   }
+     * ```
       调用样例 GET apimber.php?s=/Product/getMerchantList/lat/29.58733/lng/106.524311/range/6000
      * ``` json
      *   {
@@ -84,7 +102,34 @@ class ProductController extends ApiController{
      * @param array|string $shopIds 商铺ID，可以通过getMerchantList获得，该参数可选
      * @param string|true|false $returnMore 返回相关品牌规格等附带信息，
      * @return json
-
+     ``` json
+     *   {
+     *       "success": true,
+     *       "error_code": 0,
+     *       "data": {
+     *       "categories": [ 分类
+     *           {
+     *               "id": "<分类ID>",
+     *               "title": "<分类名称>",
+     *               "pid": "<上级分类ID>",
+     *               "level": "<分类层，例如：顶层分类为0>"
+     *           }...
+     *       ],
+     *       "brands": [  品牌，returnMore=false时为空
+     *           {
+     *               "id": "<品牌ID>",
+     *               "title": "<品牌名称>"
+     *           }...
+     *       ],
+     *       "norms": [  规格，returnMore=false时为空
+     *           {
+     *               "id": "<规格ID>",
+     *               "title": "<规格名称>"
+     *           }...
+     *           ]
+     *       }
+     *   }
+     ```
         调用样例 GET apimber.php?s=Product/getDepotCategory/shopIds/6,4,2/pid/2/returnMore/true
     ``` json
      *   {
@@ -327,6 +372,29 @@ class ProductController extends ApiController{
      * @param int $pageSize 页面大小
      * @param int|null $status 状态
      * @return json
+     ``` json
+     *{
+     *    "success": true,
+     *    "error_code": 0,
+     *    "data": [
+     *        {
+     *            "id": "<当选商铺库存ID>",
+     *            "product_id": "<商品ID>",
+     *            "product": "<商品名称>",
+     *            "price": <当选商铺定价>,
+     *            "shop_id": "<当选商铺ID>",
+     *            "shop": "<当选商铺名称>",
+     *            "alters": [ 其他销售该商品的商铺
+     *            {
+     *                "id": "<商铺库存ID>",
+     *                "price": <商铺定价>,
+     *                "shop_id": "<商铺ID>",
+     *                "shop": "<商铺名称>"
+     *            }...
+     *            ]
+     *        }...
+     *    ]
+     *}     ```
      调用样例  GET apimber.php?s=/Product/getProductList/shopIds/2,4,6
      ``` json
     *{

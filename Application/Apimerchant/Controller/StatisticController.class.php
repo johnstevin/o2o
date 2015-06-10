@@ -48,6 +48,10 @@ class StatisticController extends ApiController
      */
     public function monthlySales($shopId, $beginYear, $endYear = null)
     {
+        //TODO 验证用户权限
+        //$this->getUserId();
+        //
+
         if (is_null($endYear))
             $endYear = $beginYear;
 

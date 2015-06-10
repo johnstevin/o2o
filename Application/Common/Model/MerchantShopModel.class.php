@@ -77,14 +77,14 @@ class MerchantShopModel extends AdvModel{
     protected $_auto = array (
         [##禁止客户端修改该值
             'group_id',
-            '_default_group_id',
+            'default_group_id',
             self::MODEL_BOTH,
             'callback'
         ],
         ['status',self::STATUS_CLOSE,self::MODEL_INSERT]
     );
 
-    protected function _default_group_id(){
+    public function default_group_id(){
         return C('AUTH_GROUP_ID.MERCHANT_GROUP_ID');
     }
 
@@ -192,7 +192,10 @@ class MerchantShopModel extends AdvModel{
             ->bind(':lat', $lat)
             ->bind(':dist', $range)
             ->bind(':seconds',$seconds)
-            ->field(['id', 'title','ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance','st_astext(lnglat) as lnglat']);
+            ->field(['id','title','description','type','phone_number','address','open_time_mode','begin_open_time',
+                'end_open_time','pay_delivery_time','delivery_time_cost','delivery_distance_limit','pay_delivery_distance',
+                'delivery_distance_cost','free_delivery_amount','pay_delivery_amount','delivery_amount_cost'
+                ,'ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance','st_astext(lnglat) as lnglat']);
 
         $ret= $this->select();
         //print_r($this->getLastSql());

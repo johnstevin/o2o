@@ -59,6 +59,9 @@ class MerchantShopController extends ApiController
     {
         try {
             if (IS_POST) {
+                //TODO 验证用户权限
+                //$this->getUserId();
+
                 $model = D('MerchantShop');
                 if (!$model->create())
                     E('参数传递失败');
@@ -91,8 +94,12 @@ class MerchantShopController extends ApiController
         try {
             if (IS_POST) {
                 $model = D('MerchantShop');
-                if (!$model->create())
+                if (!($data=$model->create()))
                     E('参数传递失败');
+                //TODO 验证用户权限
+                //$data['add_uid']=$this->getUserId();
+
+                $model->data($data);
                 $this->apiSuccess(['id' => intval($model->add())],'');
             } else
                 E('非法调用');
@@ -104,7 +111,6 @@ class MerchantShopController extends ApiController
     /**
      * 获得商铺列表
      * @author WangJiang
-     * @param $groupId 用户分组ID，注意：该参数应该来自权限
      * @param null $pid 上级商铺ID
      * @param null $regionId 区域ID
      * @param string $type 商铺类型
@@ -164,11 +170,15 @@ class MerchantShopController extends ApiController
      *}
      * '''
      */
-    public function getList($groupId, $pid = null, $regionId = null, $type = '0', $title = null)
+    public function getList($pid = null, $regionId = null, $type = '0', $title = null)
     {
         try {
             if (IS_GET) {
+                //TODO 验证用户权限
+                //$this->getUserId();
+
                 $model = D('MerchantShop');
+                $groupId=$model->default_group_id();
 
                 $where['group_id'] = $groupId;
                 !is_null($pid) and $where['pid'] = $pid;

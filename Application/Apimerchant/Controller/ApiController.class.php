@@ -16,6 +16,8 @@ use Common\Controller\RestController;
  */
 abstract class ApiController extends RestController{
 
-
+    protected function isLogin($token){
+        return is_merchant_login($token);
+    }
 
 }
