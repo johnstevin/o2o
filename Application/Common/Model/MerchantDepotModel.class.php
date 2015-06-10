@@ -383,7 +383,7 @@ class MerchantDepotModel extends RelationModel
             $bindValues[':cateId'] = $categoryId;
         }
 
-        $this->field(['sq_merchant_depot.id', 'pro.id as product_id'
+        $this->field(['sq_merchant_depot.id', 'pro.id as product_id','pro.description'
             , 'pro.title as product', 'sq_merchant_depot.price', 'sq_merchant_depot.add_time'
             , 'shop.id as shop_id', 'shop.title as shop', 'brand.id as brand_id'
             , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm']);
