@@ -111,7 +111,7 @@ class MerchantDepotModel extends RelationModel
         ],
         [
             'shop_id',
-            'check_merchant_shop_exist',
+            'check_shop_exist',
             '有非法商家ID',
             self::EXISTS_VALIDATE,
             'function'
@@ -223,46 +223,54 @@ class MerchantDepotModel extends RelationModel
     /**
      * 根据商家ID查找商品列表
      * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param int $merchantId 商家ID
+     * @param int $shopId 商家ID
      * @param int $pageSize 页面大小
      * @param int $status 商品状态
      * @return array
      */
-    public static function getLists($merchantId, $pageSize = 10, $status = self::STATUS_ACTIVE)
+    public static function getListsByShopId($shopId, $pageSize = 10, $status = self::STATUS_ACTIVE)
     {
-        $where['shop_id'] = intval($merchantId);
+        $where['shop_id'] = intval($shopId);
+        //检查商铺是否存在
         if (!$where['shop_id'] || !check_merchant_exist($where['shop_id'])) return ['data' => [], 'pagination' => ''];
-        if (!empty($status)) $where['status'] = in_array($status, array_keys(self::getStatusOptions())) ? $status : self::STATUS_ACTIVE;
+        //如果状态不为空并且状态在系统状态里，那么状态就为传入的状态，否则就为正常状态
+        if ($status !== null && in_array($status, array_keys(self::getStatusOptions()))) {
+            $where['status'] = $status;
+        } else {
+            $where['status'] = self::STATUS_ACTIVE;
+        }
         $pageSize = intval($pageSize);
         $model = self::getInstance();
-        $total = $model->where($where)->count('id');
-        $result = [];
+        $total = $model->where($where)->count('id');//获得总记录数
         $pagination = new Page($total, $pageSize);
-        if ($total) {
+        if ($total) {//如果统计数大于1
             $data = $model->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
             $productIds = [];
             $depotProducts = [];
             foreach ($data as $key => $product) {
-                $productIds[] = $product['product_id'];
-                $depotProducts[$product['product_id']] = $product;
+                $productIds[] = $product['product_id'];//获取所有的商品ID
+                $depotProducts[$product['product_id']] = &$product;//重新组合数组
             }
             $productIds = array_unique($productIds);
             $products = ProductModel::getInstance()->where(['id' => ['IN', $productIds], 'status' => ProductModel::STATUS_ACTIVE])->select();
             $_products = [];
             foreach ($products as $key => $product) {
-                $_products[$product['id']] = $product;
+                $_products[$product['id']] = $product;//重新组合数组
             }
-            foreach ($_products as $key => $product) {
-                if (isset($depotProducts[$key])) {
-                    $result[$key] = $product;
-                    $result[$key]['price'] = $depotProducts[$key]['price'];
-                    $result[$key]['remark'] = $depotProducts[$key]['remark'];
+            foreach ($depotProducts as $key => &$product) {
+                if (isset($_products[$key])) {//如果系统商品里的这个商品存在，则把系统总库的商品标题和介绍存入要返回的数组里
+                    $product['title'] = &$_products[$key]['title'];
+                    $product['detail'] = &$_products[$key]['detail'];
                 }
             }
+            return [
+                'data' => $depotProducts,
+                'pagination' => $pagination->show()
+            ];
         }
         return [
-            'data' => $result,
-            'pagination' => $pagination->show()
+            'data' => [],
+            'pagination' => ''
         ];
     }
 
@@ -417,21 +425,21 @@ class MerchantDepotModel extends RelationModel
             if ($returnAlters) {
                 $depot = $depots[$k];
                 $alters = [];
-                $minPrice=null;
-                $maxPrice=null;
+                $minPrice = null;
+                $maxPrice = null;
                 foreach ($depot as $i) {
                     if ($product['id'] !== $i['id'])
                         $alters[] = ['id' => $i['id'], 'price' => $i['price'], 'shop_id' => $i['shop_id'], 'shop' => $i['shop']];
-                    if(is_null($minPrice))
-                        $minPrice=$i['price'];
+                    if (is_null($minPrice))
+                        $minPrice = $i['price'];
                     else
-                        $minPrice=min($minPrice,$i['price']);
-                    if(is_null($maxPrice))
-                        $maxPrice=$i['price'];
+                        $minPrice = min($minPrice, $i['price']);
+                    if (is_null($maxPrice))
+                        $maxPrice = $i['price'];
                     else
-                        $maxPrice=max($maxPrice,$i['price']);
+                        $maxPrice = max($maxPrice, $i['price']);
                 }
-                $product['price_range']=[$minPrice,$maxPrice];
+                $product['price_range'] = [$minPrice, $maxPrice];
                 $product['alters'] = $alters;
             }
 
@@ -460,7 +468,12 @@ class MerchantDepotModel extends RelationModel
         } else {
             $where['status'] = self::STATUS_ACTIVE;
         }
-        return self::getInstance()->field($fileds)->where($where)->find() ?: null;
+        if ($data = self::getInstance()->relation(true)->field($fileds)->where($where)->find()) {
+            $data['detail'] = $data['_product']['detail'];
+            $data['title'] = $data['_product']['title'];
+            $data['brand_id'] = $data['_product']['brand_id'];
+        }
+        return $data;
     }
 
     /**
@@ -491,6 +504,7 @@ class MerchantDepotModel extends RelationModel
         $depotCategoryModel = M('merchant_depot_pro_category');
         $ids = is_array($product['_categorys']) ?: explode(',', $product['_categorys']);
         $ids = array_unique($ids);
+        $categorys = [];
         foreach ($ids as $id) {
             //如果没有找到相应的分类才添加
             if (!$depotCategoryModel->where(['shop_id' => $shopId, 'category_id' => $id])->find()) {
@@ -564,6 +578,7 @@ class MerchantDepotModel extends RelationModel
 
     /**
      * 逻辑删除商品
+     * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id
      * @param bool $logic 是否逻辑删除
      * @return bool|int
@@ -580,6 +595,7 @@ class MerchantDepotModel extends RelationModel
 
     /**
      * 根据ID获取列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
      * @param string|array $ids
      * @param string|array $fields 要查询的字段
      * @return null|array
@@ -595,6 +611,12 @@ class MerchantDepotModel extends RelationModel
                 $ids
             ],
         ];
-        return $model->relation('_product')->where($where)->field($fields)->select();
+        $data = $model->relation('_product')->where($where)->field($fields)->select();
+        foreach ($data as &$item) {
+            $item['title'] = $item['_product']['title'];
+            $item['detail'] = $item['_product']['detail'];
+            unset($item['_product']);
+        }
+        return $data;
     }
 }
