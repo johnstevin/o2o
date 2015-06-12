@@ -2,7 +2,7 @@
 
 namespace Home\Controller;
 use OT\DataDictionary;
-
+require __ROOT__.'Addons/Sms/Common/function.php';
 /**
  * 前台首页控制器
  * 主要获取首页聚合数据
@@ -18,6 +18,16 @@ class IndexController extends HomeController {
 
     public function login(){
         echo '<a href="'.U('Index/index').'">index</a>';
+    }
+
+    /**
+     * 短信测试接口
+     * @author WangJiang
+     * @param $mobiles
+     * @param $text
+     */
+    public function sms($mobiles,$text){
+        \Addons\Sms\Common\send_code(explode(',',$mobiles),$text);
     }
 
 }
