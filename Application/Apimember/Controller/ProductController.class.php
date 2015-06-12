@@ -28,6 +28,7 @@ class ProductController extends ApiController
      * @param null|string|array words 关键字，w1,w2... 在title以及description字段中查找
      * @param string words_op  or|and，关键字组合方式
      * @param int $type 商家门店类型，可选0-所有类型，1-超市，2-生鲜，3-洗车，4-送水，缺省0
+     * @param int $order 排序，1-按距离，2-按评价
      * @return json
      * ``` json
      *   {
@@ -77,12 +78,12 @@ class ProductController extends ApiController
      * ```
      * @author  stevin WangJiang
      */
-    public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or', $type = 0)
+    public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or', $type = 0,$order=1)
     {
         try {
             $this->apiSuccess(['data' => (new MerchantShopModel())
-                ->getNearby($lat, $lng, $range, $words, $wordsOp, $type)]);
-        } catch (Exception $ex) {
+                ->getNearby($lat, $lng, $range, $words, $wordsOp, $type,$order)]);
+        } catch (\Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
         }
     }

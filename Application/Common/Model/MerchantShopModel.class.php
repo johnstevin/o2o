@@ -144,9 +144,10 @@ class MerchantShopModel extends AdvModel{
      * @param null|string|array words 关键字，w1,w2... 在title以及description字段中查找
      * @param string words_op  or|and，关键字组合方式
      * @param int $type 商家门店类型，可选0-所有类型，1-超市，2-生鲜，3-洗车，4-送水，缺省0
+     * @param int $order 排序，1-按距离，2-按评价
      * @return mixed
      */
-    public function getNearby($lat, $lng, $range = 100,$words=null,$words_op='or',$type=0)
+    public function getNearby($lat, $lng, $range,$words,$words_op,$type,$order=1)
     {
         if (!is_numeric($lat) or !is_numeric($lng))
             //$this->error('坐标必须是数值', '', true);
@@ -160,7 +161,7 @@ class MerchantShopModel extends AdvModel{
             //$this->error('查询范围必须是数值', '', true);
             E('查询范围必须是数值');
 
-        //TODO：需要考虑最大查询范围
+        //TODO 需要考虑最大查询范围
         if ($range < 0)
             //$this->error('非法查询范围', '', true);
             E('非法查询范围');
@@ -171,7 +172,9 @@ class MerchantShopModel extends AdvModel{
         //当前时间，秒
         $seconds=time()-strtotime("00:00:00");//8*3600;
 
-        $map['_string'] = 'ST_Distance_Sphere(lnglat,POINT(:lng,:lat))<:dist and (open_time_mode=2 or (begin_open_time <:seconds and end_open_time >:seconds))';
+        $map['_string'] = 'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))<:dist
+        and (sq_merchant_shop.open_time_mode=2
+            or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
 
         $type=intval($type);
 
@@ -180,22 +183,48 @@ class MerchantShopModel extends AdvModel{
             E('非法店面类型，可选项：0-所有类型，17 => 超市, 89 => 生鲜, 18 => 洗车, 90 => 送水');
 
         if ($type != 0)
-            $map['type'] = $type;
+            $map['sq_merchant_shop.type'] = $type;
 
         if (!empty($words))
-            build_words_query(explode(',', $words), $words_op, ['title', 'description'], $map);
+            build_words_query(explode(',', $words), $words_op, ['sq_merchant_shop.title', 'sq_merchant_shop.description'], $map);
 
-        $map['status&open_status']=1;
+        $map['sq_merchant_shop.status&sq_merchant_shop.open_status']=1;
 
         $this->where($map)
+            ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
             ->bind(':lng', $lng)
             ->bind(':lat', $lat)
             ->bind(':dist', $range)
             ->bind(':seconds',$seconds)
-            ->field(['id','title','description','type','phone_number','address','open_time_mode','begin_open_time',
-                'end_open_time','pay_delivery_time','delivery_time_cost','delivery_distance_limit','pay_delivery_distance',
-                'delivery_distance_cost','free_delivery_amount','pay_delivery_amount','delivery_amount_cost'
-                ,'ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance','st_astext(lnglat) as lnglat']);
+            ->field([
+                'sq_merchant_shop.id'
+                ,'sq_merchant_shop.title'
+                ,'sq_merchant_shop.description'
+                ,'sq_merchant_shop.type'
+                ,'sq_merchant_shop.phone_number'
+                ,'sq_merchant_shop.address'
+                ,'sq_merchant_shop.open_time_mode'
+                ,'sq_merchant_shop.begin_open_time'
+                ,'sq_merchant_shop.end_open_time'
+                ,'sq_merchant_shop.pay_delivery_time'
+                ,'sq_merchant_shop.delivery_time_cost'
+                ,'sq_merchant_shop.delivery_distance_limit'
+                ,'sq_merchant_shop.pay_delivery_distance'
+                ,'sq_merchant_shop.delivery_distance_cost'
+                ,'sq_merchant_shop.free_delivery_amount'
+                ,'sq_merchant_shop.pay_delivery_amount'
+                ,'sq_merchant_shop.delivery_amount_cost'
+                ,'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat)) as distance'
+                ,'st_astext(sq_merchant_shop.lnglat) as lnglat'
+                ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade']);
+
+        if(1==$order)
+            $this->order('distance');
+        //TODO 暂时即时计算，后期应该定期计算存入shop表
+        else if(2==$order)
+            $this->order('grade desc');
+
+        $this->group('sq_merchant_shop.id');
 
         $ret= $this->select();
         //print_r($this->getLastSql());
