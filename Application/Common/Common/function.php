@@ -10,6 +10,11 @@ function checkIpFormat($ip)
     return filter_var($ip, FILTER_VALIDATE_IP) ? true : false;
 }
 
+function get_client_ip_to_int()
+{
+    return get_client_ip(1, true);
+}
+
 /**
  * 构建关键字查询条件帮助函数
  * @author WangJiang
@@ -123,13 +128,24 @@ function check_merchant_exist($id)
 }
 
 /**
- * 检测商家是否存在
+ * 检测商家父级
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @param int $id 父级ID
+ * @return bool
+ */
+function check_merchant_parent_exist($id)
+{
+    return \Common\Model\MerchantModel::checkMerchantPidExist($id);
+}
+
+/**
+ * 检测商铺是否存在
  * @author Fufeng Nie <niefufeng@gmail.com>
  * @param int $id 商铺ID
  * @todo 待完善
  * @return bool
  */
-function check_merchant_shop_exist($id)
+function check_shop_exist($id)
 {
     return true;
 }
@@ -188,7 +204,8 @@ function create_order_code()
  * 检测当前用户是否为管理员
  * @return boolean true-管理员，false-非管理员
  */
-function is_administrator($uid = null){
+function is_administrator($uid = null)
+{
     $uid = is_null($uid) ? is_admin_login() : $uid;
     return $uid && (intval($uid) === C('USER_ADMINISTRATOR'));
 }
@@ -198,19 +215,21 @@ function is_administrator($uid = null){
  * @param int $time
  * @return string 完整的时间显示
  */
-function time_format($time = NULL,$format='Y-m-d H:i'){
+function time_format($time = NULL, $format = 'Y-m-d H:i')
+{
     $time = $time === NULL ? NOW_TIME : intval($time);
     return date($format, $time);
 }
 
 /**
  * 数据签名认证
- * @param  array  $data 被认证的数据
+ * @param  array $data 被认证的数据
  * @return string       签名
  */
-function data_auth_sign($data) {
+function data_auth_sign($data)
+{
     //数据类型检测
-    if(!is_array($data)){
+    if (!is_array($data)) {
         $data = (array)$data;
     }
     ksort($data); //排序
@@ -222,7 +241,8 @@ function data_auth_sign($data) {
 /**
  * @return int
  */
-function is_admin_login(){
+function is_admin_login()
+{
     $user = session('admin_auth');
     if (empty($user)) {
         return 0;
@@ -234,7 +254,8 @@ function is_admin_login(){
 /**
  * @return int
  */
-function is_merchant_login(){
+function is_merchant_login()
+{
     $user = session('merchant_auth');
     if (empty($user)) {
         return 0;
@@ -246,7 +267,8 @@ function is_merchant_login(){
 /**
  * @return int
  */
-function is_member_login(){
+function is_member_login()
+{
     $user = session('member_auth');
     if (empty($user)) {
         return 0;
@@ -259,12 +281,13 @@ function is_member_login(){
  * @param int $length
  * @return string
  */
-function generate_saltKey( $length = 6 ) {
+function generate_saltKey($length = 6)
+{
     // 密码字符集，可任意添加你需要的字符
     $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_[]{}<>~`+=,.;:/?|';
     $saltKey = '';
-    for ( $i = 0; $i < $length; $i++ ){
-        $saltKey .= $chars[ mt_rand(0, strlen($chars) - 1) ];
+    for ($i = 0; $i < $length; $i++) {
+        $saltKey .= $chars[mt_rand(0, strlen($chars) - 1)];
     }
     return $saltKey;
 }
@@ -274,12 +297,13 @@ function generate_saltKey( $length = 6 ) {
  * @param $saltkey
  * @return string
  */
-function generate_password( $pwd, $saltkey ) {
+function generate_password($pwd, $saltkey)
+{
     //Md5(Md5(盐值前三位.md5(密码).盐值后几位).盐值)，取最中间24位
-    $saltkey1 = substr($saltkey,0,3);
-    $saltkey2 = substr($saltkey,-3);
-    $pwd = md5(md5($saltkey1.$pwd.$saltkey2).$saltkey);
-    $pwd = substr($pwd,4,24);
+    $saltkey1 = substr($saltkey, 0, 3);
+    $saltkey2 = substr($saltkey, -3);
+    $pwd = md5(md5($saltkey1 . $pwd . $saltkey2) . $saltkey);
+    $pwd = substr($pwd, 4, 24);
 
     return $pwd;
 }
@@ -288,25 +312,26 @@ function generate_password( $pwd, $saltkey ) {
  * 调用系统的API接口方法（静态方法）
  * api('User/getName','id=5'); 调用公共模块的User接口的getName方法
  * api('Admin/User/getName','id=5');  调用Admin模块的User接口
- * @param  string  $name 格式 [模块名]/接口名/方法名
- * @param  array|string  $vars 参数
+ * @param  string $name 格式 [模块名]/接口名/方法名
+ * @param  array|string $vars 参数
  */
-function api($name,$vars=array()){
-    $array     = explode('/',$name);
-    $method    = array_pop($array);
+function api($name, $vars = [])
+{
+    $array = explode('/', $name);
+    $method = array_pop($array);
     $classname = array_pop($array);
-    $module    = $array? array_pop($array) : 'Common';
-    $callback  = $module.'\\Api\\'.$classname.'Api::'.$method;
-    if(is_string($vars)) {
-        parse_str($vars,$vars);
+    $module = $array ? array_pop($array) : 'Common';
+    $callback = $module . '\\Api\\' . $classname . 'Api::' . $method;
+    if (is_string($vars)) {
+        parse_str($vars, $vars);
     }
-    return call_user_func_array($callback,$vars);
+    return call_user_func_array($callback, $vars);
 }
 
 /**
  * select返回的数组进行整数映射转换
  *
- * @param array $map  映射关系二维数组  array(
+ * @param array $map 映射关系二维数组  array(
  *                                          '字段名1'=>array(映射关系数组),
  *                                          '字段名2'=>array(映射关系数组),
  *                                           ......
@@ -319,15 +344,16 @@ function api($name,$vars=array()){
  *  )
  *
  */
-function int_to_string(&$data,$map=array('status'=>array(1=>'正常',-1=>'删除',0=>'禁用',2=>'未审核',3=>'草稿'))) {
-    if($data === false || $data === null ){
+function int_to_string(&$data, $map = ['status' => [1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿']])
+{
+    if ($data === false || $data === null) {
         return $data;
     }
     $data = (array)$data;
-    foreach ($data as $key => $row){
-        foreach ($map as $col=>$pair){
-            if(isset($row[$col]) && isset($pair[$row[$col]])){
-                $data[$key][$col.'_text'] = $pair[$row[$col]];
+    foreach ($data as $key => $row) {
+        foreach ($map as $col => $pair) {
+            if (isset($row[$col]) && isset($pair[$row[$col]])) {
+                $data[$key][$col . '_text'] = $pair[$row[$col]];
             }
         }
     }
@@ -343,12 +369,12 @@ function int_to_string(&$data,$map=array('status'=>array(1=>'正常',-1=>'删除
  * @param string $prefix 参数名称前缀
  * @return array [$bindNames,$bindValues] $bindNames 参数名称, $bindValues参数绑定用于bind调用
  */
-function build_sql_bind($list,$bindValues=[],$prefix='bindName')
+function build_sql_bind($list, $bindValues = [], $prefix = 'bindName')
 {
     foreach ($list as $i => $id) {
         $name = ":$prefix" . $i;
         $bindNames[] = $name;
         $bindValues[$name] = $id;
     }
-    return array($bindNames, $bindValues);
+    return [$bindNames, $bindValues];
 }
