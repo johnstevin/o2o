@@ -34,7 +34,7 @@ abstract class RestController  extends Controller{
         $token=$_SERVER['HTTP_ACCESSTOKEN'];//I('server.ACCESSTOKEN',null);
         if($token===null)
             //或者放入GET，POST参数中
-            $token=I('access_token');
+            $token=I('accesstoken');
         //var_dump($token);
         //var_dump($_SERVER);die;
         return $token;

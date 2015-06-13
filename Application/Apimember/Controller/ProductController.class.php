@@ -191,6 +191,7 @@ class ProductController extends ApiController
             $sql = M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
                 ->where('a.shop_id in (' . implode(',', $bindNames) . ') and a.category_id=b.id')
                 ->field(['b.id', 'b.title', 'b.pid', 'b.level'])
+                ->group('b.id')
                 ->bind($bindValues);
 
             $data = $sql->select();

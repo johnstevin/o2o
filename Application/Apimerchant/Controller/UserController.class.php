@@ -14,9 +14,14 @@ namespace Apimerchant\Controller;
 class UserController extends ApiController {
 
     /**
-     * 商户登陆
-     * @param
-     * @author  stevin
+     * 商户登陆,参数用POST提交
+     * @param string username 用户名称
+     * @param string password 密码
+     * @author  stevin,WangJiang
+     * @return json
+     * {
+     *  "token":"<access token 随后某些调用需要>"
+     * }
      */
     public function login(){
         try{
@@ -46,9 +51,11 @@ class UserController extends ApiController {
     }
 
     /**
-     * 商户注册
-     * @param
-     * @author  stevin
+     * 商户注册,参数用POST提交
+     * @param string mobile   手机号
+     * @param string password 密码
+     * @author  stevin,WangJiang
+     * @return json
      */
     public function register(){
         if(IS_POST){
@@ -103,14 +110,16 @@ class UserController extends ApiController {
         }
         return $error;
     }
-
+    
     /**
      * 退出登陆
+     * @author WangJiang
+     * @param string accesstoken 调用令牌
+     * @return json
      */
     public function logout(){
         D('UcenterMember')->logout($this->getToken());
-        //TODO APP如何确定session
-        session('[destroy]');
+        //session('[destroy]');
         $this->apiSuccess(null,'退出成功！');
     }
 
