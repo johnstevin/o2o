@@ -97,6 +97,8 @@ class NormsController extends AdminController
            } elseif ($category1 != 0 and $category2 != 0 and $category3 != 0) {
                $categoryid = $category3;
            }
+
+           //将分类下辖的品牌以及绑定的规格形成一对多的数组，并存入数据库
            $brand_id = implode(",", $brandid);
            foreach ($_POST['norms_id'] as $norms) {
                $data[] = [
@@ -105,6 +107,8 @@ class NormsController extends AdminController
                    'norms_id' => $norms,
                ];
            }
+
+
            $result = $abnmodel->addAll($data);
            if (is_int($result)) {
                $this->redirect('Categorybrandnorms/index', $data, 3, '关联成功,页面跳转中...');
