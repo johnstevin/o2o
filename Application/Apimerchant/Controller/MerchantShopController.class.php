@@ -312,7 +312,7 @@ class MerchantShopController extends ApiController
      *  "error_code": 0,
      *  "data":
      *  [
-     *      "<类别名称>",...
+     *      "<类别ID>",...
      *  ]
      * }
      * ```
@@ -323,8 +323,8 @@ class MerchantShopController extends ApiController
      *  "error_code": 0,
      *  "data":
      *  [
-     *      "生鲜",
-     *      "送水"
+     *      "1",
+     *      "2"
      *  ]
      * }
      * ```
@@ -334,7 +334,7 @@ class MerchantShopController extends ApiController
             $data=M('ShopTag')->where(['shop_id'=>$shopId])->select();
             $ret=[];
             foreach($data as $v){
-                $ret[]=$v['tag'];
+                $ret[]=$v['tag_id'];
             }
             $this->apiSuccess(['data'=>$ret]);
         }catch (\Exception $ex){
@@ -349,13 +349,13 @@ class MerchantShopController extends ApiController
      * @post json
      * ``` json
      * [
-     *  "<类别名称>",...
+     *  "<类别ID>",...
      * ]
      * ```
      * @return json
      * 调用样例 POST apimchant.php?s=/MerchantShop/setTags/shopId/4
      * ``` json
-     * ["送水","生鲜"]
+     * ["1","2"]
      * ```
      */
     public function setTags($shopId){
@@ -368,7 +368,7 @@ class MerchantShopController extends ApiController
             try{
                 $m->where(['shop_id'=>$shopId])->delete();
                 foreach($content as $tag){
-                    $m->add(['shop_id'=>$shopId,'tag'=>$tag]);
+                    $m->add(['shop_id'=>$shopId,'tag_id'=>$tag]);
                 }
                 $m->commit();
                 $this->apiSuccess(null,'修改成功');

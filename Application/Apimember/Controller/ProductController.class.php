@@ -27,7 +27,8 @@ class ProductController extends ApiController
      * @param int $range 查询半径，单位米，缺省100米
      * @param null|string|array words 关键字，w1,w2... 在title以及description字段中查找
      * @param string words_op  or|and，关键字组合方式
-     * @param string $type 商家门店服务类型，可选''表示所有店铺，'商超'，'生鲜'，'洗车'，'送水'，缺省为''
+     * @param int $tagId 商家门店服务类型，可选''表示所有店铺，1-'商超'，2-'生鲜'，3-'送水'
+     * @param int $type 商家类别，有1-超市，2-洗车
      * @param int $order 排序，1-按距离，2-按评价
      * @return json
      * ``` json
@@ -78,11 +79,11 @@ class ProductController extends ApiController
      * ```
      * @author  stevin WangJiang
      */
-    public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or', $type = '',$order=1)
+    public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or', $tagId=0,$type = null,$order=1)
     {
         try {
             $this->apiSuccess(['data' => (new MerchantShopModel())
-                ->getNearby($lat, $lng, $range, $words, $wordsOp, $type,$order)]);
+                ->getNearby($lat, $lng, $range, $words, $wordsOp,$tagId, $type,$order)]);
         } catch (\Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
         }
