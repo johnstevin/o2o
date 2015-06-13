@@ -211,7 +211,7 @@ class BrandController extends AdminController
             $list = $this->lists('Brand');
             int_to_string($list);
             $this->assign('_list', $list);
-            $this->display("bindBrandIndex");
+            $this->display("bindbrandindex");
         }
     }
 }
