@@ -9,7 +9,7 @@ return array(
             'serverIP'=>'sandboxapp.cloopen.com',
             'serverPort'=>'8883',
             'softVersion'=>'2013-12-26',
-            'templateId'=>'1'
+            'templateId'=>'22288'
         ],
     ],
 
