@@ -11,9 +11,7 @@ class IndexController extends HomeController {
 
 	//系统首页
     public function index(){
-
         echo '<a href="'.U('Index/login').'">login</a>';
-
     }
 
     public function login(){
@@ -28,6 +26,26 @@ class IndexController extends HomeController {
      */
     public function sms($mobiles,$text){
         \Addons\Sms\Common\send_code(explode(',',$mobiles),$text);
+    }
+
+    /**
+     * 分词测试接口
+     * @author WangJiang
+     * @param $text
+     */
+    public function scws($text){
+        $so = scws_new();
+        $so->set_charset('utf8');
+        $so->send_text($text);
+        echo '<pre>';
+        while ($tmp = $so->get_result())
+        {
+            foreach($tmp as $i){
+                print_r($i['word']);echo '<br/>';
+            }
+            break;
+        }
+        $so->close();
     }
 
 }
