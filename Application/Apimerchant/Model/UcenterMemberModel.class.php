@@ -157,19 +157,17 @@ class UcenterMemberModel extends AdvModel {
             'last_login_time' => $data['last_login_time'],
         );
 
-        session('merchant_auth', $auth);
-        session('merchant_auth_sign', data_auth_sign($auth));
-
-        return $user['id'];
+        $token=$user['id'];
+        set_merchant_login($token,$auth);
+        return encode_token($token);
     }
 
     /**
      * 注销当前用户
      * @return void
      */
-    public function logout(){
-        session('merchant_auth', null);
-        session('merchant_auth_sign', null);
+    public function logout($token){
+        clear_merchant_login($token);
     }
 
 

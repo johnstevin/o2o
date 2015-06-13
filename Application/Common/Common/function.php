@@ -287,24 +287,66 @@ function is_admin_login()
  * @return int
  */
 function is_merchant_login($token){
-    $user = session('merchant_auth'.$token);
+    $user = F('User/Login/merchant_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('merchant_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return F('User/Login/merchant_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
+}
+
+/**
+ * 设置Merchant登录状态
+ * @author WangJiang
+ * @param $token
+ * @param $auth
+ */
+function set_merchant_login($token, $auth){
+    F('User/Login/merchant_auth'.$token, $auth);
+    F('User/Login/merchant_auth_sign'.$token, data_auth_sign($auth));
+}
+
+/**
+ * 清除Merchant登录状态
+ * @author WangJiang
+ * @param $token
+ */
+function clear_merchant_login($token){
+    F('User/Login/merchant_auth'.$token, null);
+    F('User/Login/merchant_auth_sign'.$token, null);
 }
 
 /**
  * @return int
  */
 function is_member_login($token){
-    $user = session('member_auth'.$token);
+    $user = F('User/Login/member_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('member_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return F('User/Login/member_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
+}
+
+/**
+ * 设置Member登录状态
+ * @author WangJiang
+ * @param $token
+ * @param $auth
+ */
+function set_member_login($token, $auth){
+    F('User/Login/member_auth'.$token, $auth);
+    F('User/Login/member_auth_sign'.$token, data_auth_sign($auth));
+}
+
+/**
+ * 清除Member登录状态
+ * @author WangJiang
+ * @param $token
+ */
+function clear_member_login($token){
+    F('User/Login/member_auth'.$token, null);
+    F('User/Login/member_auth_sign'.$token, null);
 }
 
 /**

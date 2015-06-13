@@ -63,14 +63,8 @@ class UserController extends ApiController {
                 $auth = D('AuthAccess');
                 $data[] = array(
                     'uid'          => $uid,
-                    'group_id'     => C('AUTH_GROUP_ID.CLIENT_GROUP_ID'),
-                    'role_id'      => C('AUTH_ROLE_ID.CLIENT_ROLE_ID'),
-                    'status'       => 1,
-                );
-                $data[] = array(
-                    'uid'          => $uid,
-                    'group_id'     => C('AUTH_GROUP_ID.MERCHANT_GROUP_ID'),
-                    'role_id'      => C('AUTH_ROLE_ID.MERCHANT_COMMIT_INFO'),
+                    'group_id'     => C('AUTH_GROUP_ID.GROUP_ID_MERCHANT'),
+                    'role_id'      => C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO'),
                     'status'       => 1,
                 );
                 $result = $auth->addUserAccess($data);
@@ -80,7 +74,7 @@ class UserController extends ApiController {
                     $this->apiError(40010,$this->showRegError($result));
                 }else{
                     D()->commit();
-                    $this->apiSuccess('注册成功！', null, null);
+                    $this->apiSuccess(null,'注册成功！');
                 }
 
             } else {
@@ -114,7 +108,8 @@ class UserController extends ApiController {
      * 退出登陆
      */
     public function logout(){
-        D('UcenterMember')->logout();
+        D('UcenterMember')->logout($this->getToken());
+        //TODO APP如何确定session
         session('[destroy]');
         $this->apiSuccess(null,'退出成功！');
     }

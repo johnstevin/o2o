@@ -59,12 +59,11 @@ class MerchantShopController extends ApiController
     {
         try {
             if (IS_POST) {
-                //TODO 验证用户权限
-                //$this->getUserId();
-
                 $model = D('MerchantShop');
-                if (!$model->create())
+                if (!($data=$model->create()))
                     E('参数传递失败');
+                $data['login_user_id']=$this->getUserId();
+                $model->data($data);
                 $model->save();
                 $this->apiSuccess(null, '');
             } else
@@ -97,8 +96,8 @@ class MerchantShopController extends ApiController
                 if (!($data=$model->create()))
                     E('参数传递失败');
                 //TODO 验证用户权限
-                //$data['add_uid']=$this->getUserId();
-
+                $data['add_uid']=$this->getUserId();
+                $data['group_id']=$this->_get_group_id($data['type']);
                 $model->data($data);
                 $this->apiSuccess(['id' => intval($model->add())],'');
             } else
@@ -106,6 +105,12 @@ class MerchantShopController extends ApiController
         } catch (\Exception $ex) {
             $this->apiError(50021, $ex->getMessage());
         }
+    }
+
+    private function _get_group_id($type){
+        return $type==1
+            ?C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_SHOP')
+            :C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_VEHICLE');
     }
 
     /**
@@ -170,17 +175,18 @@ class MerchantShopController extends ApiController
      *}
      * '''
      */
-    public function getList($pid = null, $regionId = null, $type = '0', $title = null)
+    public function getList($pid = null, $regionId = null, $type = 1, $title = null)
     {
         try {
             if (IS_GET) {
                 //TODO 验证用户权限
-                //$this->getUserId();
+                $uid=$this->getUserId();
 
                 $model = D('MerchantShop');
-                $groupId=$model->default_group_id();
+                $groupId=$this->_get_group_id($type);
 
                 $where['group_id'] = $groupId;
+                $where['add_uid']=$uid;
                 !is_null($pid) and $where['pid'] = $pid;
                 !is_null($regionId) and $where['region_id'] = $regionId;
                 $type !== '0' and $where['type'] = $type;
@@ -208,6 +214,8 @@ class MerchantShopController extends ApiController
                     'free_delivery_amount',
                     'pay_delivery_amount',
                     'delivery_amount_cost',
+                    'message',
+                    'picture_ids',
                     #'pay_delivery_mode',
                     'st_astext(lnglat) as lnglat'])
                     ->where($where)->select();
@@ -239,13 +247,13 @@ class MerchantShopController extends ApiController
      * }
      * ```
      */
-    public function getTypes(){
-        try{
-            $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
-        }catch (\Exception $ex){
-            $this->apiError(50024,$ex->getMessage());
-        }
-    }
+//    public function getTypes(){
+//        try{
+//            $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
+//        }catch (\Exception $ex){
+//            $this->apiError(50024,$ex->getMessage());
+//        }
+//    }
 
 //    /**
 //     * <pre>

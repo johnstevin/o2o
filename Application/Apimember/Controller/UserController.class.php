@@ -51,40 +51,45 @@ class UserController extends ApiController {
      * @author  stevin
      */
     public function register(){
-        if(IS_POST){
-            $mobile     = I('post.mobile');
-            $password   = I('post.password');
+        try{
+            if(IS_POST){
+                $mobile     = I('post.mobile');
+                $password   = I('post.password');
 
-            $Ucenter = D('UcenterMember');
-            D()->startTrans();
+                $Ucenter = D('UcenterMember');
+                D()->startTrans();
 
-            $uid = $Ucenter->register($mobile, $password);
-            if(0 < $uid){
-                $auth = D('AuthAccess');
-                $data[] = array(
-                    'uid'          => $uid,
-                    'group_id'     => C('AUTH_GROUP_ID.CLIENT_GROUP_ID'),
-                    'role_id'      => C('AUTH_ROLE_ID.CLIENT_ROLE_ID'),
-                    'status'       => 1,
-                );
-                $result = $auth->addUserAccess($data);
+                $uid = $Ucenter->register($mobile, $password);
+                if(0 < $uid){
+                    $auth = D('AuthAccess');
+                    $data[] = array(
+                        'uid'          => $uid,
+                        'group_id'     => C('AUTH_GROUP_ID.GROUP_ID_MEMBER'),
+                        'role_id'      => C('AUTH_ROLE_ID.ROLE_ID_MEMBER_CLIENT'),
+                        'status'       => 1,
+                    );
+                    $result = $auth->addUserAccess($data);
 
-                if( 0 > $result ){
+                    if( 0 > $result ){
+                        D()->rollback();
+                        $this->apiError(40013,$this->showRegError($result));
+                    }else{
+                        D()->commit();
+                        $this->apiSuccess(null,'注册成功！');
+                    }
+
+                } else {
                     D()->rollback();
-                    $this->apiError(40013,$this->showRegError($result));
-                }else{
-                    D()->commit();
-                    $this->apiSuccess('注册成功！', null, null);
+                    $this->apiError(40014,$this->showRegError($uid));
                 }
 
             } else {
-                D()->rollback();
-                $this->apiError(40014,$this->showRegError($uid));
+                $this->display('User/register');
             }
-
-        } else {
-            $this->display('User/register');
+        }catch (\Exception $ex){
+            $this->apiError(50112,$ex->getMessage());
         }
+
     }
 
     /**

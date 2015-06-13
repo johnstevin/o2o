@@ -28,7 +28,7 @@ class ProductController extends ApiController
      * @param null|string|array words 关键字，w1,w2... 在title以及description字段中查找
      * @param string words_op  or|and，关键字组合方式
      * @param int $tagId 商家门店服务类型，可选''表示所有店铺，1-'商超'，2-'生鲜'，3-'送水'
-     * @param int $type 商家类别，有1-超市，2-洗车
+     * @param int $type 商家类别，有1-超市，洗车
      * @param int $order 排序，1-按距离，2-按评价
      * @return json
      * ``` json
@@ -195,72 +195,79 @@ class ProductController extends ApiController
 
             $data = $sql->select();
 
-            //print_r($bindNames);
-            //print_r($sql->getLastSql());die;
+            $ret['categories']=list_to_tree($data);
 
-            $ret = [];
-            $cats = [];
-            $topHint = [];
-            $catIds = [];
-            if (!is_null($level)) {
-                //$begin = microtime(true);
-                foreach ($data as $i) {
-                    //echo json_encode(CategoryModel::get($i['id']));
-                    if ($i['level'] == $level) {
-                        if (!in_array($i['id'], $topHint)) {
-                            $cats[] = $i;
-                            $topHint[] = $i['id'];
-                        }
-                        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
-                    } else if ($i['level'] >= $level) {
-                        $temp = [$i['id']];
-                        $top = $this->_find_level_top($i, $level, $temp);
-                        if (!is_null($top)) {
-                            if (!in_array($top['id'], $topHint)) {
-                                $cats[] = $top;
-                                $topHint[] = $top['id'];
-                            }
-                            foreach ($temp as $id) {
-                                !in_array($id, $catIds) and $catIds[] = $id;
-                            }
-                        }
-                    }
-                }
-
-                //echo (microtime(true) - $begin);die;
-            } else if (!is_null($pid)) {
-                foreach ($data as $i) {
-                    //echo json_encode(CategoryModel::get($i['id']));
-                    if ($i['pid'] == $pid) {
-                        if (!in_array($i['id'], $topHint)) {
-                            $cats[] = $i;
-                            $topHint[] = $i['id'];
-                        }
-                        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
-                    } else if ($i['pid'] > 0) {
-                        $temp = [$i['id']];
-                        $top = $this->_find_parent_top($i, $pid, $temp);
-                        if (!is_null($top)) {
-                            if (!in_array($top['id'], $topHint)) {
-                                $cats[] = $top;
-                                $topHint[] = $top['id'];
-                            }
-                            foreach ($temp as $id) {
-                                !in_array($id, $catIds) and $catIds[] = $id;
-                            }
-                        }
-                    }
-                }
-            } else
-                E('参数level或pid不能全部为空');
-
-            $ret['categories'] = $cats;
-
-            //print_r($catIds);die;
-
+//            $ret = [];
+//            $cats = [];
+//            $topHint = [];
+//            $catIds = [];
+//            if (!is_null($level)) {
+//                //$begin = microtime(true);
+//                foreach ($data as $i) {
+//                    //echo json_encode(CategoryModel::get($i['id']));
+//                    if ($i['level'] == $level) {
+//                        if (!in_array($i['id'], $topHint)) {
+//                            $cats[] = $i;
+//                            $topHint[] = $i['id'];
+//                        }
+//                        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
+//                    } else if ($i['level'] >= $level) {
+//                        $temp = [$i['id']];
+//                        $top = $this->_find_level_top($i, $level, $temp);
+//                        if (!is_null($top)) {
+//                            if (!in_array($top['id'], $topHint)) {
+//                                $cats[] = $top;
+//                                $topHint[] = $top['id'];
+//                            }
+//                            foreach ($temp as $id) {
+//                                !in_array($id, $catIds) and $catIds[] = $id;
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                //echo (microtime(true) - $begin);die;
+//            } else if (!is_null($pid)) {
+//                foreach ($data as $i) {
+//                    //echo json_encode(CategoryModel::get($i['id']));
+//                    if ($i['pid'] == $pid) {
+//                        if (!in_array($i['id'], $topHint)) {
+//                            $cats[] = $i;
+//                            $topHint[] = $i['id'];
+//                        }
+//                        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
+//                    } else if ($i['pid'] > 0) {
+//                        $temp = [$i['id']];
+//                        $top = $this->_find_parent_top($i, $pid, $temp);
+//                        if (!is_null($top)) {
+//                            if (!in_array($top['id'], $topHint)) {
+//                                $cats[] = $top;
+//                                $topHint[] = $top['id'];
+//                            }
+//                            foreach ($temp as $id) {
+//                                !in_array($id, $catIds) and $catIds[] = $id;
+//                            }
+//                        }
+//                    }
+//                }
+//            } else{
+//                $cats=$data;
+//            }
+//
+//            $ret['categories'] = $cats;
+//
+//            //print_r($catIds);die;
+//
             $brands = [];
             $norms = [];
-            if ($returnMore and !empty($catIds)) {
+            if ($returnMore) {
+
+                if(empty($catIds)){
+                    foreach($data as $i){
+                        $catIds[]=$i['id'];
+                    }
+                }
+
                 //print_r($catIds);
                 list($bindNames, $bindValues) = build_sql_bind($catIds);
                 $sql = M()->table('sq_category_brand_norms as l')
@@ -285,10 +292,10 @@ class ProductController extends ApiController
                         $norms[] = ['id' => $i['nid'], 'title' => $i['norm']];
                     }
                 }
-
-                $ret['brands'] = $brands;
-                $ret['norms'] = $norms;
             }
+            $ret['brands'] = $brands;
+            $ret['norms'] = $norms;
+
             $this->apiSuccess(['data' => $ret]);
 
         } catch (Exception $ex) {

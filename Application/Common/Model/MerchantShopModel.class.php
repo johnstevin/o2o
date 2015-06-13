@@ -75,18 +75,9 @@ class MerchantShopModel extends AdvModel{
      * @var array
      */
     protected $_auto = array (
-        [##禁止客户端修改该值
-            'group_id',
-            'default_group_id',
-            self::MODEL_BOTH,
-            'callback'
-        ],
+        ['type',1,self::MODEL_INSERT],
         ['status',self::STATUS_CLOSE,self::MODEL_INSERT]
     );
-
-    public function default_group_id(){
-        return C('AUTH_GROUP_ID.MERCHANT_GROUP_ID');
-    }
 
     protected $readonlyField=[
         'type',
@@ -271,9 +262,54 @@ class MerchantShopModel extends AdvModel{
         }
 
         $sql='INSERT INTO sq_merchant_shop('.implode(',',array_keys($data)).') VALUES('.implode(',',$vals).');';
+        $sql.='UPDATE sq_auth_access SET role_id=:role_id WHERE uid=:uid;';
+        $bind[':uid']=$data['add_uid'];
+        $bind[':role_id']=$data['type']==1
+            ?C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')
+            :C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');
+        //var_dump($bind);die;
 
         //print_r($sql);die;
         return $this->doTransaction($sql, $bind);
+    }
+
+    /**
+     * 修改一条商铺信息
+     * @author  WangJiang
+     * @throws Exception
+     * @throws \Exception
+     */
+    public function save(){
+
+        $bind=[];
+        $data=$this->data();
+        $uid=$data['login_user_id'];
+        $id=$data['id'];
+        unset($data['login_user_id']);
+        $set=[];
+        $where=null;
+        foreach($data as $key=>$val){
+            $bindName=":$key";
+            if($key!=$this->pk) {
+                if($this->fields['_type'][$key]=='point'){
+                    $set[]="$key=st_geomfromtext($bindName)";
+                    $bind[$bindName]="POINT($val)";
+                }else{
+                    $set[]="$key=$bindName";
+                    $bind[$bindName]=$val;
+                }
+            }
+        }
+
+        $where=' id=:id and add_uid=:uid ';
+        $bind[':id']=$id;
+        $bind[':uid']=$uid;
+
+        //var_dump($data);die;
+
+        $sql='UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;";
+
+        $this->doTransaction($sql, $bind);
     }
 
     protected function _after_find(&$result,$options='') {
@@ -293,40 +329,6 @@ class MerchantShopModel extends AdvModel{
         foreach($resultSet as &$row){
             $this->_after_query_row($row);
         }
-    }
-
-    /**
-     * 修改一条商铺信息
-     * @author  WangJiang
-     * @throws Exception
-     * @throws \Exception
-     */
-    public function save(){
-
-        $bind=[];
-        $data=$this->data();
-        $set=[];
-        $where=null;
-        foreach($data as $key=>$val){
-            $bindName=":$key";
-            if($key==$this->pk) {
-                $where = "$key=$bindName";
-                $bind[$bindName] = $val;
-            }else{
-                if($this->fields['_type'][$key]=='point'){
-                    $set[]="$key=st_geomfromtext($bindName)";
-                    $bind[$bindName]="POINT($val)";
-                }else{
-                    $set[]="$key=$bindName";
-                    $bind[$bindName]=$val;
-                }
-            }
-        }
-
-        $sql='UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;";
-        //print_r($sql);die;
-
-        $this->doTransaction($sql, $bind);
     }
 
     /**

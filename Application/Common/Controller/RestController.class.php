@@ -29,13 +29,21 @@ abstract class RestController  extends Controller{
 
     abstract protected function isLogin($token);
 
-    protected function getUserId(){
-        if(defined('UID')) return ;
+    protected function getToken(){
         //客户端将token放入自定义header，access_token中
-        $token=I('server.access_token',null);
+        $token=$_SERVER['HTTP_ACCESSTOKEN'];//I('server.ACCESSTOKEN',null);
         if($token===null)
             //或者放入GET，POST参数中
             $token=I('access_token');
+        //var_dump($token);
+        //var_dump($_SERVER);die;
+        return $token;
+    }
+
+    protected function getUserId(){
+        if(defined('UID')) return ;
+
+        $token=$this->getToken();
         $loginId=decode_token($token);
         define('UID',$this->isLogin($loginId));
         if( !UID )
@@ -44,7 +52,6 @@ abstract class RestController  extends Controller{
     }
 
     public function _initialize() {
-        //print_r(session_encode());
     }
 
     public function setInternalCallApi($value=true) {
