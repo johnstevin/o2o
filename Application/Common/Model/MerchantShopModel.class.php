@@ -143,11 +143,11 @@ class MerchantShopModel extends AdvModel{
      * @param int $range 查询半径，单位米，缺省100米
      * @param null|string|array words 关键字，w1,w2... 在title以及description字段中查找
      * @param string words_op  or|and，关键字组合方式
-     * @param int $type 商家门店类型，可选0-所有类型，1-超市，2-生鲜，3-洗车，4-送水，缺省0
+     * @param string $tag 商家门店服务类型，可选''表示所有店铺，'商超'，'生鲜'，'洗车'，'送水'，缺省为''
      * @param int $order 排序，1-按距离，2-按评价
      * @return mixed
      */
-    public function getNearby($lat, $lng, $range,$words,$words_op,$type,$order=1)
+    public function getNearby($lat, $lng, $range,$words,$words_op,$tag='',$order=1)
     {
         if (!is_numeric($lat) or !is_numeric($lng))
             //$this->error('坐标必须是数值', '', true);
@@ -176,14 +176,13 @@ class MerchantShopModel extends AdvModel{
         and (sq_merchant_shop.open_time_mode=2
             or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
 
-        $type=intval($type);
+//        if (!in_array($tag, C('SHOP_TAG')))
+//            E('非法店面服务，可选项：\'\'表示所有店铺，\'商超\'，\'生鲜\'，\'洗车\'，\'送水\'');
 
-        if (!in_array($type, C('SHOP_TYPE')))
-            //$this->error('非法店面类型，可选项：0-所有类型，1-超市，2-生鲜，3-洗车，4-送水', '', true);
-            E('非法店面类型，可选项：0-所有类型，17 => 超市, 89 => 生鲜, 18 => 洗车, 90 => 送水');
-
-        if ($type != 0)
-            $map['sq_merchant_shop.type'] = $type;
+        if ($tag!==''){
+            $this->join('inner join sq_shop_tag on shop_id=sq_merchant_shop.id and tag=:tag');
+            $this->bind(':tag',$tag);
+        }
 
         if (!empty($words))
             build_words_query(explode(',', $words), $words_op, ['sq_merchant_shop.title', 'sq_merchant_shop.description'], $map);
@@ -227,7 +226,7 @@ class MerchantShopModel extends AdvModel{
         $this->group('sq_merchant_shop.id');
 
         $ret= $this->select();
-        //print_r($this->getLastSql());
+        //print_r($this->getLastSql());die;
         return $ret;
     }
 

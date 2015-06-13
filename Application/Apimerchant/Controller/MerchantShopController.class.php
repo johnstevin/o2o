@@ -240,7 +240,11 @@ class MerchantShopController extends ApiController
      * ```
      */
     public function getTypes(){
-        $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
+        try{
+            $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
+        }catch (\Exception $ex){
+            $this->apiError(50024,$ex->getMessage());
+        }
     }
 
 //    /**
@@ -296,5 +300,85 @@ class MerchantShopController extends ApiController
 //            $this->apiError(50023,$ex->getMessage());
 //        }
 //    }
+
+    /**
+     * 获得商铺服务类型
+     * @author WangJiang
+     * @param $shopId
+     * @return jaon
+     * ``` json
+     * {
+     *  "success": true,
+     *  "error_code": 0,
+     *  "data":
+     *  [
+     *      "<类别名称>",...
+     *  ]
+     * }
+     * ```
+     * 调用样例 GET apimchant.php?s=/MerchantShop/getTags/shopId/4
+     * ``` json
+     * {
+     *  "success": true,
+     *  "error_code": 0,
+     *  "data":
+     *  [
+     *      "生鲜",
+     *      "送水"
+     *  ]
+     * }
+     * ```
+     */
+    public function getTags($shopId){
+        try{
+            $data=M('ShopTag')->where(['shop_id'=>$shopId])->select();
+            $ret=[];
+            foreach($data as $v){
+                $ret[]=$v['tag'];
+            }
+            $this->apiSuccess(['data'=>$ret]);
+        }catch (\Exception $ex){
+            $this->apiError(50025,$ex->getMessage());
+        }
+    }
+
+    /**
+     * 设置商铺服务类型
+     * @author WangJiang
+     * @param $shopId
+     * @post json
+     * ``` json
+     * [
+     *  "<类别名称>",...
+     * ]
+     * ```
+     * @return json
+     * 调用样例 POST apimchant.php?s=/MerchantShop/setTags/shopId/4
+     * ``` json
+     * ["送水","生鲜"]
+     * ```
+     */
+    public function setTags($shopId){
+        try{
+            if(!IS_POST)
+                E('非法操作');
+            $content=json_decode(file_get_contents('php://input'));
+            $m=M('ShopTag');
+            $m->startTrans();
+            try{
+                $m->where(['shop_id'=>$shopId])->delete();
+                foreach($content as $tag){
+                    $m->add(['shop_id'=>$shopId,'tag'=>$tag]);
+                }
+                $m->commit();
+                $this->apiSuccess(null,'修改成功');
+            }catch (\Exception $ex){
+                $m->rollback();
+                throw $ex;
+            }
+        }catch (\Exception $ex){
+            $this->apiError(50026,$ex->getMessage());
+        }
+    }
 
 }

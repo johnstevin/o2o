@@ -391,7 +391,7 @@ class MerchantDepotModel extends RelationModel
         if (!empty($where))
             $this->where($where);
 
-        $this->bind($bindValues)->limit($page, $pageSize)->order('sq_merchant_depot.add_time desc');
+        $this->bind($bindValues)->limit($page, $pageSize)->order('sq_merchant_depot.price');
 
         $data = $this->select();
 
