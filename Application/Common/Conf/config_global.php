@@ -20,23 +20,43 @@ return [
     'DEFAULT_FILTER' => '', //全局过滤函数
 
     /* 文档模型配置 (文档模型核心配置，请勿更改) */
-    'DOCUMENT_MODEL_TYPE' => [2 => '主题', 1 => '目录', 3 => '段落'],
     'DATE_FORMAT' => 'Y-m-d H:i:s',
 
-    /* 权限组配置 */
+    /* 权限组配置-数据库id值 */
     'AUTH_GROUP_ID' => array(
-        'MERCHANT_GROUP_ID' => 2,   //总商户组
-        'MEMBER_GROUP_ID'   => 3,   //总用户组
-        'ADMIN_GROUP_ID'    => 4,   //总管理员组
-        'CLIENT_GROUP_ID'   => 29,  //总用户组下级顾客组
+        'GROUP_ID_MERCHANT'                 => 2,   //总商户组
+        'GROUP_ID_MEMBER'                   => 3,   //总用户组
+        'GROUP_ID_ADMIN'                    => 4,   //总管理员组
+
+        'GROUP_ID_MERCHANT_SHOP'            => 17,  //总商户组－商超组
+        'GROUP_ID_MERCHANT_VEHICLE'         => 18,  //总商户组－洗车组
+
+        'GROUP_ID_MEMBER_CLIENT'            => 29,  //总用户组下级顾客组
     ),
-    /* 权限角色配置 */
+    /* 权限角色配置-数据库id值 */
     'AUTH_ROLE_ID' => array(
-        'CLIENT_ROLE_ID'         => 1,   //顾客组下的普通用户角色
-        'MERCHANT_COMMIT_INFO'   => 5,   //总商户组下的提交资料角色
+        'ROLE_ID_MERCHANT_COMMITINFO'       => 5,   //总商户组－提交资料角色
+        'ROLE_ID_MERCHANT_SHOP_BOSS'        => 4,   //总商户组－商超组－老板
+        'ROLE_ID_MERCHANT_SHOP_MANAGER'     => 0,   //总商户组－商超组－店长
+        'ROLE_ID_MERCHANT_SHOP_STAFF'       => 0,   //总商户组－商超组－员工
+        'ROLE_ID_MERCHANT_VEHICLE_MANAGER'  => 0,   //总商户组－洗车组－管理
+        'ROLE_ID_MERCHANT_VEHICLE_WORKER'   => 0,   //总商户组－洗车组－工人
+
+        'ROLE_ID_MEMBER_CLIENT'             => 1,   //顾客组下的普通用户角色
     ),
 
-    /* 店铺配置 */
-    'SHOP_TYPE'    => array(17 => '超市', 89 => '生鲜', 18 => '洗车', 90 => '送水'),  //键值为组id
+    /* 用户组配置 */
+    'AUTH_GROUP_TYPE'  => array(
+        'ADMIN'    => 1,
+        'MERCHANT' => 2,
+        'MEMBER'   => 3,
+    ),
+
+    /* 店铺TAG配置 */
+    'SHOP_TAG'         => array(
+        1   => '超市',
+        2   => '生鲜',
+        3   => '送水',
+    ),
 
 ];

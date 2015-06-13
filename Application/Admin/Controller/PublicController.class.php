@@ -26,7 +26,7 @@ class PublicController extends Controller {
             $Ucenter = D('UcenterMember');
             $uid = $Ucenter->login($username, $password, 5);
             if(0 < $uid){
-
+                action_log('admin_login', 'admin', $uid, $uid, 1);
                 $this->success('登录成功！', U('Index/index'));
 
             } else {
@@ -42,13 +42,13 @@ class PublicController extends Controller {
             if(is_admin_login()){
                 $this->redirect('Index/index');
             }else{
-//                /* 读取数据库中的配置 */
-//                $config	=	S('DB_CONFIG_DATA');
-//                if(!$config){
-//                    $config	=	D('Config')->lists();
-//                    S('DB_CONFIG_DATA',$config);
-//                }
-//                C($config); //添加配置
+                /* 读取数据库中的配置 */
+                $config	=	S('DB_CONFIG_DATA');
+                if(!$config){
+                    $config	=	D('Config')->lists();
+                    S('DB_CONFIG_DATA',$config);
+                }
+                C($config); //添加配置
                 
                 $this->display('User/login');
             }
@@ -101,6 +101,7 @@ class PublicController extends Controller {
                     $this->error($this->showRegError($result));
                 }else{
                     D()->commit();
+                    action_log('admin_register', 'ucentermember', $uid, $uid, 1);
                     $this->success('注册成功！', U('login'));
                 }
 
@@ -144,6 +145,7 @@ class PublicController extends Controller {
      */
     public function logout(){
         if(is_admin_login()){
+            action_log('admin_logout', 'admin', is_admin_login(), is_admin_login(), 1);
             D('UcenterMember')->logout();
             session('[destroy]');
             $this->success('退出成功！', U('login'));

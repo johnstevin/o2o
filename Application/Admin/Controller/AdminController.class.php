@@ -66,7 +66,7 @@ class AdminController extends Controller
      */
     public function getMenus($where = array())
     {
-        $menus = session('ADMIN_MENU_LIST');
+        $menus = session('_AUTH_ADMIN_MENU_LIST');
         if (empty($menus)) {
             $AuthRule = D('AuthRule');
             $map = array('status' => '1', 'hide' => '1','level'=>array('ELT',1));
@@ -85,7 +85,7 @@ class AdminController extends Controller
            // print_r($menus);
 
             $menus= list_to_tree($menus, 'id', 'fid', 'children');
-            session('ADMIN_MENU_LIST', $menus);
+            session('_AUTH_ADMIN_MENU_LIST', $menus);
         }
         return $menus;
     }
