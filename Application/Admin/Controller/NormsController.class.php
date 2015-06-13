@@ -130,7 +130,7 @@ class NormsController extends AdminController
            $list = $this->lists('Norms');
            int_to_string($list);
            $this->assign('_list', $list);
-           $this->display("bindNormsIndex");
+           $this->display("bindnormsindex");
        }
     }
 }
