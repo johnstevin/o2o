@@ -316,7 +316,78 @@ class MerchantDepotModel extends RelationModel
         return $ret;
     }
 
+    public function getProductList($shopIds, $categoryId, $brandId, $normId, $title
+        , $priceMin, $priceMax
+        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = []){
+
+        $shopIds = $this->_filter_shops($shopIds, $groupIds);
+        list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
+
+        $where='sq_merchant_depot.shop_id in (' . implode(',', $shopBindNames) . ')';
+
+        if (!empty($categoryId)) {
+            $where.=' and sq_merchant_depot.product_id in (select product_id from sq_product_category where category_id=:categoryId)';
+            $bindValues[':categoryId']=$categoryId;
+        }
+
+        $this->join('JOIN sq_product on sq_product.id = sq_merchant_depot.product_id');
+        //$this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
+
+        $this->where($where);
+        $this->bind($bindValues);
+
+        $this->field(['sq_merchant_depot.product_id'
+            ,'sq_product.title as product']);
+
+        $this->group('sq_merchant_depot.product_id')
+            //->order('sq_merchant_depot.product_id,sq_merchant_depot.price')
+            ->limit($page, $pageSize);
+        //echo '<pre>';
+        //var_dump($bindValues);die;
+        $data=$this->select();
+
+        foreach($data as &$dpt){
+            list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
+            $this->field(['sq_merchant_depot.id'
+                ,'sq_merchant_depot.price'
+                ,'sq_merchant_shop.id as shop_id'
+                ,'sq_merchant_shop.title as shop']);
+            $this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
+            $this->where('shop_id in (' . implode(',', $shopBindNames) . ') and product_id =:productId');
+            $bindValues[':productId']=$dpt['product_id'];
+            $this->bind($bindValues);
+            $alters=$this->select();
+
+            $minPrice = null;
+            $maxPrice = null;
+            $depot=null;
+            foreach($alters as &$al){
+                if (is_null($minPrice))
+                    $minPrice = $al['price'];
+                else
+                    $minPrice = min($minPrice, $al['price']);
+
+                if (is_null($maxPrice))
+                    $maxPrice = $al['price'];
+                else
+                    $maxPrice = max($maxPrice, $al['price']);
+                if(is_null($depot))
+                    $depot=$al;
+                if($al['price']<=$minPrice)
+                    $depot=$al;
+            }
+            $dpt['id']=$depot['id'];
+            $dpt['price']=$depot['price'];
+            $dpt['shop_id']=$depot['shop_id'];
+            $dpt['shop']=$depot['shop'];
+            $dpt['price_range'] = [$minPrice, $maxPrice];
+            $dpt['alters']=$alters;
+        }
+        return $data;
+    }
+
     /**
+     * @ignore
      * 查询商家商品
      * @author  WangJiang
      * @param array $shopIds 商铺ID
@@ -333,7 +404,7 @@ class MerchantDepotModel extends RelationModel
      * @param array $groupIds 登录用户分组，用来检查用户对shopIds的访问权限，为空则不检查。
      * @return array
      */
-    public function getProductList($shopIds, $categoryId, $brandId, $normId, $title
+    public function getProductList_($shopIds, $categoryId, $brandId, $normId, $title
         , $priceMin, $priceMax
         , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = [])
     {
@@ -344,7 +415,7 @@ class MerchantDepotModel extends RelationModel
 
         $this->join('INNER JOIN sq_merchant_shop as shop on shop.id in (' . implode(',', $shopBindNames) . ') and shop.id=sq_merchant_depot.shop_id');
 
-        $sql_pro = 'INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id and pro.status=1';
+        $sql_pro = 'INNER JOIN sq_product as pro on pro.status=1';
 
         if (!empty($title)) {
             $sql_pro .= ' and pro.title like :title';

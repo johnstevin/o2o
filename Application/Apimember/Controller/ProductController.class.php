@@ -427,7 +427,6 @@ class ProductController extends ApiController
      * @param string $priceMax 商品售价上限
      * @param string|true|false $returnAlters 是否返回'alters'属性
      * @param int $page 指定页号
-     * @param int $pageSize 页面大小
      * @param int|null $status 状态
      * @return json
      ``` json
@@ -452,6 +451,7 @@ class ProductController extends ApiController
      *            ]
      *        }...
      *    ]
+     *    "page":<当前页号，用这个来前后翻动>
      *}     ```
      调用样例  GET apimber.php?s=/Product/getProductList/shopIds/2,4,6
      ``` json
@@ -549,7 +549,7 @@ class ProductController extends ApiController
      */
     public function getProductList($shopIds = null, $categoryId = null, $brandId = null, $normId = null, $title = null
         , $priceMin = null, $priceMax = null
-        , $returnAlters = 'true', $page = 0, $pageSize = 10)
+        , $returnAlters = 'true', $page = 0,$pageSize=30)
     {
         try {
             empty($shopIds) and E('参数shopIds不能为空');
@@ -558,9 +558,10 @@ class ProductController extends ApiController
             $returnAlters = $returnAlters === 'true';
             $shopIds = explode(',', $shopIds);
 
-            $this->apiSuccess(['data' => (new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
+            $this->apiSuccess(['data'=>(new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
                 , $priceMin, $priceMax
-                , $returnAlters, $page, $pageSize)]);
+                , $returnAlters, $page, $pageSize),'page'=>$page+1]);
+
         } catch (Exception $ex) {
             $this->apiError(50005, $ex->getMessage());
         }
