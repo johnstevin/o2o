@@ -62,7 +62,8 @@ class MerchantShopController extends ApiController
                 $model = D('MerchantShop');
                 if (!($data=$model->create()))
                     E('参数传递失败');
-                $data['login_user_id']=$this->getUserId();
+                can_modify_shop($this->getUserId(),$data['id']);
+
                 $model->data($data);
                 $model->save();
                 $this->apiSuccess(null, '');

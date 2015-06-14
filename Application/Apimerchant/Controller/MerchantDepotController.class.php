@@ -55,7 +55,7 @@ class MerchantDepotController extends ApiController
                 E('非法调用，请用POST调用该方法');
             $uid = $this->getUserId();
             $shopId = I('shop_id');
-            $this->_varify($uid, $shopId);
+            can_modify_shop($uid, $shopId);
 
             $price = I('price', null);
             $remark = I('remark', '');
@@ -148,7 +148,7 @@ class MerchantDepotController extends ApiController
                 //TODO 验证用户权限
                 $uid = $this->getUserId();
                 $shopId = I('shop_id');
-                $this->_varify($uid, $shopId);
+                can_modify_shop($uid, $shopId);
 
                 $productId = I('product_id');
                 $price = I('price');
@@ -229,7 +229,7 @@ class MerchantDepotController extends ApiController
             if (IS_POST) {
                 //TODO 验证用户权限
                 $uid = $this->getUserId();
-                $this->_varify($uid, I('shop_id'));
+                can_modify_shop($uid, I('shop_id'));
 
                 $model = D('MerchantDepot');
                 if (!$model->create())
@@ -331,19 +331,5 @@ class MerchantDepotController extends ApiController
         }
         return $cateChain;
     }
-
-    /**
-     * @param $uid
-     * @param $shopId
-     */
-    private function _varify($uid, $shopId)
-    {
-        $shop=D('MerchantShop')->find($shopId);
-        $role=D('AuthAccess')->where(['uid'=>$uid,'group_id'=>$shop['group_id']])->first();
-        //print_r($role);die;
-        if($role['role_id']!=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'))
-            E('用户无权限操作该店铺');
-    }
-
 
 }

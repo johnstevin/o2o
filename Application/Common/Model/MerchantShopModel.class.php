@@ -42,7 +42,8 @@ class MerchantShopModel extends AdvModel{
         'pid',
         'add_uid',
         'region_id',
-        'picture_ids',
+        'picture',
+        'staff_register_url',
         '_type'=>[
             'id'=>'int',
             'title'=>'string',
@@ -60,7 +61,8 @@ class MerchantShopModel extends AdvModel{
             'pid'=>'int',
             'add_uid'=>'int',
             'region_id'=>'int',
-            'picture_ids'=>'string'
+            'picture'=>'int',
+            'staff_register_url'=>'string'
         ]
     ];
 
@@ -193,6 +195,7 @@ class MerchantShopModel extends AdvModel{
             ->field([
                 'sq_merchant_shop.id'
                 ,'sq_merchant_shop.title'
+                ,'sq_merchant_shop.picture'
                 ,'sq_merchant_shop.description'
                 ,'sq_merchant_shop.type'
                 ,'sq_merchant_shop.phone_number'
@@ -286,9 +289,7 @@ class MerchantShopModel extends AdvModel{
 
         $bind=[];
         $data=$this->data();
-        $uid=$data['login_user_id'];
         $id=$data['id'];
-        unset($data['login_user_id']);
         $set=[];
         $where=null;
         foreach($data as $key=>$val){
@@ -304,9 +305,8 @@ class MerchantShopModel extends AdvModel{
             }
         }
 
-        $where=' id=:id and add_uid=:uid ';
+        $where=' id=:id';
         $bind[':id']=$id;
-        $bind[':uid']=$uid;
 
         //var_dump($data);die;
 

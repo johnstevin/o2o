@@ -667,6 +667,21 @@ function decode_token($token){
 }
 
 /**
+ * 验证用户是否允许修改商铺数据
+ * @author WangJiang
+ * @param $uid
+ * @param $sid
+ */
+function can_modify_shop($uid,$sid){
+
+    $shop=D('MerchantShop')->find($sid);
+    $role=D('AuthAccess')->where(['uid'=>$uid,'group_id'=>$shop['group_id']])->first();
+    //print_r($role);die;
+    if($role['role_id']!=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'))
+        E('用户无权限操作该店铺');
+}
+
+/**
  * array_column兼容性处理
  */
 if(!function_exists('array_column')){
