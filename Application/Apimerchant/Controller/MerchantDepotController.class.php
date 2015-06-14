@@ -24,11 +24,11 @@ class MerchantDepotController extends ApiController
 
     /**
      * <pre>
-     * 新增商家商品
-     * shop_id 商铺id
-     * product_id 商品ID
-     * price 商品价格
-     * remark 备注
+     * 新增商家商品,POST参数,需要accesstoken
+     * @param int shop_id 商铺id
+     * @param int product_id 商品ID
+     * @param float price 商品价格
+     * @param string remark 备注
      * </pre>
      * @author WangJiang
      * @return json
@@ -48,12 +48,44 @@ class MerchantDepotController extends ApiController
         try {
             if (IS_POST) {
                 //TODO 验证用户权限
-                //$this->getUserId();
+                $uid=$this->getUserId();
                 $shopId = I('shop_id');
+                if(D('MerchantShop')->where(['add_uid'=>$uid,'id'=>$shopId])->count()==0)
+                    E('用户无权限操作该店铺');
                 $productId = I('product_id');
                 $price = I('price');
                 $remark = I('remark', '');
-                $this->apiSuccess(['data' => MerchantDepotModel::addDepot($shopId, $productId, $price, $remark)]);
+                $cates1=D('ProductCategory')->where(['product_id'=>$productId])->field(['category_id as id'])->select();
+                $cateIds=[];
+                foreach($cates1 as $i){
+                    $cateIds[]=$i['id'];
+                }
+                //print_r($cateIds);
+                $cateChain=$cateIds;
+                $this->_get_cate_chain($cateIds,$cateChain);
+                $depotCates=D('MerchantDepotProCategory')->where(['shop_id'=>$shopId])->field(['category_id'])->select();
+                foreach($depotCates as $i){
+                    $k=array_search($i['category_id'],$cateChain);
+                    if(false!==$k)
+                        unset($cateChain[$k]);
+                }
+                D()->startTrans();
+                try{
+                    foreach($cateChain as $i){
+                        D('MerchantDepotProCategory')->add(['shop_id'=>$shopId,'category_id'=>$i]);
+                    }
+                    $data=D('MerchantDepot')
+                        ->create(['shop_id'=>$shopId,'product_id'=>$productId,'price'=>$price,'remark'=>$remark]);
+                    //var_dump($data);die;
+                    $newId=D('MerchantDepot')->add($data);
+                    //var_dump($newId);die;
+                    D()->commit();
+                    $this->apiSuccess(['id'=>$newId],'');
+                }catch (\Exception $ex){
+                    D()->rollback();
+                    throw $ex;
+                }
+                //$this->apiSuccess(['id' => MerchantDepotModel::addDepot($shopId, $productId, $price, $remark)]);
             } else
                 E('非法调用，请用POST调用该方法');
         } catch (\Exception $ex) {
@@ -61,9 +93,28 @@ class MerchantDepotController extends ApiController
         }
     }
 
+    private function _get_cate_chain($ids,&$ret=[],$catem=null){
+        if(is_null($catem))
+            $catem=D('Category');
+        foreach($ids as $id){
+            $cate=$catem->find($id);
+            if($cate['pid']==0){
+                break;
+            }
+
+            if(!in_array($cate['pid'],$ret)){
+                $ret[]=$cate['pid'];
+            }
+            $pids[]=$cate['pid'];
+        }
+        if($pids)
+            $this->_get_cate_chain($pids,$ret,$catem);
+        return $ret;
+    }
+
     /**
      * <pre>
-     * 修改商家商品
+     * 修改商家商品,需要accesstoken
      * id 上架商品ID
      * shop_id 商铺id
      * product_id 商品ID
@@ -104,7 +155,7 @@ class MerchantDepotController extends ApiController
     }
 
     /**
-     * 获得商家商品列表
+     * 获得商家商品列表,需要accesstoken
      * @author WangJiang
      * @param array $shopIds 商铺ID，多个用‘,’隔开
      * @param null|string $categoryId 分类ID

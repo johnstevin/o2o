@@ -14,9 +14,11 @@ namespace Apimember\Controller;
 class UserController extends ApiController {
 
     /**
+     * <pre>
      * 用户登陆,参数用POST提交
-     * @param string username 用户名称
-     * @param string password 密码
+     * string username 用户名称
+     * string password 密码
+     * </pre>
      * @author  stevin,WangJiang
      * @return json
      * {
@@ -51,9 +53,11 @@ class UserController extends ApiController {
     }
 
     /**
+     * <pre>
      * 用户注册,参数用POST提交
-     * @param string mobile   手机号
-     * @param string password 密码
+     * string mobile   手机号
+     * string password 密码
+     * </pre>
      * @author  stevin,WangJiang
      * @return json
      */
@@ -117,9 +121,11 @@ class UserController extends ApiController {
     }
 
     /**
+     * <pre>
      * 退出登陆
+     * string accesstoken 调用令牌
+     * </pre>
      * @author WangJiang
-     * @param string accesstoken 调用令牌
      * @return json
      */
     public function logout(){
@@ -129,6 +135,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户个人资料
      * @param
      * @author  stevin
@@ -138,6 +145,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户个人修改
      * @param
      * @author  stevin
@@ -147,6 +155,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户订单列表
      * @param
      * @author  stevin
@@ -156,6 +165,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户订单详情
      * @param
      * @author  stevin
@@ -165,6 +175,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户订单删除
      * @param
      * @author  stevin
@@ -174,6 +185,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户常用地址
      * @param
      * @author  stevin
@@ -183,6 +195,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户地址添加
      * @param
      * @author  stevin
@@ -192,6 +205,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户地址修改
      * @param
      * @author  stevin
@@ -201,6 +215,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户地址删除
      * @param
      * @author  stevin

@@ -37,7 +37,6 @@ class MerchantShopModel extends AdvModel{
         'open_time_mode',
         'begin_open_time',
         'end_open_time',
-        'delivery_range',
         'phone_number',
         'address',
         'pid',
@@ -55,7 +54,6 @@ class MerchantShopModel extends AdvModel{
             'open_time_mode'=>'int',
             'begin_open_time'=>'int',
             'end_open_time'=>'int',
-            'delivery_range'=>'int',
             'phone_number'=>'string',
             'address'=>'string',
             'pid'=>'int',
@@ -210,6 +208,9 @@ class MerchantShopModel extends AdvModel{
                 ,'sq_merchant_shop.delivery_amount_cost'
                 ,'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat)) as distance'
                 ,'st_astext(sq_merchant_shop.lnglat) as lnglat'
+                ,'sq_appraise.grade_1'
+                ,'sq_appraise.grade_2'
+                ,'sq_appraise.grade_3'
                 ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade']);
 
         if(1==$order)

@@ -499,34 +499,35 @@ class MerchantDepotModel extends RelationModel
         //获取产品信息和所属分类
         $product = ProductModel::get($productId, ['price', 'id'], true);
         $data['price'] = empty($price) && $product ? (float)$product['price'] : (float)$price;
-        $model = self::getInstance();
-        $model->startTrans();//启动事务
+
         $depotCategoryModel = M('merchant_depot_pro_category');
         $ids = is_array($product['_categorys']) ?: explode(',', $product['_categorys']);
         $ids = array_unique($ids);
-        $categorys = [];
+        $categoris = [];
         foreach ($ids as $id) {
             //如果没有找到相应的分类才添加
             if (!$depotCategoryModel->where(['shop_id' => $shopId, 'category_id' => $id])->find()) {
-                $categorys[] = [
+                $categoris[] = [
                     'shop_id' => $shopId,
                     'category_id' => $id
                 ];
             }
         }
+        $model = self::getInstance();
         if (!$model->create($data))
             E(current($model->getError()));
+        $model->startTrans();//启动事务
         try {
             isset($data['id']) ? $status = $model->where(['id' => $data['id']])->save() : $status = $model->add();
-            if ($status && $depotCategoryModel->addAll($categorys)) {
+            if ($status && $depotCategoryModel->addAll($categoris)) {
                 $model->commit();//提交事务
                 return $model->getLastInsID();
             } else {
                 E('添加或更新商品失败');
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $model->rollback();//回滚事务
-            return false;
+            throw $e;
         }
     }
 

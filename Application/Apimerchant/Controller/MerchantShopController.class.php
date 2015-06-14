@@ -20,7 +20,7 @@ class MerchantShopController extends ApiController
 
     /**
      * <pre>
-     * 修改商铺信息
+     * 修改商铺信息,需要accesstoken
      * 参数按照Form表单的格式提交，参数列表：
      * int id 商铺ID，必需提供
      * string title 店面名称
@@ -74,7 +74,7 @@ class MerchantShopController extends ApiController
     }
 
     /**
-     * 新增商铺信息
+     * 新增商铺信息,需要accesstoken
      * @internal 参数按照Form表单的格式提交，参数列表参考{@link update()}
      * @see MerchantShopController::update
      * @author WangJiang
@@ -114,7 +114,7 @@ class MerchantShopController extends ApiController
     }
 
     /**
-     * 获得商铺列表
+     * 获得商铺列表,需要accesstoken
      * @author WangJiang
      * @param null $pid 上级商铺ID
      * @param null $regionId 区域ID

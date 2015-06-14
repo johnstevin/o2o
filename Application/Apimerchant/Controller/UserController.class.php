@@ -14,9 +14,11 @@ namespace Apimerchant\Controller;
 class UserController extends ApiController {
 
     /**
+     * <pre>
      * 商户登陆,参数用POST提交
-     * @param string username 用户名称
-     * @param string password 密码
+     * string username 用户名称
+     * string password 密码
+     * </pre>
      * @author  stevin,WangJiang
      * @return json
      * {
@@ -51,9 +53,11 @@ class UserController extends ApiController {
     }
 
     /**
+     * <pre>
      * 商户注册,参数用POST提交
-     * @param string mobile   手机号
-     * @param string password 密码
+     * string mobile   手机号
+     * string password 密码
+     * </pre>
      * @author  stevin,WangJiang
      * @return json
      */
@@ -110,11 +114,13 @@ class UserController extends ApiController {
         }
         return $error;
     }
-    
+
     /**
+     * <pre>
      * 退出登陆
+     * string accesstoken 调用令牌
+     * </pre>
      * @author WangJiang
-     * @param string accesstoken 调用令牌
      * @return json
      */
     public function logout(){
@@ -124,6 +130,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商户提交资料
      * @param
      * @author  stevin
@@ -133,6 +140,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商户个人资料
      * @param
      * @author  stevin
@@ -142,6 +150,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商户个人资料修改
      * @param
      * @author  stevin
@@ -151,6 +160,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商户销售额统计
      * @param
      * @author  stevin
@@ -160,6 +170,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商铺资料信息
      * @param
      * @author  stevin
@@ -169,6 +180,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商铺资料信息修改
      * @param
      * @author  stevin
