@@ -42,6 +42,7 @@ class MerchantShopModel extends AdvModel{
         'pid',
         'add_uid',
         'region_id',
+        'picture_ids',
         '_type'=>[
             'id'=>'int',
             'title'=>'string',
@@ -59,6 +60,7 @@ class MerchantShopModel extends AdvModel{
             'pid'=>'int',
             'add_uid'=>'int',
             'region_id'=>'int',
+            'picture_ids'=>'string'
         ]
     ];
 
@@ -388,6 +390,11 @@ class MerchantShopModel extends AdvModel{
             }
             if($k=='distance'){
                 $v=floatval($v);
+            }
+            if($k=='picture_ids'){
+                $v=explode(',',$v);
+            }if($k=='grade'){
+                $v=intval($v);
             }
         }
     }

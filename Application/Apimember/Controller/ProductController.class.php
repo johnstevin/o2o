@@ -19,7 +19,6 @@ use Common\Model\ProductModel;
  */
 class ProductController extends ApiController
 {
-
     /**
      * 根据经纬度获取附近商家信息接口
      * @param double $lat 查询中心维度，必须是百度坐标
