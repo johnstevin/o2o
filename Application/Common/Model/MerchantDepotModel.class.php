@@ -332,14 +332,35 @@ class MerchantDepotModel extends RelationModel
             $bindValues[':categoryId']=$categoryId;
         }
 
-        $this->join('JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1');
+        //TODO 加上品牌规格查询
+        $product_sql='JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1';
+        if (!empty($categoryId)) {
+            $product_sql.=' and sq_product.id in (select product_id from sq_product_category where category_id=:categoryId)';
+            $bindValues[':categoryId']=$categoryId;
+        }
+        if (!empty($title)) {
+            $product_sql.=' and sq_product.title like :title';
+            $bindValues[':title'] = '%' . $title . '%';
+        }
+        if (!empty($brandId)) {
+            $product_sql .= ' and sq_product.brand_id=:brandId';
+            $bindValues[':brandId'] = $brandId;
+        }
+        if (!empty($normId)) {
+            $product_sql .= ' and sq_product.norms_id=:normId';
+            $bindValues[':normId'] = $normId;
+        }
+        $this->join($product_sql);
         //$this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
+        $this->join('JOIN sq_brand as brand on brand.id=sq_product.brand_id');
+        $this->join('JOIN sq_norms as norm on norm.id=sq_product.norms_id');
 
         $this->where($where);
         $this->bind($bindValues);
 
         $this->field(['sq_merchant_depot.product_id'
-            ,'sq_product.title as product']);
+            ,'sq_product.title as product','brand.id as brand_id'
+            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm']);
 
         $this->group('sq_merchant_depot.product_id')
             //->order('sq_merchant_depot.product_id,sq_merchant_depot.price')
@@ -347,6 +368,7 @@ class MerchantDepotModel extends RelationModel
         //echo '<pre>';
         //var_dump($bindValues);die;
         $data=$this->select();
+        //print_r($this->getLastSql());die;
 
         foreach($data as &$dpt){
             list($shopBindNames, $bindValues) = build_sql_bind($shopIds);

@@ -16,9 +16,8 @@ use Think\Model\AdvModel;
 class MerchantShopModel extends AdvModel{
     ## 状态常量
     const STATUS_DELETE=-1;//软删除
-    const STATUS_CLOSE = 0;//待审核,关闭
+    const STATUS_CLOSE = 2;//待审核,关闭
     const STATUS_ACTIVE = 1;//审核通过,正常
-    const STATUS_CHECKING = 2;//审核中
     const STATUS_DENIED = 3;//审核未通过
 
     /**
@@ -39,11 +38,11 @@ class MerchantShopModel extends AdvModel{
         'end_open_time',
         'phone_number',
         'address',
-        'pid',
         'add_uid',
         'region_id',
         'picture',
         'staff_register_url',
+        'tags',
         '_type'=>[
             'id'=>'int',
             'title'=>'string',
@@ -58,11 +57,11 @@ class MerchantShopModel extends AdvModel{
             'end_open_time'=>'int',
             'phone_number'=>'string',
             'address'=>'string',
-            'pid'=>'int',
             'add_uid'=>'int',
             'region_id'=>'int',
             'picture'=>'int',
-            'staff_register_url'=>'string'
+            'staff_register_url'=>'string',
+            'tags'=>'array',
         ]
     ];
 
@@ -83,7 +82,6 @@ class MerchantShopModel extends AdvModel{
 
     protected $readonlyField=[
         'type',
-        'pid',
         'add_uid',
         'region_id',
     ];
@@ -255,27 +253,42 @@ class MerchantShopModel extends AdvModel{
 
         $bind=[];
         $data=$this->data();
-        $vals=[];
+        $shopVals=[];
+        $shopFlds=[];
         foreach($data as $key=>$val){
             $bindName=":$key";
             if($this->fields['_type'][$key]=='point'){
-                $vals[]="st_geomfromtext($bindName)";
+                $shopVals[]="st_geomfromtext($bindName)";
                 $bind[$bindName]="POINT($val)";
-            }else{
-                $vals[]=$bindName;
+                $shopFlds[]=$key;
+            }else if($key!='tags'){
+                $shopVals[]=$bindName;
                 $bind[$bindName]=$val;
+                $shopFlds[]=$key;
             }
         }
 
-        $sql='INSERT INTO sq_merchant_shop('.implode(',',array_keys($data)).') VALUES('.implode(',',$vals).');';
+        $sql='INSERT INTO sq_merchant_shop('.implode(',',$shopFlds).') VALUES('.implode(',',$shopVals).');';
+        $sql.='SET @sid = last_insert_id();';
+        foreach($data as $key=>$val){
+            if($key=='tags'){
+                $a=explode(',',$val);
+                foreach($a as $i=>$tag){
+                    $bindName=":$key$i";
+                    $sql.="INSERT INTO sq_shop_tag(shop_id, tag_id) VALUES (@sid,$bindName);";
+                    $bind[$bindName]=$tag;
+                }
+            }
+        }
+        //
+
         $sql.='UPDATE sq_auth_access SET role_id=:role_id WHERE uid=:uid;';
         $bind[':uid']=$data['add_uid'];
         $bind[':role_id']=$data['type']==1
             ?C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')
             :C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');
-        //var_dump($bind);die;
 
-        //print_r($sql);die;
+        //print_r($sql);var_dump($bind);die;
         return $this->doTransaction($sql, $bind);
     }
 
@@ -298,7 +311,7 @@ class MerchantShopModel extends AdvModel{
                 if($this->fields['_type'][$key]=='point'){
                     $set[]="$key=st_geomfromtext($bindName)";
                     $bind[$bindName]="POINT($val)";
-                }else{
+                }else if($key!='tags'){
                     $set[]="$key=$bindName";
                     $bind[$bindName]=$val;
                 }
@@ -311,6 +324,18 @@ class MerchantShopModel extends AdvModel{
         //var_dump($data);die;
 
         $sql='UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;";
+
+        foreach($data as $key=>$val){
+            if($key=='tags'){
+                $sql.="DELETE FROM sq_shop_tag WHERE shop_id=:id;";
+                $a=explode(',',$val);
+                foreach($a as $i=>$tag){
+                    $bindName=":$key$i";
+                    $sql.="INSERT INTO sq_shop_tag(shop_id, tag_id) VALUES (:id,$bindName);";
+                    $bind[$bindName]=$tag;
+                }
+            }
+        }
 
         $this->doTransaction($sql, $bind);
     }

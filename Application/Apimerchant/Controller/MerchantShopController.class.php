@@ -25,7 +25,6 @@ class MerchantShopController extends ApiController
      * int id 商铺ID，必需提供
      * string title 店面名称
      * string description 店面介绍
-     * int status -1软删除,0-待审核,1-审核通过,2-审核中,3-审核未通过
      * string lnglat 格式为'lng lat'，店面坐标，采用百度地图经纬度
      * int open_status 营业状态：0-关闭，1-开放
      * int open_time_mode 营业时间模式，1-有时间段，2-7X24小时
@@ -117,7 +116,6 @@ class MerchantShopController extends ApiController
     /**
      * 获得商铺列表,需要accesstoken
      * @author WangJiang
-     * @param null $pid 上级商铺ID
      * @param null $regionId 区域ID
      * @param string $type 商铺类型
      * @param null $title 标题，模糊查询
@@ -176,22 +174,21 @@ class MerchantShopController extends ApiController
      *}
      * '''
      */
-    public function getList($pid = null, $regionId = null, $type = 1, $title = null)
+    public function getList($regionId = null, $type = 1, $title = null,$status=null)
     {
         try {
             if (IS_GET) {
                 //TODO 验证用户权限
-                $uid=$this->getUserId();
-
+                $groupIds=$this->getUserGroupIds();
                 $model = D('MerchantShop');
-                $groupId=$this->_get_group_id($type);
 
-                $where['group_id'] = $groupId;
-                $where['add_uid']=$uid;
-                !is_null($pid) and $where['pid'] = $pid;
+                $where['group_id'] = ['in',$groupIds];
+
                 !is_null($regionId) and $where['region_id'] = $regionId;
                 $type !== '0' and $where['type'] = $type;
                 !is_null($title) and $where['title'] = ['like', "%$title%"];
+                !is_null($status) and $where['status']=$status;
+
                 $data = $model->field(['id',
                     'title',
                     'description',
@@ -204,7 +201,6 @@ class MerchantShopController extends ApiController
                     'end_open_time',
                     'phone_number',
                     'address',
-                    'pid',
                     'add_uid',
                     'region_id',
                     'pay_delivery_time',
@@ -216,13 +212,12 @@ class MerchantShopController extends ApiController
                     'pay_delivery_amount',
                     'delivery_amount_cost',
                     'message',
-                    'picture_ids',
-                    #'pay_delivery_mode',
+                    'picture',
                     'st_astext(lnglat) as lnglat'])
                     ->where($where)->select();
-                //print_r($model->getLastSql());
+                //print_r($model->getLastSql());die;
                 //print_r($data);
-                $this->apiSuccess(['data' => $data]);
+                $this->apiSuccess(['data' => $data],'');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {
