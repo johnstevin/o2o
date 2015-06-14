@@ -28,6 +28,7 @@ class MerchantDepotModel extends RelationModel
     const STATUS_DELETE = -1;//逻辑删除
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
+    const STATUS_VERIFY = 2;//待审核
 
     protected $_link = [
         'Product' => [
@@ -140,7 +141,8 @@ class MerchantDepotModel extends RelationModel
             [
                 self::STATUS_DELETE,
                 self::STATUS_CLOSE,
-                self::STATUS_ACTIVE
+                self::STATUS_ACTIVE,
+                self::STATUS_VERIFY,
             ],
             '状态的范围不正确',
             self::EXISTS_VALIDATE,
@@ -326,11 +328,11 @@ class MerchantDepotModel extends RelationModel
         $where='sq_merchant_depot.shop_id in (' . implode(',', $shopBindNames) . ')';
 
         if (!empty($categoryId)) {
-            $where.=' and sq_merchant_depot.product_id in (select product_id from sq_product_category where category_id=:categoryId)';
+            $where.=' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id in (select product_id from sq_product_category where category_id=:categoryId)';
             $bindValues[':categoryId']=$categoryId;
         }
 
-        $this->join('JOIN sq_product on sq_product.id = sq_merchant_depot.product_id');
+        $this->join('JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1');
         //$this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
 
         $this->where($where);
