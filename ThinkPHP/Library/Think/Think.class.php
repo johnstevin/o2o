@@ -286,7 +286,12 @@ class Think {
         if( API_MODE ) {
             $error_page = C('ERROR_PAGE');
             if (!empty($error_page)) {
-                echo '<script>location.href="'.$error_page.'";</script>';
+                header('Content-Type:application/json; charset=utf-8');
+                $result = array();
+                $result['success'] = false;
+                $result['error_code'] = 40004;
+                $result['message'] = 'system error';
+                echo json_encode($result);
                 exit;
             }
         }

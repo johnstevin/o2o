@@ -37,10 +37,10 @@ return [
     'AUTH_ROLE_ID' => array(
         'ROLE_ID_MERCHANT_COMMITINFO'       => 5,   //总商户组－提交资料角色
         'ROLE_ID_MERCHANT_SHOP_BOSS'        => 4,   //总商户组－商超组－老板
-        'ROLE_ID_MERCHANT_SHOP_MANAGER'     => 0,   //总商户组－商超组－店长
-        'ROLE_ID_MERCHANT_SHOP_STAFF'       => 0,   //总商户组－商超组－员工
-        'ROLE_ID_MERCHANT_VEHICLE_MANAGER'  => 0,   //总商户组－洗车组－管理
-        'ROLE_ID_MERCHANT_VEHICLE_WORKER'   => 0,   //总商户组－洗车组－工人
+        'ROLE_ID_MERCHANT_SHOP_MANAGER'     => 21,  //总商户组－商超组－店长
+        'ROLE_ID_MERCHANT_SHOP_STAFF'       => 22,  //总商户组－商超组－员工
+        'ROLE_ID_MERCHANT_VEHICLE_MANAGER'  => 23,  //总商户组－洗车组－管理
+        'ROLE_ID_MERCHANT_VEHICLE_WORKER'   => 24,  //总商户组－洗车组－工人
 
         'ROLE_ID_MEMBER_CLIENT'             => 1,   //顾客组下的普通用户角色
     ),
