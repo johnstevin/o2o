@@ -547,7 +547,7 @@ class OrderModel extends RelationModel
         $userId = intval($userId);
         $userInfo = MemberModel::getById($userId, null, ['id', 'nickname']);
         if (!$userInfo) E('用户：' . $userId . '不存在');
-        $cart = is_array($cart) ?: json_decode($cart, true);
+        $cart = is_array($cart) ? $cart : json_decode($cart, true);
         $products = [];
         if ($split) {
             foreach ($cart as $product) {
