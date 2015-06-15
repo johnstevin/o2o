@@ -67,7 +67,7 @@ class AppraiseModel extends RelationModel
         ],
         [
             'shop_id',
-            'check_merchant_shop_exist',
+            'check_shop_exist',
             '商铺ID非法',
             self::EXISTS_VALIDATE,
             'function'

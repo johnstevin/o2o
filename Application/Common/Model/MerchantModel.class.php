@@ -18,7 +18,6 @@ class MerchantModel extends AdvModel
     //模型的字段
     protected $fields = [
         'id',
-        'title',
         'description',
         'pid',
         'login',
@@ -27,7 +26,6 @@ class MerchantModel extends AdvModel
         'status',
         '_type' => [
             'id' => 'int',
-            'title' => 'varchar',
             'description' => 'varchar',
             'pid' => 'int',
             'login' => 'int',

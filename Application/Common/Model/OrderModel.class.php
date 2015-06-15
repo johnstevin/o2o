@@ -70,7 +70,8 @@ class OrderModel extends RelationModel
             'parent_key' => 'pid',
             'mapping_name' => '_childs',
             'mapping_order' => 'id',
-            'condition' => 'status !=' . self::STATUS_DELETE
+//            'condition' => 'status !=' . self::STATUS_DELETE
+            'condition' => 'status != -1'
             // 定义更多的关联属性
         ],
         'Products' => [
@@ -84,7 +85,14 @@ class OrderModel extends RelationModel
             'class_name' => 'Order',
             'parent_key' => 'pid',
             'mapping_name' => '_parent',
-            'condition' => 'status !=' . self::STATUS_DELETE
+//            'condition' => 'status !=' . self::STATUS_DELETE
+            'condition' => 'status != -1'
+        ],
+        'UcenterMember' => [
+            'mapping_type' => self::BELONGS_TO,
+            'class_name' => 'UcenterMember',
+            'foreign_key' => 'user_id',
+            'mapping_name' => '_ucenter_member',
         ]
     ];
 
@@ -396,17 +404,33 @@ class OrderModel extends RelationModel
             $productIds = array_map(function ($order) {
                 return $order['product_id'];
             }, $data['_products']);
-            //TODO 这里还要合并商家自己的价格
-            $data['_products'] = ProductModel::getListsByProductIds($productIds);
-        } else {
+            $products = ProductModel::getListsByProductIds($productIds, ['id', 'title', 'detail']);
+            $reProducts = [];
+            foreach ($products as $p) {
+                $reProducts[$p['id']] = $p;
+            }
+            foreach ($data['_products'] as &$product) {
+                $current = $reProducts[$product['product_id']];
+                $product['title'] = $current['title'];
+                $product['detail'] = $current['detail'];
+            }
+        } elseif ($getChilds) {
             $orderItemModel = M('order_item');
             foreach ($data['_childs'] as &$child) {
-                $productIds = $orderItemModel->field('product_id')->where(['order_id' => $child['id']])->select();
+                $child['_products'] = $orderItemModel->field('product_id')->where(['order_id' => $child['id']])->select();
                 $productIds = array_map(function ($item) {
                     return $item['product_id'];
-                }, $productIds);
-                //TODO 这里还要合并商家自己的价格
-                $child['_products'] = ProductModel::getListsByProductIds($productIds);
+                }, $child['_products']);
+                $products = ProductModel::getListsByProductIds($productIds);
+                $reProducts = [];
+                foreach ($products as $p) {
+                    $reProducts[$p['id']] = $p;
+                }
+                foreach ($child['_products'] as &$product) {
+                    $current = $reProducts[$product['product_id']];
+                    $product['title'] = $current['title'];
+                    $product['detail'] = $current['detail'];
+                }
             }
         }
         return $data;
@@ -521,8 +545,9 @@ class OrderModel extends RelationModel
     public static function submitOrder($userId, $cart, $mobile, $consignee, $address, $remark, $payMode = self::PAY_MODE_OFFLINE, $deliveryMode = self::DELIVERY_MODE_DELIVERY, $split = true)
     {
         $userId = intval($userId);
-        if (!check_user_exist($userId)) E('用户：' . $userId . '不存在');
-        $cart = is_array($cart) ?: json_decode($cart, true);
+        $userInfo = MemberModel::getById($userId, null, ['id', 'nickname']);
+        if (!$userInfo) E('用户：' . $userId . '不存在');
+        $cart = is_array($cart) ? $cart : json_decode($cart, true);
         $products = [];
         if ($split) {
             foreach ($cart as $product) {
@@ -531,9 +556,13 @@ class OrderModel extends RelationModel
         } else {
             $products = $cart;
         }
+
+        //声明一些模型
         $model = self::getInstance();
         $orderItemModel = M('order_item');
         $depotModel = MerchantDepotModel::getInstance();
+        $statusLogModel = OrderStatusModel::getInstance();
+
         $model->startTrans();//启动事务
         //判断购物车格式，如果二级数组的值还是数组，那么就是拆单的
         if (is_array(current(current($products))) && count($products) > 1) {
@@ -541,6 +570,7 @@ class OrderModel extends RelationModel
                 $priceTotal = [];//每个子订单的总价统计数组
                 $parentId = intval(self::createEmptyParentOrder($userId, 0, 0, $payMode, $deliveryMode));
                 if (!$parentId) E('父级订单添加失败');
+                $logData = [];//记录订单状态日志的数据数组
                 foreach ($products as $shopId => $product) {
                     //获取所有的仓库商品ID
                     $depotIds = array_column($product, 'depot_id');
@@ -584,6 +614,14 @@ class OrderModel extends RelationModel
                             ];
                         }
                         if (!$orderItemModel->addAll($itemData)) E('订单商品添加失败');
+                        $logData[] = [//组合订单状态日志
+                            'user_id' => $userId,
+                            'shop_id' => intval($shopId),
+                            'merchant_id' => 0,
+                            'status' => self::STATUS_MERCHANT_CONFIRM,
+                            'order_id' => $lastOrderId,
+                            'content' => '系统：【' . $userInfo['nickname'] . '】于【' . date('Y-m-d H:i:s') . '】提交了订单【' . $lastOrderId . '】，等待商家审核',
+                        ];
                     } else {
                         E('订单添加失败');
                     }
@@ -594,6 +632,7 @@ class OrderModel extends RelationModel
                 }
                 $model->commit();//如果以上都通过了，则提交事务
                 F('user/cart/' . $userId, null);//如果订单提交成功，则清空用户的购物车
+                $statusLogModel->addAll($logData);
                 return $parentId;//返回父级订单的ID
             } catch (Exception $e) {
                 //如果中途某个提交失败了，则回滚事务
@@ -649,12 +688,15 @@ class OrderModel extends RelationModel
                     $model->commit();
                     //如果订单提交成功，则清空用户的购物车
                     F('user/cart/' . $userId, null);
+                    //记录日志
+                    $content = '系统：【' . $userInfo['nickname'] . '】于【' . date('Y-m-d H:i:s') . '】提交了订单【' . $lastId . '】，等待商家审核';
+                    $statusLogModel->addLog($userId, $data['shop_id'], 0, $lastId, $content, self::STATUS_MERCHANT_CONFIRM);
                     return intval($lastId);
                 }
             } catch (Exception $e) {
                 //如果中途某个提交失败了，则回滚事务
                 $model->rollback();
-                return false;
+                E($e->getMessage());
             }
         }
     }
@@ -751,17 +793,42 @@ class OrderModel extends RelationModel
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 订单ID
      * @param bool $confirm 是否确认订单
+     * @param null|int $merchantId 确认者ID（商家ID）
+     * @param string $content 如果$confirm为【false】，则$content不能为空
      * @return bool|int
      */
-    public static function MerchantConfirmOrder($id, $confirm = true)
+    public static function MerchantConfirmOrder($id, $confirm = true, $merchantId = null, $content = '')
     {
         $id = intval($id);
         if (!$id) E('ID非法');
+        if (!$confirm && $content === '') E('请说明不确定订单的原因');
         $model = self::getInstance()->where(['id' => $id, 'status' => self::STATUS_MERCHANT_CONFIRM]);
-        if ($confirm) {
-            return $model->save(['status' => self::STATUS_DELIVERY]);
+        $orderInfo = $model->find();//查找响应的订单信息
+        if ($confirm) {//如果确定，则更新状态为配送中，否则更新状态为用户确定
+            $saveStatus = $model->save(['status' => self::STATUS_DELIVERY]);
+        } else {
+            $saveStatus = $model->save(['status' => self::STATUS_USER_CONFIRM]);
         }
-        return $model->save(['status' => self::STATUS_USER_CONFIRM]);
+        if (!$saveStatus) E('确认订单失败');
+        $merchantInfo = UcenterMemberModel::get($merchantId, ['username', 'id']);//获取用户信息
+        $content = '商家：【' . isset($merchantInfo['username']) ? $merchantInfo['username'] : '' . '】于【' . date('Y-m-d H:i:s') . '】%s';
+        if ($confirm) {//根据是否确定来生成不同的记录信息
+            $replaceStr = '确认了订单【' . $orderInfo['id'] . '】，商家开始发货';
+        } else {
+            $replaceStr = '拒绝了订单【' . $orderInfo['id'] . '】，原因【' . $content . '】，等待用户确认';
+        }
+        $logData = [//日志信息
+            'user_id' => $orderInfo['user_id'],
+            'shop_id' => $orderInfo['shop_id'],
+            'merchant_id' => $merchantId ? $merchantId : 0,
+            'status' => $confirm ? self::STATUS_DELIVERY : self::STATUS_USER_CONFIRM,
+            'order_id' => $orderInfo['id'],
+            'content' => sprintf($content, $replaceStr)
+        ];
+        if ($saveStatus) {//如果订单状态更新成功才存入日志
+            OrderStatusModel::getInstance()->add($logData);
+        }
+        return $saveStatus;
     }
 
     /**
@@ -771,15 +838,34 @@ class OrderModel extends RelationModel
      * @param bool $confirm 是否确认订单
      * @return bool|int
      */
-    public static function UserConfirmOrder($id, $confirm = true)
+    public static function UserConfirmOrder($id, $confirm = true, $userId = null, $content = '')
     {
         $id = intval($id);
         if (!$id) E('ID非法');
         $model = self::getInstance()->where(['id' => $id, 'status' => self::STATUS_USER_CONFIRM]);
+        $orderInfo = $model->find();//查找响应的订单信息
+        $userInfo = [];
+        if ($userId) $userInfo = UcenterMemberModel::get($userId, ['id', 'username']);
+        $content = '用户：【' . isset($userInfo['username']) ? $userInfo['username'] : '' . '】于【' . date('Y-m-d H:i:s') . '】%s';
         if ($confirm) {
-            return $model->save(['status' => self::STATUS_DELIVERY]);
+            $saveStatus = $model->save(['status' => self::STATUS_DELIVERY]);
+            $replaceStr = '确认了商家对订单的修改，商家可以进行配送';
+        } else {
+            $saveStatus = $model->save(['status' => self::STATUS_CANCEL]);
+            $replaceStr = '拒绝了商家对订单的修改，订单被取消';
         }
-        return $model->save(['status' => self::STATUS_CANCEL]);
+        $logData = [//订单状态日志记录数据
+            'user_id' => $orderInfo['user_id'],
+            'shop_id' => $orderInfo['shop_id'],
+            'merchant_id' => 0,
+            'status' => $confirm ? self::STATUS_DELIVERY : self::STATUS_CANCEL,
+            'order_id' => $orderInfo['id'],
+            'content' => sprintf($content, $replaceStr)
+        ];
+        if ($saveStatus) {//如果订单状态更新成功才存入日志
+            OrderStatusModel::getInstance()->add($logData);
+        }
+        return $saveStatus;
     }
 
     /**
@@ -792,12 +878,53 @@ class OrderModel extends RelationModel
     {
         $id = intval($id);
         if (!$id) E('ID非法');
-        return self::getInstance()->where(['id' => $id, 'status' => self::STATUS_DELIVERY])->save(['status' => self::STATUS_COMPLETE]);
+        $model = self::getInstance()->where(['id' => $id, 'status' => self::STATUS_DELIVERY]);
+        $orderInfo = $model->relation('_ucenter_member')->find();//查找订单和用户数据
+        $saveStatus = $model->save(['status' => self::STATUS_COMPLETE]);
+        $logData = [//订单状态日志记录数据
+            'user_id' => $orderInfo['user_id'],
+            'shop_id' => $orderInfo['shop_id'],
+            'merchant_id' => 0,
+            'status' => self::STATUS_COMPLETE,
+            'order_id' => $orderInfo['id'],
+            'content' => '用户：【' . isset($orderInfo['_ucenter_member']) ? $orderInfo['_ucenter_member']['username'] : '' . '于【' . date('Y-m-d H:i:s') . '】完成了订单'
+        ];
+        if ($saveStatus) {//如果订单状态更新成功才存入日志
+            OrderStatusModel::getInstance()->add($logData);
+        }
+        return $saveStatus;
     }
 
+    /**
+     * 取消订单，必须要状态为【商家确认】或【用户确认】才能执行本方法成功！
+     * @param int $id 订单ID
+     * @return bool|int
+     */
     public static function CancelOrder($id)
     {
+        //TODO 如果已经付款，还要进行退款
         if (!$id = intval($id)) E('ID非法');
-
+        $model = self::getInstance()->where([
+            'id' => $id,
+            'status' => [
+                'IN' => [
+                    self::STATUS_MERCHANT_CONFIRM,
+                    self::STATUS_USER_CONFIRM
+                ]
+            ]]);
+        $orderInfo = $model->relation('_ucenter_member')->find();
+        $saveStatus = $model->save(['status' => self::STATUS_CANCEL]);
+        $logData = [//订单状态日志记录数据
+            'user_id' => $orderInfo['user_id'],
+            'shop_id' => $orderInfo['shop_id'],
+            'merchant_id' => 0,
+            'status' => self::STATUS_CANCEL,
+            'order_id' => $orderInfo['id'],
+            'content' => '用户：【' . isset($orderInfo['_ucenter_member']) ? $orderInfo['_ucenter_member']['username'] : '' . '于【' . date('Y-m-d H:i:s') . '】取消了订单'
+        ];
+        if ($saveStatus) {//如果订单状态更新成功才存入日志
+            OrderStatusModel::getInstance()->add($logData);
+        }
+        return $saveStatus;
     }
 }

@@ -297,7 +297,7 @@ class OrderController extends ApiController
      * }
      * ```
      */
-    public function find($id, $status = null, $getChilds = false, $getProducts = false, $fields = true)
+    public function find($id, $status = null, $getChilds = true, $getProducts = true, $fields = true)
     {
         $this->apiSuccess(['data' => OrderModel::get($id, $status, $fields, $getChilds, $getProducts)]);
     }
