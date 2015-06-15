@@ -27,8 +27,24 @@ abstract class RestController  extends Controller{
         $this->apiError(404, "找不到该接口");
     }
 
-    public function _initialize() {
+    abstract protected function isLogin($token);
 
+    protected function getUserId(){
+        if(defined('UID')) return ;
+        //客户端将token放入自定义header，access_token中
+        $token=I('server.access_token',null);
+        if($token===null)
+            //或者放入GET，POST参数中
+            $token=I('access_token');
+        $loginId=decode_token($token);
+        define('UID',$this->isLogin($loginId));
+        if( !UID )
+            E('用户未登录，不能访问该方法。');
+        return UID;
+    }
+
+    public function _initialize() {
+        //print_r(session_encode());
     }
 
     public function setInternalCallApi($value=true) {

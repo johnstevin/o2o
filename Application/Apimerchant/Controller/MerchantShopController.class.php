@@ -59,6 +59,9 @@ class MerchantShopController extends ApiController
     {
         try {
             if (IS_POST) {
+                //TODO 验证用户权限
+                //$this->getUserId();
+
                 $model = D('MerchantShop');
                 if (!$model->create())
                     E('参数传递失败');
@@ -91,8 +94,12 @@ class MerchantShopController extends ApiController
         try {
             if (IS_POST) {
                 $model = D('MerchantShop');
-                if (!$model->create())
+                if (!($data=$model->create()))
                     E('参数传递失败');
+                //TODO 验证用户权限
+                //$data['add_uid']=$this->getUserId();
+
+                $model->data($data);
                 $this->apiSuccess(['id' => intval($model->add())],'');
             } else
                 E('非法调用');
@@ -104,7 +111,6 @@ class MerchantShopController extends ApiController
     /**
      * 获得商铺列表
      * @author WangJiang
-     * @param $groupId 用户分组ID，注意：该参数应该来自权限
      * @param null $pid 上级商铺ID
      * @param null $regionId 区域ID
      * @param string $type 商铺类型
@@ -164,11 +170,15 @@ class MerchantShopController extends ApiController
      *}
      * '''
      */
-    public function getList($groupId, $pid = null, $regionId = null, $type = '0', $title = null)
+    public function getList($pid = null, $regionId = null, $type = '0', $title = null)
     {
         try {
             if (IS_GET) {
+                //TODO 验证用户权限
+                //$this->getUserId();
+
                 $model = D('MerchantShop');
+                $groupId=$model->default_group_id();
 
                 $where['group_id'] = $groupId;
                 !is_null($pid) and $where['pid'] = $pid;
@@ -230,7 +240,11 @@ class MerchantShopController extends ApiController
      * ```
      */
     public function getTypes(){
-        $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
+        try{
+            $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
+        }catch (\Exception $ex){
+            $this->apiError(50024,$ex->getMessage());
+        }
     }
 
 //    /**
@@ -286,5 +300,85 @@ class MerchantShopController extends ApiController
 //            $this->apiError(50023,$ex->getMessage());
 //        }
 //    }
+
+    /**
+     * 获得商铺服务类型
+     * @author WangJiang
+     * @param $shopId
+     * @return jaon
+     * ``` json
+     * {
+     *  "success": true,
+     *  "error_code": 0,
+     *  "data":
+     *  [
+     *      "<类别ID>",...
+     *  ]
+     * }
+     * ```
+     * 调用样例 GET apimchant.php?s=/MerchantShop/getTags/shopId/4
+     * ``` json
+     * {
+     *  "success": true,
+     *  "error_code": 0,
+     *  "data":
+     *  [
+     *      "1",
+     *      "2"
+     *  ]
+     * }
+     * ```
+     */
+    public function getTags($shopId){
+        try{
+            $data=M('ShopTag')->where(['shop_id'=>$shopId])->select();
+            $ret=[];
+            foreach($data as $v){
+                $ret[]=$v['tag_id'];
+            }
+            $this->apiSuccess(['data'=>$ret]);
+        }catch (\Exception $ex){
+            $this->apiError(50025,$ex->getMessage());
+        }
+    }
+
+    /**
+     * 设置商铺服务类型
+     * @author WangJiang
+     * @param $shopId
+     * @post json
+     * ``` json
+     * [
+     *  "<类别ID>",...
+     * ]
+     * ```
+     * @return json
+     * 调用样例 POST apimchant.php?s=/MerchantShop/setTags/shopId/4
+     * ``` json
+     * ["1","2"]
+     * ```
+     */
+    public function setTags($shopId){
+        try{
+            if(!IS_POST)
+                E('非法操作');
+            $content=json_decode(file_get_contents('php://input'));
+            $m=M('ShopTag');
+            $m->startTrans();
+            try{
+                $m->where(['shop_id'=>$shopId])->delete();
+                foreach($content as $tag){
+                    $m->add(['shop_id'=>$shopId,'tag_id'=>$tag]);
+                }
+                $m->commit();
+                $this->apiSuccess(null,'修改成功');
+            }catch (\Exception $ex){
+                $m->rollback();
+                throw $ex;
+            }
+        }catch (\Exception $ex){
+            $this->apiError(50026,$ex->getMessage());
+        }
+    }
 
 }

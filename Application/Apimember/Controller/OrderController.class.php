@@ -17,8 +17,7 @@ class OrderController extends ApiController
     /**
      * 设置购物车
      * @author WangJiang
-     * @param int $userId 用户ID，注意：该参数在权限验证完成应该由验证方法提供
-     * @return string
+     * @return json
      * <pre>
      * 调用样例 POST  apimber.php?s=/order/setcart/userId/0
      * POST 数据：
@@ -42,12 +41,13 @@ class OrderController extends ApiController
      * "message": "设置成功"
      * }</pre>
      */
-    public function setCart($userId)
+    public function setCart()
     {
         try {
             if (IS_POST) {
+                $uid=$this->getUserId();
                 $data = json_decode(file_get_contents('php://input'));
-                if (F("user/cart/$userId", $data) !== false)
+                if (F("user/cart/$uid", $data) !== false)
                     $this->apiSuccess(null, '设置成功');
                 else
                     E('设置购物车失败');
@@ -61,8 +61,7 @@ class OrderController extends ApiController
     /**
      * 获得购物车
      * @author WangJiang
-     * @param int $userId 用户ID，注意：该参数在权限验证完成应该由验证方法提供
-     * @return string
+     * @return json
      * <pre>
      * 调用样例 GET apimber.php?s=/order/getcart/userId/0
      * 返回
@@ -80,10 +79,11 @@ class OrderController extends ApiController
      * }
      * ]</pre>
      */
-    public function getCart($userId)
+    public function getCart()
     {
         try {
-            $data = F("user/cart/$userId");
+            $uid=$this->getUserId();
+            $data = F("user/cart/$uid");
             if ($data !== false)
                 $this->apiSuccess(['data' => $data]);
             else

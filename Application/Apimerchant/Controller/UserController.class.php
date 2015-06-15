@@ -19,32 +19,29 @@ class UserController extends ApiController {
      * @author  stevin
      */
     public function login(){
-        if(IS_POST){
-            $username = I('post.username');
-            $password = I('post.password');
+        try{
+            if(IS_POST){
+                $username = I('post.username');
+                $password = I('post.password');
 
-            $Ucenter  = D('UcenterMember');
-            $uid = $Ucenter->login($username, $password, 5);
-            if(0 < $uid){
-
-                $this->apiSuccess('登录成功！');
-
-            } else {
-                switch($uid) {
-                    case -1: $error = '用户不存在或被禁用！'; break; //系统级别禁用
-                    case -2: $error = '密码错误！'; break;
-                    case -3: $error = '插入或更新管理员信息失败'; break;
-                    default: $error = '未知错误！'; break; // 0-接口参数错误（调试阶段使用）
+                $Ucenter  = D('UcenterMember');
+                $token = $Ucenter->login($username, $password, 5);
+                if(0 < $token){
+                    $this->apiSuccess(['token'=>$token]);
+                } else {
+                    switch($token) {
+                        case 0:$error = '参数错误！'; break; //系统级别禁用
+                        case -1: $error = '用户不存在或被禁用！'; break; //系统级别禁用
+                        case -2: $error = '密码错误！'; break;
+                        case -3: $error = '插入或更新管理员信息失败'; break;
+                        default: $error = '未知错误！'; break; // 0-接口参数错误（调试阶段使用）
+                    }
+                    E($error);
                 }
-                $this->apiError(40012, $error);
-            }
-
-        }else{
-            if(is_merchant_login()){
-                $this->redirect('Index/index');
-            }else{
-                $this->display('User/login');
-            }
+            }else
+                E('非法调用');
+        }catch (\Exception $ex){
+            $this->apiError(40012, $ex->getMessage());
         }
     }
 
@@ -117,11 +114,9 @@ class UserController extends ApiController {
      * 退出登陆
      */
     public function logout(){
-        if(is_merchant_login()){
-            D('UcenterMember')->logout();
-            session('[destroy]');
-            $this->apiSuccess('退出成功！', U('login'));
-        }
+        D('UcenterMember')->logout();
+        session('[destroy]');
+        $this->apiSuccess(null,'退出成功！');
     }
 
     /**

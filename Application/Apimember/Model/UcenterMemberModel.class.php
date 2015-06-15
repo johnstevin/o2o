@@ -153,18 +153,20 @@ class UcenterMemberModel extends AdvModel {
         $auth = array(
             'uid'             => $user['id'],
             'mobile'          => $user['mobile'],
-            'last_login_time' => $data['last_login_time'],
+            'last_login_time' => $data['last_login_time']
         );
 
-        session('member_auth', $auth);
-        session('member_auth_sign', data_auth_sign($auth));
+        $token=$user['id'];
+        session('member_auth'.$token, $auth);
+        session('member_auth_sign'.$token, data_auth_sign($auth));
 
-        return $user['id'];
+        return encode_token($token);
     }
 
     /**
      * 注销当前用户
      * @return void
+     * @deprecated
      */
     public function logout(){
         session('member_auth', null);

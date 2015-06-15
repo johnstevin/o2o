@@ -1,11 +1,11 @@
 <?php
+namespace Addons\Sms\Common;
 /**
  * Created by PhpStorm.
  * User: wang
  * Date: 15-6-2
  * Time: 下午2:28
  */
-
 /**
  * 发送验证码
  * @author WangJiang

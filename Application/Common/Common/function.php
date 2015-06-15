@@ -234,24 +234,24 @@ function is_admin_login(){
 /**
  * @return int
  */
-function is_merchant_login(){
-    $user = session('merchant_auth');
+function is_merchant_login($token){
+    $user = session('merchant_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('merchant_auth_sign') == data_auth_sign($user) ? $user['uid'] : 0;
+        return session('merchant_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
 }
 
 /**
  * @return int
  */
-function is_member_login(){
-    $user = session('member_auth');
+function is_member_login($token){
+    $user = session('member_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('member_auth_sign') == data_auth_sign($user) ? $user['uid'] : 0;
+        return session('member_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
 }
 
@@ -508,29 +508,35 @@ function execute_action($rules = false, $action_id = null, $user_id = null){
     return $return;
 }
 
-function getUcenterMobile($uid = 0){
+/**
+ * @param int $uid
+ * @return string
+ * @author stevin.john
+ */
+function getUcenterMobile($uid = 0)
+{
     static $list;
-    if(!($uid && is_numeric($uid))){ //获取当前登录用户名
+    if (!($uid && is_numeric($uid))) { //获取当前登录用户名
         return '×未知用户×';
     }
 
     /* 获取缓存数据 */
-    if(empty($list)){
+    if (empty($list)) {
         $list = S('sys_user_mobile_list');
     }
 
     /* 查找用户信息 */
     $key = "u{$uid}";
-    if(isset($list[$key])){ //已缓存，直接使用
+    if (isset($list[$key])) { //已缓存，直接使用
         $name = $list[$key];
     } else { //调用接口获取用户信息
         $info = M('UcenterMember')->field('mobile')->find($uid);
-        if($info !== false && $info['mobile'] ){
+        if ($info !== false && $info['mobile']) {
             $mobile = $info['mobile'];
             $name = $list[$key] = $mobile;
             /* 缓存用户 */
             $count = count($list);
-            $max   = C('USER_MAX_CACHE');
+            $max = C('USER_MAX_CACHE');
             while ($count-- > $max) {
                 array_shift($list);
             }
@@ -540,4 +546,24 @@ function getUcenterMobile($uid = 0){
         }
     }
     return $name;
+}
+
+/**
+ * 加密token
+ * @author WangJiang
+ * @param string $token
+ * @return string
+ */
+function encode_token($token){
+    return $token;
+}
+
+/**
+ * 解密token
+ * @author WangJiang
+ * @param string $token
+ * @return string
+ */
+function decode_token($token){
+    return $token;
 }
