@@ -16,47 +16,55 @@ class AdminController extends Controller
 
     }
 
-    protected function _initialize(){
+    protected function _initialize()
+    {
         // 获取当前用户ID
-        if(defined('UID')) return ;
-        define('UID',is_admin_login());
-        if( !UID ){// 还没登录 跳转到登录页面
+        if (defined('UID')) return;
+        define('UID', is_admin_login());
+        if (!UID) {// 还没登录 跳转到登录页面
             $this->redirect('Public/login');
         }
         /* 读取数据库中的配置 */
-        $config =   S('DB_CONFIG_DATA');
-        if(!$config){
-            $config =   api('Config/lists');
-            S('DB_CONFIG_DATA',$config);
+        $config = S('DB_CONFIG_DATA');
+        if (!$config) {
+            $config = api('Config/lists');
+            S('DB_CONFIG_DATA', $config);
         }
         C($config);
 
-        define('IS_ROOT',   is_administrator());
-        if(!IS_ROOT && C('ADMIN_ALLOW_IP')){
+        define('IS_ROOT', is_administrator());
+        if (!IS_ROOT && C('ADMIN_ALLOW_IP')) {
             // 检查IP地址访问
-            if(!in_array(get_client_ip(),explode(',',C('ADMIN_ALLOW_IP')))){
+            if (!in_array(get_client_ip(), explode(',', C('ADMIN_ALLOW_IP')))) {
                 $this->error('403:禁止访问');
             }
         }
 
-        if(!IS_ROOT){
-            $access =   $this->accessControl();
-            if ( false === $access ) {
+        if (!IS_ROOT) {
+            $access = $this->accessControl();
+            if (false === $access) {
                 $this->error('403:禁止访问');
-            }elseif(null === $access ){
-                $rule  = strtolower(CONTROLLER_NAME.'/'.ACTION_NAME);
-                $checkType = array('in','1,2');  //TODO
-                if ( !$this->checkRule($rule,$checkType) ){
+            } elseif (null === $access) {
+                $rule = strtolower(CONTROLLER_NAME . '/' . ACTION_NAME);
+                $checkType = array('in', '1,2');  //TODO
+                if (!$this->checkRule($rule, $checkType)) {
                     $this->error('未授权访问!');
-                }else{
-                    $dynamic    =   $this->checkDynamic();
-                    if( false === $dynamic ){
+                } else {
+                    $dynamic = $this->checkDynamic();
+                    if (false === $dynamic) {
                         $this->error('未授权访问!');
                     }
                 }
             }
-        }
 
+            //把区域放进缓存
+            $region = S(UID.'AUTH_ADMIN_REGION');
+            if (empty($region)) {
+                $Region = D('Region');
+               S(UID.'AUTH_ADMIN_REGION', $Region->subordinate());
+            }
+
+        }
         $this->assign('menu_list', json_encode($this->getMenus()));
     }
 
@@ -66,26 +74,24 @@ class AdminController extends Controller
      */
     public function getMenus($where = array())
     {
-        $menus = session('ADMIN_MENU_LIST');
+        $menus = session('AUTH_ADMIN_MENU_LIST');
         if (empty($menus)) {
             $AuthRule = D('AuthRule');
-            $map = array('status' => '1', 'hide' => '1','level'=>array('ELT',1));
+            $map = array('status' => '1', 'hide' => '1', 'level' => array('ELT', 1));
             $map = array_merge($map, $where);
-            $AuthList=$_SESSION['_AUTH_LIST_'.UID.'in,1,2'];
-//           echo '<pre>';
-//            print_r($AuthList);
+            $AuthList = $_SESSION['_AUTH_LIST_' . UID . 'in,1,2'];
             $menus = $AuthRule->where($map)->order('sort asc')->field('id,title as text,pid as fid,url')->select();
-            //print_r($menus);
-            foreach($menus as $key => $item){
-                //  检测菜单权限
-                if (!IS_ROOT && !(in_array(strtolower($item['url']), $AuthList))) {
-                    unset($menus[$key]);
+            if (!IS_ROOT) {
+                foreach ($menus as $key => $item) {
+                    //  检测菜单权限
+                    if (!(in_array(strtolower($item['url']), $AuthList))) {
+                        unset($menus[$key]);
+                        continue;
+                    }
                 }
             }
-           // print_r($menus);
-
-            $menus= list_to_tree($menus, 'id', 'fid', 'children');
-            session('ADMIN_MENU_LIST', $menus);
+            $menus = list_to_tree($menus, 'id', 'fid', 'children');
+            session('AUTH_ADMIN_MENU_LIST', $menus);
         }
         return $menus;
     }

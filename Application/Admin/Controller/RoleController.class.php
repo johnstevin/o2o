@@ -6,7 +6,7 @@ use Admin\Model\AuthGroupModel;
 
 
 /**
- * 权限管理控制器
+ * 角色管理控制器
  * Class AuthController
  * @package Admin\Controller
  * @author liuhui
@@ -20,19 +20,19 @@ class RoleController extends AdminController
     public function index()
     {
         $list = $this->lists('AuthRole', array('module' => 'admin'), 'id asc');
-        $groups = D('AuthGroup');
+        $groups = M('AuthGroup');
         foreach ($list as &$k) {
             $k['group'] = $groups->where(array('id' => $k['group_id']))->getField('title');
         }
         $list = int_to_string($list, array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿'), 'public' => array(1 => '公共', 0 => '私有')));
         $this->assign('_list', $list);
         $this->assign('_use_tip', true);
-        $this->meta_title = '权限管理';
+        $this->meta_title = '角色管理';
         $this->display();
     }
 
     /**
-     * 新增用户组
+     * 新增角色
      */
     public function add()
     {
@@ -52,13 +52,13 @@ class RoleController extends AdminController
             /* 获取分类信息 */
             $this->assign('info', null);
             $this->assign('auth_group', $cate);
-            $this->meta_title = '新增用户组';
+            $this->meta_title = '新增角色';
             $this->display('edit');
         }
     }
 
     /**
-     * 编辑用户组
+     * 编辑角色
      */
     public function edit($id = null, $pid = 0)
     {
@@ -76,14 +76,14 @@ class RoleController extends AdminController
             /* 获取上级分类信息 */
             $cate = D('AuthGroup')->getGroups();
 //            if(!($cate && 1 == $cate['status'])){
-//                $this->error('指定的上级用户组不存在或被禁用！');
+//                $this->error('指定的上级角色不存在或被禁用！');
 //            }
             /* 获取分类信息 */
             $info = $id ? $AuthRole->info($id) : '';
 
             $this->assign('info', $info);
             $this->assign('auth_group', $cate);
-            $this->meta_title = '编辑用户组';
+            $this->meta_title = '编辑角色';
             $this->display();
         }
     }

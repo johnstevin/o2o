@@ -6,6 +6,7 @@
 // +----------------------------------------------------------------------
 
 namespace Admin\Model;
+
 use Think\Model;
 
 /**
@@ -13,18 +14,17 @@ use Think\Model;
  * Class AuthGroupModel
  * @author stevin.john
  */
-class AuthAccessModel extends Model {
-    const TYPE_ADMIN                = 1;                   // 管理员用户组类型标识
-    const TYPE_MERCHANT             = 2;                   // 商户用户组类型标识
-    const TYPE_MEMBER               = 3;                   // 用户组类型标识
-    const UCENTER_MEMBER            = 'ucenter_member';
-    const AUTH_ACCESS               = 'auth_access'; // 关系表表名
-    const AUTH_EXTEND               = 'auth_extend';       // 动态权限扩展信息表
-    const AUTH_GROUP                = 'auth_group';        // 组织表名
+class AuthAccessModel extends Model
+{
+    const TYPE_ADMIN = 1;                   // 管理员用户组类型标识
+    const TYPE_MERCHANT = 2;                   // 商户用户组类型标识
+    const TYPE_MEMBER = 3;                   // 用户组类型标识
+    const UCENTER_MEMBER = 'ucenter_member';
+    const AUTH_ACCESS = 'auth_access'; // 关系表表名
+    const AUTH_EXTEND = 'auth_extend';       // 动态权限扩展信息表
+    const AUTH_GROUP = 'auth_group';        // 组织表名
 
-    protected $_validate = array(
-
-    );
+    protected $_validate = array();
 
     /**
      * 给用户分配权限
@@ -32,11 +32,12 @@ class AuthAccessModel extends Model {
      * @return bool|int
      * @author stevin.john
      */
-    public function addUserAccess($data){
+    public function addUserAccess($data)
+    {
         $this->addAll($data);
         if ($this->getDbError()) {
             return -13;
-        }else{
+        } else {
             return true;
         }
     }
@@ -44,10 +45,11 @@ class AuthAccessModel extends Model {
     /**
      * 返回用户组列表
      * 默认返回正常状态的管理员用户组列表
-     * @param array $where   查询条件,供where()方法使用
+     * @param array $where 查询条件,供where()方法使用
      * @author stevin.john
      */
-    public function getGroups($map=array()){
+    public function getGroups($map = array())
+    {
         return $this->where($map)->select();
     }
 
@@ -83,7 +85,7 @@ class AuthAccessModel extends Model {
                 foreach ($gid as $k => $val) {
                     foreach ($val as $g) {
                         if (is_numeric($u) && is_numeric($g)) {
-                            $add[] = array('group_id' => $k, 'uid' => $u, 'role_id' => $g,'status'=>'1');
+                            $add[] = array('group_id' => $k, 'uid' => $u, 'role_id' => $g, 'status' => '1');
                         }
                     }
                 }
@@ -118,9 +120,58 @@ class AuthAccessModel extends Model {
             ->field('uid,roles,rules')
             ->table($prefix . self::AUTH_ACCESS . ' a')
             ->where("a.uid='$uid'")
-            ->find();
+            ->select();
         $roles[$uid] = $user_roles ? $user_roles : array();
         return $roles[$uid];
+    }
+
+    /**
+     * 返回用户所拥有的组织
+     * @param  int $uid 用户id
+     * @param int $type 用户组类型1-管理员，2-商户，3-用户
+     * @return array  用户所拥有的组织
+     * @author liuhui
+     */
+    static public function getUserGroup($uid, $type)
+    {
+        static $group = array();
+        if (isset($group[$uid]))
+            return $group[$uid];
+        $prefix = C('DB_PREFIX');
+        if ($type == 1) {
+            $user_groups = M()
+                ->field('a.group_id')
+                ->table($prefix . self::AUTH_ACCESS . ' a')
+                ->join('__AUTH_GROUP__ b ON a.group_id= b.id')
+                ->where(array('a.uid' => $uid, 'b.type' => C('auth_group_type')['ADMIN']))
+                ->distinct(true)
+                ->select();
+        } else if ($type == 2) {
+            $user_groups = M()
+                ->field('a.group_id')
+                ->table($prefix . self::AUTH_ACCESS . ' a')
+                ->join('__AUTH_GROUP__ b ON a.group_id= b.id')
+                ->where(array('a.uid' => $uid, 'b.type' => C('auth_group_type')['MERCHANT']))
+                ->distinct(true)
+                ->select();
+        } else if ($type == 3) {
+            $user_groups = M()
+                ->field('a.group_id')
+                ->table($prefix . self::AUTH_ACCESS . ' a')
+                ->join('__AUTH_GROUP__ b ON a.group_id= b.id')
+                ->where(array('a.uid' => $uid, 'b.type' => C('auth_group_type')['MEMBER']))
+                ->distinct(true)
+                ->select();
+        }else{
+            $user_groups = M()
+                ->field('a.group_id')
+                ->table($prefix . self::AUTH_ACCESS . ' a')
+                ->where(array('a.uid' => $uid))
+                ->distinct(true)
+                ->select();
+        }
+        $group[$uid] = $user_groups ? $user_groups : array();
+        return $group[$uid];
     }
 
 }

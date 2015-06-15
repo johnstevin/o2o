@@ -39,4 +39,11 @@ return [
     /* 店铺配置 */
     'SHOP_TYPE'    => array(17 => '超市', 89 => '生鲜', 18 => '洗车', 90 => '送水'),  //键值为组id
 
+    /* 用户组配置 */
+    'AUTH_GROUP_TYPE'  => array(
+        'ADMIN'    => 1,
+        'MERCHANT' => 2,
+        'MEMBER'   => 3,
+    ),
+
 ];

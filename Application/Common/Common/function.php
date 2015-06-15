@@ -42,30 +42,62 @@ function build_words_query($words, $words_op, $flds, &$map)
 }
 
 /**
- * 列表转为树状
- * @param array $list 数组
+ * 对查询结果集进行排序
+ * @access public
+ * @param array $list 查询结果
+ * @param string $field 排序的字段名
+ * @param array $sortby 排序类型
+ * asc正向排序 desc逆向排序 nat自然排序
+ * @return array
+ */
+function list_sort_by($list, $field, $sortby = 'asc')
+{
+    if (is_array($list)) {
+        $refer = $resultSet = array();
+        foreach ($list as $i => $data)
+            $refer[$i] = &$data[$field];
+        switch ($sortby) {
+            case 'asc': // 正向排序
+                asort($refer);
+                break;
+            case 'desc':// 逆向排序
+                arsort($refer);
+                break;
+            case 'nat': // 自然排序
+                natcasesort($refer);
+                break;
+        }
+        foreach ($refer as $key => $val)
+            $resultSet[] = &$list[$key];
+        return $resultSet;
+    }
+    return false;
+}
+
+/**
+ * 把返回的数据集转换成Tree
+ * @param array $list 要转换的数据集
  * @param string $pk 主键名称
  * @param string $pid 父级键名
  * @param string $child 子级键名
  * @param int $root 开始的根ID
  * @return array
  */
-function list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = 0)
-{
+function list_to_tree($list, $pk='id', $pid = 'pid', $child = '_child', $root = 0) {
     // 创建Tree
-    $tree = [];
-    if (is_array($list)) {
+    $tree = array();
+    if(is_array($list)) {
         // 创建基于主键的数组引用
-        $refer = [];
+        $refer = array();
         foreach ($list as $key => $data) {
             $refer[$data[$pk]] =& $list[$key];
         }
         foreach ($list as $key => $data) {
             // 判断是否存在parent
-            $parentId = $data[$pid];
+            $parentId =  $data[$pid];
             if ($root == $parentId) {
                 $tree[] =& $list[$key];
-            } else {
+            }else{
                 if (isset($refer[$parentId])) {
                     $parent =& $refer[$parentId];
                     $parent[$child][] =& $list[$key];
@@ -77,14 +109,14 @@ function list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root 
 }
 
 /**
- * 将list_to_tree转为的树状转回列表
- * @param array $tree 树状数组
- * @param string $child 子级键名
- * @param string $order 排序依据
- * @param array $list 列表
- * @return array
+ * 将list_to_tree的树还原成列表
+ * @param  array $tree 原来的树
+ * @param  string $child 孩子节点的键
+ * @param  string $order 排序显示的键，一般是主键 升序排列
+ * @param  array $list 过渡用的中间数组，
+ * @return array        返回排过序的列表数组
  */
-function tree_to_list($tree, $child = '_child', $order = 'id', &$list = [])
+function tree_to_list($tree, $child = '_child', $order = 'id', &$list = array())
 {
     if (is_array($tree)) {
         foreach ($tree as $key => $value) {
@@ -188,7 +220,8 @@ function create_order_code()
  * 检测当前用户是否为管理员
  * @return boolean true-管理员，false-非管理员
  */
-function is_administrator($uid = null){
+function is_administrator($uid = null)
+{
     $uid = is_null($uid) ? is_admin_login() : $uid;
     return $uid && (intval($uid) === C('USER_ADMINISTRATOR'));
 }
@@ -198,19 +231,21 @@ function is_administrator($uid = null){
  * @param int $time
  * @return string 完整的时间显示
  */
-function time_format($time = NULL,$format='Y-m-d H:i'){
+function time_format($time = NULL, $format = 'Y-m-d H:i')
+{
     $time = $time === NULL ? NOW_TIME : intval($time);
     return date($format, $time);
 }
 
 /**
  * 数据签名认证
- * @param  array  $data 被认证的数据
+ * @param  array $data 被认证的数据
  * @return string       签名
  */
-function data_auth_sign($data) {
+function data_auth_sign($data)
+{
     //数据类型检测
-    if(!is_array($data)){
+    if (!is_array($data)) {
         $data = (array)$data;
     }
     ksort($data); //排序
@@ -222,7 +257,8 @@ function data_auth_sign($data) {
 /**
  * @return int
  */
-function is_admin_login(){
+function is_admin_login()
+{
     $user = session('admin_auth');
     if (empty($user)) {
         return 0;
@@ -234,7 +270,8 @@ function is_admin_login(){
 /**
  * @return int
  */
-function is_merchant_login(){
+function is_merchant_login()
+{
     $user = session('merchant_auth');
     if (empty($user)) {
         return 0;
@@ -246,7 +283,8 @@ function is_merchant_login(){
 /**
  * @return int
  */
-function is_member_login(){
+function is_member_login()
+{
     $user = session('member_auth');
     if (empty($user)) {
         return 0;
@@ -259,12 +297,13 @@ function is_member_login(){
  * @param int $length
  * @return string
  */
-function generate_saltKey( $length = 6 ) {
+function generate_saltKey($length = 6)
+{
     // 密码字符集，可任意添加你需要的字符
     $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_[]{}<>~`+=,.;:/?|';
     $saltKey = '';
-    for ( $i = 0; $i < $length; $i++ ){
-        $saltKey .= $chars[ mt_rand(0, strlen($chars) - 1) ];
+    for ($i = 0; $i < $length; $i++) {
+        $saltKey .= $chars[mt_rand(0, strlen($chars) - 1)];
     }
     return $saltKey;
 }
@@ -274,12 +313,13 @@ function generate_saltKey( $length = 6 ) {
  * @param $saltkey
  * @return string
  */
-function generate_password( $pwd, $saltkey ) {
+function generate_password($pwd, $saltkey)
+{
     //Md5(Md5(盐值前三位.md5(密码).盐值后几位).盐值)，取最中间24位
-    $saltkey1 = substr($saltkey,0,3);
-    $saltkey2 = substr($saltkey,-3);
-    $pwd = md5(md5($saltkey1.$pwd.$saltkey2).$saltkey);
-    $pwd = substr($pwd,4,24);
+    $saltkey1 = substr($saltkey, 0, 3);
+    $saltkey2 = substr($saltkey, -3);
+    $pwd = md5(md5($saltkey1 . $pwd . $saltkey2) . $saltkey);
+    $pwd = substr($pwd, 4, 24);
 
     return $pwd;
 }
@@ -288,25 +328,26 @@ function generate_password( $pwd, $saltkey ) {
  * 调用系统的API接口方法（静态方法）
  * api('User/getName','id=5'); 调用公共模块的User接口的getName方法
  * api('Admin/User/getName','id=5');  调用Admin模块的User接口
- * @param  string  $name 格式 [模块名]/接口名/方法名
- * @param  array|string  $vars 参数
+ * @param  string $name 格式 [模块名]/接口名/方法名
+ * @param  array|string $vars 参数
  */
-function api($name,$vars=array()){
-    $array     = explode('/',$name);
-    $method    = array_pop($array);
+function api($name, $vars = array())
+{
+    $array = explode('/', $name);
+    $method = array_pop($array);
     $classname = array_pop($array);
-    $module    = $array? array_pop($array) : 'Common';
-    $callback  = $module.'\\Api\\'.$classname.'Api::'.$method;
-    if(is_string($vars)) {
-        parse_str($vars,$vars);
+    $module = $array ? array_pop($array) : 'Common';
+    $callback = $module . '\\Api\\' . $classname . 'Api::' . $method;
+    if (is_string($vars)) {
+        parse_str($vars, $vars);
     }
-    return call_user_func_array($callback,$vars);
+    return call_user_func_array($callback, $vars);
 }
 
 /**
  * select返回的数组进行整数映射转换
  *
- * @param array $map  映射关系二维数组  array(
+ * @param array $map 映射关系二维数组  array(
  *                                          '字段名1'=>array(映射关系数组),
  *                                          '字段名2'=>array(映射关系数组),
  *                                           ......
@@ -319,15 +360,16 @@ function api($name,$vars=array()){
  *  )
  *
  */
-function int_to_string(&$data,$map=array('status'=>array(1=>'正常',-1=>'删除',0=>'禁用',2=>'未审核',3=>'草稿'))) {
-    if($data === false || $data === null ){
+function int_to_string(&$data, $map = array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿')))
+{
+    if ($data === false || $data === null) {
         return $data;
     }
     $data = (array)$data;
-    foreach ($data as $key => $row){
-        foreach ($map as $col=>$pair){
-            if(isset($row[$col]) && isset($pair[$row[$col]])){
-                $data[$key][$col.'_text'] = $pair[$row[$col]];
+    foreach ($data as $key => $row) {
+        foreach ($map as $col => $pair) {
+            if (isset($row[$col]) && isset($pair[$row[$col]])) {
+                $data[$key][$col . '_text'] = $pair[$row[$col]];
             }
         }
     }
@@ -343,7 +385,7 @@ function int_to_string(&$data,$map=array('status'=>array(1=>'正常',-1=>'删除
  * @param string $prefix 参数名称前缀
  * @return array [$bindNames,$bindValues] $bindNames 参数名称, $bindValues参数绑定用于bind调用
  */
-function build_sql_bind($list,$bindValues=[],$prefix='bindName')
+function build_sql_bind($list, $bindValues = [], $prefix = 'bindName')
 {
     foreach ($list as $i => $id) {
         $name = ":$prefix" . $i;
@@ -351,4 +393,33 @@ function build_sql_bind($list,$bindValues=[],$prefix='bindName')
         $bindValues[$name] = $id;
     }
     return array($bindNames, $bindValues);
+}
+
+/**
+ * array_column兼容性处理
+ */
+if(!function_exists('array_column')){
+    function array_column(array $input, $columnKey, $indexKey = null) {
+        $result = array();
+        if (null === $indexKey) {
+            if (null === $columnKey) {
+                $result = array_values($input);
+            } else {
+                foreach ($input as $row) {
+                    $result[] = $row[$columnKey];
+                }
+            }
+        } else {
+            if (null === $columnKey) {
+                foreach ($input as $row) {
+                    $result[$row[$indexKey]] = $row;
+                }
+            } else {
+                foreach ($input as $row) {
+                    $result[$row[$indexKey]] = $row[$columnKey];
+                }
+            }
+        }
+        return $result;
+    }
 }
