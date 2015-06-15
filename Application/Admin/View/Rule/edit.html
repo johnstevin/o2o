@@ -61,12 +61,12 @@
                 <label class="control-label col-md-2">是否隐藏</label>
 
                 <div class="col-md-10">
-                    <eq name="info.hide" value="1">
-                        <input type="radio" name="hide" value="1" checked>是
-                        <input type="radio" name="hide" value="0">否
+                    <eq name="info.hide" value="0">
+                        <input type="radio" name="hide" value="0" checked >是
+                        <input type="radio" name="hide" value="1" >否
                         <else/>
-                        <input type="radio" name="hide" value="1">是
-                        <input type="radio" name="hide" value="0" checked>否
+                        <input type="radio" name="hide" value="0" >是
+                        <input type="radio" name="hide" value="1" checked>否
                     </eq>
 
                 </div>
@@ -75,6 +75,7 @@
             <div class="footer">
                 <input type="hidden" name="id" value="{$info.id|default=''}">
                 <input type="hidden" name="level" value="{$category['level']|default=''}"/>
+                <input type="hidden" name="status" value="{$info.status|default='1'}">
                 <input type="hidden" name="pid" value="{:isset($category['id'])?$category['id']:$info['pid']}">
             </div>
         </form>

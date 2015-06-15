@@ -1,7 +1,7 @@
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
     </button>
-    <h4 class="modal-title"><h2>{:isset($info['id'])?'编辑':'新增'}用户组</h2></h4>
+    <h4 class="modal-title"><h2>{:isset($info['id'])?'编辑':'新增'}组织</h2></h4>
 </div>
 <div class="modal-body">
 
@@ -32,17 +32,17 @@
                         </div>
                         <div class="col-md-2">
                             <select id="level4" name="level4" class="form-control level">
-                                <option value="0">街道</option>
+                                <option value="0">商圈</option>
                             </select>
                         </div>
                         <div class="col-md-2">
                             <select id="level5" name="level5" class="form-control level">
-                                <option value="0">社区</option>
+                                <option value="0">街道</option>
                             </select>
                         </div>
                         <div class="col-md-2">
                             <select id="level6" name="level6" class="form-control level">
-                                <option value="0">小区</option>
+                                <option value="0">社区</option>
                             </select>
                         </div>
                     </div>
@@ -91,7 +91,7 @@
                 <label for="auth-description" class="control-label col-md-2">描述</label>
 
                 <div class="col-md-10">
-                    <textarea id="auth-description" rows="4" type="text" name="description" class="form-control">{$auth_group.description|default=''}</textarea>
+                    <textarea id="auth-description" rows="4" type="text" name="description" class="form-control">{$info.description|default=''}</textarea>
                 </div>
             </div>
         </div>
@@ -132,14 +132,14 @@
         obj3.add(new Option('区域', 0));
         var obj4 = document.getElementById("level4");
         obj4.options.length = 0;
-        obj4.add(new Option('街道', 0));
+        obj4.add(new Option('商圈', 0));
         var obj5 = document.getElementById("level5");
         obj5.options.length = 0;
-        obj5.add(new Option('社区', 0));
+        obj5.add(new Option('街道', 0));
 //            var child=parseInt(level,10)+parseInt(1,10);
         var obj6 = document.getElementById("level6");
         obj6.options.length = 0;
-        obj6.add(new Option('小区', 0));
+        obj6.add(new Option('社区', 0));
         var obj = document.getElementById("level2");
         if (parseInt(level, 10) > 0) {
             $.get("{:U('Group/showChild')}&pid=" + this.value, function (result) {
@@ -165,14 +165,14 @@
         var level = this.value;
         var obj4 = document.getElementById("level4");
         obj4.options.length = 0;
-        obj4.add(new Option('街道', 0));
+        obj4.add(new Option('商圈', 0));
         var obj5 = document.getElementById("level5");
         obj5.options.length = 0;
-        obj5.add(new Option('社区', 0));
+        obj5.add(new Option('街道', 0));
         var obj = document.getElementById("level3");
         var obj6 = document.getElementById("level6");
         obj6.options.length = 0;
-        obj6.add(new Option('小区', 0));
+        obj6.add(new Option('社区', 0));
         if (parseInt(level, 10) > 0) {
             $.get("{:U('Group/showChild')}&pid=" + this.value, function (result) {
 
@@ -197,11 +197,11 @@
         var level = this.value;
         var obj5 = document.getElementById("level5");
         obj5.options.length = 0;
-        obj5.add(new Option('社区', 0));
+        obj5.add(new Option('街道', 0));
         var obj = document.getElementById("level4");
         var obj6 = document.getElementById("level6");
         obj6.options.length = 0;
-        obj6.add(new Option('小区', 0));
+        obj6.add(new Option('社区', 0));
         if (parseInt(level, 10) > 0) {
             $.get("{:U('Group/showChild')}&pid=" + this.value, function (result) {
 
@@ -209,7 +209,7 @@
 
                 obj.options.length = 0;
                 //添加选项
-                obj.add(new Option('街道', 0));
+                obj.add(new Option('商圈', 0));
                 $.each(result, function (key, item) {
                     obj.add(new Option(item.name, item.id));
                 });
@@ -219,7 +219,7 @@
         } else {
             obj.options.length = 0;
             //添加选项
-            obj.add(new Option('街道', 0));
+            obj.add(new Option('商圈', 0));
         }
     });
     $('#level4').change(function () {
@@ -228,7 +228,7 @@
         var obj = document.getElementById("level5");
         var obj6 = document.getElementById("level6");
         obj6.options.length = 0;
-        obj6.add(new Option('小区', 0));
+        obj6.add(new Option('社区', 0));
         if (parseInt(level, 10) > 0) {
             $.get("{:U('Group/showChild')}&pid=" + this.value, function (result) {
 
@@ -236,7 +236,7 @@
 
                 obj.options.length = 0;
                 //添加选项
-                obj.add(new Option('社区', 0));
+                obj.add(new Option('街道', 0));
                 $.each(result, function (key, item) {
                     obj.add(new Option(item.name, item.id));
                 });
@@ -260,7 +260,7 @@
 
                 obj.options.length = 0;
                 //添加选项
-                obj.add(new Option('小区', 0));
+                obj.add(new Option('社区', 0));
                 $.each(result, function (key, item) {
                     obj.add(new Option(item.name, item.id));
                 });
@@ -270,7 +270,7 @@
         } else {
             obj.options.length = 0;
             //添加选项
-            obj.add(new Option('小区', 0));
+            obj.add(new Option('社区', 0));
         }
     });
     //    });

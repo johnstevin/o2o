@@ -22,8 +22,9 @@
                     str += '<tr>' +
                     '<td>'+prefix+'<a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">'+v.title+'</a></td>' +
                     '<td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("add")}&pid='+ v.id+'">添加子分类</a></td>' +
-                    '<td>'+ v.description+'</td>' +
-                    '<td>'+v.status+'</td>'+
+                    '<td>'+v.type_text+'</td>'+
+                    '<td>'+v.description+'</td>' +
+                    '<td>'+v.status_text+'</td>'+
                     '<td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑</a>&nbsp;&nbsp;'+
                     '<a href="{:U("Group/changeStatus")}&method=forbid&id='+ v.id+'">禁用</a>&nbsp;&nbsp;'+
                     '<a href="{:U("Group/changeStatus")}&method=resume&id='+ v.id+'">启用</a>&nbsp;&nbsp;'+
@@ -39,10 +40,6 @@
         });
     </script>
 <div class="container-fluid">
-    <!-- 标题栏 -->
-    <div>
-        <h2>组织管理</h2>
-    </div>
     <!-- 操作  -->
     <div>
         <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-group" class="btn btn-success" href="{:U('add')}">新 增</a>
@@ -55,6 +52,7 @@
             <!--<th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>-->
             <th>用户组</th>
             <th>添加子分类</th>
+            <th>类型</th>
             <th>描述</th>
             <th>状态</th>
             <th>操作</th>

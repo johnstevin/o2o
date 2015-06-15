@@ -72,6 +72,7 @@ class MerchantController extends AdminController
                     $this->error(empty($error) ? '未知错误' : $error);
                 };
             } else if (strtolower($method) == 'unpass') {
+                ($status !=='1')?:$this->error('已经审核过的不能再次审核');
                 if (false !== $MerchantShop->saveUnPassReason($shop_id)) {
                     $this->success('保存成功');
                 } else {

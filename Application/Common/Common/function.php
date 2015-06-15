@@ -47,30 +47,62 @@ function build_words_query($words, $words_op, $flds, &$map)
 }
 
 /**
- * 列表转为树状
- * @param array $list 数组
+ * 对查询结果集进行排序
+ * @access public
+ * @param array $list 查询结果
+ * @param string $field 排序的字段名
+ * @param array $sortby 排序类型
+ * asc正向排序 desc逆向排序 nat自然排序
+ * @return array
+ */
+function list_sort_by($list, $field, $sortby = 'asc')
+{
+    if (is_array($list)) {
+        $refer = $resultSet = array();
+        foreach ($list as $i => $data)
+            $refer[$i] = &$data[$field];
+        switch ($sortby) {
+            case 'asc': // 正向排序
+                asort($refer);
+                break;
+            case 'desc':// 逆向排序
+                arsort($refer);
+                break;
+            case 'nat': // 自然排序
+                natcasesort($refer);
+                break;
+        }
+        foreach ($refer as $key => $val)
+            $resultSet[] = &$list[$key];
+        return $resultSet;
+    }
+    return false;
+}
+
+/**
+ * 把返回的数据集转换成Tree
+ * @param array $list 要转换的数据集
  * @param string $pk 主键名称
  * @param string $pid 父级键名
  * @param string $child 子级键名
  * @param int $root 开始的根ID
  * @return array
  */
-function list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = 0)
-{
+function list_to_tree($list, $pk='id', $pid = 'pid', $child = '_child', $root = 0) {
     // 创建Tree
-    $tree = [];
-    if (is_array($list)) {
+    $tree = array();
+    if(is_array($list)) {
         // 创建基于主键的数组引用
-        $refer = [];
+        $refer = array();
         foreach ($list as $key => $data) {
             $refer[$data[$pk]] =& $list[$key];
         }
         foreach ($list as $key => $data) {
             // 判断是否存在parent
-            $parentId = $data[$pid];
+            $parentId =  $data[$pid];
             if ($root == $parentId) {
                 $tree[] =& $list[$key];
-            } else {
+            }else{
                 if (isset($refer[$parentId])) {
                     $parent =& $refer[$parentId];
                     $parent[$child][] =& $list[$key];
@@ -82,14 +114,14 @@ function list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root 
 }
 
 /**
- * 将list_to_tree转为的树状转回列表
- * @param array $tree 树状数组
- * @param string $child 子级键名
- * @param string $order 排序依据
- * @param array $list 列表
- * @return array
+ * 将list_to_tree的树还原成列表
+ * @param  array $tree 原来的树
+ * @param  string $child 孩子节点的键
+ * @param  string $order 排序显示的键，一般是主键 升序排列
+ * @param  array $list 过渡用的中间数组，
+ * @return array        返回排过序的列表数组
  */
-function tree_to_list($tree, $child = '_child', $order = 'id', &$list = [])
+function tree_to_list($tree, $child = '_child', $order = 'id', &$list = array())
 {
     if (is_array($tree)) {
         foreach ($tree as $key => $value) {
@@ -313,8 +345,7 @@ function generate_password($pwd, $saltkey)
  * @param  string $name 格式 [模块名]/接口名/方法名
  * @param  array|string $vars 参数
  */
-function api($name, $vars = [])
-{
+function api($name, $vars = array()){
     $array = explode('/', $name);
     $method = array_pop($array);
     $classname = array_pop($array);
@@ -342,7 +373,7 @@ function api($name, $vars = [])
  *  )
  *
  */
-function int_to_string(&$data, $map = ['status' => [1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿']])
+function int_to_string(&$data, $map = array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿')))
 {
     if ($data === false || $data === null) {
         return $data;
@@ -590,4 +621,33 @@ function encode_token($token){
  */
 function decode_token($token){
     return $token;
+}
+
+/**
+ * array_column兼容性处理
+ */
+if(!function_exists('array_column')){
+    function array_column(array $input, $columnKey, $indexKey = null) {
+        $result = array();
+        if (null === $indexKey) {
+            if (null === $columnKey) {
+                $result = array_values($input);
+            } else {
+                foreach ($input as $row) {
+                    $result[] = $row[$columnKey];
+                }
+            }
+        } else {
+            if (null === $columnKey) {
+                foreach ($input as $row) {
+                    $result[$row[$indexKey]] = $row;
+                }
+            } else {
+                foreach ($input as $row) {
+                    $result[$row[$indexKey]] = $row[$columnKey];
+                }
+            }
+        }
+        return $result;
+    }
 }

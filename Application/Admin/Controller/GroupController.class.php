@@ -1,10 +1,8 @@
 <?php
 namespace Admin\Controller;
 
-use Admin\Model\AuthGroupModel;
-
 /**
- * Class 用户组控制器
+ * Class 组织机构控制器
  * @package Admin\Controller
  * @author liuhui
  */
@@ -12,19 +10,19 @@ class GroupController extends AdminController
 {
 
     /**
-     * 用户组首页
+     * 组织机构首页
      */
     public function index()
     {
 
-        $tree = D('AuthGroup')->getTree(0, 'id,group_code,title,description,level,pid,status');
+        $tree = D('AuthGroup')->getTree(0, 'id,group_code,title,description,level,pid,status,public,type');
         $this->assign('_list', $tree);
-        $this->meta_title = '用户组管理';
+        $this->meta_title = '组织机构管理';
         $this->display();
     }
 
     /**
-     * @param int 上级pid，默认为顶级
+     * @param int $pid 上级pid，默认为顶级
      */
     public function showChild($pid)
     {
@@ -36,57 +34,64 @@ class GroupController extends AdminController
     }
 
     /**
-     * 新增用户组
+     * 新增组织机构
      */
     public function add($pid = 0)
     {
         $AuthGroup = D('AuthGroup');
-         //TODO  事物控制
+
+        M()->startTrans();
         if (IS_POST) {
             $result = $AuthGroup->update();
             if (false !== $result) {
 
-                if(2==$pid){ //TODO 商户组暂时定死为2
-                    $this->success('新增成功！', U('index'));
+                //商户组的不再保存区域
+                if (C('AUTH_GROUP_ID')['MERCHANT_GROUP_ID'] == $pid) {
+                    M()->commit();
+                    $this->success('新增成功！');
                 }
+
                 /* 添加或更新数据 */
-                if ($AuthGroup->saveRegion($result)) {
-                    $this->success('新增成功！', U('index'));
+                if (false !== $AuthGroup->saveRegion($result)) {
+                    M()->commit();
+                    $this->success('新增成功！');
                 } else {
+                    M()->rollback();
                     $error = $AuthGroup->getError();
                     $this->error(empty($error) ? '未知错误' : $error);
                 }
             } else {
+                M()->rollback();
                 $error = $AuthGroup->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
             $cate = array();
-            //$Region=D('Region');
+
             $region = D('Region')->showChild();
-//            echo'<pre>';)//            print_r($Region);die;);
+
             if ($pid) {
-                /* 获取上级分类信息 */
+                /* 获取上级组织信息 */
                 $cate = $AuthGroup->info($pid, 'id,level,title,status');
                 if (!($cate && 1 == $cate['status'])) {
-                    $this->error('指定的上级分类不存在或被禁用！');
+                    $this->error('指定的上级组织不存在或被禁用！');
                 }
                 ++$cate['level'];
 
                 /*获取上一级一致的区域信息*/
             }
 
-            /* 获取分类信息 */
+            /* 获取组织信息 */
             $this->assign('info', null);
             $this->assign('category', $cate);
-            $this->assign('region', 2==$pid?null:$region);//TODO 商户组暂时定死为2
-            $this->meta_title = '新增用户组';
+            $this->assign('region', C('AUTH_GROUP_ID')['MERCHANT_GROUP_ID'] == $pid ? null : $region);
+            $this->meta_title = '新增组织机构';
             $this->display('edit');
         }
     }
 
     /**
-     * 编辑用户组
+     * 编辑组织机构
      */
     public function edit($id = null, $pid = 0)
     {
@@ -94,28 +99,37 @@ class GroupController extends AdminController
         //$Region=D('Region');
         if (IS_POST) { //提交表单
             if (false !== $AuthGroup->update()) {
-                $this->success('新增成功！', U('index'));
+                $this->success('编辑成功！', U('index'));
             } else {
                 $error = $AuthGroup->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
-            $cate = '';
-            if ($pid) {
-                /* 获取上级分类信息 */
-                $cate = $AuthGroup->info($pid, 'id,level,title,status');
-                if (!($cate && 1 == $cate['status'])) {
-                    $this->error('指定的上级用户组不存在或被禁用！');
+
+            /*非管理员判断权限是否越权*/
+            if (!IS_ROOT) {
+                $AuthGroup = D('AuthGroup');
+                $UserAuthGroup = $AuthGroup->UserAuthGroup();
+                if (!in_array($id, $UserAuthGroup)) {
+                    $this->error('权限不足,请联系管理员!');
                 }
             }
 
-            /* 获取分类信息 */
-            $info = $id ? $AuthGroup->info($id) : '';
+            $cate = '';
+            if ($pid) {
+                /* 获取上级组织信息 */
+                $cate = $AuthGroup->info($pid, 'id,level,title,status');
+                if (!($cate && 1 == $cate['status'])) {
+                    $this->error('指定的上级组织机构不存在或被禁用！');
+                }
+            }
 
+            /* 获取组织信息 */
+            $info = $id ? $AuthGroup->info($id) : '';
             $this->assign('info', $info);
             $this->assign('category', $cate);
             $this->assign('region', null);
-            $this->meta_title = '编辑用户组';
+            $this->meta_title = '编辑组织机构';
             $this->display();
         }
     }
@@ -125,9 +139,20 @@ class GroupController extends AdminController
      */
     public function changeStatus($method = null)
     {
-        if (empty($_REQUEST['id'])) {
+        $id = $_REQUEST['id'];
+        if (empty($id)) {
             $this->error('请选择要操作的数据!');
         }
+
+        /*非管理员判断权限是否越权*/
+        if (!IS_ROOT) {
+            $AuthGroup = D('AuthGroup');
+            $UserAuthGroup = $AuthGroup->UserAuthGroup();
+            if (!in_array($id, $UserAuthGroup)) {
+                $this->error('权限不足,请联系管理员!');
+            }
+        }
+
         switch (strtolower($method)) {
             case 'forbid':
                 $this->forbid('AuthGroup');
@@ -137,7 +162,7 @@ class GroupController extends AdminController
                 break;
             case 'delete':
 
-//                //判断该分类下有没有子分类，有则不允许删除
+//                //判断该组织下有没有子组织，有则不允许删除
 //                $child = M('AuthGroup')->where(array('pid'=>$_REQUEST['id']))->field('id')->find();
 //                if(!empty($child)){
 //                    $this->error('请先删除该组织下的组织');
