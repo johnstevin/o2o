@@ -37,12 +37,23 @@
             var level = level ? level : 0,prefix = '';
             for(i=0;i<level;i++){
                 if(i==0 && level == 1){
+                    prefix += '&nbsp;&nbsp;&nbsp;&nbsp;|__';
+                }else if(i==0 &&  level > 1){
+                    for(j=0;j<level;j++){
+                        prefix += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                    }
+                    prefix += '|';
+                }else {
+                    prefix += '_';
+                }
+
+                /*if(i==0 && level == 1){
                     prefix += '└——';
                 }else if(i==0 && level > 1){
                     prefix += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|';
                 }else {
                     prefix += '——';
-                }
+                }*/
             }
             $.each(list, function (k, v) {
                 string += '<tr>' +

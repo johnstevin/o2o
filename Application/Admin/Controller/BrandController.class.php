@@ -103,44 +103,81 @@ class BrandController extends AdminController
                 $this->error('请选择二级分类', U(Brand / bindBrand));
             }
 
+            //在categorybrandnorms表中查询出所有的字段
+            $both_id=$abnmodel->select();
+            //在categorybrandnorms表中根据category_id查询出所有的品牌id值
+            $b_id=$abnmodel->field('brand_id')->where(array('category_id'=>array('IN',$categoryId)))->select();
+            //将category_id和brand_id字段取出来形成一个单独集合
+            $cid=array_column($both_id,'category_id');
+            $bid=array_column($b_id,'brand_id');
+            //判断发送的分类id值（一、二、三级）是否在category_id数组集合中
+            $cate1=in_array($_POST['category1'],$cid);
+            $cate2=in_array($_POST['category2'],$cid);
+            $cate3=in_array($_POST['category3'],$cid);
+            //根据发送的品牌id在 根据分类id查询出的品牌id集合中进行比较,如果存在提示用户：有相同记录,否则存入用户.
+            $b=$_POST[brand_id];
+            $diff=array_diff($b,$bid);
+            $empty=empty($diff);
+
             //3.通过遍历将一对多的数组转换成多对多的数组
-            foreach ($_POST['brand_id'] as $brand) {
+            foreach ($diff as $brand) {
                 $data[] = [
                     'category_id' => $categoryId,
                     'brand_id' => $brand,
                 ];
             }
-            $b=implode(",",$_POST[brand_id]);
-//            var_dump($b);die;
-          $result = $abnmodel->addAll($data);
-            $b_id=$abnmodel->field('category_id,brand_id')->select();
-
-            $cid=array_column($b_id,'category_id');
-            $bid=array_column($b_id,'brand_id');
 
             //4.以数组的方式传递三级分类及关联品牌的数据到bindNorms_index页面
             $bdata=array(
                 'category_1'=>$_POST['category1'],
                 'category_2'=>!empty($_POST['category2'])?$_POST['category2']:'无',
                 'category_3'=>!empty($_POST['category3'])?$_POST['category3']:'无',
-                'brand'=>$_POST['brand_id'],
+                'brand'=>$diff,
             );
 
-          /* if(in_array($_POST['category1'],$cid)){
+            //判断一、二、三级分类及绑定的品牌在中间表中是否又相同记录,如果有提示用户,否则插入数据
+            if($cate1==false){
                 $result = $abnmodel->addAll($data);
                 if (is_int($result)) {
                     $this->redirect('Norms/bindNorms', $bdata, 3, '关联成功,页面跳转中...');
-                } else {
-                    $this->error('对不起，关联失败！', U('bindBrand'));}
+                }
+            }elseif(($cate1==true) && ($empty==false)){
+                $result = $abnmodel->addAll($data);
+                if (is_int($result)) {
+                    $this->redirect('Norms/bindNorms', $bdata, 3, '关联成功,页面跳转中...');
+                }
             }else{
-                $this->error('对不起，存在相同记录！', U('bindBrand'));
-            }*/
-
-        if (is_int($result)) {
-                $this->redirect('Norms/bindNorms', $bdata, 3, '关联成功,页面跳转中...');
-            } else {
-                $this->error('对不起，关联失败！', U('bindBrand'));
+                $this->error('对不起、有相同记录,请重新关联！', U('bindBrand'));
             }
+
+            if($cate2==false){
+                $result = $abnmodel->addAll($data);
+                if (is_int($result)) {
+                    $this->redirect('Norms/bindNorms', $bdata, 3, '关联成功,页面跳转中...');
+                }
+            }elseif(($cate2==true) && ($empty==false)){
+                $result = $abnmodel->addAll($data);
+                if (is_int($result)) {
+                    $this->redirect('Norms/bindNorms', $bdata, 3, '关联成功,页面跳转中...');
+                }
+            }else{
+                $this->error('对不起、有相同记录,请重新关联！', U('bindBrand'));
+            }
+
+            if($cate3==false){
+                $result = $abnmodel->addAll($data);
+                if (is_int($result)) {
+                    $this->redirect('Norms/bindNorms', $bdata, 3, '关联成功,页面跳转中...');
+                }
+            }elseif(($cate3==true) && ($empty==false)){
+                $result = $abnmodel->addAll($data);
+                if (is_int($result)) {
+                    $this->redirect('Norms/bindNorms', $bdata, 3, '关联成功,页面跳转中...');
+                }
+            }else{
+                $this->error('对不起、有相同记录,请重新关联！', U('bindBrand'));
+            }
+
         } else {
             //二、分类的三级联动下拉选择菜单
             $tree = D("Category")->getTree(0, 'id,sort,title,pid,status');
@@ -174,7 +211,7 @@ class BrandController extends AdminController
             $list = $this->lists('Brand');
             int_to_string($list);
             $this->assign('_list', $list);
-            $this->display("bindBrandIndex");
+            $this->display("bindbrandindex");
         }
     }
 }
