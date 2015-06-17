@@ -45,6 +45,7 @@ class MemberAddressModel extends RelationModel
         'address',
         'mobile',
         'status',
+        'lnglat',
         '_type' => [
             'id' => 'int',
             'uid' => 'int',
@@ -52,7 +53,8 @@ class MemberAddressModel extends RelationModel
             'region_id' => 'int',
             'address' => 'varchar',
             'mobile' => 'char',
-            'status' => 'tinyint'
+            'status' => 'tinyint',
+            'lnglat' => 'point'
         ]
     ];
 
@@ -176,6 +178,8 @@ class MemberAddressModel extends RelationModel
         if ($regionId !== null) $where['region_id'] = intval($regionId);
         if ($status && in_array($status, array_keys(self::getStatusOptions()))) {
             $where['status'] = $status;
+        } else {
+            $where['status'] = self::STATUS_ACTIVE;
         }
         return [
             'data' => self::getInstance()->field($fields)->where($where)->select()
@@ -190,22 +194,44 @@ class MemberAddressModel extends RelationModel
      * @param string $address 收货地址
      * @param string|int $mobile 收货人联系方式
      * @param int $regionId 区域ID
+     * @param float $lng 经度
+     * @param float $lat 纬度
      * @return int|bool 添加成功返回地址ID，否则返回false
      */
-    public static function addAddress($uid, $name, $address, $mobile, $regionId)
+    public function addAddress($uid, $name, $address, $mobile, $regionId, $lng, $lat)
     {
-        $model = self::getInstance();
         $data = [
             'uid' => intval($uid),
             'name' => trim($name),
             'address' => trim($address),
             'mobile' => $mobile,
-            'region_id' => intval($regionId)
+            'region_id' => intval($regionId),
+            'lnglat' => 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')'
         ];
+        $model = self::getInstance();
         if (!$model->create($data)) {
-            E($model->getError());
+            E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         }
-        return $model->add();
+        $field = [];
+        $bind = [];
+        foreach ($data as $key => $item) {
+            $bindName = ':' . $key;
+            if ($this->fields['_type'][$key] == 'point') {
+                $field[] = 'st_geomfromtext(' . $bindName . ')';
+            } else {
+                $field[] = $bindName;
+            }
+            $bind[$bindName] = $item;
+        }
+        $pdo = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
+        $pdo->exec('SET NAMES ' . C('DB_CHARSET'));
+        $sql = 'INSERT INTO ' . self::getInstance()->getTableName() . '(' . implode(',', array_keys($data)) . ') VALUES('
+            . implode(',', $field) . ')';
+        $sth = $pdo->prepare($sql);
+        $sth->execute($bind);
+        $lastId = (int)$pdo->lastInsertId();
+        unset($pdo);
+        return $lastId;
     }
 
     /**
@@ -216,22 +242,43 @@ class MemberAddressModel extends RelationModel
      * @param string $address 收货地址
      * @param int|string $mobile 收货人联系方式
      * @param int $regionId 区域ID
+     * @param float $lng 经度
+     * @param float $lat 纬度
      * @return bool 是否更新成功
      */
-    public static function updateAddress($id, $name, $address, $mobile, $regionId)
+    public function updateAddress($id, $name = null, $address = null, $mobile = null, $regionId = null, $lng = null, $lat = null)
     {
         $model = self::getInstance();
-        $data = [
-            'id' => intval($id),
-            'name' => trim($name),
-            'address' => trim($address),
-            'mobile' => $mobile,
-            'region_id' => intval($regionId)
-        ];
-        if (!$model->create($data)) {
-            E($model->getError());
+        $data = [];
+        ## 组合要更新的数据
+        if (!empty($name)) $data['name'] = trim($name);
+        if (!empty($address)) $data['address'] = trim($address);
+        if (!empty($mobile)) $data['mobile'] = $mobile;
+        if (!empty($regionId)) $data['region_id'] = intval($regionId);
+        if (!empty($lng) && !empty($lat)) $data['lnglat'] = 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')';
+        if (!$model->create($data)) {//利用模型的规则检测数据是否合法
+            E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         }
-        return $model->save();
+        $field = [];//要更新的字段
+        $bind = [];//要绑定的数据
+        foreach ($data as $key => $item) {
+            if ($item === null) continue;
+            $bindName = ':' . $key;
+            if ($this->fields['_type'][$key] == 'point') {
+                $field[] = $key . '=st_geomfromtext(' . $bindName . ')';
+            } else {
+                $field[] = $key . '=' . $bindName;
+            }
+            $bind[$bindName] = $item;
+        }
+        $bind[':id'] = intval($id);
+        $pdo = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
+        $pdo->exec('SET NAMES ' . C('DB_CHARSET'));
+        $sql = 'UPDATE ' . self::getInstance()->getTableName() . ' SET ' . implode(',', $field) . ' WHERE id = :id';
+        $sth = $pdo->prepare($sql);
+        $result = $sth->execute($bind);
+        unset($pdo);
+        return $result;
     }
 
     /**
