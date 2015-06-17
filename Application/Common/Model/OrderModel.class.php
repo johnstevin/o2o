@@ -2,6 +2,7 @@
 namespace Common\Model;
 
 use Think\Exception;
+use Think\Log;
 use Think\Model\RelationModel;
 use Think\Page;
 
@@ -47,8 +48,10 @@ class OrderModel extends RelationModel
     const STATUS_REFUND_COMPLETE = 6;//退款完成
 
     ## 支付模式
-    const PAY_MODE_ONLINE = 0;//在线支付
-    const PAY_MODE_OFFLINE = 1;//线下支付
+    const PAY_MODE_OFFLINE = 0;//线下支付
+    const PAY_MODE_WECHAT = 1;//微信支付
+    const PAY_MODE_ALIPAY = 2;//支付宝支付
+    const PAY_MODE_ONLINE_BANK = 3;//网银
 
     ## 支付状态
     const PAY_STATUS_TRUE = 1;//以支付
@@ -128,7 +131,7 @@ class OrderModel extends RelationModel
             'shop_id' => 'int',
             'consignee' => 'char',
             'pay_mode' => 'tinyint',
-            'order_code' => 'varchar',
+            'order_code' => 'char',
             'pay_status' => 'tinyint',
             'address' => 'varchar',
             'add_ip' => 'char',
@@ -166,7 +169,9 @@ class OrderModel extends RelationModel
             'pay_mode',
             [
                 self::PAY_MODE_OFFLINE,
-                self::PAY_MODE_ONLINE
+                self::PAY_MODE_WECHAT,
+                self::PAY_MODE_ALIPAY,
+                self::PAY_MODE_ONLINE_BANK
             ],
             '支付模式非法',
             self::EXISTS_VALIDATE,
@@ -355,8 +360,10 @@ class OrderModel extends RelationModel
     public static function getPayModeOptions()
     {
         return [
-            self::PAY_MODE_ONLINE => '在线支付',
-            self::PAY_MODE_OFFLINE => '线下支付'
+            self::PAY_MODE_OFFLINE => '线下支付',
+            self::PAY_MODE_WECHAT => '微信支付',
+            self::PAY_MODE_ALIPAY => '支付宝支付',
+            self::PAY_MODE_ONLINE_BANK => '网银支付'
         ];
     }
 
