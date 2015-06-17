@@ -336,6 +336,7 @@ class MerchantShopModel extends AdvModel{
      * @param $bind 绑定参数
      * @throws Exception
      * @throws \Exception
+     * @return int
      */
     public function doTransaction($sql, $bind)
     {
