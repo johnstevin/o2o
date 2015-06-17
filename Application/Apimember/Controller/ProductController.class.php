@@ -576,10 +576,10 @@ class ProductController extends ApiController
      * }
      * ```
      */
-//    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE, $getCategorys = false, $getBrand = false)
-//    {
-//        $this->apiSuccess(['data' => ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize, $getCategorys, $getBrand)['data']]);
-//    }
+    public function lists($categoryId = null, $brandId = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE, $getCategorys = false, $getBrand = false)
+    {
+        $this->apiSuccess(ProductModel::getLists($categoryId, $brandId, $status, $title, $pagesize, $getCategorys, $getBrand));
+    }
 
     /**
      * @ignore
