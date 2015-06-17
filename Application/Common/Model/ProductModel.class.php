@@ -204,49 +204,91 @@ class ProductModel extends RelationModel
      * @param int $pageSize 分页大小，默认为10
      * @param bool $getCategorys 是否关联查询分类
      * @param bool $getBrand 是否关联查询品牌
+     * @param string|array $fields 要查询的字段
      * @return array
      */
-    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $getCategorys = false, $getBrand = false)
+    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $getCategorys = false, $getBrand = false, $fields = '*')
     {
         $where = [];
-        $productIds = null;
-        $relation = [];
-        if ($getCategorys) $relation[] = '_categorys';
-        if ($getBrand) $relation[] = '_brand';
-        if (!empty($categoryIds)) {//如果分类ID不为空，则先查询出分类下所有的商品ID
-            $categoryIds = is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds);
-            $categoryIds = array_unique($categoryIds);
-            $categoryProducts = M('product_category')->where(['category_id' => ['IN', $categoryIds]])->select();
-            if (empty($categoryProducts)) {
-                return [
-                    'data' => [],
-                    'pagination' => ''
-                ];
-            }
-            $productIds = array_map(function ($value) {
-                return $value['product_id'];
-            }, $categoryProducts);
+        if ($status === null || !array_key_exists($status, self::getStatusOptions())) {//如果状态为空或者不在系统定义的状态里
+            $status = self::STATUS_ACTIVE;
         }
-        if (!empty($brandId)) {
-            $brandId = is_array($brandId) ? $brandId : explode(',', $brandId);
-            $where['brands'] = ['IN', array_unique($brandId)];
+        $bind = [
+            ':status' => $status
+        ];
+        switch (gettype($fields)) {//判断字段类型
+            case 'string':
+                $fields = trim($fields);
+                if ($fields === '*') {
+                    $fields = 'p.*';
+                } else {
+                    $fields = 'p.' . implode(',p.', array_unique(explode(',', $fields)));
+                }
+                break;
+            case 'array':
+                $fields = 'p.' . implode(',p.', array_unique($fields));
+                break;
+            default:
+                $fields = 'p.*';
+                break;
         }
-        if (!empty($status)) $where['status'] = in_array($status, array_keys(self::getStatusOptions())) ? $status : self::STATUS_ACTIVE;
-        if (!empty($title)) $where['title'] = ['LIKE', trim($title)];
-        $model = self::getInstance();
-        if ($productIds) {
-            $subSql = $model->where(['id' => ['IN', $productIds]])->buildSql();
-            $total = $model->table($subSql . ' sub')->where($where)->count('id');
-            $pagination = new Page($total, $pageSize);
-            $data = $model->relation($relation)->table($subSql . ' sub')->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+        if ($getBrand) {//如果需要获取品牌信息
+            $fields .= ',b.title _brand_name,b.logo _brand_logo';//增加读取品牌名称和品牌logo
+            $getBrand = ' LEFT JOIN ' . BrandModel::getInstance()->getTableName() . ' b ON p.brand_id=b.id';
         } else {
-            $total = $model->where($where)->count('id');
-            $pagination = new Page($total, $pageSize);
-            $data = $model->relation($relation)->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+            $getBrand = '';
+        }
+        $sql = 'SELECT ' . $fields . ' FROM ' . self::getInstance()->getTableName() . ' p' . $getBrand . ' WHERE p.status = :status';//查询的SQL
+        $totalSql = 'SELECT COUNT(p.id) total FROM ' . self::getInstance()->getTableName() . ' p WHERE p.status = :status';//统计的SQL
+        if (!empty($brandId)) {//如果品牌ID不会空，则根据品牌ID查询
+            $brandId = is_array($brandId) ? implode(',', $brandId) : $brandId;
+            $bind[':brandId'] = trim($brandId);//ID去重
+            $sql .= ' and brand_id IN (:brandId)';
+        }
+        if (!empty($title)) {//如果传入了标题，就对标题进行模糊查询
+            $bind[':title'] = '%' . $title . '%';
+            $sql .= ' and title like :title';
+        }
+        if (!empty($categoryIds)) {//如果要根据分类ID来查询
+            $categoryIds = array_unique(is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds));//ID去重
+            $categorySql = ' and p.id IN(SELECT product_id FROM ' . C('DB_PREFIX') . 'product_category WHERE category_id IN (';
+            foreach ($categoryIds as $id) {
+                $categorySql .= intval($id) . ',';
+            }
+            $categorySql = rtrim($categorySql, ',');
+            $categorySql .= '))';
+            //查询数据的SQL
+            $sql .= $categorySql;
+            //统计数据的SQL
+            $totalSql .= $categorySql;
+        }
+        $sql .= ' limit ' . ($_GET['p'] ? $_GET['p'] - 1 : 0) * $pageSize . ',' . $pageSize;//对列表进行分页
+        $pdo = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
+        $pdo->exec('SET NAMES ' . C('DB_CHARSET'));
+        $sth = $pdo->prepare($sql);
+        $sth->execute($bind);
+        $totalSth = $pdo->prepare($totalSql);
+        $totalSth->execute($bind);
+        $total = $totalSth->fetch(\PDO::FETCH_ASSOC);
+        $lists = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($lists as &$item) {
+            if (!empty($item['add_ip'])) $item['add_ip'] = long2ip($item['add_ip']);
+            if (!empty($item['edit_ip'])) $item['edit_ip'] = long2ip($item['edit_ip']);
+            if ($getBrand) {
+                $item['_brand'] = [
+                    'name' => $item['_brand_name'],
+                    'logo' => $item['_brand_logo']
+                ];
+                unset($item['_brand_name'], $item['_brand_logo']);
+            }
+            if ($getCategorys) {
+                $categorys = $pdo->query('select id,title,list_row,description,icon,level from sq_category WHERE id IN (SELECT category_id FROM sq_product_category WHERE product_id =' . $item['id'] . ') AND status=' . CategoryModel::STATUS_ACTIVE);
+                $item['_categorys'] = $categorys->fetchAll(\PDO::FETCH_ASSOC);
+            }
         }
         return [
-            'data' => $data,
-            'pagination' => $pagination->show()
+            'total' => $total ? (int)$total['total'] : 0,
+            'data' => $lists
         ];
     }
 
