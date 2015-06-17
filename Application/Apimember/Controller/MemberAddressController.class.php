@@ -19,10 +19,12 @@ class MemberAddressController extends ApiController
      * @param string $address 收货地址
      * @param string|int $mobile 联系方式
      * @param int $regionId 区域ID
+     * @param float $lng 经度
+     * @param float $lat 纬度
      */
-    public function add($uid, $name, $address, $mobile, $regionId)
+    public function add($uid, $name, $address, $mobile, $regionId, $lng, $lat)
     {
-        $this->apiSuccess(['data' => MemberAddressModel::addAddress($uid, $name, $address, $mobile, $regionId)]);
+        $this->apiSuccess(['data' => MemberAddressModel::getInstance()->addAddress($uid, $name, $address, $mobile, $regionId, $lng, $lat)]);
     }
 
     /**
@@ -33,10 +35,12 @@ class MemberAddressController extends ApiController
      * @param string $address 收货地址
      * @param int|string $mobile 联系方式
      * @param int $regionId 区域ID
+     * @param float $lng 经度
+     * @param float $lat 纬度
      */
-    public function update($id, $name, $address, $mobile, $regionId)
+    public function update($id, $name, $address, $mobile, $regionId, $lng, $lat)
     {
-        $this->apiSuccess(['data' => MemberAddressModel::updateAddress($id, $name, $address, $mobile, $regionId)]);
+        $this->apiSuccess(['data' => MemberAddressModel::getInstance()->updateAddress($id, $name, $address, $mobile, $regionId, $lng, $lat)]);
     }
 
     /**
