@@ -199,6 +199,7 @@ class ProductModel extends RelationModel
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param null|string|array|int $categoryIds 分类ID，可传数组、NULL、以逗号分割的ID号或单个ID
      * @param null|string|array|int $brandId 品牌ID，可传数组、NULL、以逗号分割的ID号或单个ID
+     * @param int $normsIds 规格ID
      * @param null|int $status 状态，可传null或数字
      * @param null|string $title 商品标题，用于模糊搜索，可传NULL
      * @param int $pageSize 分页大小，默认为10
@@ -207,7 +208,7 @@ class ProductModel extends RelationModel
      * @param string|array $fields 要查询的字段
      * @return array
      */
-    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $getCategorys = false, $getBrand = false, $fields = '*')
+    public static function getLists($categoryIds = null, $brandId = null, $normsIds = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $getCategorys = false, $getBrand = false, $fields = '*')
     {
         $where = [];
         if ($status === null || !array_key_exists($status, self::getStatusOptions())) {//如果状态为空或者不在系统定义的状态里
@@ -238,8 +239,10 @@ class ProductModel extends RelationModel
         } else {
             $getBrand = '';
         }
-        $sql = 'SELECT ' . $fields . ' FROM ' . self::getInstance()->getTableName() . ' p' . $getBrand . ' WHERE p.status = :status';//查询的SQL
-        $totalSql = 'SELECT COUNT(p.id) total FROM ' . self::getInstance()->getTableName() . ' p WHERE p.status = :status';//统计的SQL
+        //查询的SQL
+        $sql = 'SELECT ' . $fields . ' FROM ' . self::getInstance()->getTableName() . ' p' . $getBrand . ' WHERE p.status = :status';
+        //统计的SQL
+        $totalSql = 'SELECT COUNT(p.id) total FROM ' . self::getInstance()->getTableName() . ' p WHERE p.status = :status';
         if (!empty($brandId)) {//如果品牌ID不会空，则根据品牌ID查询
             $brandId = is_array($brandId) ? implode(',', $brandId) : $brandId;
             $bind[':brandId'] = trim($brandId);//ID去重
@@ -255,16 +258,25 @@ class ProductModel extends RelationModel
             foreach ($categoryIds as $id) {
                 $categorySql .= intval($id) . ',';
             }
-            $categorySql = rtrim($categorySql, ',');
-            $categorySql .= '))';
+            $categorySql = rtrim($categorySql, ',') . '))';//去除最右那个多余的,
             //查询数据的SQL
             $sql .= $categorySql;
             //统计数据的SQL
             $totalSql .= $categorySql;
         }
+        if (!empty($normsIds)) {//如果规则ID不会空
+            $normsIds = array_unique(is_array($normsIds) ? $normsIds : explode(',', $normsIds));//ID去重
+            $normsSql = ' AND p.norms_id IN (';
+            foreach ($normsIds as $id) {//组合数据
+                $normsSql .= intval($id) . ',';
+            }
+            $normsSql = rtrim($normsSql, ',') . ')';//去除最右那个多余的,
+            $sql .= $normsSql;
+            $totalSql .= $normsSql;
+        }
         $sql .= ' limit ' . ($_GET['p'] ? $_GET['p'] - 1 : 0) * $pageSize . ',' . $pageSize;//对列表进行分页
         $pdo = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
-        $pdo->exec('SET NAMES ' . C('DB_CHARSET'));
+        $pdo->exec('SET NAMES ' . C('DB_CHARSET'));//设置编码字符集
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
         $totalSth = $pdo->prepare($totalSql);
@@ -274,21 +286,21 @@ class ProductModel extends RelationModel
         foreach ($lists as &$item) {
             if (!empty($item['add_ip'])) $item['add_ip'] = long2ip($item['add_ip']);
             if (!empty($item['edit_ip'])) $item['edit_ip'] = long2ip($item['edit_ip']);
-            if ($getBrand) {
+            if ($getBrand) {//如果获取了品牌，则把品牌信息压入下级数组，并删除当前级的数据
                 $item['_brand'] = [
                     'name' => $item['_brand_name'],
                     'logo' => $item['_brand_logo']
                 ];
                 unset($item['_brand_name'], $item['_brand_logo']);
             }
-            if ($getCategorys) {
+            if ($getCategorys) {//如果需要获取分类信息，则独立发送一条SQL查询（由于参数来自数据库查询的结果，所以不用做参数绑定）
                 $categorys = $pdo->query('select id,title,list_row,description,icon,level from sq_category WHERE id IN (SELECT category_id FROM sq_product_category WHERE product_id =' . $item['id'] . ') AND status=' . CategoryModel::STATUS_ACTIVE);
                 $item['_categorys'] = $categorys->fetchAll(\PDO::FETCH_ASSOC);
             }
         }
         return [
-            'total' => $total ? (int)$total['total'] : 0,
-            'data' => $lists
+            'total' => $total ? (int)$total['total'] : 0,//总数统计
+            'data' => $lists,//当前页码的数据
         ];
     }
 
