@@ -28,6 +28,7 @@ class MerchantDepotModel extends RelationModel
     const STATUS_DELETE = -1;//逻辑删除
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
+    const STATUS_VERIFY = 2;//待审核
 
     protected $_link = [
         'Product' => [
@@ -140,7 +141,8 @@ class MerchantDepotModel extends RelationModel
             [
                 self::STATUS_DELETE,
                 self::STATUS_CLOSE,
-                self::STATUS_ACTIVE
+                self::STATUS_ACTIVE,
+                self::STATUS_VERIFY
             ],
             '状态的范围不正确',
             self::EXISTS_VALIDATE,
@@ -180,7 +182,7 @@ class MerchantDepotModel extends RelationModel
         ],
         [
             'status',
-            self::STATUS_ACTIVE,
+            self::STATUS_VERIFY,
             self::MODEL_INSERT
         ]
     ];
@@ -205,7 +207,8 @@ class MerchantDepotModel extends RelationModel
         return [
             self::STATUS_DELETE => '逻辑删除',
             self::STATUS_CLOSE => '关闭',
-            self::STATUS_ACTIVE => '正常'
+            self::STATUS_ACTIVE => '正常',
+            self::STATUS_VERIFY => '待审核'
         ];
     }
 
@@ -391,7 +394,7 @@ class MerchantDepotModel extends RelationModel
             $bindValues[':cateId'] = $categoryId;
         }
 
-        $this->field(['sq_merchant_depot.id', 'pro.id as product_id','pro.description'
+        $this->field(['sq_merchant_depot.id', 'pro.id as product_id', 'pro.description'
             , 'pro.title as product', 'sq_merchant_depot.price', 'sq_merchant_depot.add_time'
             , 'shop.id as shop_id', 'shop.title as shop', 'brand.id as brand_id'
             , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm']);
