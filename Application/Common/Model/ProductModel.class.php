@@ -15,6 +15,7 @@ class ProductModel extends RelationModel
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
+    const STATUS_VERIFY = 2;//待审核
 
     //模型的字段
     protected $fields = [
@@ -79,7 +80,8 @@ class ProductModel extends RelationModel
             'status',
             [
                 self::STATUS_CLOSE,
-                self::STATUS_ACTIVE
+                self::STATUS_ACTIVE,
+                self::STATUS_VERIFY
             ],
             '状态的范围不正确',
             self::EXISTS_VALIDATE,
@@ -118,7 +120,7 @@ class ProductModel extends RelationModel
         ],
         [
             'status',
-            self::STATUS_ACTIVE,
+            self::STATUS_VERIFY,
             self::MODEL_INSERT
         ]
     ];
