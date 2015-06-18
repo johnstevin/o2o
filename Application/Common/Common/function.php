@@ -708,3 +708,13 @@ function send_get($url)
     curl_close($ch);
     return $result;
 }
+
+/**
+ * 获取PDO对象
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @return PDO
+ */
+function get_pdo()
+{
+    return new PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
+}
