@@ -26,6 +26,9 @@ class MemberAddressModel extends RelationModel
     ## 状态常量
     const STATUS_DELETE = -1;//逻辑删除
     const STATUS_ACTIVE = 1;//正常
+    ## 默认常量
+    const DEFAULT_TRUE = 1;//默认地址
+    const DEFAULT_FALSE = 0;//不是默认地址
 
     /**
      * 获得当前模型的实例
@@ -46,6 +49,7 @@ class MemberAddressModel extends RelationModel
         'mobile',
         'status',
         'lnglat',
+        'default',
         '_type' => [
             'id' => 'int',
             'uid' => 'int',
@@ -54,7 +58,8 @@ class MemberAddressModel extends RelationModel
             'address' => 'varchar',
             'mobile' => 'char',
             'status' => 'tinyint',
-            'lnglat' => 'point'
+            'lnglat' => 'point',
+            'default' => 'tinyint'
         ]
     ];
 
@@ -105,6 +110,14 @@ class MemberAddressModel extends RelationModel
             'require',
             '联系方式不能为空',
             self::MUST_VALIDATE
+        ]
+    ];
+
+    protected $_auto = [
+        [
+            'default',
+            self::DEFAULT_FALSE,
+            self::MODEL_INSERT
         ]
     ];
 
