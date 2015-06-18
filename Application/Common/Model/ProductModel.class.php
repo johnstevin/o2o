@@ -148,6 +148,7 @@ class ProductModel extends RelationModel
             'foreign_key' => 'product_id',
             'relation_foreign_key' => 'category_id',
             'mapping_name' => '_categorys',
+            'relation_table' => 'sq_product_category'
         ]
     ];
 
@@ -323,7 +324,28 @@ class ProductModel extends RelationModel
     }
 
     /**
+     * 根据商品条形码查询商品
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int|string $number 商品条形码
+     * @param string|array $fields 要查询的字段
+     * @param bool $getCategorys 是否需要关联查询分类
+     * @param bool $getBrand 是否需要关联查询品牌
+     * @return array|mixed
+     */
+    public function getByNumber($number, $fields = '*', $getCategorys = false, $getBrand = false)
+    {
+        $number = is_string($number) ? trim($number) : $number;
+        if (empty($number)) return [];
+        $relation = [];
+        if ($getBrand) $relation[] = '_brand';//关联查询品牌
+        if ($getCategorys) $relation[] = '_categorys';
+        $model = self::getInstance();
+        return $model->relation($relation)->field($fields)->where(['number' => $number, 'status' => self::STATUS_ACTIVE])->find();
+    }
+
+    /**
      * 根据ID查询商品列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
      * @param string|array $ids 多个商品ID
      * @param bool $fields 要查询的字段，默认为所有
      * @param bool $getBrand 是否获得品牌信息
