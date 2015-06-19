@@ -6,6 +6,7 @@
 // +----------------------------------------------------------------------
 namespace Apimember\Controller;
 
+use Common\Model\UcenterMemberModel;
 /**
  * 用户中心
  * Class UserController
@@ -119,7 +120,10 @@ class UserController extends ApiController {
      * @author  stevin
      */
     public function getUserInfo(){
-
+        $uInfo = D('UcenterMember')->get($this->getUserId(),'id,mobile,real_name,username,photo,email');
+        if(empty($uInfo))
+            $this->apiError(40015,'没有此用户');
+        $this->apiSuccess(array('data'=>$uInfo), '获取成功');
     }
 
     /**

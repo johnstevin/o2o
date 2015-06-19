@@ -1,6 +1,7 @@
 <?php
 namespace Common\Model;
 
+use Think\Exception;
 use Think\Model\AdvModel;
 
 /**
@@ -204,6 +205,23 @@ class MerchantModel extends AdvModel
     // TODO 这个因为要算距离，我做不到
     public static function getLists()
     {
+    }
+
+    public function getInfos( $uid, $field = '*' ){
+        try{
+            $userInfo=$this
+                ->field($field)
+                ->table('__UCENTER_MEMBER__ a')
+                ->join('__MERCHANT__ b ON  a.id = b.id','LEFT')
+                ->where(array('a.is_merchant'=>array('eq', '1'),'a.id'=>$uid))
+                ->select();
+            if(empty($userInfo))
+                E(-1);
+            return $userInfo;
+
+        }catch (\Exception $ex){
+            return $ex->getMessage();
+        }
     }
 
 }

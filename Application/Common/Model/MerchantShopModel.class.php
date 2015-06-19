@@ -240,12 +240,11 @@ class MerchantShopModel extends AdvModel{
      * @param int $id 商铺ID
      * @return array|null
      */
-    public function get($id)
+    public function get($id, $field='*')
     {
         $id = intval($id);
         if (!$id) return null;
-        return $this->field(['id', 'title', 'description', 'type', 'open_status', 'open_time_mode'
-            , 'begin_open_time', 'end_open_time', 'delivery_range', 'phone_number', 'address', 'st_astext(lnglat) as lnglat'])->find($id);
+        return $this->field($field)->find($id);
     }
 
     /**

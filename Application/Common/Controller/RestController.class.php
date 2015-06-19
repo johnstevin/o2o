@@ -81,9 +81,11 @@ abstract class RestController  extends Controller{
         } else if($format == 'json') {
             header('Content-Type:application/json; charset=utf-8');
             echo json_encode($result);
+            exit();
         } else if($format == 'xml') {
             header('Content-Type:text/xml; charset=utf-8');
             echo xml_encode($result);
+            exit();
         } else {
             $_GET['format'] = 'json';
             $_REQUEST['format'] = 'json';
