@@ -182,7 +182,7 @@ class MerchantDepotModel extends RelationModel
         ],
         [
             'status',
-            self::STATUS_ACTIVE,
+            self::STATUS_VERIFY,
             self::MODEL_INSERT
         ]
     ];
@@ -207,7 +207,8 @@ class MerchantDepotModel extends RelationModel
         return [
             self::STATUS_DELETE => '逻辑删除',
             self::STATUS_CLOSE => '关闭',
-            self::STATUS_ACTIVE => '正常'
+            self::STATUS_ACTIVE => '正常',
+            self::STATUS_VERIFY => '待审核'
         ];
     }
 
@@ -486,7 +487,7 @@ class MerchantDepotModel extends RelationModel
             $bindValues[':cateId'] = $categoryId;
         }
 
-        $this->field(['sq_merchant_depot.id', 'pro.id as product_id','pro.description'
+        $this->field(['sq_merchant_depot.id', 'pro.id as product_id', 'pro.description'
             , 'pro.title as product', 'sq_merchant_depot.price', 'sq_merchant_depot.add_time'
             , 'shop.id as shop_id', 'shop.title as shop', 'brand.id as brand_id'
             , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm']);

@@ -45,7 +45,7 @@ class OrderController extends ApiController
     {
         try {
             if (IS_POST) {
-                $uid=$this->getUserId();
+                $uid = $this->getUserId();
                 $data = json_decode(file_get_contents('php://input'));
                 if (F("user/cart/$uid", $data) !== false)
                     $this->apiSuccess(null, '设置成功');
@@ -82,7 +82,7 @@ class OrderController extends ApiController
     public function getCart()
     {
         try {
-            $uid=$this->getUserId();
+            $uid = $this->getUserId();
             $data = F("user/cart/$uid");
             if ($data !== false)
                 $this->apiSuccess(['data' => $data]);
@@ -422,5 +422,10 @@ class OrderController extends ApiController
     public function cancelOrder($id)
     {
         $this->apiSuccess(['data' => OrderModel::updateOrderStatus($id, OrderModel::STATUS_CANCEL)]);
+    }
+
+    public function initOrder($cart, $deliveryMode, $split)
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->initOrder($cart, $deliveryMode, $split)]);
     }
 }

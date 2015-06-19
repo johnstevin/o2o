@@ -13,7 +13,10 @@ use Think\Model\AdvModel;
 /*
  * @author  WangJiang
  */
-class MerchantShopModel extends AdvModel{
+
+class MerchantShopModel extends AdvModel
+{
+    public static $model;//当前模型实例
     ## 状态常量
     const STATUS_DELETE=-1;//软删除
     const STATUS_CLOSE = 2;//待审核,关闭
@@ -24,7 +27,7 @@ class MerchantShopModel extends AdvModel{
      * @author  WangJiang
      * @var array
      */
-    protected $fields=[
+    protected $fields = [
         'id',
         'title',
         'description',
@@ -69,7 +72,7 @@ class MerchantShopModel extends AdvModel{
      * @author  WangJiang
      * @var string
      */
-    protected $pk     = 'id';
+    protected $pk = 'id';
 
     /**
      * @author  WangJiang
@@ -127,6 +130,16 @@ class MerchantShopModel extends AdvModel{
 //    ];
 
     /**
+     * 获得当前模型实例
+     * @author Fufeng NIe <niefufeng@gmail.com>
+     * @return MerchantShopModel
+     */
+    public static function getInstance()
+    {
+        return self::$model instanceof self ? self::$model : self::$model = new self;
+    }
+
+    /**
      * 查询周边商铺
      * @author  WangJiang
      * @param double $lat 查询中心维度，必须是百度坐标
@@ -139,7 +152,7 @@ class MerchantShopModel extends AdvModel{
      * @param int $order 排序，1-按距离，2-按评价
      * @return mixed
      */
-    public function getNearby($lat, $lng, $range,$words,$words_op,$tagId=0,$type=null,$order=1)
+    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1)
     {
         if (!is_numeric($lat) or !is_numeric($lng))
             //$this->error('坐标必须是数值', '', true);
@@ -158,17 +171,17 @@ class MerchantShopModel extends AdvModel{
             //$this->error('非法查询范围', '', true);
             E('非法查询范围');
 
-        $range=floatval($range);
-        $range+=$range*0.15;
+        $range = floatval($range);
+        $range += $range * 0.15;
 
         //当前时间，秒
-        $seconds=time()-strtotime("00:00:00");//8*3600;
+        $seconds = time() - strtotime("00:00:00");//8*3600;
 
         $where='ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))<:dist and (sq_merchant_shop.open_time_mode=2
             or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
 
-        if(!is_null($type))
-            $map['type']=$type;
+        if (!is_null($type))
+            $map['type'] = $type;
 
 //        if (!in_array($tag, C('SHOP_TAG')))
 //            E('非法店面服务，可选项：\'\'表示所有店铺，\'商超\'，\'生鲜\'，\'洗车\'，\'送水\'');
@@ -184,13 +197,12 @@ class MerchantShopModel extends AdvModel{
 
         $map['_string'] =$where;
         $map['sq_merchant_shop.status&sq_merchant_shop.open_status']=1;
-
         $this->where($map)
             ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
             ->bind(':lng', $lng)
             ->bind(':lat', $lat)
             ->bind(':dist', $range)
-            ->bind(':seconds',$seconds)
+            ->bind(':seconds', $seconds)
             ->field([
                 'sq_merchant_shop.id'
                 ,'sq_merchant_shop.title'
@@ -220,12 +232,12 @@ class MerchantShopModel extends AdvModel{
         if(1==$order)
             $this->order('distance');
         //TODO 暂时即时计算，后期应该定期计算存入shop表
-        else if(2==$order)
+        else if (2 == $order)
             $this->order('grade desc');
 
         $this->group('sq_merchant_shop.id');
 
-        $ret= $this->select();
+        $ret = $this->select();
         //print_r($this->getLastSql());die;
         return $ret;
     }
@@ -366,6 +378,7 @@ class MerchantShopModel extends AdvModel{
      * @param $bind 绑定参数
      * @throws Exception
      * @throws \Exception
+     * @return int
      */
     public function doTransaction($sql, $bind)
     {
@@ -380,18 +393,18 @@ class MerchantShopModel extends AdvModel{
     protected function _after_query_row(&$row)
     {
         foreach ($row as $k => &$v) {
-            $type=$this->fields['_type'][$k];
+            $type = $this->fields['_type'][$k];
             if ($type == 'point') {
                 $lls = substr($v, 6, strlen($v) - 7);
                 $ll = explode(' ', $lls);
                 $v = [floatval($ll[0]), floatval($ll[1])];
-            }else if($type=='int'){
-                $v=intval($v);
-            }else if($type=='float'){
-                $v=floatval($v);
+            } else if ($type == 'int') {
+                $v = intval($v);
+            } else if ($type == 'float') {
+                $v = floatval($v);
             }
-            if($k=='distance'){
-                $v=floatval($v);
+            if ($k == 'distance') {
+                $v = floatval($v);
             }
             if($k=='picture_ids'){
                 $v=explode(',',$v);

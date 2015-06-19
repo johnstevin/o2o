@@ -23,41 +23,41 @@ return [
     'DATE_FORMAT' => 'Y-m-d H:i:s',
 
     /* 权限组配置-数据库id值 */
-    'AUTH_GROUP_ID' => array(
-        'GROUP_ID_MERCHANT'                 => 2,   //总商户组
-        'GROUP_ID_MEMBER'                   => 3,   //总用户组
-        'GROUP_ID_ADMIN'                    => 4,   //总管理员组
+    'AUTH_GROUP_ID' => [
+        'GROUP_ID_MERCHANT' => 2,   //总商户组
+        'GROUP_ID_MEMBER' => 3,   //总用户组
+        'GROUP_ID_ADMIN' => 4,   //总管理员组
 
-        'GROUP_ID_MERCHANT_SHOP'            => 17,  //总商户组－商超组
-        'GROUP_ID_MERCHANT_VEHICLE'         => 18,  //总商户组－洗车组
+        'GROUP_ID_MERCHANT_SHOP' => 17,  //总商户组－商超组
+        'GROUP_ID_MERCHANT_VEHICLE' => 18,  //总商户组－洗车组
 
-        'GROUP_ID_MEMBER_CLIENT'            => 29,  //总用户组下级顾客组
-    ),
+        'GROUP_ID_MEMBER_CLIENT' => 29,  //总用户组下级顾客组
+    ],
     /* 权限角色配置-数据库id值 */
-    'AUTH_ROLE_ID' => array(
-        'ROLE_ID_MERCHANT_COMMITINFO'       => 5,   //总商户组－提交资料角色
-        'ROLE_ID_MERCHANT_SHOP_BOSS'        => 4,   //总商户组－商超组－老板
-        'ROLE_ID_MERCHANT_SHOP_MANAGER'     => 21,  //总商户组－商超组－店长
-        'ROLE_ID_MERCHANT_SHOP_STAFF'       => 22,  //总商户组－商超组－员工
-        'ROLE_ID_MERCHANT_VEHICLE_MANAGER'  => 23,  //总商户组－洗车组－管理
-        'ROLE_ID_MERCHANT_VEHICLE_WORKER'   => 24,  //总商户组－洗车组－工人
+    'AUTH_ROLE_ID' => [
+        'ROLE_ID_MERCHANT_COMMITINFO' => 5,   //总商户组－提交资料角色
+        'ROLE_ID_MERCHANT_SHOP_BOSS' => 4,   //总商户组－商超组－老板
+        'ROLE_ID_MERCHANT_SHOP_MANAGER' => 21,  //总商户组－商超组－店长
+        'ROLE_ID_MERCHANT_SHOP_STAFF' => 22,  //总商户组－商超组－员工
+        'ROLE_ID_MERCHANT_VEHICLE_MANAGER' => 23,  //总商户组－洗车组－管理
+        'ROLE_ID_MERCHANT_VEHICLE_WORKER' => 24,  //总商户组－洗车组－工人
 
-        'ROLE_ID_MEMBER_CLIENT'             => 1,   //顾客组下的普通用户角色
-    ),
+        'ROLE_ID_MEMBER_CLIENT' => 1,   //顾客组下的普通用户角色
+    ],
 
     /* 用户组配置 */
-    'AUTH_GROUP_TYPE'  => array(
-        'ADMIN'    => 1,
+    'AUTH_GROUP_TYPE' => [
+        'ADMIN' => 1,
         'MERCHANT' => 2,
-        'MEMBER'   => 3,
-    ),
+        'MEMBER' => 3,
+    ],
 
     /* 店铺TAG配置 */
-    'SHOP_TAG'         => array(
-        1   => '超市',
-        2   => '生鲜',
-        3   => '送水',
-    ),
+    'SHOP_TAG' => [
+        1 => '超市',
+        2 => '生鲜',
+        3 => '送水',
+    ],
 
     /* 上传图片类型picture */
     'PICTURE_TYPE'     => array(
@@ -65,5 +65,14 @@ return [
         'MERCHANT_SHOP_PICTURE'          => 2,
         'UCENTER_MEMBER_PHOTO'           => 3,
     ),
+
+    'ALIPAY' => [
+        'PARTNER' => '',//合作身份者id
+        'SELLER_EMAIL' => '',//收款支付宝账号
+        'KEY' => '',//安全检验码，以数字和字母组成的32位字符
+        'SIGN_TYPE' => 'MD5',//签名方式
+        'TRANSPORT' => 'https',//访问模式,根据自己的服务器是否支持ssl访问，若支持请选择https；若不支持请选择http
+    ]
+
 
 ];
