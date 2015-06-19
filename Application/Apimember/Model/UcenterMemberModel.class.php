@@ -157,9 +157,7 @@ class UcenterMemberModel extends AdvModel {
         );
 
         $token=$user['id'];
-        session('member_auth'.$token, $auth);
-        session('member_auth_sign'.$token, data_auth_sign($auth));
-
+        set_member_login($token,$auth);
         return encode_token($token);
     }
 
@@ -168,9 +166,8 @@ class UcenterMemberModel extends AdvModel {
      * @return void
      * @deprecated
      */
-    public function logout(){
-        session('member_auth', null);
-        session('member_auth_sign', null);
+    public function logout($token){
+        clear_member_login($token);
     }
 
 

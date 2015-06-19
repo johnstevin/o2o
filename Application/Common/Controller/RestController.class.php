@@ -29,13 +29,29 @@ abstract class RestController  extends Controller{
 
     abstract protected function isLogin($token);
 
-    protected function getUserId(){
-        if(defined('UID')) return ;
+    /**
+     * 获得调用token
+     * @return mixed
+     */
+    protected function getToken(){
         //客户端将token放入自定义header，access_token中
-        $token=I('server.access_token',null);
+        $token=$_SERVER['HTTP_ACCESSTOKEN'];//I('server.ACCESSTOKEN',null);
         if($token===null)
             //或者放入GET，POST参数中
-            $token=I('access_token');
+            $token=I('accesstoken');
+        //var_dump($token);
+        //var_dump($_SERVER);die;
+        return $token;
+    }
+
+    /**
+     * 获得UserID，未登录抛异常
+     * @return int|void
+     */
+    protected function getUserId(){
+        if(defined('UID')) return ;
+
+        $token=$this->getToken();
         $loginId=decode_token($token);
         define('UID',$this->isLogin($loginId));
         if( !UID )
@@ -43,8 +59,44 @@ abstract class RestController  extends Controller{
         return UID;
     }
 
+    /**
+     * 获得用户分组，未登录抛异常
+     * @return array
+     */
+    protected function getUserGroupIds(){
+        $access=$this->getUserAccess();
+
+        $ret=[];
+        foreach($access as $i){
+            $ret[]=$i['group_id'];
+        }
+        return $ret;
+    }
+
+    /**
+     * 获得用户角色，未登录抛异常
+     * @return array
+     */
+    protected function getUserRoleIds(){
+        $access=$this->getUserAccess();
+        $ret=[];
+        foreach($access as $i){
+            $ret[]=$i['role_id'];
+        }
+        return $ret;
+    }
+
+    /**
+     * 获得分组和角色，未登录抛异常
+     * @return mixed
+     */
+    protected function getUserAccess(){
+        $uid=$this->getUserId();
+        $access= M()->table('sq_auth_access')->where(['uid'=>$uid])->select();
+        return $access;
+    }
+
     public function _initialize() {
-        //print_r(session_encode());
     }
 
     public function setInternalCallApi($value=true) {

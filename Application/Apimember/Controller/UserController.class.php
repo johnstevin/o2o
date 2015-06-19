@@ -15,9 +15,16 @@ use Common\Model\UcenterMemberModel;
 class UserController extends ApiController {
 
     /**
-     * 用户登陆
-     * @param
-     * @author  stevin
+     * <pre>
+     * 用户登陆,参数用POST提交
+     * string username 用户名称
+     * string password 密码
+     * </pre>
+     * @author  stevin,WangJiang
+     * @return json
+     * {
+     *  "token":"<access token 随后某些调用需要>"
+     * }
      */
     public function login(){
         try{
@@ -47,45 +54,54 @@ class UserController extends ApiController {
     }
 
     /**
-     * 用户注册
-     * @param
-     * @author  stevin
+     * <pre>
+     * 用户注册,参数用POST提交
+     * string mobile   手机号
+     * string password 密码
+     * </pre>
+     * @author  stevin,WangJiang
+     * @return json
      */
     public function register(){
-        if(IS_POST){
-            $mobile     = I('post.mobile');
-            $password   = I('post.password');
+        try{
+            if(IS_POST){
+                $mobile     = I('post.mobile');
+                $password   = I('post.password');
 
-            $Ucenter = D('UcenterMember');
-            D()->startTrans();
+                $Ucenter = D('UcenterMember');
+                D()->startTrans();
 
-            $uid = $Ucenter->register($mobile, $password);
-            if(0 < $uid){
-                $auth = D('AuthAccess');
-                $data[] = array(
-                    'uid'          => $uid,
-                    'group_id'     => C('AUTH_GROUP_ID.CLIENT_GROUP_ID'),
-                    'role_id'      => C('AUTH_ROLE_ID.CLIENT_ROLE_ID'),
-                    'status'       => 1,
-                );
-                $result = $auth->addUserAccess($data);
+                $uid = $Ucenter->register($mobile, $password);
+                if(0 < $uid){
+                    $auth = D('AuthAccess');
+                    $data[] = array(
+                        'uid'          => $uid,
+                        'group_id'     => C('AUTH_GROUP_ID.GROUP_ID_MEMBER'),
+                        'role_id'      => C('AUTH_ROLE_ID.ROLE_ID_MEMBER_CLIENT'),
+                        'status'       => 1,
+                    );
+                    $result = $auth->addUserAccess($data);
 
-                if( 0 > $result ){
+                    if( 0 > $result ){
+                        D()->rollback();
+                        $this->apiError(40013,$this->showRegError($result));
+                    }else{
+                        D()->commit();
+                        $this->apiSuccess(null,'注册成功！');
+                    }
+
+                } else {
                     D()->rollback();
-                    $this->apiError(40013,$this->showRegError($result));
-                }else{
-                    D()->commit();
-                    $this->apiSuccess('注册成功！', null, null);
+                    $this->apiError(40014,$this->showRegError($uid));
                 }
 
             } else {
-                D()->rollback();
-                $this->apiError(40014,$this->showRegError($uid));
+                $this->display('User/register');
             }
-
-        } else {
-            $this->display('User/register');
+        }catch (\Exception $ex){
+            $this->apiError(50112,$ex->getMessage());
         }
+
     }
 
     /**
@@ -106,11 +122,16 @@ class UserController extends ApiController {
     }
 
     /**
+     * <pre>
      * 退出登陆
+     * string accesstoken 调用令牌
+     * </pre>
+     * @author WangJiang
+     * @return json
      */
     public function logout(){
-        D('UcenterMember')->logout();
-        session('[destroy]');
+        D('UcenterMember')->logout($this->getToken());
+        //session('[destroy]');
         $this->apiSuccess(null,'退出成功！');
     }
 
@@ -127,6 +148,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户个人修改
      * @param
      * @author  stevin
@@ -136,6 +158,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户订单列表
      * @param
      * @author  stevin
@@ -145,6 +168,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户订单详情
      * @param
      * @author  stevin
@@ -154,6 +178,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户订单删除
      * @param
      * @author  stevin
@@ -163,6 +188,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户常用地址
      * @param
      * @author  stevin
@@ -172,6 +198,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户地址添加
      * @param
      * @author  stevin
@@ -181,6 +208,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户地址修改
      * @param
      * @author  stevin
@@ -190,6 +218,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 用户地址删除
      * @param
      * @author  stevin

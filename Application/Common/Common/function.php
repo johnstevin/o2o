@@ -96,6 +96,7 @@ function list_to_tree($list, $pk='id', $pid = 'pid', $child = '_child', $root = 
         $refer = array();
         foreach ($list as $key => $data) {
             $refer[$data[$pk]] =& $list[$key];
+            $refer[$data[$pk]][$child]=[];
         }
         foreach ($list as $key => $data) {
             // 判断是否存在parent
@@ -287,24 +288,66 @@ function is_admin_login()
  * @return int
  */
 function is_merchant_login($token){
-    $user = session('merchant_auth'.$token);
+    $user = F('User/Login/merchant_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('merchant_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return F('User/Login/merchant_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
+}
+
+/**
+ * 设置Merchant登录状态
+ * @author WangJiang
+ * @param $token
+ * @param $auth
+ */
+function set_merchant_login($token, $auth){
+    F('User/Login/merchant_auth'.$token, $auth);
+    F('User/Login/merchant_auth_sign'.$token, data_auth_sign($auth));
+}
+
+/**
+ * 清除Merchant登录状态
+ * @author WangJiang
+ * @param $token
+ */
+function clear_merchant_login($token){
+    F('User/Login/merchant_auth'.$token, null);
+    F('User/Login/merchant_auth_sign'.$token, null);
 }
 
 /**
  * @return int
  */
 function is_member_login($token){
-    $user = session('member_auth'.$token);
+    $user = F('User/Login/member_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('member_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return F('User/Login/member_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
+}
+
+/**
+ * 设置Member登录状态
+ * @author WangJiang
+ * @param $token
+ * @param $auth
+ */
+function set_member_login($token, $auth){
+    F('User/Login/member_auth'.$token, $auth);
+    F('User/Login/member_auth_sign'.$token, data_auth_sign($auth));
+}
+
+/**
+ * 清除Member登录状态
+ * @author WangJiang
+ * @param $token
+ */
+function clear_member_login($token){
+    F('User/Login/member_auth'.$token, null);
+    F('User/Login/member_auth_sign'.$token, null);
 }
 
 /**
@@ -621,6 +664,86 @@ function encode_token($token){
  */
 function decode_token($token){
     return $token;
+}
+
+/**
+ * 验证用户是否允许修改商铺数据，不满足条件抛异常
+ * @author WangJiang
+ * @param $uid
+ * @param $sid
+ */
+function can_modify_shop($uid,$sid){
+
+    $shop=D('MerchantShop')->find($sid);
+    except_merchant_manager($uid,$shop['group_id']);
+}
+
+/**
+ * 是否店长，抛异常
+ * @author WangJiang
+ * @param $uid
+ * @param $gid
+ */
+function except_merchant_manager($uid,$gid){
+    $role=D('AuthAccess')->where(['uid'=>$uid,'group_id'=>$gid])->first();
+    //print_r($role);die;
+    if($role['role_id']!=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'))
+        E('用户无权限操作该店铺');
+}
+
+class DBException extends RuntimeException{
+    public $errorCode;
+    public $errorInfo;
+    public function __constructor($errorCode,$errorInfo){
+        $this->$errorCode=$errorCode;
+        $this->$errorInfo=$errorInfo;
+    }
+}
+
+/**
+ * 数据库事务处理
+ * @author WangJiang
+ * @param string $sql
+ * @param array $bind
+ * @param function $success 成功回调函数，缺省为null
+ * @param boolean $success_safe 是否捕获回调的异常，缺省为true
+ * @throws Exception
+ * @return int newId
+ */
+function db_transaction($sql, $bind,$success=null,$success_safe=true){
+    //TODO:目前ThinkPHP不支持空间类型字段
+    $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'));
+    $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $dbh->prepare($sql);
+    foreach ($bind as $k => $v) {
+        $stmt->bindValue($k, $v);
+    }
+
+    $newid=null;
+    try {
+        $dbh->beginTransaction();
+        $r=$stmt->execute();
+        $newid= $dbh->lastInsertId();
+        //test for transaction
+        //throw new Exception();
+        if($r==true and is_callable($success))
+            if($success_safe){
+                try{
+                    call_user_func($success);
+                }catch (\Exception $e){}
+            }else
+                call_user_func($success);
+        if($r==false)
+            throw new DBException($dbh->errorCode(),$dbh->errorInfo());
+        $dbh->commit();
+        return $newid;
+    } catch (\Exception $e) {
+        $dbh->rollBack();
+        throw $e;
+    } finally {
+        unset($dbh);
+    }
 }
 
 /**

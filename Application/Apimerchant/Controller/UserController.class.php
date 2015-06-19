@@ -15,9 +15,16 @@ use Common\Model\MerchantModel;
 class UserController extends ApiController {
 
     /**
-     * 商户登陆
-     * @param
-     * @author  stevin
+     * <pre>
+     * 商户登陆,参数用POST提交
+     * string username 用户名称
+     * string password 密码
+     * </pre>
+     * @author  stevin,WangJiang
+     * @return json
+     * {
+     *  "token":"<access token 随后某些调用需要>"
+     * }
      */
     public function login(){
         try{
@@ -47,9 +54,13 @@ class UserController extends ApiController {
     }
 
     /**
-     * 商户注册
-     * @param
-     * @author  stevin
+     * <pre>
+     * 商户注册,参数用POST提交
+     * string mobile   手机号
+     * string password 密码
+     * </pre>
+     * @author  stevin,WangJiang
+     * @return json
      */
     public function register(){
         if(IS_POST){
@@ -64,14 +75,8 @@ class UserController extends ApiController {
                 $auth = D('AuthAccess');
                 $data[] = array(
                     'uid'          => $uid,
-                    'group_id'     => C('AUTH_GROUP_ID.CLIENT_GROUP_ID'),
-                    'role_id'      => C('AUTH_ROLE_ID.CLIENT_ROLE_ID'),
-                    'status'       => 1,
-                );
-                $data[] = array(
-                    'uid'          => $uid,
-                    'group_id'     => C('AUTH_GROUP_ID.MERCHANT_GROUP_ID'),
-                    'role_id'      => C('AUTH_ROLE_ID.MERCHANT_COMMIT_INFO'),
+                    'group_id'     => C('AUTH_GROUP_ID.GROUP_ID_MERCHANT'),
+                    'role_id'      => C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO'),
                     'status'       => 1,
                 );
                 $result = $auth->addUserAccess($data);
@@ -81,7 +86,7 @@ class UserController extends ApiController {
                     $this->apiError(40010,$this->showRegError($result));
                 }else{
                     D()->commit();
-                    $this->apiSuccess('注册成功！', null, null);
+                    $this->apiSuccess(null,'注册成功！');
                 }
 
             } else {
@@ -112,15 +117,21 @@ class UserController extends ApiController {
     }
 
     /**
+     * <pre>
      * 退出登陆
+     * string accesstoken 调用令牌
+     * </pre>
+     * @author WangJiang
+     * @return json
      */
     public function logout(){
-        D('UcenterMember')->logout();
-        session('[destroy]');
+        D('UcenterMember')->logout($this->getToken());
+        //session('[destroy]');
         $this->apiSuccess(null,'退出成功！');
     }
 
     /**
+     * @ignore
      * 商户提交资料
      * @param
      * @author  stevin
@@ -130,6 +141,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商户个人资料
      * @param
      * @author  stevin
@@ -145,6 +157,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商户个人资料修改
      * @param
      * @author  stevin
@@ -154,6 +167,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商户销售额统计
      * @param
      * @author  stevin
@@ -163,6 +177,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商铺资料信息
      * @param
      * @author  stevin
@@ -172,6 +187,7 @@ class UserController extends ApiController {
     }
 
     /**
+     * @ignore
      * 商铺资料信息修改
      * @param
      * @author  stevin

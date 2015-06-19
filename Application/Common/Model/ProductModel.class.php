@@ -15,6 +15,7 @@ class ProductModel extends RelationModel
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
+    const STATUS_VERIFY = 2;//待审核
 
     //模型的字段
     protected $fields = [
@@ -27,6 +28,7 @@ class ProductModel extends RelationModel
         'add_ip',
         'edit_time',
         'status',
+        'picture',
         '_type' => [
             'id' => 'int',
             'title' => 'varchar',
@@ -38,7 +40,8 @@ class ProductModel extends RelationModel
             'add_ip' => 'bigint',
             'edit_time' => 'int',
             'edit_ip' => 'bigint',
-            'status' => 'tinyint'
+            'status' => 'tinyint',
+            'picture'=>'int'
         ]
     ];
     /**
@@ -79,7 +82,8 @@ class ProductModel extends RelationModel
             'status',
             [
                 self::STATUS_CLOSE,
-                self::STATUS_ACTIVE
+                self::STATUS_ACTIVE,
+                self::STATUS_VERIFY
             ],
             '状态的范围不正确',
             self::EXISTS_VALIDATE,
@@ -265,7 +269,8 @@ class ProductModel extends RelationModel
         $relation = [];
         if ($getCategory) $relation[] = '_categorys';
         if ($getBrand) $relation[] = '_brand';
-        return $id ? self::getInstance()->relation($relation)->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
+        return $id ? self::getInstance()->relation($relation)->where(['status' => ['in',[self::STATUS_ACTIVE,self::STATUS_VERIFY]]
+            , 'id' => $id])->field($fields)->find() : null;
     }
 
     /**
