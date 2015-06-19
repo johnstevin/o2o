@@ -1,5 +1,6 @@
 <?php
 namespace Admin\Controller;
+
 use Admin\Model\AuthRoleModel;
 
 
@@ -19,27 +20,28 @@ class AccessController extends AdminController
      */
     public function index()
     {
-        //$this->updateRules();
-        $auth_group = M('AuthRole')->where(array('status' => array('egt', '0'), 'module' => 'admin', 'type' => AuthRoleModel::TYPE_ADMIN))
-            ->getfield('id,title,group_id');
+//        //$this->updateRules();
+//        $auth_group = M('AuthRole')->where(array('status' => array('egt', '0'), 'module' => 'admin', 'type' => AuthRoleModel::TYPE_ADMIN))
+//            ->getfield('id,title,group_id');
 
         /*获取rule*/
         $tree = D('AuthRule')->getTree(0, 'id,title,level,pid,status');
 
         /*获取之前用户已经存在的*/
         $child_list = M('AuthRoleRule')->where(array('role_id' => (int)I('group_id')))->select();
-        $child_tree = array();
-        foreach ($child_list as &$value) {
-            $child_tree[] = $value['rule_id'];
-        }
+        $child_tree = array_column($child_list, 'rule_id');
+//        foreach ($child_list as &$value) {
+//            $child_tree[] = $value['rule_id'];
+//        }
         $child_tree = is_array($child_tree) ? implode(',', $child_tree) : trim($child_tree, ',');
         $this->assign('node_list', $tree);
         $this->assign('child_list', $child_tree);
-        $this->assign('auth_group', $auth_group);
-        $this->assign('this_group', $auth_group[(int)$_GET['group_id']]);
+        //$this->assign('auth_group', $auth_group);
+        $this->assign('this_group', I('group_id'));
         $this->meta_title = '访问授权';
         $this->display();
     }
+
     /**
      *将用户添加到角色的编辑页面
      * @author liuhui
@@ -48,17 +50,63 @@ class AccessController extends AdminController
     {
         $uid = I('uid');
 
+
+        /*根据用户type判断是组织类型*/
+        $_type = I('_type');
+        $map = array();
+        switch (strtolower($_type)) {
+            case '1':
+                $map = array('type' => C('auth_group_type')['ADMIN']);
+                break;
+            case'3':
+                $map = array('type' =>  C('auth_group_type')['MEMBER']);
+                break;
+            case'2':
+                $map = array('type' =>  C('auth_group_type')['MERCHANT']);
+                break;
+            default:
+                $this->error('参数错误');
+                break;
+        }
         /*获取组织*/
-        $auth_Groups = D('AuthGroup')->getGroups();
+        $AuthGroup = D('AuthGroup');
+        $auth_Groups = $AuthGroup->getGroups($map, 'id,pid,title');
+
+        /*用户已经拥有的角色*/
         $userAccess = M('auth_access')->where(['uid' => $uid, 'status' => 1])->select();
         foreach ($userAccess as $access) {
             $hasAccess[$access['group_id']][] = $access['role_id'];
         }
+
+
         /*获取组织下的所有的角色*/
         $AuthRole = M('AuthRole');
         foreach ($auth_Groups as &$key) {
-            $key['_roles'] = $AuthRole->where(array('group_id' => $key['id'], 'status' => '1'))->select();
+            $key['_roles'] = $AuthRole->field('id,title,group_id')->where(array('group_id' => $key['id'], 'status' => '1'))->select();
         }
+
+
+        $Tree = D('Tree');
+        $auth_Groups = $Tree->toFormatTree($auth_Groups);
+//        $auth_Groups = $Tree->toTree($auth_Groups, $pk = 'id', $pid = 'pid', $child = '_child');
+
+
+
+        /*非超管级管理员只列出拥有权限的组织*/
+        if (!IS_ROOT) {
+            /*获取当前用户所拥有的组织*/
+            foreach ($auth_Groups as $key => $data) {
+                if (!in_array($data['id'], $AuthGroup->UserAuthGroup())) {
+                    unset($auth_Groups[$key]);
+                    continue;
+                }
+            }
+        }
+
+//        echo "<pre>";
+//        print_r($auth_Groups);
+//        echo "</pre>";
+
         $this->assign('user_roles', $hasAccess);
         $this->assign('node_list', $auth_Groups);
         $this->meta_title = '用户授权';
@@ -80,12 +128,12 @@ class AccessController extends AdminController
             $this->error('参数有误');
         }
         $AuthAccess = D('AuthAccess');
-        $AuthRole=D('AuthRole');
+        $AuthRole = D('AuthRole');
         if (is_numeric($uid)) {
             if (is_administrator($uid)) {
                 $this->error('该用户为超级管理员');
             }
-//            if (!M('Member')->where(array('uid' => $uid))->find()) {
+//            if (!M('UcenterMember')->where(array('uid' => $uid))->find()) {
 //                $this->error('用户不存在');
 //            }
         }
@@ -96,8 +144,9 @@ class AccessController extends AdminController
             }
 
         }
+
         if ($AuthAccess->addToRole($uid, $gid)) {
-            $this->success('操作成功', U('User/index'));
+            $this->success('操作成功');
         } else {
             $this->error($AuthAccess->getError());
         }

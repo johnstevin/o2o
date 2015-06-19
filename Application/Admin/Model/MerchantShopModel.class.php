@@ -14,10 +14,10 @@ class MerchantShopModel extends AdvModel
      * 列表
      * @param null $status
      * @param null $group_id
-     * @param string $field
+     * @param bool $field
      * @return mixed
      */
-    public function lists($status = null, $group_id = null, $field = '*')
+    public function lists($status = null, $group_id = null, $field = true)
     {
         $map = array();
         $status === null ?: $map['status'] = $status;
@@ -30,8 +30,37 @@ class MerchantShopModel extends AdvModel
             $where = array('region_id' => array('in', $Region_arr));
             $map = array_merge($map, $where);
         }
+
+
+
+        /*分页*/
+        $total = $this->where($map)->count();
+
+        if (isset($REQUEST['r'])) {
+            $listRows = (int)$REQUEST['r'];
+        } else {
+            $listRows = C('LIST_ROWS') > 0 ? C('LIST_ROWS') : 10;
+        }
+
+        $page = new \Think\Page($total, $listRows);
+
+        $page->setConfig('theme', '%FIRST% %UP_PAGE% %LINK_PAGE% %DOWN_PAGE% %END% %HEADER%');
+
+        $options['limit'] = $page->firstRow . ',' . $page->listRows;
+
+        $this->setProperty('options', $options);
+
+
+
+
+
         $result = $this->where($map)->field($field)->select();
-        return $result;
+//        return $result;
+
+          return [
+              'data' => $result,
+              '_page' => $page->show()
+          ];
     }
 
     /**
@@ -55,7 +84,7 @@ class MerchantShopModel extends AdvModel
     public function saveCheckInfo($shop_id)
     {
         //检查商户是否存在
-        $info = $this->info($shop_id, 'id,title,description,group_id,type,pid,add_uid,region_id,role_id');
+        $info = $this->info($shop_id, 'id,title,description,group_id,type,pid,add_uid,region_id');
         if (empty($info)) {
             $this->error = '没有此商铺';
             return false;
@@ -64,7 +93,7 @@ class MerchantShopModel extends AdvModel
         //保存组织包括区域以及权限信息
 
         $Group = D('AuthGroup');
-        $pidGroup = $Group->info($info['type']);
+        $pidGroup = $Group->info($info['group_id']);
         if (empty($pidGroup)) {
             $this->error = '未找到上级商铺';
             return false;
@@ -83,7 +112,7 @@ class MerchantShopModel extends AdvModel
         $data['title'] = $info['title'];
         $data['description'] = $info['description'];
         $data['level'] = $pidGroup['level'] + 1;
-        $data['pid'] = $info['type'];
+        $data['pid'] = $info['group_id'];
         $data['public'] = 1;
         $data['status'] = 1;
         $data['type'] = C('auth_group_type')['MERCHANT'];
@@ -101,7 +130,7 @@ class MerchantShopModel extends AdvModel
             if (false !== $GroupRegion->add($Region)) {
 
                 //保存角色、组织和权限关系
-                $arr[$res][] = $info['role_id'];
+                $arr[$res][]=  typeToRole($info['type']);
                 $AuthAccess = D('AuthAccess');
 
                 if (false !== $AuthAccess->addToRole($info['add_uid'], $arr)) {
@@ -142,7 +171,7 @@ class MerchantShopModel extends AdvModel
         //修改状态
         $data['id'] = $shop_id;
         $data['message'] = I('reason');
-        $data['status'] = 0;
+        $data['status'] = 3;
         return $this->save($data);
     }
 

@@ -1,7 +1,7 @@
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
     </button>
-    <h4 class="modal-title"><h2>{:isset($info['id'])?'编辑':'新增'}用户组</h2></h4>
+    <h4 class="modal-title"><h2>{:isset($info['id'])?'编辑':'新增'}角色</h2></h4>
 </div>
 <div class="modal-body">
     <form id="fm">
@@ -15,8 +15,7 @@
                 <select id="group_pid" class="form-control" name="group_id">
                     <option value="0">--请选择--</option>
                 <volist name="auth_group" id="vo">
-
-                    <option value="{$vo['id']|default='无'}" <eq name="vo['id']" value="$info.group_id">selected</eq> >{$vo.title}</option>
+                    <option value="{$vo['id']|default='无'}" <eq name="vo['id']" value="$info.group_id">selected</eq> >{$vo.title_show}</option>
                 </volist>
                     </select> </div>
             </div>
@@ -66,21 +65,5 @@
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-    <button type="button" class="btn btn-primary" onclick="Save()">保存</button>
+    <button type="button" class="btn btn-primary" onclick="Save('{:U()}','fm')">保存</button>
 </div>
-<script>
-    function Save(){
-        $.ajax({
-            type:'POST',
-            url:"{:U()}",
-            data:$('#fm').serialize(),
-            dataType:'json',
-            success:function(data) {
-                onSuccess(data);
-            },
-            error : function() {
-                alert("异常！");
-            }
-        })
-    }
-</script>

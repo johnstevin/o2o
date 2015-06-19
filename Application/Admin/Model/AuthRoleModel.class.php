@@ -15,6 +15,7 @@ class AuthRoleModel extends Model
 
     const TYPE_ADMIN = 1; // 管理员用户组类型标识
     const AUTH_ACCESS = 'auth_access'; // 关系表表名
+    const ROLE_ADMIN = 1;
 
     protected $_validate = array(
         array('group_id', '0', '必须选择组织', self::MUST_VALIDATE, 'notequal', self::MODEL_BOTH),
@@ -46,8 +47,6 @@ class AuthRoleModel extends Model
     }
 
 
-
-
     /**
      * 更新角色信息
      * @return boolean 更新状态
@@ -61,8 +60,24 @@ class AuthRoleModel extends Model
 
         /* 添加或更新数据 */
         if (empty($data['id'])) {
+
+            /* 判断权限*/
+            if (!IS_ROOT) {
+                $group_id = I('group_id');
+                if (!(in_array($group_id, D('AuthGroup')->UserAuthGroup()))) {
+                    $this->error = '权限不足，请联系管理员';
+                    return false;
+                }
+            }
+
             $res = $this->add();
         } else {
+            if (!IS_ROOT) {
+                if (!(in_array($data['id'], $this->UserAuthRole()))) {
+                    $this->error = '权限不足，请联系管理员';
+                    return false;
+                }
+            }
             $res = $this->save();
         }
 
@@ -123,6 +138,29 @@ class AuthRoleModel extends Model
             $map['name'] = $id;
         }
         return $this->field($field)->where($map)->find();
+    }
+
+    /**
+     * 返回拥有权限的角色
+     * @return array 权限数组
+     * @author liuhui
+     */
+    public function UserAuthRole()
+    {
+
+        $userRole = S(UID . 'AUTH_ROLE');
+        if (empty($userRole)) {
+//            $userRole = D('AuthAccess')->getUserRole(UID);
+
+            $AuthGoup = D('AuthGroup');
+            $UserAuthGroup = $AuthGoup->UserAuthGroup();
+            $map['group_id']=   array('in',$UserAuthGroup);
+            $map['status']  =   array('egt',0);
+            $userRole = $this->field('id')->where($map)->select();
+            $userRole = array_column($userRole, 'id');
+            S(UID . 'AUTH_ROLE', $userRole);
+        }
+        return $userRole;
     }
 
 }

@@ -5,9 +5,16 @@ use Think\Model;
 
 class RegionModel extends Model
 {
-    /*获取区域详细信息
-      @param      $id     区域id
-      @param      $fields 查询字段*/
+
+    protected $_validate = array(
+        array('name','require', '区域名称是必填的！', Model::MUST_VALIDATE ,'regex',Model::MODEL_INSERT),
+    );
+    /**
+     * 获取区域详细信息
+     * @param  int $id 区域id
+     * @param bool $field 查询字段
+     * @return mixed
+     */
     public function info($id, $field = true)
     {
         $map = array();
@@ -19,11 +26,13 @@ class RegionModel extends Model
         return $this->field($field)->where($map)->find();
     }
 
-    /*获取区域树，指定区域则返回指定分类及其子区域，不指定则返回所有区域树
-    @parm $id     区域ID
-    @parm fields  查询字段
-    @parm array   区域树*/
 
+    /**
+     * 获取区域树，指定区域则返回指定分类及其子区域，不指定则返回所有区域树
+     * @param int $id 区域ID
+     * @param bool $field 查询字段
+     * @return array|mixed 区域树
+     */
     public function getTree($id = 0, $field = true)
     {
         //获取当前区域信息
@@ -32,12 +41,14 @@ class RegionModel extends Model
             $id = $info['id'];
         }
         //获取所有区域
-        $map = array();
-        $list = $this->field($field)->where($map)->select();
+        $map  = array('status' => array('gt', -1));
+        $list = $this->field($field)->where($map)->order('id')->select();
+        $list = int_to_string($list);
         $list = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = $id);
+
         //获取返回数据
         if (isset($info)) {//指定区域则返回当前区域及其子区域
-            $info['child'] = $list;
+            $info['_child'] = $list;
         } else {//否则则返回所有区域
             $info = $list;
         }
@@ -47,7 +58,7 @@ class RegionModel extends Model
     /**
      * 更新区域信息
      * @return boolean 更新状态
-     * @author 麦当苗儿 <zuojiazi@vip.qq.com>
+     * @author liu hui
      */
     public function update()
     {

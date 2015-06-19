@@ -16,14 +16,14 @@ class ProductController extends AdminController
      */
     public function index()
     {
-        $list = $this->lists('Product','', 'edit_time desc');
+        $list = $this->lists('Product');
         $Brands = D('Brand');
         $norms = D('Norms');
         foreach ($list as &$v) {
             $v['brand'] = $Brands->where(array('id' => $v['brand_id']))->getField('title');
             $v['norm'] = $norms->where(array('id' => $v['norms_id']))->getField('title');
         }
-        $list = int_to_string($list, array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿')));
+        $list = int_to_string($list, array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用', 2 => '待审核', 3 => '审核未通过')));
         $this->assign('_list', $list);
         $this->meta_title = '商品管理';
         $this->display();
@@ -37,16 +37,20 @@ class ProductController extends AdminController
         $Product = D('Product');
         if (IS_POST) {
             //TODO 事物控制，插入商品和插入商品分类
+            M()->startTrans();
             $result = $Product->update();
             if (false !== $result) {
                 /* 添加或更新数据 */
                 if ($Product->saveCategory($result)) {
+                    M()->commit();
                     $this->success('新增成功！', U('index'));
                 } else {
+                    M()->rollback();
                     $error = $Product->getError();
                     $this->error(empty($error) ? '未知错误' : $error);
                 }
             } else {
+                M()->rollback();
                 $error = $Product->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
@@ -96,16 +100,20 @@ class ProductController extends AdminController
         $Product = D('Product');
         if (IS_POST) { //提交表单
             //TODO 事物控制，插入商品和插入商品分类
+            M()->startTrans();
             $result = $Product->update();
             if (false !== $result) {
                 /* 添加或更新数据 */
                 if ($Product->saveCategory($id)) {
+                    M()->commit();
                     $this->success('编辑成功！', U('index'));
                 } else {
+                    M()->rollback();
                     $error = $Product->getError();
                     $this->error(empty($error) ? '未知错误' : $error);
                 }
             }else {
+                M()->rollback();
                 $error = $Product->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
             }

@@ -13,17 +13,17 @@ class AuthRuleModel extends Model{
     const RULE_MAIN = 2;
     const AUTH_ROLE_RULE         = 'auth_role_rule'; // 关系表表名
     protected $_validate = array(
-        array('title','require', '必须设置用户组标题', Model::MUST_VALIDATE ,'regex',Model::MODEL_INSERT),
+        array('title','require', '必须设置规则标题', Model::MUST_VALIDATE ,'regex',Model::MODEL_INSERT),
     );
     /**
-     * 获取用户组详细信息
-     * @param  milit   $id 分类ID或标识
+     * 获取规则详细信息
+     * @param  milit   $id 规则ID或标识
      * @param  boolean $field 查询字段
-     * @return array     分类信息
+     * @return array     规则信息
      * @author liuhui
      */
     public function info($id, $field = true){
-        /* 获取分类信息 */
+        /* 获取规则信息 */
         $map = array();
         if(is_numeric($id)){ //通过ID查询
             $map['id'] = $id;
@@ -34,28 +34,28 @@ class AuthRuleModel extends Model{
     }
 
     /**
-     * 获取分类树，指定分类则返回指定分类极其子分类，不指定则返回所有分类树
-     * @param  integer $id    分类ID
+     * 获取规则树，指定规则则返回指定规则极其子规则，不指定则返回所有规则树
+     * @param  integer $id    规则ID
      * @param  boolean $field 查询字段
-     * @return array          分类树
+     * @return array          规则树
      */
     public function getTree($id = 0, $field = true){
-        /* 获取当前分类信息 */
+        /* 获取当前规则信息 */
         if($id){
             $info = $this->info($id);
             $id   = $info['id'];
         }
 
-        /* 获取所有分类 */
+        /* 获取所有规则 */
         $map  = array('status' => array('gt', -1));
         $list = $this->field($field)->where($map)->order('id')->select();
         $list = int_to_string($list, array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用')));
         $list = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = $id);
 
         /* 获取返回数据 */
-        if(isset($info)){ //指定分类则返回当前分类极其子分类
+        if(isset($info)){ //指定规则则返回当前规则极其子规则
             $info['_child'] = $list;
-        } else { //否则返回所有分类
+        } else { //否则返回所有规则
             $info = $list;
         }
 
@@ -63,7 +63,7 @@ class AuthRuleModel extends Model{
     }
 
     /**
-     * 更新用户组信息
+     * 更新规则信息
      * @return boolean 更新状态
      */
     public function update(){
@@ -86,7 +86,7 @@ class AuthRuleModel extends Model{
      * @param  检查id是否全部存在
      * @param $mid
      * @param string $msg
-     * @return array|string $gid  用户组id列表
+     * @return array|string $gid  规则id列表
      */
     public function checkId($modelname,$mid,$msg = '以下id不存在:'){
         if(is_array($mid)){
@@ -130,7 +130,7 @@ class AuthRuleModel extends Model{
 
         $Access = M(self::AUTH_ROLE_RULE);
         if( isset($_REQUEST['batch']) ){
-            //为单个用户批量添加用户组时,先删除旧数据
+            //为单个用户批量添加规则时,先删除旧数据
             $del = $Access->where( array('role_id'=>array('in',$uid)) )->delete();
         }
         $uid_arr = explode(',',$uid);

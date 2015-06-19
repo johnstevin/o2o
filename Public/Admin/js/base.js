@@ -1,5 +1,5 @@
-﻿
-$(document).ready(function () {
+﻿$(document).ready(function () {
+
     $("#DlgModal").on("hidden.bs.modal", function () {
         $(this).removeData("bs.modal");
     });
@@ -9,7 +9,20 @@ $(document).ready(function () {
             $('.modal-body').height($("#DlgModal").height() - 290);
         }
     });
-    // 加载导航
+
+    /**
+     * message 弹出提示框
+     * @type {{extraClasses: string, theme: string}}
+     */
+    Messenger.options = {
+        extraClasses: 'messenger-fixed messenger-on-top',
+        theme: 'block'
+    }
+
+
+
+
+// 加载导航
     var navStr = "";
     menuJson = $.parseJSON(result);
     //首页每个人都有，所以不需要权限判断，直接在这里加上
@@ -130,24 +143,10 @@ function showFun(rootI, subI) {
         //加载功能
         if (menuJson[rootI].url != "" && menuJson[rootI].url != null) {//有路由地址
             //更新面板内容
-            $('#rg-container-fun').load('/admin.php/'+menuJson[rootI].url,function(response,status,xhr){
 
-                if (status=="success")
-                {
-                    $('#rg-container-fun').html(response);
-                }
-                else
-                {
-                    $('#rg-container-fun').html("An error occured: <br/>" + xhr.status + " " + xhr.statusText)
-                }
-
-
-
-
-
-
-                //alert(status);
-            });
+                var target='/admin.php/' + menuJson[rootI].children[subI].url;
+                contentload(target);
+                $('#rg-container-fun').attr("href", '/admin.php/' + menuJson[rootI].children[subI].url)
         }
         else {//没有地址
             //更新面板内容
@@ -178,28 +177,9 @@ function showFun(rootI, subI) {
         changeMainPanelHeight();
         if (menuJson[rootI].children[subI].url != "" && menuJson[rootI].children[subI].url != null) {//有路由地址
             //更新面板内容
-            //$('#rg-container-fun').load(menuJson[rootI].children[subI].url,function(response,status,xhr){
-            $('#rg-container-fun').load('/admin.php/'+menuJson[rootI].children[subI].url,function(response,status,xhr){
-
-
-
-
-                if (status=="success")
-                {
-                    $('#rg-container-fun').html(response);
-                }
-                else
-                {
-                    $('#rg-container-fun').html("An error occured: <br/>" + xhr.status + " " + xhr.statusText)
-                }
-
-
-
-
-
-
-                //alert(status);
-            });
+            var target='/admin.php/' + menuJson[rootI].children[subI].url;
+            contentload(target);
+            $('#rg-container-fun').attr("href", '/admin.php/' + menuJson[rootI].children[subI].url);
         }
         else {//没有地址
             //更新面板内容
@@ -280,26 +260,140 @@ window.onresize = function () {
 }
 
 
+
+
+
+
+
+
+
+/**
+ * @author liu hui
+ * 给中间的div加载内容
+ * @param result
+ */
 function onSuccess(result) {
     if (result.status) {
         $('#DlgModal').modal('hide');
-        //更新面板内容
-       // alert();
-       // alert(menuJson[rootI].url);
-       // $('#rg-container-fun').load(menuJson[rootI].url,function(response,status,xhr){
-       //
-       //
-       //
-       //
-       //
-       //
-       //
-       //
-       //
-       //
-       //
-       //     //alert(status);
-       //});
+        //更新内容
+       var target= $('#rg-container-fun').attr("href")
+        contentload(target);
+
+        Messenger().post({
+            message: result.info,
+            type: 'success',
+            showCloseButton: true,
+            hideAfter: 2
+        });
+    } else {
+        Messenger().post({
+            message: result.info,
+            type: 'error',
+            showCloseButton: true,
+            hideAfter: 2
+        });
     }
-    alert(result.info);
+
+}
+
+
+/**
+ * @author liu hui
+ * @description 将ThinkPHP的分页转换为 bootstrap分页
+ * @param selector
+ */
+function initPagination(selector) {
+    selector = selector || '.page';
+    $(selector).each(function (i, o) {
+        var html = '<ul class="pagination">';
+        $(o).find('a,span').each(function (i2, o2) {
+            var linkHtml = '';
+            if ($(o2).is('a')) {
+                linkHtml = '<a href="' + ($(o2).attr('href') || '#') + '">' + $(o2).text() + '</a>';
+            } else if ($(o2).is('span')) {
+                linkHtml = '<a>' + $(o2).text() + '</a>';
+            }
+
+            var css = '';
+            if ($(o2).hasClass('current')) {
+                css = ' class="active" ';
+            }
+
+            html += '<li' + css + '>' + linkHtml + '</li>';
+        });
+
+        html += '</ul>';
+        $(o).html(html).fadeIn();
+    });
+}
+
+/**
+ * 更新面板内容
+ */
+function contentload(target){
+    //更新面板内容
+    $("#rg-container-fun").load(target,function (response, status, xhr) {
+
+        if (status == "success") {
+
+            $('#rg-container-fun').html(response);
+        }
+        else {
+            $('#rg-container-fun').html("An error occured: <br/>" + xhr.status + " " + xhr.statusText)
+        }
+
+
+    });
+}
+
+
+ function baseJs(){
+    //分页格式化
+    initPagination('.page');
+
+
+    //分页链接点击函数
+    $('.pagination a').click(function () {
+        var target;
+        var that = this;
+        if ((target = $(this).attr('href')) || (target = $(this).attr('url'))) {
+            contentload(target);
+        }
+
+        return false;
+    });
+
+
+    //ajax get请求
+    //$('.ajax-get').click(function () {
+    //    var target;
+    // //   var that = this;
+    //    if ($(this).hasClass('confirm')) {
+    //        if (!confirm('确认要执行该操作吗?')) {
+    //            return false;
+    //        }
+    //    }
+    //    if ((target = $(this).attr('href')) || (target = $(this).attr('url'))) {
+    //        $.get(target).success(function (data) {
+    //            onSuccess(data);
+    //        });
+    //    }
+    //
+    //    return false;
+    //});
+}
+
+function Save(Url,selector){
+    $.ajax({
+        type:'POST',
+        url: Url,
+        data:$('#'+selector).serialize(),
+        dataType:'json',
+        success:function(data) {
+            onSuccess(data);
+        },
+        error : function() {
+            alert("异常！");
+        }
+    })
 }

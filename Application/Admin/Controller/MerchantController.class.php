@@ -24,9 +24,10 @@ class MerchantController extends AdminController
 
         } else {
             $model = D('MerchantShop');
-            $result = $model->lists(null, null, '*');
+            $result = $model->lists(null, null, true);
             $this->assign('_meta_title', '商户列表');
-            $this->assign('_list', $result);
+            $this->assign('_list', $result['data']);
+            $this->assign('_page', $result['_page']);
             $this->display();
         }
 
@@ -91,6 +92,18 @@ class MerchantController extends AdminController
             $result = D('MerchantShop')->info($shop_id, '*');
             $this->assign('_info', $result);
             $this->assign('_meta_title', '商户审核');
+            $this->display();
+        }
+    }
+
+    public function modify()
+    {
+        if (IS_POST) {
+
+
+
+        } else {
+            $this->assign('_meta_title', '修改组织');
             $this->display();
         }
     }

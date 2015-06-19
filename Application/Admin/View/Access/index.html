@@ -5,18 +5,7 @@
 </div>
 <div class="modal-body">
     <!-- 管理员用户组新增和编辑页面 -->
-    <h5>请选择角色</h5>
-
-    <div class="form-group">
-
-        <select id="group_pid" name="group" class="form-control">
-            <volist name="auth_group" id="vo">
-                <option value="{:U('Access/index',array('group_id'=>$vo['id']))}"
-                <eq name="vo['id']" value="$this_group['id']">selected</eq>
-                >{$vo.title}</option>
-            </volist>
-        </select>
-
+    <h5>请勾选节点</h5>
         <hr>
         <!-- 访问授权 -->
         <form id="fm"  method="POST" class="form-horizontal auth-form">
@@ -31,24 +20,10 @@
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-    <button type="button" class="btn btn-primary" onclick="Save()">保存</button>
+    <button type="button" class="btn btn-primary" onclick="Save('{:U(\'addToRule\')}','fm')">保存</button>
 </div>
 <script type="text/javascript" charset="utf-8">
-    function Save() {
-        $.ajax({
-            type: 'POST',
-            url: "{:U('addToRule')}",
-            data: $('#fm').serialize(),
-            dataType: 'json',
-            success: function (data) {
-                onSuccess(data);
-            },
-            error: function () {
-                alert("异常！");
-            }
-        })
-    }
-    $(document).ready(function () {
+
         var arrTree = jQuery.parseJSON('{$node_list|json_encode}');
 
         function recursionJSON(data, str) {
@@ -83,11 +58,8 @@
         });
 
 
-        $('select[name=group]').change(function () {
-            location.href = this.value;
-        });
-    });
+//        $('select[name=group]').change(function () {
+//            location.href = this.value;
+//        });
+
 </script>
-</div>
-</body>
-</html>

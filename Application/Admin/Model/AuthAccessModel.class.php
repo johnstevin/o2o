@@ -76,15 +76,29 @@ class AuthAccessModel extends Model
         $uid_arr = array_diff($uid_arr, array(C('USER_ADMINISTRATOR')));
         $add = array();
         if ($del !== false) {
+
+
+            /*权限控制*/
+//            $AuthGroup = D('AuthGroup')->UserAuthGroup();
+//            $AuthRole = D('AuthRole')->UserAuthRole();
             foreach ($uid_arr as $u) {
-                //判断用户id是否合法
-//                if (M('Member')->getFieldByUid($u, 'uid') == false) {
-//                    $this->error = "编号为{$u}的用户不存在！";
-//                    return false;
+//                判断用户id是否合法
+//                if (!IS_ROOT) {
+//                    if (M('MerchantShop') == false) {
+//                        $this->error = "编号为{$u}的用户不合法！";
+//                        return false;
+//                    }
 //                }
                 foreach ($gid as $k => $val) {
                     foreach ($val as $g) {
+
                         if (is_numeric($u) && is_numeric($g)) {
+//                            if (!IS_ROOT) {
+//                                if (!in_array($k, $AuthGroup) || !in_array($g, $AuthRole)) {
+//                                    $this->error = "编号为{$k}的组织会编号为{$g}的角色不存在！";
+//                                    return false;
+//                                }
+//                            }
                             $add[] = array('group_id' => $k, 'uid' => $u, 'role_id' => $g, 'status' => '1');
                         }
                     }
@@ -117,9 +131,10 @@ class AuthAccessModel extends Model
             return $roles[$uid];
         $prefix = C('DB_PREFIX');
         $user_roles = M()
-            ->field('uid,roles,rules')
+            ->field('a.role_id')
             ->table($prefix . self::AUTH_ACCESS . ' a')
             ->where("a.uid='$uid'")
+            ->distinct(true)
             ->select();
         $roles[$uid] = $user_roles ? $user_roles : array();
         return $roles[$uid];
@@ -132,7 +147,7 @@ class AuthAccessModel extends Model
      * @return array  用户所拥有的组织
      * @author liuhui
      */
-    static public function getUserGroup($uid, $type)
+    static public function getUserGroup($uid, $type=null)
     {
         static $group = array();
         if (isset($group[$uid]))
@@ -162,7 +177,7 @@ class AuthAccessModel extends Model
                 ->where(array('a.uid' => $uid, 'b.type' => C('auth_group_type')['MEMBER']))
                 ->distinct(true)
                 ->select();
-        }else{
+        } else {
             $user_groups = M()
                 ->field('a.group_id')
                 ->table($prefix . self::AUTH_ACCESS . ' a')

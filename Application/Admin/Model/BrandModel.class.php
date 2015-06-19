@@ -1,26 +1,21 @@
 <?php
-// +----------------------------------------------------------------------
-// | OneThink [ WE CAN DO IT JUST THINK IT ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2013 http://www.onethink.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Author: 麦当苗儿 <zuojiazi@vip.qq.com> <http://www.zjzit.cn>
-// +----------------------------------------------------------------------
 
 namespace Admin\Model;
 use Think\Model;
 
 /**
  * 品牌模型
- * @author 麦当苗儿 <zuojiazi@vip.qq.com>
  */
 
 class BrandModel extends Model {
 
-    /*获取品牌详细信息
-     @param      $id     分类id
-     @param      $fields 查询字段
-    */
+
+    /**
+     * 获取品牌详细信息
+     * @param int  $id 分类id
+     * @param bool $field 查询字段
+     * @return mixed
+     */
     public function info($id,$field=true){
         $map=array();
         if(is_numeric($id)){//通过id来查询
@@ -28,7 +23,9 @@ class BrandModel extends Model {
         }else{//通过标题来查询
             $map['title']=$id;
         }
-        return $this->field($field)->where($map)->find();
+        $brand=$this->field($field)->where($map)->find();
+        $brand['_logo']=M('Picture')->where(array('id'=>$brand['logo']))->find();
+        return $brand;
     }
 
     /**
@@ -50,4 +47,42 @@ class BrandModel extends Model {
         return $res;
     }
 
+
+    /**
+     * 检查id是否全部存在
+     * @param $modelname
+     * @param $mid
+     * @param string $msg
+     * @return bool
+     * @author liu hui
+     */
+    public function checkId($modelname,$mid,$msg = '以下id不存在:'){
+        if(is_array($mid)){
+            $count = count($mid);
+            $ids   = implode(',',$mid);
+        }else{
+            $mid   = explode(',',$mid);
+            $count = count($mid);
+            $ids   = $mid;
+        }
+
+        $s = M($modelname)->where(array('id'=>array('IN',$ids)))->getField('id',true);
+        if(count($s)===$count){
+            return true;
+        }else{
+            $diff = implode(',',array_diff($mid,$s));
+            $this->error = $msg.$diff;
+            return false;
+        }
+    }
+
+    /**
+     * 检查用户组是否全部存在
+     * @param $brands
+     * @return bool
+     * @author liu hui
+     */
+    public function checkBrandId($brands){
+        return $this->checkId('Brand',$brands, '以下用户组id不存在:');
+    }
 }

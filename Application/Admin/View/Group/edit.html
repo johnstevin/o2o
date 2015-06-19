@@ -97,7 +97,7 @@
         </div>
         <div class="footer">
             <input type="hidden" name="id" value="{$info.id|default=''}">
-            <input type="hidden" name="type" value="1">
+            <input type="hidden" name="type" value="{$category['type']}">
             <input type="hidden" name="level" value="{$category['level']|default=''}"/>
             <input type="hidden" name="pid" value="{:isset($category['id'])?$category['id']:$info['pid']}">
             <!--<button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>-->
@@ -107,23 +107,9 @@
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-    <button type="button" class="btn btn-primary" onclick="Save()">保存</button>
+    <button type="button" class="btn btn-primary"  onclick="Save('{:U()}','fm')">保存</button>
 </div>
 <script>
-    function Save(){
-        $.ajax({
-            type:'POST',
-            url:"{:U()}",
-            data:$('#fm').serialize(),
-            dataType:'json',
-            success:function(data) {
-                onSuccess(data);
-            },
-            error : function() {
-                alert("异常！");
-            }
-        })
-    }
     //    $(document).ready(function(){
     $('#level1').change(function () {
         var level = this.value;

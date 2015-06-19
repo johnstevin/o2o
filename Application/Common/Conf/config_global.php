@@ -65,7 +65,7 @@ return [
         'MERCHANT_SHOP_PICTURE'          => 2,
         'UCENTER_MEMBER_PHOTO'           => 3,
     ),
-
+    
     'ALIPAY' => [
         'PARTNER' => '',//合作身份者id
         'SELLER_EMAIL' => '',//收款支付宝账号

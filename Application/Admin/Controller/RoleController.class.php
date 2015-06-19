@@ -19,16 +19,40 @@ class RoleController extends AdminController
      */
     public function index()
     {
-        $list = $this->lists('AuthRole', array('module' => 'admin'), 'id asc');
-        $groups = M('AuthGroup');
+        //TODO liu hui where
+        $group_id       =   I('group_id');
+        $map['status']  =   array('egt',0);
+        if(!empty($group_id)){
+            $map['group_id']=   array('EQ',$group_id);
+        }
+        /*非管理员判断权限*/
+        if (!IS_ROOT) {
+            $AuthGoup = D('AuthGroup');
+            $UserAuthGroup = $AuthGoup->UserAuthGroup();
+            $map['group_id']=   array('in',$UserAuthGroup);
+        }
+
+        $list = $this->lists('AuthRole',$map , 'id asc');
+
+        $groups = D('AuthGroup');
+        $cate=$groups-> UserGroupFormat();
+
         foreach ($list as &$k) {
             $k['group'] = $groups->where(array('id' => $k['group_id']))->getField('title');
         }
         $list = int_to_string($list, array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿'), 'public' => array(1 => '公共', 0 => '私有')));
+
+
+        $cate = array_merge(array(0=>array('id'=>0,'title_show'=>'请选择组织')), $cate);
+
+        //Cookie('__forward__', $_SERVER['REQUEST.']);
         $this->assign('_list', $list);
         $this->assign('_use_tip', true);
+        $this->assign('auth_group', $cate);
+        $this->assign('selected_group', $group_id);
         $this->meta_title = '角色管理';
         $this->display();
+
     }
 
     /**
@@ -37,18 +61,20 @@ class RoleController extends AdminController
     public function add()
     {
 
-        $AuthGroup = D('AuthRole');
+        $AuthRole = D('AuthRole');
         if (IS_POST) {
-            if (false !== $AuthGroup->update()) {
+            if (false !== $AuthRole->update()) {
                 $this->success('新增成功！', U('index'));
             } else {
-                $error = $AuthGroup->getError();
+                $error = $AuthRole->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
 
-            /* 获取上级分类信息 */
-            $cate = D('AuthGroup')->getGroups();
+            /* 获取上级有权限的组织信息 */
+            $groups = D('AuthGroup');
+            $cate=$groups-> UserGroupFormat();
+
             /* 获取分类信息 */
             $this->assign('info', null);
             $this->assign('auth_group', $cate);
@@ -73,8 +99,18 @@ class RoleController extends AdminController
             }
         } else {
 
-            /* 获取上级分类信息 */
-            $cate = D('AuthGroup')->getGroups();
+            /* 获取上级组织信息 */
+            $groups = D('AuthGroup');
+            $cate=$groups-> UserGroupFormat();
+
+            /*非管理员判断权限*/
+            if (!IS_ROOT) {
+                $UserAuthRole = $AuthRole->UserAuthRole();
+                if (!in_array($id, $UserAuthRole)) {
+                    $this->error('权限不足,请联系管理员!');
+                }
+            }
+
 //            if(!($cate && 1 == $cate['status'])){
 //                $this->error('指定的上级角色不存在或被禁用！');
 //            }
@@ -93,9 +129,19 @@ class RoleController extends AdminController
      */
     public function changeStatus($method = null)
     {
-        if (empty($_REQUEST['id'])) {
+        $id = $_REQUEST['id'];
+        if (empty($id)) {
             $this->error('请选择要操作的数据!');
         }
+        /*非管理员判断权限*/
+        if (!IS_ROOT) {
+            $AuthRole = D('AuthRole');
+            $UserAuthRole = $AuthRole->UserAuthRole();
+            if (!in_array($id, $UserAuthRole)) {
+                $this->error('权限不足,请联系管理员!');
+            }
+        }
+
         switch (strtolower($method)) {
             case 'forbid':
                 $this->forbid('AuthRole');

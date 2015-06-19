@@ -1,3 +1,4 @@
+<link rel="stylesheet" type="text/css" href="__STATIC__/uploadify/uploadify.css" media="all">
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
     </button>
@@ -100,6 +101,21 @@
                 </div>
             </div>
             <div class="form-group">
+                <label for="logo" class="control-label col-md-2">图片</label>
+
+                <div class="col-md-10">
+                    <div id="logo" class="controls">
+                        <input type="file" id="upload_picture">
+                        <!--<p><a class="btn btn-success" href="javascript:$('#upload_picture').uploadify('upload')">上传</a></p>-->
+                        <input type="hidden" name="picture" id="cover_id" value="{$info.picture|default=''}"/>
+
+                        <div class="upload-img-box">
+                            <div class="upload-pre-item"><img height="180px" width="170px" src="{$info['_picture']['path']|default=''}"/></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
                 <label for="detail" class="control-label col-md-2">详细</label>
 
                 <div class="col-md-10">
@@ -116,22 +132,39 @@
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-    <button type="button" class="btn btn-primary" onclick="Save()">保存</button>
+    <button type="button" class="btn btn-primary"  onclick="Save('{:U()}','fm')">保存</button>
 </div>
+<script type="text/javascript" src="__STATIC__/uploadify/jquery.uploadify.min.js"></script>
 <script>
-    function Save(){
-        $.ajax({
-            type:'POST',
-            url:"{:U()}",
-            data:$('#fm').serialize(),
-            dataType:'json',
-            success:function(data) {
-                onSuccess(data);
-            },
-            error : function() {
-                alert("异常！");
-            }
-        })
+    //上传图片
+    /* 初始化上传插件 */
+    $("#upload_picture").uploadify({
+        "height": 30,
+//        'auto': false,
+        "swf": "__STATIC__/uploadify/uploadify.swf",
+        "fileObjName": "download",
+        "buttonText": "选择图片",
+        "uploader": "{:U('File/uploadPicture',array('session_id'=>session_id()))}",
+        "width": 120,
+        'removeTimeout': 1,
+        'fileTypeExts': '*.jpg; *.png; *.gif;',
+        "onUploadSuccess": uploadPicture,
+        'onFallback': function () {
+            alert('未检测到兼容版本的Flash.');
+        }
+    });
+    function uploadPicture(file, data) {
+        var data = $.parseJSON(data);
+        var src = '';
+        if (data.status) {
+            $("#cover_id").val(data.id);
+            src = data.url || '__ROOT__' + data.path
+            $("#cover_id").parent().find('.upload-img-box').html(
+                    '<div class="upload-pre-item"><img style="width: 170px; height: 180px;" src="' + src + '"/></div>'
+            );
+        } else {
+            onSuccess(data);
+        }
     }
     $('#category1').change(function () {
         // alert($(this).val());

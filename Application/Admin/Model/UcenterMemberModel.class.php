@@ -292,7 +292,8 @@ class UcenterMemberModel extends Model{
                     ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
                     ->table('__UCENTER_MEMBER__ a')
                     ->join('__MEMBER__ b ON  a.id = b.login','LEFT')
-                    ->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('neq', '1'),'a.is_member'=>array('eq', '1')))
+                    //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('neq', '1'),'a.is_member'=>array('eq', '1')))
+                    ->where(array('a.is_member'=>array('eq', '1')))
                     ->select();
                 break;
             case'merchant':
@@ -300,7 +301,8 @@ class UcenterMemberModel extends Model{
                     ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
                     ->table('__UCENTER_MEMBER__ a')
                     ->join('__MERCHANT__ b ON  a.id = b.login','LEFT')
-                    ->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('eq', '1')))
+                    //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('eq', '1')))
+                    ->where(array('a.is_merchant'=>array('eq', '1')))
                     ->select();
                 break;
             default:

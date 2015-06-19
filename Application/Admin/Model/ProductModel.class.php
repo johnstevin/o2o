@@ -77,7 +77,9 @@ class ProductModel extends Model
         } else { //通过标识查询
             $map['name'] = $id;
         }
-        return $this->field($field)->where($map)->find();
+        $Product=$this->field($field)->where($map)->find();
+        $Product['_picture']=M('Picture')->where(array('id'=>$Product['picture']))->find();
+        return $Product;
     }
 
     /**

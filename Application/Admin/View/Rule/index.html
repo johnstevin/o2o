@@ -23,9 +23,9 @@
                     '<td>'+v.url+'</td>'+
                     '<td>'+v.status_text+'</td>'+
                     '<td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑</a>&nbsp;&nbsp;'+
-                    '<a href="{:U("Rule/changeStatus")}&method=forbid&id='+ v.id+'">禁用</a>&nbsp;&nbsp;'+
-                    '<a href="{:U("Rule/changeStatus")}&method=resume&id='+ v.id+'">启用</a>&nbsp;&nbsp;'+
-                    '<a href="{:U("Rule/changeStatus")}&method=delete&id='+ v.id+'">删除</a></td>&nbsp;&nbsp;'+
+                    '<a class=" ajax-get" href="{:U("Rule/changeStatus")}&method=forbid&id='+ v.id+'">禁用</a>&nbsp;&nbsp;'+
+                    '<a class=" ajax-get" href="{:U("Rule/changeStatus")}&method=resume&id='+ v.id+'">启用</a>&nbsp;&nbsp;'+
+                    '<a class="confirm ajax-get" href="{:U("Rule/changeStatus")}&method=delete&id='+ v.id+'">删除</a></td>&nbsp;&nbsp;'+
                     '</tr>';
                     if (v._child) {
                         digui(v._child, level + 1);
@@ -33,7 +33,9 @@
                 })
             }
             digui(arrTree);
-            $('#tree').after(str)
+            $('#tree').after(str);
+
+             baseJs();
     </script>
 
 
