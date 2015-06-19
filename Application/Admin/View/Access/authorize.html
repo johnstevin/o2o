@@ -5,34 +5,40 @@
 </div>
 <div class="modal-body">
     <!-- 管理员用户组新增和编辑页面 -->
-    <h5>请选择角色</h5>
-
     <div class="form-group">
         <div id="auth_roles">
 
-            <form id="fm"  method="POST" class="form-horizontal auth-form">
-                <volist name="node_list" id="node">
-                    <notempty name="node['_roles']">
-                        <dl class="checkmod group">
-                            <dt class="hd">
-                                <!--<label class="checkbox"><input class="auth_rules rules_all" type="checkbox"-->
-                                <!--name="group[]" value="$node.id}">$node.title}</label>-->
-                                <label class="checkbox">{$node.title}</label>
-                            </dt>
-                            <dd class="bd">
-                                <volist name="node['_roles']" id="child">
-                                    <div class="rule_check">
-                                        <div>
-                                            <input class="auth_rules rules_row" group="{$node.id}" type="checkbox" name="group_role[{$node.id}][]"
-                                                   value="{$child.id}" <if condition="in_array($child['id'],$user_roles[$node['id']])">checked='checked'</if>/>{$child.title}
-                                        </div>
-                                    </div>
-                                </volist>
-                            </dd>
-                        </dl>
-                    </notempty>
-                </volist>
-
+            <form id="fm" method="POST" class="form-horizontal auth-form">
+                <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                    <tr>
+                        <th>组织</th>
+                        <th>角色</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tree">
+                    <volist name="node_list" id="node">
+                        <tr>
+                            <td>{$node.title_show}</td>
+                            <td>
+                                <notempty name="node['_roles']">
+                                    <volist name="node['_roles']" id="child">
+                                                <input class="auth_rules rules_row" group="{$node.id}" type="checkbox"
+                                                       name="group_role[{$node.id}][]"
+                                                       value="{$child.id}"
+                                                <if condition="in_array($child['id'],$user_roles[$node['id']])">
+                                                    checked='checked'
+                                                </if>
+                                                />{$child.title}
+                                    </volist>
+                                </notempty>
+                            </td>
+                        </tr>
+                    </volist>
+                    </tbody>
+                </table>
+                    </div>
                 <input type="hidden" name="uid" value="{:I('uid')}">
                 <input type="hidden" name="batch" value="true">
                 <!--<button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>-->
@@ -44,10 +50,28 @@
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-    <button type="button" class="btn btn-primary" onclick="Save()">保存</button>
+    <button type="button" class="btn btn-primary" onclick="Save('{:U(\'addToRole\')}','fm')">保存</button>
 </div>
 <script type="text/javascript">
-    $(function () {
+
+        //js写法
+//        var arrTree = jQuery.parseJSON('{$node_list|json_encode}');
+//
+//        function recursionJSON(data, str) {
+//            str += "　";
+//            if (typeof(data) == "object") {
+//                $.each(data, function (i, n) {
+//                    $("#tree").append('<tr><td>' + str + '<input type="checkbox" class="auth_rules rules_row" value="' + n.id + '" name="rules[]" />' + n.title + '</td><td>sdfsdfdsfdsfsdfsdfsdfsdfsdfsdfdsf</td>');
+//                    if (typeof(n._child) == "object") {
+//                        recursionJSON(n._child, str + "　");
+//                    }
+//                });
+//            }
+//        }
+//
+//        recursionJSON(arrTree, "");
+
+
         //全选节点
         $('.rules_all').on('change', function () {
             $(this).closest('dl').find('dd').find('input').prop('checked', this.checked);
@@ -55,21 +79,6 @@
         $('.rules_row').on('change', function () {
             $(this).closest('.rule_check').find('.child_row').find('input').prop('checked', this.checked);
         });
-    });
-    function Save(){
-        $.ajax({
-            type:'POST',
-            url:"{:U('addToRole')}",
-            data:$('#fm').serialize(),
-            dataType:'json',
-            success:function(data) {
-                onSuccess(data);
-            },
-            error : function() {
-                alert("异常！");
-            }
-        })
-    }
 </script>
 </body>
 </html>

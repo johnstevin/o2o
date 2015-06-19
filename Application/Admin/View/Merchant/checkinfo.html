@@ -113,19 +113,25 @@
             url: "{:U('checkinfo')}",
             dataType: "json",
             data: {"shop_id":shop_id,"status":status,"method":'pass'},
-            beforeSend: function(){
-                $('.msg').html("正在处理...");
+            success:function(data) {
+                onSuccess(data);
             },
-            success: function(json){
-            if(json.status==1){
-                $('.msg').html("处理成功，正在跳转...");
-                alert('处理成功！');
-                location.href="{:U('lists')}";
-            }else{
-                $('.msg').html("<div class = 'text-danger'>处理失败！错误原因:"+json.info+"</div>");
-                return false;
+            error : function() {
+                alert("异常！");
             }
-            }
+//            beforeSend: function(){
+//                $('.msg').html("正在处理...");
+//            },
+//            success: function(json){
+//            if(json.status==1){
+//                $('.msg').html("处理成功，正在跳转...");
+//                alert('处理成功！');
+//                location.href="{:U('lists')}";
+//            }else{
+//                $('.msg').html("<div class = 'text-danger'>处理失败！错误原因:"+json.info+"</div>");
+//                return false;
+//            }
+//            }
         });
     };
   function refuse(){
@@ -134,18 +140,24 @@
             url: "{:U('checkinfo')}",
             dataType: "json",
             data: {"shop_id":shop_id,"status":status,"method":'UnPass',"reason":$("#reason").val()},
-            beforeSend: function(){
-                $('.msg').html("正在提交...");
+//            beforeSend: function(){
+//                $('.msg').html("正在提交...");
+//            },
+//            success: function(json){
+//                if(json.status==1){
+//                    $('.msg').html("处理成功，正在跳转...");
+//                    alert('处理成功！');
+//                    location.href="{:U('lists')}";
+//                }else{
+//                    $('.msg').html("<div class = 'text-danger'>处理失败！错误原因:"+json.info+"</div>");
+//                    return false;
+//                }
+//            }
+            success:function(data) {
+                onSuccess(data);
             },
-            success: function(json){
-                if(json.status==1){
-                    $('.msg').html("处理成功，正在跳转...");
-                    alert('处理成功！');
-                    location.href="{:U('lists')}";
-                }else{
-                    $('.msg').html("<div class = 'text-danger'>处理失败！错误原因:"+json.info+"</div>");
-                    return false;
-                }
+            error : function() {
+                alert("异常！");
             }
         });
     };

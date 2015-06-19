@@ -72,7 +72,7 @@ class GroupController extends AdminController
 
             if ($pid) {
                 /* 获取上级组织信息 */
-                $cate = $AuthGroup->info($pid, 'id,level,title,status');
+                $cate = $AuthGroup->info($pid, 'id,level,title,status,type');
                 if (!($cate && 1 == $cate['status'])) {
                     $this->error('指定的上级组织不存在或被禁用！');
                 }
@@ -99,7 +99,7 @@ class GroupController extends AdminController
         //$Region=D('Region');
         if (IS_POST) { //提交表单
             if (false !== $AuthGroup->update()) {
-                $this->success('编辑成功！', U('index'));
+                $this->success('编辑成功！');
             } else {
                 $error = $AuthGroup->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
@@ -108,7 +108,6 @@ class GroupController extends AdminController
 
             /*非管理员判断权限是否越权*/
             if (!IS_ROOT) {
-                $AuthGroup = D('AuthGroup');
                 $UserAuthGroup = $AuthGroup->UserAuthGroup();
                 if (!in_array($id, $UserAuthGroup)) {
                     $this->error('权限不足,请联系管理员!');
@@ -118,7 +117,7 @@ class GroupController extends AdminController
             $cate = '';
             if ($pid) {
                 /* 获取上级组织信息 */
-                $cate = $AuthGroup->info($pid, 'id,level,title,status');
+                $cate = $AuthGroup->info($pid, 'id,level,title,status,type');
                 if (!($cate && 1 == $cate['status'])) {
                     $this->error('指定的上级组织机构不存在或被禁用！');
                 }

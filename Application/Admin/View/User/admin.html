@@ -1,11 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title>{$meta_title}</title>
-    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
-</head>
-<body>
+
 <div class="container-fluid">
     <!-- 标题栏 -->
     <div>
@@ -44,12 +37,12 @@
                     <td>
                         <a href="{:U('User/edit?uid='.$vo['uid'])}">编辑</a>
                         <eq name="vo.status" value="1">
-                        <a href="{:U('User/changeStatus?method=forbidUser&id='.$vo['id'])}">禁用</a>
+                        <a href="{:U('User/changeStatus?method=forbid&id='.$vo['id'].'&_type=1')}" class="ajax-get">禁用</a>
                         <else/>
-                        <a href="{:U('User/changeStatus?method=resumeUser&id='.$vo['id'])}">启用</a>
+                        <a href="{:U('User/changeStatus?method=resume&id='.$vo['id'].'&_type=1')}" class="ajax-get">启用</a>
                     </eq>
-                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('Access/authorize?uid='.$vo['id'])}">授权</a>
-                        <a href="{:U('User/changeStatus?method=deleteUser&id='.$vo['id'])}">删除</a>
+                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('Access/authorize?uid='.$vo['id'].'&_type=1')}">授权</a>
+                        <a href="{:U('User/changeStatus?method=delete&id='.$vo['id'].'&_type=1')}" class="confirm ajax-get">删除</a>
                     </td>
                 </tr>
             </volist>
@@ -63,5 +56,4 @@
         {$_page}
     </div>
 </div>
-</body>
-</html>
+<script>baseJs();</script>

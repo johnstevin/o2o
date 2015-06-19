@@ -6,8 +6,9 @@ class RegionController extends AdminController{
     //区域列表
     public function index(){
         //查询出所有的区域
-        $tree=D("Region")->getTree(0,'id,name,pid,status');
-        $this->assign('tree',$tree);
+        $tree = D('Region')->getTree(0, 'id,name,pid,level,status');
+        $this->assign('tree', $tree);
+        $this->meta_title = '区域管理';
         $this->display();
     }
 
@@ -34,6 +35,7 @@ class RegionController extends AdminController{
             /* 获取区域信息 */
             $this->assign('info', null);
             $this->assign('region', $Reg);
+            $this->meta_title = '增加区域';
             $this->display('edit');
         }
     }
@@ -53,15 +55,17 @@ class RegionController extends AdminController{
             $Reg = '';
             if($pid){
                 /* 获取上级区域信息 */
-                $Reg = $Region->info($pid, 'id,level,title,status');
+                $Reg = $Region->info($pid, 'id,level,name,status');
                 if(!($Reg && 1 == $Reg['status'])){
                     $this->error('指定的上级区域不存在或被禁用！');
                 }
+                ++$Reg['level'];
             }
             /* 获取区域信息 */
             $info = $id ? $Region->info($id) : '';
             $this->assign('info',$info);
             $this->assign('region', $Reg);
+            $this->meta_title = '编辑区域';
             $this->display('edit');
         }
     }

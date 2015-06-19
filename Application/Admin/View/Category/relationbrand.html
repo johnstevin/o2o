@@ -1,0 +1,53 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title"><h2>{$meta_title}</h2></h4>
+</div>
+<div class="modal-body">
+
+    <div class="form-horizontal">
+        <form id="fm" method="post">
+            <div class="form-horizontal">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                        <tr>
+                            <th>首字母</th>
+                            <th>选择品牌</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <volist name="_list" id="brand">
+                            <tr>
+                                <td>
+                                    {$brand._title}
+                                </td>
+                                <td>
+                                    &nbsp;&nbsp; <input type="checkbox" name="brands[]" class="brand_id" value="{$brand.id}"/>&nbsp;&nbsp;{$brand.title}
+                                </td>
+                            </tr>
+                        </volist>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="footer">
+                <input type="hidden" name="id" value="{:I('id')}">
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+    <button type="button" class="btn btn-primary"  onclick="Save('{:U()}','fm')">保存</button>
+</div>
+<script>
+    $(function () {
+        var user_brands = [{$user_brands}];
+        $('.brand_id').each(function () {
+            if ($.inArray(parseInt(this.value, 10), user_brands) > -1) {
+                $(this).prop('checked', true);
+            }
+        });
+    })
+</script>

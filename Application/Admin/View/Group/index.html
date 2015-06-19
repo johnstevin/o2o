@@ -1,7 +1,6 @@
 
     <script>
         var arrTree = jQuery.parseJSON('{$_list|json_encode}');
-        $(document).ready(function () {
             var str = '';
 
             function digui(list, level) {
@@ -26,9 +25,9 @@
                     '<td>'+v.description+'</td>' +
                     '<td>'+v.status_text+'</td>'+
                     '<td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑</a>&nbsp;&nbsp;'+
-                    '<a href="{:U("Group/changeStatus")}&method=forbid&id='+ v.id+'">禁用</a>&nbsp;&nbsp;'+
-                    '<a href="{:U("Group/changeStatus")}&method=resume&id='+ v.id+'">启用</a>&nbsp;&nbsp;'+
-                    '<a href="{:U("Group/changeStatus")}&method=delete&id='+ v.id+'">删除</a></td>'+
+                    '<a class="ajax-get" href="{:U("Group/changeStatus")}&method=forbid&id='+ v.id+'">禁用</a>&nbsp;&nbsp;'+
+                    '<a class="ajax-get" href="{:U("Group/changeStatus")}&method=resume&id='+ v.id+'">启用</a>&nbsp;&nbsp;'+
+                    '<a class="confirm ajax-get" href="{:U("Group/changeStatus")}&method=delete&id='+ v.id+'">删除</a></td>'+
                     '</tr>';
                     if (v._child) {
                         digui(v._child, level + 1);
@@ -36,8 +35,9 @@
                 })
             }
             digui(arrTree);
-            $('#tree').after(str)
-        });
+            $('#tree').after(str);
+
+            baseJs();
     </script>
 <div class="container-fluid">
     <!-- 操作  -->

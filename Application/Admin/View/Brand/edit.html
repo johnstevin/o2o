@@ -1,59 +1,99 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title></title>
-    <link rel="stylesheet" href="__STATIC__/bootstrap/css/bootstrap.min.css"/>
-</head>
-<body>
-<div class="container">
-    <h2>{:isset($info['id'])?'编辑':'新增'}品牌</h2>
-    <hr>
-    <form action="{:U()}" method="post">
-        <div class="form-horizontal">
-
-            <div class="form-group">
-                <label for="auth-title" class="control-label col-md-2">标题</label>
-
-                <div class="col-md-10">
-                    <input id="auth-title" type="text" name="title" class="form-control"
-                           value="{$info.title}"/>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="group_sort" class="control-label col-md-2">排序</label>
-
-                <div class="col-md-10">
-                    <input id="group_sort" type="text" name="group_sort" class="form-control"
-                           value="{$info.group_code|default=''}"/>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="group_logo" class="control-label col-md-2">品牌logo</label>
-
-                <div class="col-md-10">
-                    <input id="group_logo" type="file" name="upload"
-                           value="{$info.group_code|default=''}"/>
-                    <input type="submit" name="Submit" value="上传">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="auth-description" class="control-label col-md-2">描述</label>
-
-                <div class="col-md-10">
-                    <textarea id="auth-description" rows="4" type="text" name="description" class="form-control">{$auth_group.description|default=''}</textarea>
-                </div>
-            </div>
-        </div>
-        <div class="footer">
-            <input type="hidden" name="id" value="{$info.id|default=''}">
-            <button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>
-            <button type="submit" class="btn btn-primary">确 定</button>
-        </div>
-    </form>
+<link rel="stylesheet" type="text/css" href="__STATIC__/uploadify/uploadify.css" media="all">
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title"><h2>{$meta_title}</h2></h4>
 </div>
-</body>
-</html>
+<div class="modal-body">
+
+    <div class="form-horizontal">
+        <form id="fm" method="post">
+            <div class="form-horizontal">
+
+                <div class="form-group">
+                    <label for="title" class="control-label col-md-2">标题</label>
+
+                    <div class="col-md-10">
+                        <input id="title" type="text" name="title" class="form-control" placeholder="请输入标题"
+                               value="{$info.title}"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="sort" class="control-label col-md-2">排序</label>
+
+                    <div class="col-md-10">
+                        <input id="sort" type="number" name="group_sort" class="form-control"
+                               value="{$info.sort|default=''}"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="logo" class="control-label col-md-2">Logo</label>
+
+                    <div class="col-md-10">
+                        <div id="logo" class="controls">
+                            <input type="file" id="upload_picture">
+                            <input type="hidden" name="logo" id="cover_id" value="{$info.logo|default=''}"/>
+
+                            <div class="upload-img-box">
+                                <div class="upload-pre-item"><img height="180px" width="170px" src="{$info['_logo']['path']|default=''}"/></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="control-label col-md-2">描述</label>
+
+                    <div class="col-md-10">
+                                <textarea id="description" rows="4" placeholder="请输入描述信息" name="description"
+                                          class="form-control">{$info.description|default=''}</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <input type="hidden" name="id" value="{$info.id|default=''}">
+                <input type="hidden" name="status" value=1>
+                <!--<button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>-->
+                <!--<button type="submit" class="btn btn-primary">确 定</button>-->
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+    <button type="button" class="btn btn-primary"  onclick="Save('{:U()}','fm')">保存</button>
+</div>
+<script type="text/javascript" src="__STATIC__/uploadify/jquery.uploadify.min.js"></script>
+<script>
+    //上传图片
+    /* 初始化上传插件 */
+    $("#upload_picture").uploadify({
+        "height": 30,
+        "swf": "__STATIC__/uploadify/uploadify.swf",
+        "fileObjName": "download",
+        "buttonText": "上传Logo",
+        "uploader": "{:U('File/uploadPicture',array('session_id'=>session_id()))}",
+        "width": 120,
+        'removeTimeout': 1,
+        'fileTypeExts': '*.jpg; *.png; *.gif;',
+        "onUploadSuccess": uploadPicture,
+        'onFallback': function () {
+            alert('未检测到兼容版本的Flash.');
+        }
+    });
+    function uploadPicture(file, data) {
+        var data = $.parseJSON(data);
+        var src = '';
+        if (data.status) {
+            $("#cover_id").val(data.id);
+            src = data.url || '__ROOT__' + data.path
+            $("#cover_id").parent().find('.upload-img-box').html(
+                    '<div class="upload-pre-item"><img style="width: 170px; height: 180px;" src="' + src + '"/></div>'
+            );
+        } else {
+            onSuccess(data);
+        }
+    }
+</script>

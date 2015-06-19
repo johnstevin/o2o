@@ -1,0 +1,53 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title"><h2>{$meta_title}</h2></h4>
+</div>
+<div class="modal-body">
+
+    <div class="form-horizontal">
+        <form id="fm" method="post">
+            <div class="form-horizontal">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                        <tr>
+                            <th width="10%">品牌</th>
+                            <th>勾选规格</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <notempty name="_list">
+                        <volist name="_list" id="brand">
+                            <tr>
+                                <td>{$brand.title}</td>
+                                <td>
+                                    <volist name="_norms" id="norm">
+                                        <input class="brand_id"  type="checkbox"
+                                               name="norms[{$brand.brand_id}][]"
+                                               value="{$norm.id}"
+                                        <if condition="in_array($norm['id'],$user_norms[$brand['brand_id']])">
+                                            checked='checked'
+                                        </if>
+                                                />{$norm.title}&nbsp;&nbsp;
+                                    </volist>
+                                </td>
+                            </tr>
+                        </volist>
+                            <else/>
+                            <td colspan="3" class="text-center"> 请先关联品牌!</td>
+                        </notempty>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="footer">
+                <input type="hidden" name="id" value="{:I('id')}">
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+    <button type="button" class="btn btn-primary"  onclick="Save('{:U()}','fm')">保存</button>
+</div>

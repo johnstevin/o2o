@@ -39,12 +39,13 @@ class AuthGroupModel extends Model
      *
      * @return array 返回组织机构列表
      */
-    public function getGroups($where = array())
+    public function getGroups($where = array(),$field=true)
     {
         $map = array('status' => 1, 'id' => array('neq', AuthGroupModel::GROUP_ADMIN), 'module' => 'admin');
         $map = array_merge($map, $where);
         // return $this->relation('_roles')->where($map)->select();
-        return $this->where($map)->select();
+        $list = $this->field($field)->where($map)->select();
+        return $list;
     }
 
     /**
@@ -74,30 +75,27 @@ class AuthGroupModel extends Model
      */
     public function getTree($id = 0, $field = true)
     {
-        //TODO $id 组织ID 不为空的情况 以及有包含关系的情况
+        //TODO liu hui where
+        if ($id) {
+            $where=array('id'=>$id);
+        }
         /* 获取所有组织 */
         $map = array('status' => array('EGT', -1), 'id' => array('neq', AuthGroupModel::GROUP_ADMIN));
+        $map=array_merge($where,$map);
         $list = $this->field($field)->where($map)->order('id')->select();
         $list = int_to_string($list, array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿'), 'public' => array(1 => '公共', 0 => '私有'), 'type' => array(1 => '管理员', 2 => '商户', 3 => '用户')));
 
         /*非超管级管理员只列出拥有权限的组织*/
         if (!IS_ROOT) {
             /*获取当前用户所拥有的组织*/
-
-            $AuthAccess = D('AuthAccess');
-            $userGroup = $AuthAccess->getUserGroup(UID);
-
-            $refer = array();
             foreach ($list as $key => $data) {
-                $refer[$data['id']] = $data;
-            }
-
-            foreach ($userGroup as $key => &$item) {
-                $item = $refer[$item['group_id']];
-                if ($child = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = $item['id'])) {
-                    $item['_child'] = $child;
+                if (!in_array($data['id'], $this->UserAuthGroup())) {
+                    unset($list[$key]);
+                    continue;
                 }
             }
+
+            $userGroup = D('Tree')->toTree($list, $pk = 'id', $pid = 'pid', $child = '_child');
 
             return $userGroup;
         } else {
@@ -215,6 +213,31 @@ class AuthGroupModel extends Model
             S(UID . 'AUTH_GROUP', $userGroup);
         }
         return $userGroup;
+    }
+
+    /**
+     * @return array|mixed
+     */
+    public function UserGroupFormat()
+    {
+        $FormatGroup = S(UID . 'AUTH_GROUP_FORMAT');
+        if (empty($FormatGroup)) {
+            $FormatGroup = $this->getGroups();
+            $Tree = D('Tree');
+            $FormatGroup = $Tree->toFormatTree($FormatGroup);
+
+            if (!IS_ROOT) {
+                /*获取当前用户所拥有权限的组织*/
+                foreach ($FormatGroup as $key => $data) {
+                    if (!in_array($data['id'], $this->UserAuthGroup())) {
+                        unset($FormatGroup[$key]);
+                        continue;
+                    }
+                }
+            }
+            S(UID . 'AUTH_GROUP_FORMAT', $FormatGroup);
+        }
+        return $FormatGroup;
     }
 }
 

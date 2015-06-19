@@ -59,4 +59,10 @@ return [
         3   => '送水',
     ),
 
+    /* 上传图片类型picture */
+    'PICTURE_TYPE'     => array(
+        'PRODUCT'                => 1,
+        'MERCHANT_SHOP'          => 2,
+    ),
+
 ];
