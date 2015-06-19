@@ -63,7 +63,19 @@ class MemberAddressController extends ApiController
         $this->apiSuccess(['data' => MemberAddressModel::activeAddress($id)]);
     }
 
-    public function lists()
+    /**
+     * 获取地址列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param null|int $userId 用户ID
+     * @param null|string $name 收货人姓名
+     * @param null|int $regionId 区域ID
+     * @param int $status 状态
+     * @param string|array $fields 要查询的字段
+     * @param int $pageSize 分页大小
+     * @return null|array
+     */
+    public function lists($userId = null, $name = null, $regionId = null, $status = null, $fields = '*', $pageSize = 20)
     {
+        $this->apiSuccess(MemberAddressModel::getInstance()->getLists($userId, $name, $regionId, $status, $fields, $pageSize));
     }
 }
