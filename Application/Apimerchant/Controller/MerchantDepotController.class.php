@@ -25,7 +25,7 @@ class MerchantDepotController extends ApiController
 
     /**
      * <pre>
-     * 新增商家商品,POST参数,需要accesstoken
+     * 新增商家商品，当商品库中没有需要商品时，商家用该接口提交商品信息，需要等待审核,POST参数,需要accesstoken
      * int shop_id 商铺id，必须
      * string title 商品名称，必须
      * float price 商品价格，必须
