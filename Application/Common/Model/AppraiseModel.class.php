@@ -16,6 +16,9 @@ class AppraiseModel extends RelationModel
     ## 状态常量
     const STATUS_DELETE = -1;//逻辑删除
     const STATUS_ACTIVE = 1;//正常
+    ## 匿名状态常量
+    const ANONYMITY_TRUE = 1;//匿名评论
+    const ANONYMITY_FALSE = 0;//公开评论
 
     /**
      * 获取本模型实例
@@ -38,6 +41,8 @@ class AppraiseModel extends RelationModel
         'grade_2',
         'grade_3',
         'status',
+        'type',
+        'anonymity',
         '_type' => [
             'id' => 'int',
             'order_id' => 'int',
@@ -48,7 +53,9 @@ class AppraiseModel extends RelationModel
             'grade_1' => 'tinyint',
             'grade_2' => 'tinyint',
             'grade_3' => 'tinyint',
-            'status' => 'tinyint'
+            'status' => 'tinyint',
+            'type' => 'tinyint',
+            'anonymity' => 'tinyint'
         ]
     ];
 
@@ -115,7 +122,16 @@ class AppraiseModel extends RelationModel
             '评分非法',
             self::EXISTS_VALIDATE,
             'between'
-        ]
+        ],
+        [
+            'anonymity',
+            [
+                self::ANONYMITY_TRUE,
+                self::ANONYMITY_FALSE
+            ],
+            '匿名类型非法',
+            'in'
+        ],
     ];
 
     protected $_auto = [
@@ -135,6 +151,19 @@ class AppraiseModel extends RelationModel
         return [
             self::STATUS_DELETE => '已删除',
             self::STATUS_ACTIVE => '正常'
+        ];
+    }
+
+    /**
+     * 获得所有匿名的选项
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @return array
+     */
+    public static function getAnonymityOptions()
+    {
+        return [
+            self::ANONYMITY_FALSE => '公开评价',
+            self::ANONYMITY_TRUE => '匿名评价'
         ];
     }
 
