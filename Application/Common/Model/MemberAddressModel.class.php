@@ -2,6 +2,7 @@
 namespace Common\Model;
 
 use Think\Model\RelationModel;
+use Think\Page;
 
 /**
  * Class MemberAddressModel
@@ -49,7 +50,7 @@ class MemberAddressModel extends RelationModel
         'mobile',
         'status',
         'lnglat',
-        'default',
+        'patientia',
         '_type' => [
             'id' => 'int',
             'uid' => 'int',
@@ -59,7 +60,7 @@ class MemberAddressModel extends RelationModel
             'mobile' => 'char',
             'status' => 'tinyint',
             'lnglat' => 'point',
-            'default' => 'tinyint'
+            'patientia' => 'tinyint'
         ]
     ];
 
@@ -114,11 +115,6 @@ class MemberAddressModel extends RelationModel
     ];
 
     protected $_auto = [
-        [
-            'default',
-            self::DEFAULT_FALSE,
-            self::MODEL_INSERT
-        ]
     ];
 
     /**
@@ -181,21 +177,63 @@ class MemberAddressModel extends RelationModel
      * @param null|int $regionId 区域ID
      * @param int $status 状态
      * @param string|array $fields 要查询的字段
+     * @param int $pageSize 分页大小
      * @return null|array
      */
-    public static function getLists($uid = null, $name = null, $regionId = null, $status = self::STATUS_ACTIVE, $fields = '*')
+    public function getLists($uid = null, $name = null, $regionId = null, $status = self::STATUS_ACTIVE, $fields = '*', $pageSize = 10)
     {
-        $where = [];
-        if ($uid !== null) $where['uid'] = intval($uid);
-        if (!empty($name)) $where['name'] = trim($name);
-        if ($regionId !== null) $where['region_id'] = intval($regionId);
-        if ($status && in_array($status, array_keys(self::getStatusOptions()))) {
-            $where['status'] = $status;
+        $bind = [];
+        $nowPage = isset($_GET['p']) ? intval($_GET['p']) : 1;
+        switch (gettype($fields)) {
+            case 'boolean':
+                $fields = '*';
+            case 'string':
+                $fields = trim($fields);
+                if ($fields === '*') {
+                    $fields = $this->fields;
+                    unset($fields['_type']);
+                } else {
+                    $fields = explode(',', $fields);
+                }
+            case 'array':
+                $fields = array_unique($fields);
+                foreach ($fields as $key => &$field) {
+                    if (!in_array($field, $this->fields)) unset($fields[$key]);
+                    if ($this->fields['_type'][$field] === 'point') {
+                        $field = 'AsText(' . $field . ') lnglat';
+                    }
+                }
+                break;
+        }
+        $where = '';
+        if ($status && array_key_exists($status, self::getStatusOptions())) {
+            $where .= ' WHERE status=' . intval($status);
         } else {
-            $where['status'] = self::STATUS_ACTIVE;
+            $where .= ' WHERE status=' . self::STATUS_ACTIVE;
+        }
+        if ($uid !== null) $where .= ' AND uid=' . intval($uid);
+        if (!empty($name)) {
+            $where .= ' AND name=:name';
+            $bind[':name'] = trim($name);
+        }
+        if ($regionId !== null) $where .= ' AND reqion_id=' . intval($regionId);
+
+        $sql = 'SELECT ' . implode(',', $fields) . ' FROM ' . self::getInstance()->getTableName() . $where . ' LIMIT ' . ($nowPage - 1) * $pageSize . ',' . $pageSize;
+        $totalSql = 'SELECT count(*) total FROM ' . self::getInstance()->getTableName() . $where;
+        $pdo = get_pdo();
+        $sth = $pdo->prepare($sql);
+        $totalSth = $pdo->prepare($totalSql);
+        $totalSth->execute($bind);
+        $sth->execute($bind);
+        $lists = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        if (in_array('lnglat', $fields)) {
+            foreach ($lists as &$list) {
+                $list['lnglat'] = explode(' ', substr($list['lnglat'], 6, -1));
+            }
         }
         return [
-            'data' => self::getInstance()->field($fields)->where($where)->select()
+            'total' => (int)current($totalSth->fetch(\PDO::FETCH_ASSOC)),
+            'data' => $lists
         ];
     }
 
