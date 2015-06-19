@@ -135,13 +135,15 @@ class UserController extends ApiController {
     }
 
     /**
-     * @ignore
      * 用户个人资料
      * @param
      * @author  stevin
      */
     public function getUserInfo(){
-
+        $uInfo = D('UcenterMember')->get($this->getUserId(),'id,mobile,real_name,username,photo,email');
+        if(empty($uInfo))
+            $this->apiError(40015,'没有此用户');
+        $this->apiSuccess(array('data'=>$uInfo), '获取成功');
     }
 
     /**
