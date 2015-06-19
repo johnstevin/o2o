@@ -212,9 +212,9 @@ class MerchantShopModel extends AdvModel{
                 ,'sq_merchant_shop.delivery_amount_cost'
                 ,'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat)) as distance'
                 ,'st_astext(sq_merchant_shop.lnglat) as lnglat'
-                ,'sq_appraise.grade_1'
-                ,'sq_appraise.grade_2'
-                ,'sq_appraise.grade_3'
+                ,'avg(sq_appraise.grade_1) as grade_1'
+                ,'avg(sq_appraise.grade_2) as grade_2'
+                ,'avg(sq_appraise.grade_3) as grade_3'
                 ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade']);
 
         if(1==$order)
@@ -370,30 +370,7 @@ class MerchantShopModel extends AdvModel{
      */
     public function doTransaction($sql, $bind)
     {
-        //TODO:目前ThinkPHP不支持空间类型字段
-        $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'));
-        $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-        $stmt = $dbh->prepare($sql);
-        foreach ($bind as $k => $v) {
-            $stmt->bindValue($k, $v);
-        }
-
-        $newid=null;
-        try {
-            $dbh->beginTransaction();
-            $stmt->execute();
-            $newid= $dbh->lastInsertId();
-            //test for transaction
-            //throw new Exception();
-            $dbh->commit();
-            return $newid;
-        } catch (Exception $e) {
-            $dbh->rollBack();
-            throw $e;
-        } finally {
-            unset($dbh);
-        }
+        db_transaction($sql, $bind);
     }
 
     /**

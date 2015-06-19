@@ -144,6 +144,48 @@ class MerchantModel extends AdvModel
     ];
 
     /**
+     * 获得附件洗车工
+     * @author WangJiang
+     * @param $lat
+     * @param $lng
+     * @param int $range
+     * @param $number
+     * @param $page
+     * @param $pageSize
+     */
+    public function getCarWashersNearby($lat, $lng, $range,$name,$number,$page,$pageSize){
+        $this->join('JOIN sq_ucenter_member on sq_ucenter_member.id=sq_merchant.id');
+        $this->join('LEFT JOIN sq_appraise on sq_appraise.merchant_id = sq_merchant.id');
+
+        $where['_string']='ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))<:dist and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)';
+
+        if(!is_null($number))
+            $where['sq_merchant.number']=$number;
+
+        if(!is_null($name))
+            $where['sq_ucenter_member.real_name']=['like',"%$name%"];
+
+        $data=$this->where($where)->field(['sq_merchant.id'
+            ,'sq_ucenter_member.mobile'
+            ,'sq_ucenter_member.real_name'
+            ,'sq_ucenter_member.photo'
+            ,'ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat)) as distance'
+            ,'st_astext(sq_merchant.lnglat) as lnglat'
+            ,'avg(sq_appraise.grade_1) as grade_1'
+            ,'avg(sq_appraise.grade_2) as grade_2'
+            ,'avg(sq_appraise.grade_3) as grade_3'
+            ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade'
+        ])->bind([':lng'=>$lng,':lat'=>$lat,':dist'=>$range,':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')])
+            ->limit($page,$pageSize)
+            ->group('sq_merchant.id')
+            ->select();
+
+        //print_r($this->getLastSql());die;
+
+        return $data;
+    }
+
+    /**
      * 获取当前模型的实例
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @return MerchantModel

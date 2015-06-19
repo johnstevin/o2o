@@ -691,6 +691,61 @@ function except_merchant_manager($uid,$gid){
         E('用户无权限操作该店铺');
 }
 
+class DBException extends RuntimeException{
+    public $errorCode;
+    public $errorInfo;
+    public function __constructor($errorCode,$errorInfo){
+        $this->$errorCode=$errorCode;
+        $this->$errorInfo=$errorInfo;
+    }
+}
+
+/**
+ * 数据库事务处理
+ * @author WangJiang
+ * @param string $sql
+ * @param array $bind
+ * @param function $success 成功回调函数，缺省为null
+ * @param boolean $success_safe 是否捕获回调的异常，缺省为true
+ * @throws Exception
+ * @return int newId
+ */
+function db_transaction($sql, $bind,$success=null,$success_safe=true){
+    //TODO:目前ThinkPHP不支持空间类型字段
+    $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'));
+    $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $dbh->prepare($sql);
+    foreach ($bind as $k => $v) {
+        $stmt->bindValue($k, $v);
+    }
+
+    $newid=null;
+    try {
+        $dbh->beginTransaction();
+        $r=$stmt->execute();
+        $newid= $dbh->lastInsertId();
+        //test for transaction
+        //throw new Exception();
+        if($r==true and is_callable($success))
+            if($success_safe){
+                try{
+                    call_user_func($success);
+                }catch (\Exception $e){}
+            }else
+                call_user_func($success);
+        if($r==false)
+            throw new DBException($dbh->errorCode(),$dbh->errorInfo());
+        $dbh->commit();
+        return $newid;
+    } catch (\Exception $e) {
+        $dbh->rollBack();
+        throw $e;
+    } finally {
+        unset($dbh);
+    }
+}
+
 /**
  * array_column兼容性处理
  */
