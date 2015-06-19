@@ -164,8 +164,7 @@ class MerchantShopModel extends AdvModel{
         //当前时间，秒
         $seconds=time()-strtotime("00:00:00");//8*3600;
 
-        $map['_string'] = 'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))<:dist
-        and (sq_merchant_shop.open_time_mode=2
+        $where='ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))<:dist and (sq_merchant_shop.open_time_mode=2
             or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
 
         if(!is_null($type))
@@ -175,13 +174,15 @@ class MerchantShopModel extends AdvModel{
 //            E('非法店面服务，可选项：\'\'表示所有店铺，\'商超\'，\'生鲜\'，\'洗车\'，\'送水\'');
 
         if ($tagId!=0){
-            $this->join('inner join sq_shop_tag on shop_id=sq_merchant_shop.id and tag_id=:tag_id');
+            $where.=' and sq_merchant_shop.id in (select shop_id from sq_shop_tag where tag_id=:tag_id)';
+            //$this->join('inner join sq_shop_tag on shop_id=sq_merchant_shop.id and tag_id=:tag_id');
             $this->bind(':tag_id',$tagId);
         }
 
         if (!empty($words))
             build_words_query(explode(',', $words), $words_op, ['sq_merchant_shop.title', 'sq_merchant_shop.description'], $map);
 
+        $map['_string'] =$where;
         $map['sq_merchant_shop.status&sq_merchant_shop.open_status']=1;
 
         $this->where($map)

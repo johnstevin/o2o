@@ -188,7 +188,6 @@ class MerchantShopController extends ApiController
                 $type !== '0' and $where['type'] = $type;
                 !is_null($title) and $where['title'] = ['like', "%$title%"];
                 !is_null($status) and $where['status']=$status;
-
                 $data = $model->field(['id',
                     'title',
                     'description',
@@ -215,8 +214,18 @@ class MerchantShopController extends ApiController
                     'picture',
                     'st_astext(lnglat) as lnglat'])
                     ->where($where)->select();
+
+                foreach($data as &$i){
+                    $sid=$i['id'];
+                    $tags=D()->query("select tag_id from sq_shop_tag where shop_id=$sid;");
+                    //print_r($i);print_r($tags);die;
+                    foreach($tags as $t){
+                        $i['tags'][]=$t['tag_id'];
+                    }
+                }
+
                 //print_r($model->getLastSql());die;
-                //print_r($data);
+                //print_r($data);die;
                 $this->apiSuccess(['data' => $data],'');
             } else
                 E('非法调用');
