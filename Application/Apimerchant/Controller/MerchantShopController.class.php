@@ -174,11 +174,15 @@ class MerchantShopController extends ApiController
      *}
      * '''
      */
-    public function getList($regionId = null, $type = 1, $title = null,$status=null)
+    public function getList($regionId = null, $type = 1, $title = null,$status=null,$page=1,$pageSize=10)
     {
         try {
             if (IS_GET) {
                 //TODO 验证用户权限
+                $pageSize > 50 and $pageSize = 50;
+                $page--;
+                $page *= $pageSize;
+
                 $groupIds=$this->getUserGroupIds();
                 $model = D('MerchantShop');
 
@@ -213,7 +217,7 @@ class MerchantShopController extends ApiController
                     'message',
                     'picture',
                     'st_astext(lnglat) as lnglat'])
-                    ->where($where)->select();
+                    ->where($where)->limit($page,$pageSize)->select();
 
                 foreach($data as &$i){
                     $sid=$i['id'];
@@ -313,85 +317,5 @@ class MerchantShopController extends ApiController
 //            $this->apiError(50023,$ex->getMessage());
 //        }
 //    }
-
-    /**
-     * 获得商铺服务类型
-     * @author WangJiang
-     * @param $shopId
-     * @return jaon
-     * ``` json
-     * {
-     *  "success": true,
-     *  "error_code": 0,
-     *  "data":
-     *  [
-     *      "<类别ID>",...
-     *  ]
-     * }
-     * ```
-     * 调用样例 GET apimchant.php?s=/MerchantShop/getTags/shopId/4
-     * ``` json
-     * {
-     *  "success": true,
-     *  "error_code": 0,
-     *  "data":
-     *  [
-     *      "1",
-     *      "2"
-     *  ]
-     * }
-     * ```
-     */
-    public function getTags($shopId){
-        try{
-            $data=M('ShopTag')->where(['shop_id'=>$shopId])->select();
-            $ret=[];
-            foreach($data as $v){
-                $ret[]=$v['tag_id'];
-            }
-            $this->apiSuccess(['data'=>$ret]);
-        }catch (\Exception $ex){
-            $this->apiError(50025,$ex->getMessage());
-        }
-    }
-
-    /**
-     * 设置商铺服务类型
-     * @author WangJiang
-     * @param $shopId
-     * @post json
-     * ``` json
-     * [
-     *  "<类别ID>",...
-     * ]
-     * ```
-     * @return json
-     * 调用样例 POST apimchant.php?s=/MerchantShop/setTags/shopId/4
-     * ``` json
-     * ["1","2"]
-     * ```
-     */
-    public function setTags($shopId){
-        try{
-            if(!IS_POST)
-                E('非法操作');
-            $content=json_decode(file_get_contents('php://input'));
-            $m=M('ShopTag');
-            $m->startTrans();
-            try{
-                $m->where(['shop_id'=>$shopId])->delete();
-                foreach($content as $tag){
-                    $m->add(['shop_id'=>$shopId,'tag_id'=>$tag]);
-                }
-                $m->commit();
-                $this->apiSuccess(null,'修改成功');
-            }catch (\Exception $ex){
-                $m->rollback();
-                throw $ex;
-            }
-        }catch (\Exception $ex){
-            $this->apiError(50026,$ex->getMessage());
-        }
-    }
 
 }

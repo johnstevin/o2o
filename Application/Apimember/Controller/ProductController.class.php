@@ -119,8 +119,12 @@ class ProductController extends ApiController
      * ```
      *调用样例 GET apimber.php?s=Product/getAppriseList/shopId/2
      */
-    public function getAppriseList($shopId,$page = 0, $pageSize = 10){
+    public function getAppriseList($shopId,$page = 1, $pageSize = 10){
         try {
+            $pageSize > 50 and $pageSize = 50;
+            $page--;
+            $page *= $pageSize;
+
             $this->apiSuccess(['data' =>D('Appraise')
                 ->where(['shop_id'=>$shopId])
                 ->limit($page, $pageSize)
@@ -549,11 +553,12 @@ class ProductController extends ApiController
      */
     public function getProductList($shopIds = null, $categoryId = null, $brandId = null, $normId = null, $title = null
         , $priceMin = null, $priceMax = null
-        , $returnAlters = 'true', $page = 0,$pageSize=30)
+        , $returnAlters = 'true', $page = 1,$pageSize=30)
     {
         try {
             empty($shopIds) and E('参数shopIds不能为空');
             $pageSize > 50 and $pageSize = 50;
+            $page--;
             $page *= $pageSize;
             $returnAlters = $returnAlters === 'true';
             $shopIds = explode(',', $shopIds);

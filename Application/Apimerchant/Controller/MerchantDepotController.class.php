@@ -290,11 +290,14 @@ class MerchantDepotController extends ApiController
      *```
      */
     public function getList($shopIds = null, $categoryId = null, $brandId = null, $normId = null, $title = null
-        , $priceMin = null, $priceMax = null, $page = 0, $pageSize = 10, $status = MerchantDepotModel::STATUS_ACTIVE, $groupIds = [])
+        , $priceMin = null, $priceMax = null, $page = 1, $pageSize = 10, $status = MerchantDepotModel::STATUS_ACTIVE, $groupIds = [])
     {
         try {
             if (!IS_GET)
                 E('非法调用，请用GET调用该方法');
+            $pageSize > 50 and $pageSize = 50;
+            $page--;
+            $page *= $pageSize;
 
             //TODO 验证用户权限
             //$this->getUserId();
