@@ -85,7 +85,9 @@ class MerchantDepotController extends ApiController
                     , 'norms_id' => $norm_id
                     , 'price' => $price
                     , 'picture' => $picture
-                    , 'status' => ProductModel::STATUS_VERIFY]);
+                    , 'status' => ProductModel::STATUS_VERIFY
+                    ,'create_uid'=>$uid
+                    ,'source'=>2]);
 
                 D('ProductCategory')->add(['product_id' => $productId, 'category_id' => $category_id]);
 

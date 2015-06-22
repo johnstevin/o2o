@@ -164,7 +164,7 @@ class OrderVehicleController extends ApiController
                     E('参数传递失败');
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
-                    $wid=$model->find_avalable_worker($data);
+                    $wid=$model->getAvalibleWorker($data);
                     if(is_null($wid))
                         $data['status']=OrderVehicleModel::STATUS_NO_WORKER;
                     else{
@@ -183,18 +183,31 @@ class OrderVehicleController extends ApiController
                     }
                 }))],'');
             } else
-                E('非法调用');
+                E('非法调用，请用POST调用');
         } catch (\Exception $ex) {
             $this->apiError(51021, $ex->getMessage());
         }
     }
 
     /**
-     * 修改订单，POST参数
+     * 取消订单，POST参数
+     * <pre>
+     * 参数
+     * orderId 订单ID，必须
+     * </pre>
      * @author WangJiang
      * @return json
      */
-    public function update(){
-
+    public function cancel(){
+        try{
+            if(!IS_POST)
+                E('非法调用，请用POST调用');
+            $oid=I('post.orderId');
+            $m=new OrderVehicleModel();
+            $m->cancel($oid,$this->getUserId());
+            $this->apiSuccess(null,'成功');
+        }catch (\Exception $ex) {
+            $this->apiError(51022, $ex->getMessage());
+        }
     }
 }

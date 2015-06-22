@@ -147,12 +147,12 @@ class OrderVehicleModel extends AdvModel{
         'order_code'
     ];
 
-    protected function _after_find(&$result,$options='') {
-        parent::_after_select($result,$options);
-        $this->_after_query_row($result);
-        //echo '<pre>';
-        //print_r($result);
-    }
+//    protected function _after_find(&$result,$options='') {
+//        parent::_after_select($result,$options);
+//        $this->_after_query_row($result);
+//        //echo '<pre>';
+//        //print_r($result);
+//    }
 
     /**
      * 处理point类型字段值
@@ -209,7 +209,27 @@ class OrderVehicleModel extends AdvModel{
         return db_transaction($sql, $bind,$success);
     }
 
-    public function find_avalable_worker($data){
+    public function getAvalibleWorker($data){
 
+    }
+
+    /**
+     * 取消订单
+     * @author WangJiang
+     * @param $oid
+     * @param $uid
+     */
+    public function cancel($oid,$uid){
+        $data=$this->find($oid);
+        //print_r($data);die;
+        if($data['status']>=self::STATUS_CONFIRM)
+            E('该订单已经开始处理，不能取消。');
+
+        if($data['user_id']!=$uid)
+            E('非本人操作');
+
+        $data['status']=self::STATUS_CANCELED;
+
+        $this->save($data);
     }
 }

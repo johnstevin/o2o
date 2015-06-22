@@ -414,4 +414,63 @@ class MerchantShopModel extends AdvModel
         }
     }
 
+    public function getProductList($shopIds = null, $categoryId = null, $title = null
+        , $priceMin = null, $priceMax = null){
+
+        list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
+
+        $where = 'sq_merchant_shop.id in (' . implode(',', $shopBindNames) . ')';
+
+        $product_sql = 'JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1';
+        if (!empty($categoryId)) {
+            $product_sql .= ' and sq_product.id in (select product_id from sq_product_category where category_id=:categoryId)';
+            $bindValues[':categoryId'] = $categoryId;
+        }
+        if (!empty($title)) {
+            $product_sql .= ' and sq_product.title like :title';
+            $bindValues[':title'] = '%' . $title . '%';
+        }
+
+        $this->join('JOIN sq_merchant_depot on sq_merchant_shop.id=sq_merchant_depot.shop_id and sq_merchant_depot.status=1');
+        $this->join($product_sql);
+        $this->join('JOIN sq_brand on sq_brand.id=sq_product.brand_id');
+        $this->join('JOIN sq_norms on sq_norms.id=sq_product.norms_id');
+        $this->where($where);
+        $this->bind($bindValues);
+
+        $this->field(['sq_merchant_shop.id as shop_id'
+            ,'sq_merchant_shop.title as shop_title'
+            ,'sq_merchant_depot.id as depot_id'
+            ,'sq_merchant_depot.price'
+            ,'sq_merchant_depot.product_id'
+            , 'sq_product.title as product'
+            , 'sq_brand.id as brand_id'
+            , 'sq_brand.title as brand'
+            , 'sq_norms.id as norm_id'
+            , 'sq_norms.title as norm'])
+            ->order('sq_merchant_depot.price');
+        $data = $this->select();
+
+        //print_r($this->getLastSql());die;
+
+        $shop=[];
+        foreach($data as $i){
+            if(!array_key_exists($i['shop_id'],$shop)){
+                $shop[$i['shop_id']]=[
+                    'id'=>$i['shop_id'],
+                    'title'=>$i['shop_title'],
+                    'depots'=>[]
+                ];
+            }
+            $shop[$i['shop_id']]['depots'][]=[
+                'id'=>$i['depot_id'],
+                'price'=>$i['price'],
+                'price'=>$i['price'],
+                'product_id'=>$i['product_id'],
+                'product'=>$i['product'],
+            ];
+        }
+        return array_values($shop);
+    }
+
 }

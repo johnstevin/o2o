@@ -35,4 +35,51 @@ class MerchantController extends ApiController {
             $this->apiError(51002, $ex->getMessage());
         }
     }
+
+    /**
+     * 获得洗车工评价
+     * @author WangJiang
+     * @param $merchantId  员工ID，必须
+     * @param int $page 页号，从1开始
+     * @param int $pageSize 每页大小
+     * @return json
+     * ``` json
+     * {
+     *    "success": true,
+     *    "error_code": 0,
+     *    "data":
+     *      [
+     *          {
+     *              "id": "<ID>",
+     *              "order_id": "<相关订单ID>",
+     *              "shop_id": "<商铺ID>",
+     *              "user_id": "<评价客户ID>",
+     *              "merchant_id": "<商家ID>",
+     *              "content": "<内容>",
+     *              "grade_1": "<打分1>",
+     *              "grade_2": "<打分1>",
+     *              "grade_3": "<打分1>",
+     *              "status": "<状态，-1-关闭,1-已评价>",
+     *              "update_time": "<修改时间>"
+     *          }...
+     *      ]
+     * }
+     * ```
+     *调用样例 GET apimber.php?s=Merchant/getAppriseList/merchantId/2
+     */
+    public function getAppriseList($merchantId,$page = 1, $pageSize = 10){
+        try {
+            $pageSize > 50 and $pageSize = 50;
+            $page--;
+            $page *= $pageSize;
+
+            $this->apiSuccess(['data' =>D('Appraise')
+                ->where(['merchant_id'=>$merchantId])
+                ->limit($page, $pageSize)
+                ->order('update_time')
+                ->select()]);
+        } catch (\Exception $ex) {
+            $this->apiError(50002, $ex->getMessage());
+        }
+    }
 }

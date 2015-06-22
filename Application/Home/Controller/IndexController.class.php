@@ -3,6 +3,7 @@
 namespace Home\Controller;
 use OT\DataDictionary;
 require __ROOT__.'Addons/Sms/Common/function.php';
+
 /**
  * 前台首页控制器
  * 主要获取首页聚合数据
