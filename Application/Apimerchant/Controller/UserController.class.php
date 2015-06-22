@@ -146,11 +146,9 @@ class UserController extends ApiController {
      * @param
      * @author  stevin
      */
-    public function userInfo(){
-        $uid = 81;
+    public function userInfos( $mapUid, $field='*' ){
         $model = D("Merchant");
-        $field = 'a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time';
-        $result = $model->getInfos($uid,$field);
+        $result = $model->getInfos($mapUid,$field);
         return $result;
 
 
@@ -299,7 +297,7 @@ class UserController extends ApiController {
      * @author : Stevin.John@qq.com
      */
     public function staffManage(){
-        $shop_id  = is_numeric(I('post.shop_id')) ? I('post.shop_id') : 0;
+        $shop_id  = is_numeric(I('get.shop_id')) ? I('get.shop_id') : 0;
         if($shop_id==0)
             $this->apiError('40030', '非法操作');
         $model = D('MerchantShop');
@@ -322,7 +320,11 @@ class UserController extends ApiController {
         $uids = $auth->get( $map,$field );
         if($uids == -1)
             $this->apiError('40033', '获取员工失败');
-
+        $uids = implode(',',$uids);
+        $mapUcenter  = array('in',$uids);
+        $fieldUcenter      = 'a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time';
+        $resultUserInfos = $this->userInfos($mapUcenter,$fieldUcenter);
+        $this->apiSuccess(array('data'=>$resultUserInfos),'获取员工成功');
 
 
     }

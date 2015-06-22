@@ -45,12 +45,21 @@ class AuthAccessModel extends AdvModel {
         }
     }
 
+    /**
+     * 根据条件查询
+     * @param $map
+     * @param $field
+     * @return array|int
+     */
     public function get( $map, $field ){
         $result = $this->field($field)->where($map)->select();
         if( empty($result) ){
             return -1; //
         } else {
-            return array_unique($result);
+            foreach ($result as $v) {
+                $tempArr[] = $v['uid'];
+            }
+            return array_unique($tempArr);
         }
 
 

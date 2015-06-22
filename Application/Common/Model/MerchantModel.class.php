@@ -249,13 +249,19 @@ class MerchantModel extends AdvModel
     {
     }
 
-    public function getInfos( $uid, $field = '*' ){
+    /**
+     * 获取商户信息
+     * @param $mapUid
+     * @param string $field
+     * @return mixed|string
+     */
+    public function getInfos( $mapUid, $field = '*' ){
         try{
             $userInfo=$this
                 ->field($field)
                 ->table('__UCENTER_MEMBER__ a')
                 ->join('__MERCHANT__ b ON  a.id = b.id','LEFT')
-                ->where(array('a.is_merchant'=>array('eq', '1'),'a.id'=>$uid))
+                ->where(array('a.is_merchant'=>array('eq', '1'),'a.id'=>$mapUid))
                 ->select();
             if(empty($userInfo))
                 E(-1);

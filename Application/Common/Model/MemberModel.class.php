@@ -18,6 +18,7 @@ class MemberModel extends RelationModel
     protected $_validate = [
         ['nickname', '1,16', '昵称长度为1-16个字符', self::EXISTS_VALIDATE, 'length'],
         ['nickname', '', '昵称被占用', self::EXISTS_VALIDATE, 'unique'], //用户名被占用
+
     ];
 
     public function lists($status = 1, $order = 'uid DESC', $field = true)
@@ -75,6 +76,48 @@ class MemberModel extends RelationModel
             self::STATUS_ACTIVE => '正常',
             self::STATUS_LOCK => '锁定'
         ];
+    }
+
+    public function getMemberInfos( $mapUid, $field = '*' ) {
+        try{
+            $userInfo=$this
+                ->field($field)
+                ->table('__UCENTER_MEMBER__ a')
+                ->join('__MEMBER__ b ON  a.id = b.uid','LEFT')
+                ->where(array('a.is_member'=>array('eq', '1'),'b.status'=>array('eq', '1'),'a.id'=>$mapUid))
+                ->select();
+            if(empty($userInfo))
+                E(-1);
+            return $userInfo;
+
+        }catch (\Exception $ex){
+            return $ex->getMessage();
+        }
+    }
+
+    public function saveInfo ($data) {
+        try {
+
+            empty($data) ? E('修改字段不能为空') : '';
+            $data = $this->create($data);
+            if(empty($data))
+                E('创建对象失败');
+            if(empty($data['uid'])){
+                $id = $this->add();
+                if(!$id)
+                    E('新增失败');
+            } else {
+                $status = $this->save();
+                if(false === $status)
+                    E('更新失败');
+            }
+
+
+        } catch (\Exception $ex) {
+
+            return $ex->getMessage();
+
+        }
     }
 
 }

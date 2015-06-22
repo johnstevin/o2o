@@ -7,6 +7,7 @@
 namespace Apimember\Controller;
 
 use Common\Model\UcenterMemberModel;
+use Common\Model\MemberModel;
 /**
  * 用户中心
  * Class UserController
@@ -141,20 +142,68 @@ class UserController extends ApiController {
      * @author  stevin
      */
     public function getUserInfo(){
-        $uInfo = D('UcenterMember')->get($this->getUserId(),'id,mobile,real_name,username,photo,email');
-        if(empty($uInfo))
-            $this->apiError(40015,'没有此用户');
-        $this->apiSuccess(array('data'=>$uInfo), '获取成功');
+        try {
+            $map = $this->getUserId();
+            $fields = 'a.id,a.mobile,a.username,a.email,a.reg_time,a.reg_ip,b.nickname,b.sex,b.birthday,b.qq';
+            $uInfo = D('Member')->getMemberInfos($map, $fields);
+            if(empty($uInfo))
+                $this->apiError(40015,'没有此用户');
+            $this->apiSuccess(array('data'=>$uInfo[0]), '获取成功');
+        } catch (\Exception $ex) {
+            $this->apiError(50115, $ex->getMessage());
+        }
     }
 
     /**
      * @ignore
      * 用户个人修改
      * @param
-     * @author  stevin
+     * @author  Stevin.John@qq.com
+     * @Url
      */
-    public function getUserEdit(){
+    public function editInfo(){
+        try {
+            //$uid = $this->getUserId();
+            $uid = 80;
+            $type = I('get.type');
+            switch ( $type ) {
+                case 'photo' :
 
+                    break;
+                case 'real_name' :
+                    $model = D("UcenterMember");
+                    $real_name = I('get.real_name');
+                    $data['real_name'] = $real_name;
+                    $data['id'] = $uid;
+                    break;
+                case 'nickname' :
+                    $model = D("Member");
+                    $nickname = I('get.nickname');
+                    $data['nickname'] = $nickname;
+                    $data['uid'] = $uid;
+                    break;
+                case 'email' :
+
+                    break;
+                case 'password' :
+
+                    break;
+                default :
+                    E('必须传递type参数');
+            }
+
+
+            $result = $model->saveInfo($data);
+            if($result===true){
+                $this->apiSuccess(array('data'=>''), '获取成功');
+            }else{
+                E($model->getError());
+            }
+
+
+        } catch (\Exception $ex) {
+            $this->apiError(50115, $ex->getMessage());
+        }
     }
 
     /**

@@ -61,9 +61,9 @@ return [
 
     /* 上传图片类型picture */
     'PICTURE_TYPE'     => array(
-        'PRODUCT_PICTURE'                => 1,
-        'MERCHANT_SHOP_PICTURE'          => 2,
-        'UCENTER_MEMBER_PHOTO'           => 3,
+        'PRODUCT_PICTURE'                => 1,    //产品图片
+        'MERCHANT_SHOP_PICTURE'          => 2,    //商家店铺图片
+        'UCENTER_MEMBER_PHOTO'           => 3,    //用户头像
     ),
 
     'ALIPAY' => [
