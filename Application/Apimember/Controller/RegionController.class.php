@@ -61,4 +61,33 @@ class RegionController extends ApiController
             $this->apiError(50030, $ex->getMessage());
         }
     }
+
+    /**
+     * ## 获取区域列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param null|integer $pid 父级ID
+     * @param null|array|string $level 要获取的层级，比如【0,1,2】表示获取省市区三级，以此类推
+     * @param null|int $status 状态，默认为获取正常状态的区域
+     * @param int|null $pageSize 分页大小，如果传【null】表示获取所有数据
+     * @param string $fileds 要读取的字段，可传数组 || 字符串
+     */
+    public function lists($pid = null, $level = null, $status = null, $pageSize = 20, $fileds = '*')
+    {
+        $this->apiSuccess(RegionModel::getInstance()->getLists($pid, $level, $status, $pageSize, $fileds));
+    }
+
+    /**
+     * ## 获取区域的树状结构
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $pid 父级ID
+     * @param null|string|array $level `要获取的层级`，比如【0,1,2】表示获取省市区三级，以此类推
+     * @param null|int $status 状态
+     * @param string $fileds 要查询的字段，注意，`id`、`pid`为必查字段
+     */
+    public function tree($pid = 0, $level = null, $status = null, $fileds = '*')
+    {
+        $this->apiSuccess(RegionModel::getInstance()->getTree($pid, $level, $status, null, $fileds));
+    }
 }
