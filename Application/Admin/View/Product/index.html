@@ -47,6 +47,8 @@
                         </eq>
                         <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
                            class="confirm ajax-get">删除</a>
+                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                           href="{:U('audit?id='.$vo['id'])}">审核商品</a>
                     </td>
                 </tr>
             </volist>
