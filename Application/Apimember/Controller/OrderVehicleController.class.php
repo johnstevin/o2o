@@ -9,6 +9,7 @@
 namespace Apimember\Controller;
 
 
+use Common\Model\MerchantModel;
 use Common\Model\OrderVehicleModel;
 
 class OrderVehicleController extends ApiController
@@ -143,6 +144,7 @@ class OrderVehicleController extends ApiController
      * worker_id 洗车工ID
      * address 车辆地址，必须
      * lnglat  车辆位置，格式为'lng lat'，必须
+     * preset_time 预定时间，绝对时间戳，必须
      * car_number 车牌号，必须
      * user_picture_ids  用户照片ID，用','隔开，必须
      * </pre>
@@ -162,9 +164,10 @@ class OrderVehicleController extends ApiController
                 $model = new OrderVehicleModel();
                 if (!($data=$model->create()))
                     E('参数传递失败');
+
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
-                    $wid=$model->getAvalibleWorker($data);
+                    $wid=(new MerchantModel())->getAvalibleWorker($data['lnglat'],$data['preset_time']);
                     if(is_null($wid))
                         $data['status']=OrderVehicleModel::STATUS_NO_WORKER;
                     else{
@@ -210,4 +213,52 @@ class OrderVehicleController extends ApiController
             $this->apiError(51022, $ex->getMessage());
         }
     }
+
+    //TODO 等APP端开始再讨论细节
+    /**
+     * 付费，POST参数
+     * <pre>
+     * 参数
+     * orderId 订单ID，必须
+     * charge 费用
+     * grade1 评分1
+     * grade2 评分2
+     * grade3 评分3
+     * content 评价
+     * </pre>
+     * @author WangJiang
+     * @return json
+     */
+//    public function pay(){
+//        try{
+//            if(!IS_POST)
+//                E('非法调用，请用POST调用');
+//            $oid=I('post.orderId');
+//            $charge=I('post.charge',0);
+//            $grade1=I('post.grade1',0);
+//            $grade2=I('post.grade2',0);
+//            $grade3=I('post.grade3',0);
+//            $content=I('post.content','');
+//
+//            if($charge<15 and strlen($content)<25)
+//                E('请给出不少于25字的评价，谢谢。');
+//
+//            $m=new OrderVehicleModel();
+//            $m->find($oid);
+//
+//            D()->startTrans();
+//            try{
+//                $m->status=OrderVehicleModel::STATUS_CLOSED;
+//                $m->save();
+//
+//                D()->commit();
+//            }catch (\Exception $ex){
+//                D()->rollback();
+//                throw $ex;
+//            }
+//            $this->apiSuccess(null,'成功');
+//        }catch (\Exception $ex) {
+//            $this->apiError(51023, $ex->getMessage());
+//        }
+//    }
 }

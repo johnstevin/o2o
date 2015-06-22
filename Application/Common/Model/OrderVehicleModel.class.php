@@ -32,6 +32,7 @@ class OrderVehicleModel extends AdvModel{
         'worker_id',
         'address',
         'lnglat',
+        'preset_time',
         'car_number',
         'price',
         'user_picture_ids',
@@ -49,6 +50,7 @@ class OrderVehicleModel extends AdvModel{
             'worker_id'=>'int',
             'address'=>'string',
             'lnglat'=>'point',
+            'preset_time'=>'int',
             'car_number'=>'string',
             'price'=>'float',
             'user_picture_ids'=>'string',
@@ -108,6 +110,11 @@ class OrderVehicleModel extends AdvModel{
             'address',
             'require',
             '地址不能为空'
+        ],
+        [
+            'preset_time',
+            'require',
+            '预定时间不能为空'
         ],
         [
             'status',
@@ -209,10 +216,6 @@ class OrderVehicleModel extends AdvModel{
         return db_transaction($sql, $bind,$success);
     }
 
-    public function getAvalibleWorker($data){
-
-    }
-
     /**
      * 取消订单
      * @author WangJiang
@@ -224,12 +227,11 @@ class OrderVehicleModel extends AdvModel{
         //print_r($data);die;
         if($data['status']>=self::STATUS_CONFIRM)
             E('该订单已经开始处理，不能取消。');
-
         if($data['user_id']!=$uid)
             E('非本人操作');
-
         $data['status']=self::STATUS_CANCELED;
-
+        //经纬度不需要修改
+        unset($data['lnglat']);
         $this->save($data);
     }
 }
