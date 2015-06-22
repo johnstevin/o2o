@@ -7,8 +7,9 @@ class RegionModel extends Model
 {
 
     protected $_validate = array(
-        array('name','require', '区域名称是必填的！', Model::MUST_VALIDATE ,'regex',Model::MODEL_INSERT),
+        array('name', 'require', '区域名称是必填的！', Model::MUST_VALIDATE, 'regex', Model::MODEL_INSERT),
     );
+
     /**
      * 获取区域详细信息
      * @param  int $id 区域id
@@ -41,7 +42,7 @@ class RegionModel extends Model
             $id = $info['id'];
         }
         //获取所有区域
-        $map  = array('status' => array('gt', -1));
+        $map = array('status' => array('gt', -1));
         $list = $this->field($field)->where($map)->order('id')->select();
         $list = int_to_string($list);
         $list = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = $id);
@@ -116,9 +117,9 @@ class RegionModel extends Model
         $region_list = array();
         foreach ($GroupRegions as $gr) {
             $ids[] = $gr['region_id'];
-            $temp= list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $gr['region_id']);
-            $temp=tree_to_list($temp, $child = '_child', $order = 'id');
-            $region_list=array_merge($region_list,$temp);
+            $temp = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $gr['region_id']);
+            $temp = tree_to_list($temp, $child = '_child', $order = 'id');
+            $region_list = array_merge($region_list, $temp);
         }
 
 //        echo "<pre>";
@@ -133,7 +134,26 @@ class RegionModel extends Model
 
 
         /*从而为数组中取出id,合并pid,去重*/
-        return array_unique(array_merge(array_column($region_list,'id'), $ids));
+        return array_unique(array_merge(array_column($region_list, 'id'), $ids));
+    }
+
+    /**
+     * 保存坐标
+     * @return bool|string
+     */
+    public function savelnglat()
+    {
+        $region_id = I('id');
+        $lnglat = I('lnglat');
+        if(!$region_id){
+            return $this->error="参数非法";
+        }
+       // $Model = new \Think\Model();
+        return  $this->execute("update __REGION__ set lnglat=point($lnglat) where id=$region_id");
+        // 要修改的数据对象属性赋值
+//        $data['lnglat'] = $lnglat;
+//        return  $this->where(array('id'=>$region_id))->save($data);
+
     }
 
 }
