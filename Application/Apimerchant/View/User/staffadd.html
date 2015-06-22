@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>{:C('WEB_SITE_TITLE')}</title>
+    <script src="__STATIC__/js/jquery.min.js"></script>
+    <script src="__STATIC__/js/jquery.md5.js"></script>
+</head>
+<body>
+
+<form action="?" method="post" name="form">
+
+    手机：<input type="text" name="mobile" id="mobile" value="" />　<br />
+    密码：<input type="password" name="password" id="password" value="" />
+         <input type="button" value="提交" onclick="register()" />
+
+</form>
+<div id="msg"></div>
+</body>
+</html>
+<script>
+$(document).ready(function(){
+
+});
+
+function register(){
+    var mobile = $("#mobile").val();
+    var password = $("#password").val();
+
+    if(mobile==""){
+        $('#msg').html("手机号不能为空！");
+        $("#mobile").focus();
+        return false;
+    }
+    if(password==""){
+        $('#msg').html("密码不能为空！");
+        $("#password").focus();
+        return false;
+    }
+    password = $.md5(password);
+
+    $.ajax({
+        type: "POST",
+        url: '{:U('User/staffAdd')}',
+        dataType: "json",
+        data: {"mobile":mobile,"password":password,"shop_id":50},
+        beforeSend: function(){
+            $('#msg').html("正在注册...");
+        },
+        success: function(json){
+            if(json.success==1){
+                $('#msg').html("注册成功，正在跳转...");
+                alert('注册成功！请下载APP应用登陆...');
+            }else{
+                $('#msg').html("注册失败！Error:"+json.message);
+                return false;
+            }
+        }
+    });
+}
+
+</script>

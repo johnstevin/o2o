@@ -22,6 +22,10 @@ class AuthAccessModel extends AdvModel {
     const AUTH_EXTEND               = 'auth_extend';       // 动态权限扩展信息表
     const AUTH_GROUP                = 'auth_group';        // 组织表名
 
+    const AUTH_STATUS_AWAIT         = 0;                   // 待审核
+    const AUTH_STATUS_PASS          = 1;                   // 审核通过
+    const AUTH_STATUS_NOPASS        = 2;                   // 审核未通过
+
     protected $_validate = array(
 
     );
@@ -39,6 +43,27 @@ class AuthAccessModel extends AdvModel {
         }else{
             return true;
         }
+    }
+
+    /**
+     * 根据条件查询
+     * @param $map
+     * @param $field
+     * @return array|int
+     */
+    public function get( $map, $field ){
+        $result = $this->field($field)->where($map)->select();
+        if( empty($result) ){
+            return -1; //
+        } else {
+            foreach ($result as $v) {
+                $tempArr[] = $v['uid'];
+            }
+            return array_unique($tempArr);
+        }
+
+
+
     }
 
 

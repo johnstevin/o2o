@@ -2,6 +2,7 @@
 namespace Common\Model;
 
 use Think\Model\RelationModel;
+use Think\Page;
 
 /**
  * Class MemberAddressModel
@@ -26,6 +27,9 @@ class MemberAddressModel extends RelationModel
     ## 状态常量
     const STATUS_DELETE = -1;//逻辑删除
     const STATUS_ACTIVE = 1;//正常
+    ## 默认常量
+    const DEFAULT_TRUE = 1;//默认地址
+    const DEFAULT_FALSE = 0;//不是默认地址
 
     /**
      * 获得当前模型的实例
@@ -45,6 +49,8 @@ class MemberAddressModel extends RelationModel
         'address',
         'mobile',
         'status',
+        'lnglat',
+        'patientia',
         '_type' => [
             'id' => 'int',
             'uid' => 'int',
@@ -52,7 +58,9 @@ class MemberAddressModel extends RelationModel
             'region_id' => 'int',
             'address' => 'varchar',
             'mobile' => 'char',
-            'status' => 'tinyint'
+            'status' => 'tinyint',
+            'lnglat' => 'point',
+            'patientia' => 'tinyint'
         ]
     ];
 
@@ -104,6 +112,9 @@ class MemberAddressModel extends RelationModel
             '联系方式不能为空',
             self::MUST_VALIDATE
         ]
+    ];
+
+    protected $_auto = [
     ];
 
     /**
@@ -166,19 +177,63 @@ class MemberAddressModel extends RelationModel
      * @param null|int $regionId 区域ID
      * @param int $status 状态
      * @param string|array $fields 要查询的字段
+     * @param int $pageSize 分页大小
      * @return null|array
      */
-    public static function getLists($uid = null, $name = null, $regionId = null, $status = self::STATUS_ACTIVE, $fields = '*')
+    public function getLists($uid = null, $name = null, $regionId = null, $status = self::STATUS_ACTIVE, $fields = '*', $pageSize = 10)
     {
-        $where = [];
-        if ($uid !== null) $where['uid'] = intval($uid);
-        if (!empty($name)) $where['name'] = trim($name);
-        if ($regionId !== null) $where['region_id'] = intval($regionId);
-        if ($status && in_array($status, array_keys(self::getStatusOptions()))) {
-            $where['status'] = $status;
+        $bind = [];
+        $nowPage = isset($_GET['p']) ? intval($_GET['p']) : 1;
+        switch (gettype($fields)) {
+            case 'boolean':
+                $fields = '*';
+            case 'string':
+                $fields = trim($fields);
+                if ($fields === '*') {
+                    $fields = $this->fields;
+                    unset($fields['_type']);
+                } else {
+                    $fields = explode(',', $fields);
+                }
+            case 'array':
+                $fields = array_unique($fields);
+                foreach ($fields as $key => &$field) {
+                    if (!in_array($field, $this->fields)) unset($fields[$key]);
+                    if ($this->fields['_type'][$field] === 'point') {
+                        $field = 'AsText(' . $field . ') lnglat';
+                    }
+                }
+                break;
+        }
+        $where = '';
+        if ($status && array_key_exists($status, self::getStatusOptions())) {
+            $where .= ' WHERE status=' . intval($status);
+        } else {
+            $where .= ' WHERE status=' . self::STATUS_ACTIVE;
+        }
+        if ($uid !== null) $where .= ' AND uid=' . intval($uid);
+        if (!empty($name)) {
+            $where .= ' AND name=:name';
+            $bind[':name'] = trim($name);
+        }
+        if ($regionId !== null) $where .= ' AND reqion_id=' . intval($regionId);
+
+        $sql = 'SELECT ' . implode(',', $fields) . ' FROM ' . self::getInstance()->getTableName() . $where . ' LIMIT ' . ($nowPage - 1) * $pageSize . ',' . $pageSize;
+        $totalSql = 'SELECT count(*) total FROM ' . self::getInstance()->getTableName() . $where;
+        $pdo = get_pdo();
+        $sth = $pdo->prepare($sql);
+        $totalSth = $pdo->prepare($totalSql);
+        $totalSth->execute($bind);
+        $sth->execute($bind);
+        $lists = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        if (in_array('lnglat', $fields)) {
+            foreach ($lists as &$list) {
+                $list['lnglat'] = explode(' ', substr($list['lnglat'], 6, -1));
+            }
         }
         return [
-            'data' => self::getInstance()->field($fields)->where($where)->select()
+            'total' => (int)current($totalSth->fetch(\PDO::FETCH_ASSOC)),
+            'data' => $lists
         ];
     }
 
@@ -190,22 +245,44 @@ class MemberAddressModel extends RelationModel
      * @param string $address 收货地址
      * @param string|int $mobile 收货人联系方式
      * @param int $regionId 区域ID
+     * @param float $lng 经度
+     * @param float $lat 纬度
      * @return int|bool 添加成功返回地址ID，否则返回false
      */
-    public static function addAddress($uid, $name, $address, $mobile, $regionId)
+    public function addAddress($uid, $name, $address, $mobile, $regionId, $lng, $lat)
     {
-        $model = self::getInstance();
         $data = [
             'uid' => intval($uid),
             'name' => trim($name),
             'address' => trim($address),
             'mobile' => $mobile,
-            'region_id' => intval($regionId)
+            'region_id' => intval($regionId),
+            'lnglat' => 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')'
         ];
+        $model = self::getInstance();
         if (!$model->create($data)) {
-            E($model->getError());
+            E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         }
-        return $model->add();
+        $field = [];
+        $bind = [];
+        foreach ($data as $key => $item) {
+            $bindName = ':' . $key;
+            if ($this->fields['_type'][$key] == 'point') {
+                $field[] = 'st_geomfromtext(' . $bindName . ')';
+            } else {
+                $field[] = $bindName;
+            }
+            $bind[$bindName] = $item;
+        }
+        $pdo = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
+        $pdo->exec('SET NAMES ' . C('DB_CHARSET'));
+        $sql = 'INSERT INTO ' . self::getInstance()->getTableName() . '(' . implode(',', array_keys($data)) . ') VALUES('
+            . implode(',', $field) . ')';
+        $sth = $pdo->prepare($sql);
+        $sth->execute($bind);
+        $lastId = (int)$pdo->lastInsertId();
+        unset($pdo);
+        return $lastId;
     }
 
     /**
@@ -216,22 +293,43 @@ class MemberAddressModel extends RelationModel
      * @param string $address 收货地址
      * @param int|string $mobile 收货人联系方式
      * @param int $regionId 区域ID
+     * @param float $lng 经度
+     * @param float $lat 纬度
      * @return bool 是否更新成功
      */
-    public static function updateAddress($id, $name, $address, $mobile, $regionId)
+    public function updateAddress($id, $name = null, $address = null, $mobile = null, $regionId = null, $lng = null, $lat = null)
     {
         $model = self::getInstance();
-        $data = [
-            'id' => intval($id),
-            'name' => trim($name),
-            'address' => trim($address),
-            'mobile' => $mobile,
-            'region_id' => intval($regionId)
-        ];
-        if (!$model->create($data)) {
-            E($model->getError());
+        $data = [];
+        ## 组合要更新的数据
+        if (!empty($name)) $data['name'] = trim($name);
+        if (!empty($address)) $data['address'] = trim($address);
+        if (!empty($mobile)) $data['mobile'] = $mobile;
+        if (!empty($regionId)) $data['region_id'] = intval($regionId);
+        if (!empty($lng) && !empty($lat)) $data['lnglat'] = 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')';
+        if (!$model->create($data)) {//利用模型的规则检测数据是否合法
+            E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         }
-        return $model->save();
+        $field = [];//要更新的字段
+        $bind = [];//要绑定的数据
+        foreach ($data as $key => $item) {
+            if ($item === null) continue;
+            $bindName = ':' . $key;
+            if ($this->fields['_type'][$key] == 'point') {
+                $field[] = $key . '=st_geomfromtext(' . $bindName . ')';
+            } else {
+                $field[] = $key . '=' . $bindName;
+            }
+            $bind[$bindName] = $item;
+        }
+        $bind[':id'] = intval($id);
+        $pdo = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
+        $pdo->exec('SET NAMES ' . C('DB_CHARSET'));
+        $sql = 'UPDATE ' . self::getInstance()->getTableName() . ' SET ' . implode(',', $field) . ' WHERE id = :id';
+        $sth = $pdo->prepare($sql);
+        $result = $sth->execute($bind);
+        unset($pdo);
+        return $result;
     }
 
     /**

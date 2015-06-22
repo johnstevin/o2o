@@ -13,19 +13,21 @@ use Think\Model\AdvModel;
 /*
  * @author  WangJiang
  */
-class MerchantShopModel extends AdvModel{
+
+class MerchantShopModel extends AdvModel
+{
+    public static $model;//当前模型实例
     ## 状态常量
     const STATUS_DELETE=-1;//软删除
-    const STATUS_CLOSE = 0;//待审核,关闭
+    const STATUS_CLOSE = 2;//待审核,关闭
     const STATUS_ACTIVE = 1;//审核通过,正常
-    const STATUS_CHECKING = 2;//审核中
     const STATUS_DENIED = 3;//审核未通过
 
     /**
      * @author  WangJiang
      * @var array
      */
-    protected $fields=[
+    protected $fields = [
         'id',
         'title',
         'description',
@@ -37,12 +39,13 @@ class MerchantShopModel extends AdvModel{
         'open_time_mode',
         'begin_open_time',
         'end_open_time',
-        'delivery_range',
         'phone_number',
         'address',
-        'pid',
         'add_uid',
         'region_id',
+        'picture',
+        'staff_register_url',
+        'tags',
         '_type'=>[
             'id'=>'int',
             'title'=>'string',
@@ -55,12 +58,13 @@ class MerchantShopModel extends AdvModel{
             'open_time_mode'=>'int',
             'begin_open_time'=>'int',
             'end_open_time'=>'int',
-            'delivery_range'=>'int',
             'phone_number'=>'string',
             'address'=>'string',
-            'pid'=>'int',
             'add_uid'=>'int',
             'region_id'=>'int',
+            'picture'=>'int',
+            'staff_register_url'=>'string',
+            'tags'=>'array',
         ]
     ];
 
@@ -68,29 +72,19 @@ class MerchantShopModel extends AdvModel{
      * @author  WangJiang
      * @var string
      */
-    protected $pk     = 'id';
+    protected $pk = 'id';
 
     /**
      * @author  WangJiang
      * @var array
      */
     protected $_auto = array (
-        [##禁止客户端修改该值
-            'group_id',
-            'default_group_id',
-            self::MODEL_BOTH,
-            'callback'
-        ],
+        ['type',1,self::MODEL_INSERT],
         ['status',self::STATUS_CLOSE,self::MODEL_INSERT]
     );
 
-    public function default_group_id(){
-        return C('AUTH_GROUP_ID.MERCHANT_GROUP_ID');
-    }
-
     protected $readonlyField=[
         'type',
-        'pid',
         'add_uid',
         'region_id',
     ];
@@ -136,6 +130,16 @@ class MerchantShopModel extends AdvModel{
 //    ];
 
     /**
+     * 获得当前模型实例
+     * @author Fufeng NIe <niefufeng@gmail.com>
+     * @return MerchantShopModel
+     */
+    public static function getInstance()
+    {
+        return self::$model instanceof self ? self::$model : self::$model = new self;
+    }
+
+    /**
      * 查询周边商铺
      * @author  WangJiang
      * @param double $lat 查询中心维度，必须是百度坐标
@@ -148,7 +152,7 @@ class MerchantShopModel extends AdvModel{
      * @param int $order 排序，1-按距离，2-按评价
      * @return mixed
      */
-    public function getNearby($lat, $lng, $range,$words,$words_op,$tagId=0,$type=null,$order=1)
+    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1)
     {
         if (!is_numeric($lat) or !is_numeric($lng))
             //$this->error('坐标必须是数值', '', true);
@@ -167,41 +171,42 @@ class MerchantShopModel extends AdvModel{
             //$this->error('非法查询范围', '', true);
             E('非法查询范围');
 
-        $range=floatval($range);
-        $range+=$range*0.15;
+        $range = floatval($range);
+        $range += $range * 0.15;
 
         //当前时间，秒
-        $seconds=time()-strtotime("00:00:00");//8*3600;
+        $seconds = time() - strtotime("00:00:00");//8*3600;
 
-        $map['_string'] = 'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))<:dist
-        and (sq_merchant_shop.open_time_mode=2
+        $where='ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))<:dist and (sq_merchant_shop.open_time_mode=2
             or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
 
-        if(!is_null($type))
-            $map['type']=$type;
+        if (!is_null($type))
+            $map['type'] = $type;
 
 //        if (!in_array($tag, C('SHOP_TAG')))
 //            E('非法店面服务，可选项：\'\'表示所有店铺，\'商超\'，\'生鲜\'，\'洗车\'，\'送水\'');
 
         if ($tagId!=0){
-            $this->join('inner join sq_shop_tag on shop_id=sq_merchant_shop.id and tag_id=:tag_id');
+            $where.=' and sq_merchant_shop.id in (select shop_id from sq_shop_tag where tag_id=:tag_id)';
+            //$this->join('inner join sq_shop_tag on shop_id=sq_merchant_shop.id and tag_id=:tag_id');
             $this->bind(':tag_id',$tagId);
         }
 
         if (!empty($words))
             build_words_query(explode(',', $words), $words_op, ['sq_merchant_shop.title', 'sq_merchant_shop.description'], $map);
 
+        $map['_string'] =$where;
         $map['sq_merchant_shop.status&sq_merchant_shop.open_status']=1;
-
         $this->where($map)
             ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
             ->bind(':lng', $lng)
             ->bind(':lat', $lat)
             ->bind(':dist', $range)
-            ->bind(':seconds',$seconds)
+            ->bind(':seconds', $seconds)
             ->field([
                 'sq_merchant_shop.id'
                 ,'sq_merchant_shop.title'
+                ,'sq_merchant_shop.picture'
                 ,'sq_merchant_shop.description'
                 ,'sq_merchant_shop.type'
                 ,'sq_merchant_shop.phone_number'
@@ -219,17 +224,20 @@ class MerchantShopModel extends AdvModel{
                 ,'sq_merchant_shop.delivery_amount_cost'
                 ,'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat)) as distance'
                 ,'st_astext(sq_merchant_shop.lnglat) as lnglat'
+                ,'avg(sq_appraise.grade_1) as grade_1'
+                ,'avg(sq_appraise.grade_2) as grade_2'
+                ,'avg(sq_appraise.grade_3) as grade_3'
                 ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade']);
 
         if(1==$order)
             $this->order('distance');
         //TODO 暂时即时计算，后期应该定期计算存入shop表
-        else if(2==$order)
+        else if (2 == $order)
             $this->order('grade desc');
 
         $this->group('sq_merchant_shop.id');
 
-        $ret= $this->select();
+        $ret = $this->select();
         //print_r($this->getLastSql());die;
         return $ret;
     }
@@ -240,12 +248,11 @@ class MerchantShopModel extends AdvModel{
      * @param int $id 商铺ID
      * @return array|null
      */
-    public function get($id)
+    public function get($id, $field='*')
     {
         $id = intval($id);
         if (!$id) return null;
-        return $this->field(['id', 'title', 'description', 'type', 'open_status', 'open_time_mode'
-            , 'begin_open_time', 'end_open_time', 'delivery_range', 'phone_number', 'address', 'st_astext(lnglat) as lnglat'])->find($id);
+        return $this->field($field)->find($id);
     }
 
     /**
@@ -258,22 +265,91 @@ class MerchantShopModel extends AdvModel{
 
         $bind=[];
         $data=$this->data();
-        $vals=[];
+        $shopVals=[];
+        $shopFlds=[];
         foreach($data as $key=>$val){
             $bindName=":$key";
             if($this->fields['_type'][$key]=='point'){
-                $vals[]="st_geomfromtext($bindName)";
+                $shopVals[]="st_geomfromtext($bindName)";
                 $bind[$bindName]="POINT($val)";
-            }else{
-                $vals[]=$bindName;
+                $shopFlds[]=$key;
+            }else if($key!='tags'){
+                $shopVals[]=$bindName;
                 $bind[$bindName]=$val;
+                $shopFlds[]=$key;
             }
         }
 
-        $sql='INSERT INTO sq_merchant_shop('.implode(',',array_keys($data)).') VALUES('.implode(',',$vals).');';
+        $sql='INSERT INTO sq_merchant_shop('.implode(',',$shopFlds).') VALUES('.implode(',',$shopVals).');';
+        $sql.='SET @sid = last_insert_id();';
+        foreach($data as $key=>$val){
+            if($key=='tags'){
+                $a=explode(',',$val);
+                foreach($a as $i=>$tag){
+                    $bindName=":$key$i";
+                    $sql.="INSERT INTO sq_shop_tag(shop_id, tag_id) VALUES (@sid,$bindName);";
+                    $bind[$bindName]=$tag;
+                }
+            }
+        }
+        //
 
-        //print_r($sql);die;
+        $sql.='UPDATE sq_auth_access SET role_id=:role_id WHERE uid=:uid;';
+        $bind[':uid']=$data['add_uid'];
+        $bind[':role_id']=$data['type']==1
+            ?C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')
+            :C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');
+
+        //print_r($sql);var_dump($bind);die;
         return $this->doTransaction($sql, $bind);
+    }
+
+    /**
+     * 修改一条商铺信息
+     * @author  WangJiang
+     * @throws Exception
+     * @throws \Exception
+     */
+    public function save(){
+
+        $bind=[];
+        $data=$this->data();
+        $id=$data['id'];
+        $set=[];
+        $where=null;
+        foreach($data as $key=>$val){
+            $bindName=":$key";
+            if($key!=$this->pk) {
+                if($this->fields['_type'][$key]=='point'){
+                    $set[]="$key=st_geomfromtext($bindName)";
+                    $bind[$bindName]="POINT($val)";
+                }else if($key!='tags'){
+                    $set[]="$key=$bindName";
+                    $bind[$bindName]=$val;
+                }
+            }
+        }
+
+        $where=' id=:id';
+        $bind[':id']=$id;
+
+        //var_dump($data);die;
+
+        $sql='UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;";
+
+        foreach($data as $key=>$val){
+            if($key=='tags'){
+                $sql.="DELETE FROM sq_shop_tag WHERE shop_id=:id;";
+                $a=explode(',',$val);
+                foreach($a as $i=>$tag){
+                    $bindName=":$key$i";
+                    $sql.="INSERT INTO sq_shop_tag(shop_id, tag_id) VALUES (:id,$bindName);";
+                    $bind[$bindName]=$tag;
+                }
+            }
+        }
+
+        $this->doTransaction($sql, $bind);
     }
 
     protected function _after_find(&$result,$options='') {
@@ -296,73 +372,17 @@ class MerchantShopModel extends AdvModel{
     }
 
     /**
-     * 修改一条商铺信息
-     * @author  WangJiang
-     * @throws Exception
-     * @throws \Exception
-     */
-    public function save(){
-
-        $bind=[];
-        $data=$this->data();
-        $set=[];
-        $where=null;
-        foreach($data as $key=>$val){
-            $bindName=":$key";
-            if($key==$this->pk) {
-                $where = "$key=$bindName";
-                $bind[$bindName] = $val;
-            }else{
-                if($this->fields['_type'][$key]=='point'){
-                    $set[]="$key=st_geomfromtext($bindName)";
-                    $bind[$bindName]="POINT($val)";
-                }else{
-                    $set[]="$key=$bindName";
-                    $bind[$bindName]=$val;
-                }
-            }
-        }
-
-        $sql='UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;";
-        //print_r($sql);die;
-
-        $this->doTransaction($sql, $bind);
-    }
-
-    /**
      * 在实务环境下执行一条语句
      * @author  WangJiang
      * @param $sql  SQL语句
      * @param $bind 绑定参数
      * @throws Exception
      * @throws \Exception
+     * @return int
      */
     public function doTransaction($sql, $bind)
     {
-        //TODO:目前ThinkPHP不支持空间类型字段
-        $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'));
-        $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-        $stmt = $dbh->prepare($sql);
-        foreach ($bind as $k => $v) {
-            $stmt->bindValue($k, $v);
-        }
-
-        $newid=null;
-        try {
-            $dbh->beginTransaction();
-            $stmt->execute();
-            $newid= $dbh->lastInsertId();
-            //test for transaction
-            //throw new Exception();
-            $dbh->commit();
-            return $newid;
-        } catch (Exception $e) {
-            $dbh->rollBack();
-            throw $e;
-        } finally {
-            unset($dbh);
-        }
+        db_transaction($sql, $bind);
     }
 
     /**
@@ -373,18 +393,23 @@ class MerchantShopModel extends AdvModel{
     protected function _after_query_row(&$row)
     {
         foreach ($row as $k => &$v) {
-            $type=$this->fields['_type'][$k];
+            $type = $this->fields['_type'][$k];
             if ($type == 'point') {
                 $lls = substr($v, 6, strlen($v) - 7);
                 $ll = explode(' ', $lls);
                 $v = [floatval($ll[0]), floatval($ll[1])];
-            }else if($type=='int'){
-                $v=intval($v);
-            }else if($type=='float'){
-                $v=floatval($v);
+            } else if ($type == 'int') {
+                $v = intval($v);
+            } else if ($type == 'float') {
+                $v = floatval($v);
             }
-            if($k=='distance'){
-                $v=floatval($v);
+            if ($k == 'distance') {
+                $v = floatval($v);
+            }
+            if($k=='picture_ids'){
+                $v=explode(',',$v);
+            }if($k=='grade'){
+                $v=intval($v);
             }
         }
     }

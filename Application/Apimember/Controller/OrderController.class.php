@@ -15,7 +15,7 @@ use Common\Model\OrderModel;
 class OrderController extends ApiController
 {
     /**
-     * 设置购物车
+     * 设置购物车,需要accesstoken
      * @author WangJiang
      * @return json
      * <pre>
@@ -45,7 +45,7 @@ class OrderController extends ApiController
     {
         try {
             if (IS_POST) {
-                $uid=$this->getUserId();
+                $uid = $this->getUserId();
                 $data = json_decode(file_get_contents('php://input'));
                 if (F("user/cart/$uid", $data) !== false)
                     $this->apiSuccess(null, '设置成功');
@@ -59,7 +59,7 @@ class OrderController extends ApiController
     }
 
     /**
-     * 获得购物车
+     * 获得购物车,需要accesstoken
      * @author WangJiang
      * @return json
      * <pre>
@@ -82,7 +82,7 @@ class OrderController extends ApiController
     public function getCart()
     {
         try {
-            $uid=$this->getUserId();
+            $uid = $this->getUserId();
             $data = F("user/cart/$uid");
             if ($data !== false)
                 $this->apiSuccess(['data' => $data]);
@@ -149,7 +149,7 @@ class OrderController extends ApiController
     }
 
     /**
-     * ###获得订单列表
+     * ###获得订单列表,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param null|int $shopId 商铺ID
      * @param null|int $userId 用户ID
@@ -237,7 +237,7 @@ class OrderController extends ApiController
     }
 
     /**
-     * ###根据ID获取单个订单
+     * ###根据ID获取单个订单,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param int $id 订单ID
@@ -303,7 +303,7 @@ class OrderController extends ApiController
     }
 
     /**
-     * ###获取子订单列表
+     * ###获取子订单列表,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param int $orderId 订单ID
@@ -347,7 +347,7 @@ class OrderController extends ApiController
     }
 
     /**
-     * ###提交订单
+     * ###提交订单,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param int $userId 用户ID
@@ -366,7 +366,7 @@ class OrderController extends ApiController
     }
 
     /**
-     * ###更新订单信息
+     * ###更新订单信息,需要accesstoken
      * @param int $id
      * @param null|int $payMode
      * @param null|int $deliveryMode
@@ -381,7 +381,7 @@ class OrderController extends ApiController
     }
 
     /**
-     * ###更新订单状态
+     * ###更新订单状态,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param int $id 订单ID
@@ -393,7 +393,7 @@ class OrderController extends ApiController
     }
 
     /**
-     * ###更新订单支付方式
+     * ###更新订单支付方式,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 订单ID
      * @param int $payMode 要更新为哪个支付方式
@@ -404,7 +404,7 @@ class OrderController extends ApiController
     }
 
     /**
-     * ###更新支付状态
+     * ###更新支付状态,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 订单ID
      * @param int $payStatus 要更新为哪个订单状态
@@ -415,12 +415,17 @@ class OrderController extends ApiController
     }
 
     /**
-     * ###取消订单
+     * ###取消订单,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 订单ID
      */
     public function cancelOrder($id)
     {
         $this->apiSuccess(['data' => OrderModel::updateOrderStatus($id, OrderModel::STATUS_CANCEL)]);
+    }
+
+    public function initOrder($cart, $deliveryMode, $split)
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->initOrder($cart, $deliveryMode, $split)]);
     }
 }

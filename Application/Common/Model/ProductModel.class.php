@@ -15,6 +15,7 @@ class ProductModel extends RelationModel
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
+    const STATUS_VERIFY = 2;//待审核
 
     //模型的字段
     protected $fields = [
@@ -27,6 +28,7 @@ class ProductModel extends RelationModel
         'add_ip',
         'edit_time',
         'status',
+        'picture',
         '_type' => [
             'id' => 'int',
             'title' => 'varchar',
@@ -38,7 +40,8 @@ class ProductModel extends RelationModel
             'add_ip' => 'bigint',
             'edit_time' => 'int',
             'edit_ip' => 'bigint',
-            'status' => 'tinyint'
+            'status' => 'tinyint',
+            'picture'=>'int'
         ]
     ];
     /**
@@ -79,7 +82,8 @@ class ProductModel extends RelationModel
             'status',
             [
                 self::STATUS_CLOSE,
-                self::STATUS_ACTIVE
+                self::STATUS_ACTIVE,
+                self::STATUS_VERIFY
             ],
             '状态的范围不正确',
             self::EXISTS_VALIDATE,
@@ -118,7 +122,7 @@ class ProductModel extends RelationModel
         ],
         [
             'status',
-            self::STATUS_ACTIVE,
+            self::STATUS_VERIFY,
             self::MODEL_INSERT
         ]
     ];
@@ -148,6 +152,7 @@ class ProductModel extends RelationModel
             'foreign_key' => 'product_id',
             'relation_foreign_key' => 'category_id',
             'mapping_name' => '_categorys',
+            'relation_table' => 'sq_product_category'
         ]
     ];
 
@@ -199,54 +204,108 @@ class ProductModel extends RelationModel
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param null|string|array|int $categoryIds 分类ID，可传数组、NULL、以逗号分割的ID号或单个ID
      * @param null|string|array|int $brandId 品牌ID，可传数组、NULL、以逗号分割的ID号或单个ID
+     * @param int $normsIds 规格ID
      * @param null|int $status 状态，可传null或数字
      * @param null|string $title 商品标题，用于模糊搜索，可传NULL
      * @param int $pageSize 分页大小，默认为10
      * @param bool $getCategorys 是否关联查询分类
      * @param bool $getBrand 是否关联查询品牌
+     * @param string|array $fields 要查询的字段
      * @return array
      */
-    public static function getLists($categoryIds = null, $brandId = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $getCategorys = false, $getBrand = false)
+    public static function getLists($categoryIds = null, $brandId = null, $normsIds = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $getCategorys = false, $getBrand = false, $fields = '*')
     {
         $where = [];
-        $productIds = null;
-        $relation = [];
-        if ($getCategorys) $relation[] = '_categorys';
-        if ($getBrand) $relation[] = '_brand';
-        if (!empty($categoryIds)) {//如果分类ID不为空，则先查询出分类下所有的商品ID
-            $categoryIds = is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds);
-            $categoryIds = array_unique($categoryIds);
-            $categoryProducts = M('product_category')->where(['category_id' => ['IN', $categoryIds]])->select();
-            if (empty($categoryProducts)) {
-                return [
-                    'data' => [],
-                    'pagination' => ''
-                ];
-            }
-            $productIds = array_map(function ($value) {
-                return $value['product_id'];
-            }, $categoryProducts);
+        if ($status === null || !array_key_exists($status, self::getStatusOptions())) {//如果状态为空或者不在系统定义的状态里
+            $status = self::STATUS_ACTIVE;
         }
-        if (!empty($brandId)) {
-            $brandId = is_array($brandId) ? $brandId : explode(',', $brandId);
-            $where['brands'] = ['IN', array_unique($brandId)];
+        $bind = [
+            ':status' => $status
+        ];
+        switch (gettype($fields)) {//判断字段类型
+            case 'string':
+                $fields = trim($fields);
+                if ($fields === '*') {
+                    $fields = 'p.*';
+                } else {
+                    $fields = 'p.' . implode(',p.', array_unique(explode(',', $fields)));
+                }
+                break;
+            case 'array':
+                $fields = 'p.' . implode(',p.', array_unique($fields));
+                break;
+            default:
+                $fields = 'p.*';
+                break;
         }
-        if (!empty($status)) $where['status'] = in_array($status, array_keys(self::getStatusOptions())) ? $status : self::STATUS_ACTIVE;
-        if (!empty($title)) $where['title'] = ['LIKE', trim($title)];
-        $model = self::getInstance();
-        if ($productIds) {
-            $subSql = $model->where(['id' => ['IN', $productIds]])->buildSql();
-            $total = $model->table($subSql . ' sub')->where($where)->count('id');
-            $pagination = new Page($total, $pageSize);
-            $data = $model->relation($relation)->table($subSql . ' sub')->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+        if ($getBrand) {//如果需要获取品牌信息
+            $fields .= ',b.title _brand_name,b.logo _brand_logo';//增加读取品牌名称和品牌logo
+            $getBrand = ' LEFT JOIN ' . BrandModel::getInstance()->getTableName() . ' b ON p.brand_id=b.id';
         } else {
-            $total = $model->where($where)->count('id');
-            $pagination = new Page($total, $pageSize);
-            $data = $model->relation($relation)->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+            $getBrand = '';
+        }
+        //查询的SQL
+        $sql = 'SELECT ' . $fields . ' FROM ' . self::getInstance()->getTableName() . ' p' . $getBrand . ' WHERE p.status = :status';
+        //统计的SQL
+        $totalSql = 'SELECT COUNT(p.id) total FROM ' . self::getInstance()->getTableName() . ' p WHERE p.status = :status';
+        if (!empty($brandId)) {//如果品牌ID不会空，则根据品牌ID查询
+            $brandId = is_array($brandId) ? implode(',', $brandId) : $brandId;
+            $bind[':brandId'] = trim($brandId);//ID去重
+            $sql .= ' and brand_id IN (:brandId)';
+        }
+        if (!empty($title)) {//如果传入了标题，就对标题进行模糊查询
+            $bind[':title'] = '%' . $title . '%';
+            $sql .= ' and title like :title';
+        }
+        if (!empty($categoryIds)) {//如果要根据分类ID来查询
+            $categoryIds = array_unique(is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds));//ID去重
+            $categorySql = ' and p.id IN(SELECT product_id FROM ' . C('DB_PREFIX') . 'product_category WHERE category_id IN (';
+            foreach ($categoryIds as $id) {
+                $categorySql .= intval($id) . ',';
+            }
+            $categorySql = rtrim($categorySql, ',') . '))';//去除最右那个多余的,
+            //查询数据的SQL
+            $sql .= $categorySql;
+            //统计数据的SQL
+            $totalSql .= $categorySql;
+        }
+        if (!empty($normsIds)) {//如果规则ID不会空
+            $normsIds = array_unique(is_array($normsIds) ? $normsIds : explode(',', $normsIds));//ID去重
+            $normsSql = ' AND p.norms_id IN (';
+            foreach ($normsIds as $id) {//组合数据
+                $normsSql .= intval($id) . ',';
+            }
+            $normsSql = rtrim($normsSql, ',') . ')';//去除最右那个多余的,
+            $sql .= $normsSql;
+            $totalSql .= $normsSql;
+        }
+        $sql .= ' limit ' . ($_GET['p'] ? $_GET['p'] - 1 : 0) * $pageSize . ',' . $pageSize;//对列表进行分页
+        $pdo = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
+        $pdo->exec('SET NAMES ' . C('DB_CHARSET'));//设置编码字符集
+        $sth = $pdo->prepare($sql);
+        $sth->execute($bind);
+        $totalSth = $pdo->prepare($totalSql);
+        $totalSth->execute($bind);
+        $total = $totalSth->fetch(\PDO::FETCH_ASSOC);
+        $lists = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($lists as &$item) {
+            if (!empty($item['add_ip'])) $item['add_ip'] = long2ip($item['add_ip']);
+            if (!empty($item['edit_ip'])) $item['edit_ip'] = long2ip($item['edit_ip']);
+            if ($getBrand) {//如果获取了品牌，则把品牌信息压入下级数组，并删除当前级的数据
+                $item['_brand'] = [
+                    'name' => $item['_brand_name'],
+                    'logo' => $item['_brand_logo']
+                ];
+                unset($item['_brand_name'], $item['_brand_logo']);
+            }
+            if ($getCategorys) {//如果需要获取分类信息，则独立发送一条SQL查询（由于参数来自数据库查询的结果，所以不用做参数绑定）
+                $categorys = $pdo->query('select id,title,list_row,description,icon,level from sq_category WHERE id IN (SELECT category_id FROM sq_product_category WHERE product_id =' . $item['id'] . ') AND status=' . CategoryModel::STATUS_ACTIVE);
+                $item['_categorys'] = $categorys->fetchAll(\PDO::FETCH_ASSOC);
+            }
         }
         return [
-            'data' => $data,
-            'pagination' => $pagination->show()
+            'total' => $total ? (int)$total['total'] : 0,//总数统计
+            'data' => $lists,//当前页码的数据
         ];
     }
 
@@ -265,11 +324,33 @@ class ProductModel extends RelationModel
         $relation = [];
         if ($getCategory) $relation[] = '_categorys';
         if ($getBrand) $relation[] = '_brand';
-        return $id ? self::getInstance()->relation($relation)->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
+        return $id ? self::getInstance()->relation($relation)->where(['status' => ['in',[self::STATUS_ACTIVE,self::STATUS_VERIFY]]
+            , 'id' => $id])->field($fields)->find() : null;
+    }
+
+    /**
+     * 根据商品条形码查询商品
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int|string $number 商品条形码
+     * @param string|array $fields 要查询的字段
+     * @param bool $getCategorys 是否需要关联查询分类
+     * @param bool $getBrand 是否需要关联查询品牌
+     * @return array|mixed
+     */
+    public function getByNumber($number, $fields = '*', $getCategorys = false, $getBrand = false)
+    {
+        $number = is_string($number) ? trim($number) : $number;
+        if (empty($number)) return [];
+        $relation = [];
+        if ($getBrand) $relation[] = '_brand';//关联查询品牌
+        if ($getCategorys) $relation[] = '_categorys';
+        $model = self::getInstance();
+        return $model->relation($relation)->field($fields)->where(['number' => $number, 'status' => self::STATUS_ACTIVE])->find();
     }
 
     /**
      * 根据ID查询商品列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
      * @param string|array $ids 多个商品ID
      * @param bool $fields 要查询的字段，默认为所有
      * @param bool $getBrand 是否获得品牌信息

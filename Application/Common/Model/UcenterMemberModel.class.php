@@ -9,6 +9,12 @@ class UcenterMemberModel extends AdvModel
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
 
+    protected $_validate = array(
+        array('real_name','','真实姓名已存在',self::EXISTS_VALIDATE, 'unique'),
+        array('email','','邮箱已存在',self::EXISTS_VALIDATE, 'unique'),
+
+    );
+
     /**
      * 获取当前模型实例
      * @author Fufeng Nie <niefufeng@gmail.com>
@@ -43,4 +49,6 @@ class UcenterMemberModel extends AdvModel
         $id = intval($id);
         return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fileds)->find() : null;
     }
+
+
 }

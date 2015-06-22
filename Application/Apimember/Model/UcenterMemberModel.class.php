@@ -157,9 +157,7 @@ class UcenterMemberModel extends AdvModel {
         );
 
         $token=$user['id'];
-        session('member_auth'.$token, $auth);
-        session('member_auth_sign'.$token, data_auth_sign($auth));
-
+        set_member_login($token,$auth);
         return encode_token($token);
     }
 
@@ -168,9 +166,35 @@ class UcenterMemberModel extends AdvModel {
      * @return void
      * @deprecated
      */
-    public function logout(){
-        session('member_auth', null);
-        session('member_auth_sign', null);
+    public function logout($token){
+        clear_member_login($token);
+    }
+
+
+    public function saveInfo( $data ) {
+        try {
+
+            empty($data) ? E('修改字段不能为空') : '';
+            $data = $this->create($data);
+            if(empty($data))
+                E('创建对象失败');
+            if(empty($data['id'])){
+                $id = $this->add();
+                if(!$id)
+                    E('新增失败');
+            } else {
+                $status = $this->save();
+                if(false === $status)
+                    E('更新失败');
+                return true;
+            }
+
+
+        } catch (\Exception $ex) {
+
+            return $ex->getMessage();
+
+        }
     }
 
 

@@ -28,6 +28,7 @@ class MerchantDepotModel extends RelationModel
     const STATUS_DELETE = -1;//逻辑删除
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
+    const STATUS_VERIFY = 2;//待审核
 
     protected $_link = [
         'Product' => [
@@ -140,7 +141,8 @@ class MerchantDepotModel extends RelationModel
             [
                 self::STATUS_DELETE,
                 self::STATUS_CLOSE,
-                self::STATUS_ACTIVE
+                self::STATUS_ACTIVE,
+                self::STATUS_VERIFY,
             ],
             '状态的范围不正确',
             self::EXISTS_VALIDATE,
@@ -180,7 +182,7 @@ class MerchantDepotModel extends RelationModel
         ],
         [
             'status',
-            self::STATUS_ACTIVE,
+            self::STATUS_VERIFY,
             self::MODEL_INSERT
         ]
     ];
@@ -205,7 +207,8 @@ class MerchantDepotModel extends RelationModel
         return [
             self::STATUS_DELETE => '逻辑删除',
             self::STATUS_CLOSE => '关闭',
-            self::STATUS_ACTIVE => '正常'
+            self::STATUS_ACTIVE => '正常',
+            self::STATUS_VERIFY => '待审核'
         ];
     }
 
@@ -316,7 +319,100 @@ class MerchantDepotModel extends RelationModel
         return $ret;
     }
 
+    public function getProductList($shopIds, $categoryId, $brandId, $normId, $title
+        , $priceMin, $priceMax
+        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = []){
+
+        $shopIds = $this->_filter_shops($shopIds, $groupIds);
+        list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
+
+        $where='sq_merchant_depot.shop_id in (' . implode(',', $shopBindNames) . ')';
+
+        if (!empty($categoryId)) {
+            $where.=' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id in (select product_id from sq_product_category where category_id=:categoryId)';
+            $bindValues[':categoryId']=$categoryId;
+        }
+
+        //TODO 加上品牌规格查询
+        $product_sql='JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1';
+        if (!empty($categoryId)) {
+            $product_sql.=' and sq_product.id in (select product_id from sq_product_category where category_id=:categoryId)';
+            $bindValues[':categoryId']=$categoryId;
+        }
+        if (!empty($title)) {
+            $product_sql.=' and sq_product.title like :title';
+            $bindValues[':title'] = '%' . $title . '%';
+        }
+        if (!empty($brandId)) {
+            $product_sql .= ' and sq_product.brand_id=:brandId';
+            $bindValues[':brandId'] = $brandId;
+        }
+        if (!empty($normId)) {
+            $product_sql .= ' and sq_product.norms_id=:normId';
+            $bindValues[':normId'] = $normId;
+        }
+        $this->join($product_sql);
+        //$this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
+        $this->join('JOIN sq_brand as brand on brand.id=sq_product.brand_id');
+        $this->join('JOIN sq_norms as norm on norm.id=sq_product.norms_id');
+
+        $this->where($where);
+        $this->bind($bindValues);
+
+        $this->field(['sq_merchant_depot.product_id'
+            ,'sq_product.title as product','brand.id as brand_id'
+            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm']);
+
+        $this->group('sq_merchant_depot.product_id')
+            //->order('sq_merchant_depot.product_id,sq_merchant_depot.price')
+            ->limit($page, $pageSize);
+        //echo '<pre>';
+        //var_dump($bindValues);die;
+        $data=$this->select();
+        //print_r($this->getLastSql());die;
+
+        foreach($data as &$dpt){
+            list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
+            $this->field(['sq_merchant_depot.id'
+                ,'sq_merchant_depot.price'
+                ,'sq_merchant_shop.id as shop_id'
+                ,'sq_merchant_shop.title as shop']);
+            $this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
+            $this->where('shop_id in (' . implode(',', $shopBindNames) . ') and product_id =:productId');
+            $bindValues[':productId']=$dpt['product_id'];
+            $this->bind($bindValues);
+            $alters=$this->select();
+
+            $minPrice = null;
+            $maxPrice = null;
+            $depot=null;
+            foreach($alters as &$al){
+                if (is_null($minPrice))
+                    $minPrice = $al['price'];
+                else
+                    $minPrice = min($minPrice, $al['price']);
+
+                if (is_null($maxPrice))
+                    $maxPrice = $al['price'];
+                else
+                    $maxPrice = max($maxPrice, $al['price']);
+                if(is_null($depot))
+                    $depot=$al;
+                if($al['price']<=$minPrice)
+                    $depot=$al;
+            }
+            $dpt['id']=$depot['id'];
+            $dpt['price']=$depot['price'];
+            $dpt['shop_id']=$depot['shop_id'];
+            $dpt['shop']=$depot['shop'];
+            $dpt['price_range'] = [$minPrice, $maxPrice];
+            $dpt['alters']=$alters;
+        }
+        return $data;
+    }
+
     /**
+     * @ignore
      * 查询商家商品
      * @author  WangJiang
      * @param array $shopIds 商铺ID
@@ -333,7 +429,7 @@ class MerchantDepotModel extends RelationModel
      * @param array $groupIds 登录用户分组，用来检查用户对shopIds的访问权限，为空则不检查。
      * @return array
      */
-    public function getProductList($shopIds, $categoryId, $brandId, $normId, $title
+    public function getProductList_($shopIds, $categoryId, $brandId, $normId, $title
         , $priceMin, $priceMax
         , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = [])
     {
@@ -344,7 +440,7 @@ class MerchantDepotModel extends RelationModel
 
         $this->join('INNER JOIN sq_merchant_shop as shop on shop.id in (' . implode(',', $shopBindNames) . ') and shop.id=sq_merchant_depot.shop_id');
 
-        $sql_pro = 'INNER JOIN sq_product as pro on pro.id=sq_merchant_depot.product_id and pro.status=1';
+        $sql_pro = 'INNER JOIN sq_product as pro on pro.status=1';
 
         if (!empty($title)) {
             $sql_pro .= ' and pro.title like :title';
@@ -391,7 +487,7 @@ class MerchantDepotModel extends RelationModel
             $bindValues[':cateId'] = $categoryId;
         }
 
-        $this->field(['sq_merchant_depot.id', 'pro.id as product_id','pro.description'
+        $this->field(['sq_merchant_depot.id', 'pro.id as product_id', 'pro.description'
             , 'pro.title as product', 'sq_merchant_depot.price', 'sq_merchant_depot.add_time'
             , 'shop.id as shop_id', 'shop.title as shop', 'brand.id as brand_id'
             , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm']);
@@ -499,34 +595,35 @@ class MerchantDepotModel extends RelationModel
         //获取产品信息和所属分类
         $product = ProductModel::get($productId, ['price', 'id'], true);
         $data['price'] = empty($price) && $product ? (float)$product['price'] : (float)$price;
-        $model = self::getInstance();
-        $model->startTrans();//启动事务
+
         $depotCategoryModel = M('merchant_depot_pro_category');
         $ids = is_array($product['_categorys']) ?: explode(',', $product['_categorys']);
         $ids = array_unique($ids);
-        $categorys = [];
+        $categoris = [];
         foreach ($ids as $id) {
             //如果没有找到相应的分类才添加
             if (!$depotCategoryModel->where(['shop_id' => $shopId, 'category_id' => $id])->find()) {
-                $categorys[] = [
+                $categoris[] = [
                     'shop_id' => $shopId,
                     'category_id' => $id
                 ];
             }
         }
+        $model = self::getInstance();
         if (!$model->create($data))
             E(current($model->getError()));
+        $model->startTrans();//启动事务
         try {
             isset($data['id']) ? $status = $model->where(['id' => $data['id']])->save() : $status = $model->add();
-            if ($status && $depotCategoryModel->addAll($categorys)) {
+            if ($status && $depotCategoryModel->addAll($categoris)) {
                 $model->commit();//提交事务
                 return $model->getLastInsID();
             } else {
                 E('添加或更新商品失败');
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $model->rollback();//回滚事务
-            return false;
+            throw $e;
         }
     }
 

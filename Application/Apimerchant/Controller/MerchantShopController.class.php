@@ -20,12 +20,11 @@ class MerchantShopController extends ApiController
 
     /**
      * <pre>
-     * 修改商铺信息
+     * 修改商铺信息,需要accesstoken
      * 参数按照Form表单的格式提交，参数列表：
      * int id 商铺ID，必需提供
      * string title 店面名称
      * string description 店面介绍
-     * int status -1软删除,0-待审核,1-审核通过,2-审核中,3-审核未通过
      * string lnglat 格式为'lng lat'，店面坐标，采用百度地图经纬度
      * int open_status 营业状态：0-关闭，1-开放
      * int open_time_mode 营业时间模式，1-有时间段，2-7X24小时
@@ -59,12 +58,12 @@ class MerchantShopController extends ApiController
     {
         try {
             if (IS_POST) {
-                //TODO 验证用户权限
-                //$this->getUserId();
-
                 $model = D('MerchantShop');
-                if (!$model->create())
+                if (!($data=$model->create()))
                     E('参数传递失败');
+                can_modify_shop($this->getUserId(),$data['id']);
+
+                $model->data($data);
                 $model->save();
                 $this->apiSuccess(null, '');
             } else
@@ -75,7 +74,7 @@ class MerchantShopController extends ApiController
     }
 
     /**
-     * 新增商铺信息
+     * 新增商铺信息,需要accesstoken
      * @internal 参数按照Form表单的格式提交，参数列表参考{@link update()}
      * @see MerchantShopController::update
      * @author WangJiang
@@ -97,8 +96,8 @@ class MerchantShopController extends ApiController
                 if (!($data=$model->create()))
                     E('参数传递失败');
                 //TODO 验证用户权限
-                //$data['add_uid']=$this->getUserId();
-
+                $data['add_uid']=$this->getUserId();
+                $data['group_id']=$this->_get_group_id($data['type']);
                 $model->data($data);
                 $this->apiSuccess(['id' => intval($model->add())],'');
             } else
@@ -108,10 +107,15 @@ class MerchantShopController extends ApiController
         }
     }
 
+    private function _get_group_id($type){
+        return $type==1
+            ?C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_SHOP')
+            :C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_VEHICLE');
+    }
+
     /**
-     * 获得商铺列表
+     * 获得商铺列表,需要accesstoken
      * @author WangJiang
-     * @param null $pid 上级商铺ID
      * @param null $regionId 区域ID
      * @param string $type 商铺类型
      * @param null $title 标题，模糊查询
@@ -170,21 +174,24 @@ class MerchantShopController extends ApiController
      *}
      * '''
      */
-    public function getList($pid = null, $regionId = null, $type = '0', $title = null)
+    public function getList($regionId = null, $type = 1, $title = null,$status=null,$page=1,$pageSize=10)
     {
         try {
             if (IS_GET) {
                 //TODO 验证用户权限
-                //$this->getUserId();
+                $pageSize > 50 and $pageSize = 50;
+                $page--;
+                $page *= $pageSize;
 
+                $groupIds=$this->getUserGroupIds();
                 $model = D('MerchantShop');
-                $groupId=$model->default_group_id();
 
-                $where['group_id'] = $groupId;
-                !is_null($pid) and $where['pid'] = $pid;
+                $where['group_id'] = ['in',$groupIds];
+
                 !is_null($regionId) and $where['region_id'] = $regionId;
                 $type !== '0' and $where['type'] = $type;
                 !is_null($title) and $where['title'] = ['like', "%$title%"];
+                !is_null($status) and $where['status']=$status;
                 $data = $model->field(['id',
                     'title',
                     'description',
@@ -197,7 +204,6 @@ class MerchantShopController extends ApiController
                     'end_open_time',
                     'phone_number',
                     'address',
-                    'pid',
                     'add_uid',
                     'region_id',
                     'pay_delivery_time',
@@ -208,12 +214,23 @@ class MerchantShopController extends ApiController
                     'free_delivery_amount',
                     'pay_delivery_amount',
                     'delivery_amount_cost',
-                    #'pay_delivery_mode',
+                    'message',
+                    'picture',
                     'st_astext(lnglat) as lnglat'])
-                    ->where($where)->select();
-                //print_r($model->getLastSql());
-                //print_r($data);
-                $this->apiSuccess(['data' => $data]);
+                    ->where($where)->limit($page,$pageSize)->select();
+
+                foreach($data as &$i){
+                    $sid=$i['id'];
+                    $tags=D()->query("select tag_id from sq_shop_tag where shop_id=$sid;");
+                    //print_r($i);print_r($tags);die;
+                    foreach($tags as $t){
+                        $i['tags'][]=$t['tag_id'];
+                    }
+                }
+
+                //print_r($model->getLastSql());die;
+                //print_r($data);die;
+                $this->apiSuccess(['data' => $data],'');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {
@@ -239,13 +256,13 @@ class MerchantShopController extends ApiController
      * }
      * ```
      */
-    public function getTypes(){
-        try{
-            $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
-        }catch (\Exception $ex){
-            $this->apiError(50024,$ex->getMessage());
-        }
-    }
+//    public function getTypes(){
+//        try{
+//            $this->apiSuccess(['data'=>C('SHOP_TYPE')]);
+//        }catch (\Exception $ex){
+//            $this->apiError(50024,$ex->getMessage());
+//        }
+//    }
 
 //    /**
 //     * <pre>
@@ -300,85 +317,5 @@ class MerchantShopController extends ApiController
 //            $this->apiError(50023,$ex->getMessage());
 //        }
 //    }
-
-    /**
-     * 获得商铺服务类型
-     * @author WangJiang
-     * @param $shopId
-     * @return jaon
-     * ``` json
-     * {
-     *  "success": true,
-     *  "error_code": 0,
-     *  "data":
-     *  [
-     *      "<类别ID>",...
-     *  ]
-     * }
-     * ```
-     * 调用样例 GET apimchant.php?s=/MerchantShop/getTags/shopId/4
-     * ``` json
-     * {
-     *  "success": true,
-     *  "error_code": 0,
-     *  "data":
-     *  [
-     *      "1",
-     *      "2"
-     *  ]
-     * }
-     * ```
-     */
-    public function getTags($shopId){
-        try{
-            $data=M('ShopTag')->where(['shop_id'=>$shopId])->select();
-            $ret=[];
-            foreach($data as $v){
-                $ret[]=$v['tag_id'];
-            }
-            $this->apiSuccess(['data'=>$ret]);
-        }catch (\Exception $ex){
-            $this->apiError(50025,$ex->getMessage());
-        }
-    }
-
-    /**
-     * 设置商铺服务类型
-     * @author WangJiang
-     * @param $shopId
-     * @post json
-     * ``` json
-     * [
-     *  "<类别ID>",...
-     * ]
-     * ```
-     * @return json
-     * 调用样例 POST apimchant.php?s=/MerchantShop/setTags/shopId/4
-     * ``` json
-     * ["1","2"]
-     * ```
-     */
-    public function setTags($shopId){
-        try{
-            if(!IS_POST)
-                E('非法操作');
-            $content=json_decode(file_get_contents('php://input'));
-            $m=M('ShopTag');
-            $m->startTrans();
-            try{
-                $m->where(['shop_id'=>$shopId])->delete();
-                foreach($content as $tag){
-                    $m->add(['shop_id'=>$shopId,'tag_id'=>$tag]);
-                }
-                $m->commit();
-                $this->apiSuccess(null,'修改成功');
-            }catch (\Exception $ex){
-                $m->rollback();
-                throw $ex;
-            }
-        }catch (\Exception $ex){
-            $this->apiError(50026,$ex->getMessage());
-        }
-    }
 
 }

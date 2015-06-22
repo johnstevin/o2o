@@ -58,7 +58,7 @@ function build_words_query($words, $words_op, $flds, &$map)
 function list_sort_by($list, $field, $sortby = 'asc')
 {
     if (is_array($list)) {
-        $refer = $resultSet = array();
+        $refer = $resultSet = [];
         foreach ($list as $i => $data)
             $refer[$i] = &$data[$field];
         switch ($sortby) {
@@ -91,12 +91,13 @@ function list_sort_by($list, $field, $sortby = 'asc')
 function list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = 0)
 {
     // 创建Tree
-    $tree = array();
+    $tree = [];
     if (is_array($list)) {
         // 创建基于主键的数组引用
-        $refer = array();
+        $refer = [];
         foreach ($list as $key => $data) {
             $refer[$data[$pk]] =& $list[$key];
+            $refer[$data[$pk]][$child]=[];
         }
         foreach ($list as $key => $data) {
             // 判断是否存在parent
@@ -122,7 +123,7 @@ function list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root 
  * @param  array $list 过渡用的中间数组，
  * @return array        返回排过序的列表数组
  */
-function tree_to_list($tree, $child = '_child', $order = 'id', &$list = array())
+function tree_to_list($tree, $child = '_child', $order = 'id', &$list = [])
 {
     if (is_array($tree)) {
         foreach ($tree as $key => $value) {
@@ -158,6 +159,17 @@ function check_user_exist($id)
 function check_merchant_exist($id)
 {
     return \Common\Model\MerchantModel::checkMerchantExist($id);
+}
+
+/**
+ * 检测用户中心是否存在这个用户
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @param int $id 用户ID
+ * @return bool
+ */
+function check_ucenter_member_exist($id)
+{
+    return \Common\Model\UcenterMemberModel::checkUserExist($id);
 }
 
 /**
@@ -229,8 +241,7 @@ function check_region_exist($id)
  */
 function create_order_code()
 {
-    //TODO 没有代码。。。
-    return date("YmdHi") . time();
+    return date('YmdHis') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8);
 }
 
 /**
@@ -287,27 +298,67 @@ function is_admin_login()
 /**
  * @return int
  */
-function is_merchant_login($token)
-{
-    $user = session('merchant_auth' . $token);
+function is_merchant_login($token){
+    $user = F('User/Login/merchant_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('merchant_auth_sign' . $token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return F('User/Login/merchant_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
+}
+
+/**
+ * 设置Merchant登录状态
+ * @author WangJiang
+ * @param $token
+ * @param $auth
+ */
+function set_merchant_login($token, $auth){
+    F('User/Login/merchant_auth'.$token, $auth);
+    F('User/Login/merchant_auth_sign'.$token, data_auth_sign($auth));
+}
+
+/**
+ * 清除Merchant登录状态
+ * @author WangJiang
+ * @param $token
+ */
+function clear_merchant_login($token){
+    F('User/Login/merchant_auth'.$token, null);
+    F('User/Login/merchant_auth_sign'.$token, null);
 }
 
 /**
  * @return int
  */
-function is_member_login($token)
-{
-    $user = session('member_auth' . $token);
+function is_member_login($token){
+    $user = F('User/Login/member_auth'.$token);
     if (empty($user)) {
         return 0;
     } else {
-        return session('member_auth_sign' . $token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return F('User/Login/member_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
+}
+
+/**
+ * 设置Member登录状态
+ * @author WangJiang
+ * @param $token
+ * @param $auth
+ */
+function set_member_login($token, $auth){
+    F('User/Login/member_auth'.$token, $auth);
+    F('User/Login/member_auth_sign'.$token, data_auth_sign($auth));
+}
+
+/**
+ * 清除Member登录状态
+ * @author WangJiang
+ * @param $token
+ */
+function clear_member_login($token){
+    F('User/Login/member_auth'.$token, null);
+    F('User/Login/member_auth_sign'.$token, null);
 }
 
 /**
@@ -348,7 +399,7 @@ function generate_password($pwd, $saltkey)
  * @param  string $name 格式 [模块名]/接口名/方法名
  * @param  array|string $vars 参数
  */
-function api($name, $vars = array())
+function api($name, $vars = [])
 {
     $array = explode('/', $name);
     $method = array_pop($array);
@@ -377,7 +428,7 @@ function api($name, $vars = array())
  *  )
  *
  */
-function int_to_string(&$data, $map = array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿')))
+function int_to_string(&$data, $map = ['status' => [1 => '正常', -1 => '删除', 0 => '禁用', 2 => '未审核', 3 => '草稿']])
 {
     if ($data === false || $data === null) {
         return $data;
@@ -409,7 +460,7 @@ function build_sql_bind($list, $bindValues = [], $prefix = 'bindName')
         $bindNames[] = $name;
         $bindValues[$name] = $id;
     }
-    return array($bindNames, $bindValues);
+    return [$bindNames, $bindValues];
 }
 
 /**
@@ -450,7 +501,7 @@ function action_log($action = null, $model = null, $record_id = null, $user_id =
             $log['record'] = $record_id;
             $log['model'] = $model;
             $log['time'] = NOW_TIME;
-            $log['data'] = array('user' => $user_id, 'model' => $model, 'record' => $record_id, 'time' => NOW_TIME);
+            $log['data'] = ['user' => $user_id, 'model' => $model, 'record' => $record_id, 'time' => NOW_TIME];
             foreach ($match[1] as $value) {
                 $param = explode('|', $value);
                 if (isset($param[1])) {
@@ -501,9 +552,9 @@ function parse_action($action = null, $self)
 
     //参数支持id或者name
     if (is_numeric($action)) {
-        $map = array('id' => $action);
+        $map = ['id' => $action];
     } else {
-        $map = array('name' => $action);
+        $map = ['name' => $action];
     }
 
     //查询行为信息
@@ -516,11 +567,11 @@ function parse_action($action = null, $self)
     $rules = $info['rule'];
     $rules = str_replace('{$self}', $self, $rules);
     $rules = explode(';', $rules);
-    $return = array();
+    $return = [];
     foreach ($rules as $key => &$rule) {
         $rule = explode('|', $rule);
         foreach ($rule as $k => $fields) {
-            $field = empty($fields) ? array() : explode(':', $fields);
+            $field = empty($fields) ? [] : explode(':', $fields);
             if (!empty($field)) {
                 $return[$key][$field[0]] = $field[1];
             }
@@ -551,8 +602,8 @@ function execute_action($rules = false, $action_id = null, $user_id = null)
     foreach ($rules as $rule) {
 
         //检查执行周期
-        $map = array('action_id' => $action_id, 'user_id' => $user_id);
-        $map['create_time'] = array('gt', NOW_TIME - intval($rule['cycle']) * 3600);
+        $map = ['action_id' => $action_id, 'user_id' => $user_id];
+        $map['create_time'] = ['gt', NOW_TIME - intval($rule['cycle']) * 3600];
         $exec_count = M('ActionLog')->where($map)->count();
         if ($exec_count > $rule['max']) {
             continue;
@@ -561,7 +612,7 @@ function execute_action($rules = false, $action_id = null, $user_id = null)
         //执行数据库操作
         $Model = M(ucfirst($rule['table']));
         $field = $rule['field'];
-        $res = $Model->where($rule['condition'])->setField($field, array('exp', $rule['rule']));
+        $res = $Model->where($rule['condition'])->setField($field, ['exp', $rule['rule']]);
 
         if (!$res) {
             $return = false;
@@ -633,12 +684,92 @@ function decode_token($token)
 }
 
 /**
+ * 验证用户是否允许修改商铺数据，不满足条件抛异常
+ * @author WangJiang
+ * @param $uid
+ * @param $sid
+ */
+function can_modify_shop($uid,$sid){
+
+    $shop=D('MerchantShop')->find($sid);
+    except_merchant_manager($uid,$shop['group_id']);
+}
+
+/**
+ * 是否店长，抛异常
+ * @author WangJiang
+ * @param $uid
+ * @param $gid
+ */
+function except_merchant_manager($uid,$gid){
+    $role=D('AuthAccess')->where(['uid'=>$uid,'group_id'=>$gid])->first();
+    //print_r($role);die;
+    if($role['role_id']!=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'))
+        E('用户无权限操作该店铺');
+}
+
+class DBException extends RuntimeException{
+    public $errorCode;
+    public $errorInfo;
+    public function __constructor($errorCode,$errorInfo){
+        $this->$errorCode=$errorCode;
+        $this->$errorInfo=$errorInfo;
+    }
+}
+
+/**
+ * 数据库事务处理
+ * @author WangJiang
+ * @param string $sql
+ * @param array $bind
+ * @param function $success 成功回调函数，缺省为null
+ * @param boolean $success_safe 是否捕获回调的异常，缺省为true
+ * @throws Exception
+ * @return int newId
+ */
+function db_transaction($sql, $bind,$success=null,$success_safe=true){
+    //TODO:目前ThinkPHP不支持空间类型字段
+    $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'));
+    $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $dbh->prepare($sql);
+    foreach ($bind as $k => $v) {
+        $stmt->bindValue($k, $v);
+    }
+
+    $newid=null;
+    try {
+        $dbh->beginTransaction();
+        $r=$stmt->execute();
+        $newid= $dbh->lastInsertId();
+        //test for transaction
+        //throw new Exception();
+        if($r==true and is_callable($success))
+            if($success_safe){
+                try{
+                    call_user_func($success);
+                }catch (\Exception $e){}
+            }else
+                call_user_func($success);
+        if($r==false)
+            throw new DBException($dbh->errorCode(),$dbh->errorInfo());
+        $dbh->commit();
+        return $newid;
+    } catch (\Exception $e) {
+        $dbh->rollBack();
+        throw $e;
+    } finally {
+        unset($dbh);
+    }
+}
+
+/**
  * array_column兼容性处理
  */
 if (!function_exists('array_column')) {
     function array_column(array $input, $columnKey, $indexKey = null)
     {
-        $result = array();
+        $result = [];
         if (null === $indexKey) {
             if (null === $columnKey) {
                 $result = array_values($input);
@@ -660,6 +791,53 @@ if (!function_exists('array_column')) {
         }
         return $result;
     }
+}
+
+/**
+ * curl模拟POST请求
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @param array $data 要发送的POST数据
+ * @param string $url 要请求的链接
+ * @return mixed
+ */
+function send_post($data, $url)
+{
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HEADER, false);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    $result = curl_exec($ch);
+    curl_close($ch);
+    return $result;
+}
+
+/**
+ * curl模拟GET请求
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @param string $url 请求的链接
+ * @return mixed
+ */
+function send_get($url)
+{
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_HEADER, false);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_URL, $url);
+    $result = curl_exec($ch);
+    curl_close($ch);
+    return $result;
+}
+
+/**
+ * 获取PDO对象
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @return PDO
+ */
+function get_pdo()
+{
+    return new PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
 }
 
 /**
