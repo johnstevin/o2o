@@ -168,7 +168,8 @@ class UserController extends ApiController {
             $type = I('get.type');
             switch ( $type ) {
                 case 'photo' :
-
+                    // TODO
+                    
                     break;
                 case 'real_name' :
                     $model = D("UcenterMember");
@@ -183,9 +184,23 @@ class UserController extends ApiController {
                     $data['uid'] = $uid;
                     break;
                 case 'email' :
-
+                    $model = D("UcenterMember");
+                    $email = I('get.email');
+                    $data['email'] = $email;
+                    $data['id'] = $uid;
                     break;
                 case 'password' :
+                    $model = D("UcenterMember");
+                    $opassword = I('get.opassword');
+                    $npassword = I('get.npassword');
+                    if ($opassword === $npassword)
+                        E('新旧密码不能相同');
+
+                    $data['password'] = $npassword;
+                    $data['id'] = $uid;
+                    break;
+                case 'mobile' :
+                    //TODO
 
                     break;
                 default :

@@ -25,6 +25,9 @@ class UcenterMemberModel extends AdvModel {
         array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', -9, self::EXISTS_VALIDATE), //手机格式不正确 TODO:
         array('mobile', 'checkDenyMobile', -10, self::EXISTS_VALIDATE, 'callback'), //过滤手机黑名单
         array('mobile', '', -11, self::EXISTS_VALIDATE, 'unique'), //手机号被占用
+
+        array('real_name', 'require', '真实姓名不能为空', self::EXISTS_VALIDATE, 'regex', self::MODEL_BOTH),
+        array('real_name', '', '真实姓名已经存在', self::EXISTS_VALIDATE, 'unique'),
     );
 
 //    protected $_filter = array(
@@ -163,7 +166,7 @@ class UcenterMemberModel extends AdvModel {
 
     /**
      * 注销当前用户
-     * @return void
+     * @return voidsaltkey
      * @deprecated
      */
     public function logout($token){
@@ -176,6 +179,10 @@ class UcenterMemberModel extends AdvModel {
 
             empty($data) ? E('修改字段不能为空') : '';
             $data = $this->create($data);
+            if($data['password']){
+                $this->saltkey = SALTKEY;
+                $this->password = $this->getPwd($data['password']);
+            }
             if(empty($data))
                 E('创建对象失败');
             if(empty($data['id'])){
