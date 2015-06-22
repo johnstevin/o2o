@@ -40,9 +40,9 @@ class PictureModel extends Model
         if ($info) { //文件上传成功，记录文件信息
             foreach ($info as $key => &$value) {
                 /* 已经存在文件记录 */
-                if (isset($value['id']) && is_numeric($value['id'])) {
-                    continue;
-                }
+//                if (isset($value['id']) && is_numeric($value['id'])) {
+//                    continue;
+//                }
 
                 /* 记录文件信息 */
                 $value['create_ip'] = get_client_ip(1,true);

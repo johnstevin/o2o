@@ -89,6 +89,7 @@ class ProductModel extends Model
      */
     public function update()
     {
+
         $data = $this->create();
         if (!$data) { //数据对象创建错误
             return false;
@@ -98,8 +99,6 @@ class ProductModel extends Model
         if (empty($data['id'])) {
             $res = $this->add();
         } else {
-            $data['create_id'] = UID;
-            $data['source'] = 1;
             $res = $this->save();
         }
 
@@ -330,13 +329,6 @@ class ProductModel extends Model
             return true;
         } else {
             $this->error = '审核失败 ';
-            return false;
-        }
-
-        $Group = D('MerchantDepot');
-        $pidGroup = $Group->info($info['group_id']);
-        if (empty($pidGroup)) {
-            $this->error = '未找到上级商铺';
             return false;
         }
     }

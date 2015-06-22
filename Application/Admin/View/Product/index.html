@@ -18,6 +18,7 @@
             <th>最后编辑时间</th>
             <th>状态</th>
             <th>操作</th>
+            <th>商品审核</th>
         </tr>
         </thead>
         <tbody>
@@ -47,9 +48,12 @@
                         </eq>
                         <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
                            class="confirm ajax-get">删除</a>
+
+                    </td>
+                    <td> <egt name="vo.status" value="2">
                         <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
                            href="{:U('audit?id='.$vo['id'])}">审核商品</a>
-                    </td>
+                    </egt></td>
                 </tr>
             </volist>
             <else/>

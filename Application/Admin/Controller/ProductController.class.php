@@ -184,8 +184,7 @@ class ProductController extends AdminController
     {
         $Product = D('Product');
         if (IS_POST) { //提交表单
-            $Product_id = is_numeric(I('post.product_id')) ? I('post.product_id
-            ') : 0;
+            $Product_id = is_numeric(I('post.product_id')) ? I('post.product_id') : 0;
             $status = is_numeric(I('post.status')) ? I('post.status') : 0;
             ($Product_id !== 0) ?: $this->error('禁止操作');
             $method = I('method');
@@ -213,7 +212,7 @@ class ProductController extends AdminController
             /* 获取产品信息 */
             $info = $id ? $Product->info($id) : '';
             $this->assign('info', $info);
-            $this->meta_title = '编辑规格';
+            $this->meta_title = '审核商品';
             $this->display();
         }
     }

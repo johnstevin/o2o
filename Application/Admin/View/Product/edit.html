@@ -125,6 +125,9 @@
         </div>
         <div class="footer">
             <input type="hidden" name="id" value="{$info.id|default=''}">
+            <input type="hidden" name="create_uid" value="{$info.create_uid|default=UID}">
+            <input type="hidden" name="source" value="{$info.source|default='1'}">
+            <input type="hidden" name="status" value="{$info.status|default='1'}">
             <!--<button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>-->
             <!--<button type="submit" class="btn btn-primary">确 定</button>-->
         </div>

@@ -68,11 +68,12 @@
 <script>
     var product_id = '{$info.id}';
     var status='{$info.status}';
+    function pass(){
         $.ajax({
             type: "POST",
             url: "{:U('audit')}",
             dataType: "json",
-            data: {"shop_id":shop_id,"status":status,"method":'pass'},
+            data: {"product_id":product_id,"status":status,"method":'pass'},
             success:function(data) {
                 onSuccess(data);
             },
@@ -86,7 +87,7 @@
             type: "POST",
             url: "{:U('audit')}",
             dataType: "json",
-            data: {"shop_id":shop_id,"status":status,"method":'UnPass',"reason":$("#reason").val()},
+            data: {"product_id":product_id,"status":status,"method":'UnPass',"reason":$("#reason").val()},
             success:function(data) {
                 onSuccess(data);
             },
