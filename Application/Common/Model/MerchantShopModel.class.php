@@ -177,7 +177,8 @@ class MerchantShopModel extends AdvModel
         //当前时间，秒
         $seconds = time() - strtotime("00:00:00");//8*3600;
 
-        $where='ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))<:dist and (sq_merchant_shop.open_time_mode=2
+        $bind=[':seconds'=>$seconds];
+        $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant_shop.lnglat').' and (sq_merchant_shop.open_time_mode=2
             or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
 
         if (!is_null($type))
@@ -189,7 +190,7 @@ class MerchantShopModel extends AdvModel
         if ($tagId!=0){
             $where.=' and sq_merchant_shop.id in (select shop_id from sq_shop_tag where tag_id=:tag_id)';
             //$this->join('inner join sq_shop_tag on shop_id=sq_merchant_shop.id and tag_id=:tag_id');
-            $this->bind(':tag_id',$tagId);
+            $bind[':tag_id']=$tagId;
         }
 
         if (!empty($words))
@@ -199,10 +200,7 @@ class MerchantShopModel extends AdvModel
         $map['sq_merchant_shop.status&sq_merchant_shop.open_status']=1;
         $this->where($map)
             ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
-            ->bind(':lng', $lng)
-            ->bind(':lat', $lat)
-            ->bind(':dist', $range)
-            ->bind(':seconds', $seconds)
+            ->bind($bind)
             ->field([
                 'sq_merchant_shop.id'
                 ,'sq_merchant_shop.title'
@@ -468,6 +466,10 @@ class MerchantShopModel extends AdvModel
                 'price'=>$i['price'],
                 'product_id'=>$i['product_id'],
                 'product'=>$i['product'],
+                'norm_id'=>$i['norm_id'],
+                'norm'=>$i['norm'],
+                'brand_id'=>$i['brand_id'],
+                'brand'=>$i['brand'],
             ];
         }
         return array_values($shop);

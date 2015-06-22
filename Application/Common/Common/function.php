@@ -920,3 +920,20 @@ function pinyin_long($zh){
     }
     return $ret;
 }
+
+/**
+ * 构建距离查询语句
+ * @author WangJiang
+ * @param $lng
+ * @param $lat
+ * @param $distance
+ * @param $bind
+ * @return string
+ */
+function build_distance_sql_where($lng,$lat,$distance,&$bind,$lnglatField='lnglat'){
+    $sql="ST_Distance_Sphere($lnglatField,POINT(:lng,:lat))<:dist";
+    $bind[':lng']=$lng;
+    $bind[':lat']=$lat;
+    $bind[':dist']=$distance;
+    return $sql;
+}
