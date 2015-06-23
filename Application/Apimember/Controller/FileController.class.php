@@ -14,6 +14,7 @@ class FileController extends ApiController{
     /**
      * 上传图片文件,POST参数,需要accesstoken
      * @author WangJiang
+     * @param string $type 图片类型
      * @return json
      * ``` json
      * {
@@ -39,7 +40,7 @@ class FileController extends ApiController{
      * }
      * ```
      */
-    public function uploadPicture(){
+    public function uploadPicture($type){
 
         try{
             if(!IS_POST)
@@ -48,7 +49,7 @@ class FileController extends ApiController{
             //测试时注释$this->getToken();
 
             //print_r($_FILES);
-            $this->apiSuccess(['data'=>upload_picture($this->getUserId())]);
+            $this->apiSuccess(['data'=>upload_picture($this->getUserId(),$type)]);
 
         }catch (\Exception $ex){
             $this->apiError(550001,$ex->getMessage());

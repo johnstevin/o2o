@@ -15,12 +15,12 @@ use Common\Model\OrderVehicleModel;
 class OrderVehicleController extends ApiController
 {
     /**
-     * 获得用户订单
+     * 获得用户订单,需要accesstoken
      * @author WangJiang
-     * @param null $status
-     * @param null $orderCode
-     * @param int $page
-     * @param int $pageSize
+     * @param null $status （0-未分配，1-已分配，2-已接单，3-处理中，4-处理完，5-订单结束，6订单取消）
+     * @param null $orderCode 订单号
+     * @param int $page 页码，从1开始
+     * @param int $pageSize，页大小
      * @return json
      * ``` json
      * {
@@ -110,6 +110,12 @@ class OrderVehicleController extends ApiController
             $page *= $pageSize;
             $uid = $this->getUserId();
 
+            $where['user_id']=$uid;
+
+            if(!is_null($status))
+                $where['status']=$status;
+            if(!is_null($orderCode))
+                $where['order_code']=$orderCode;
             $m = D('OrderVehicle');
             $data = $m
                 ->field(['st_astext(lnglat) as lnglat',
@@ -127,7 +133,7 @@ class OrderVehicleController extends ApiController
                     'add_time',
                     'update_time',
                 ])
-                ->where(['user_id' => $uid])->limit($page, $pageSize)->select();
+                ->where($where)->limit($page, $pageSize)->select();
 
             //print_r($m->getLastSql());die;
 

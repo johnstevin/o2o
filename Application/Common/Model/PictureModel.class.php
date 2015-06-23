@@ -43,7 +43,8 @@ class PictureModel extends Model{
                  }
                 /* 记录文件信息 */
                 $value['create_ip'] = get_client_ip(1,true);
-                $value['type'] = C('auth_group_type')['MERCHANT'];
+                $type=$setting['picType'];
+                $value['type'] = C("PICTURE_TYPE.$type");
                 $value['uid'] = $uid;
                 $value['path'] = substr($setting['rootPath'], 1) . $value['savepath'] . $value['savename']; //在模板里的url路径
                 if ($this->create($value) && ($id = $this->add())) {

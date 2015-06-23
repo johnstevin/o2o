@@ -939,13 +939,17 @@ function build_distance_sql_where($lng,$lat,$distance,&$bind,$lnglatField='lngla
     return $sql;
 }
 
-function upload_picture($uid){
+function upload_picture($uid,$type){
+    $type=strtoupper($type);
+    //print_r("{$type}_PICTURE_UPLOAD");
+    //print_r($_FILES);
     /* 调用文件上传组件上传文件 */
     $Picture = new PictureModel();
     $pic_driver = C('PICTURE_UPLOAD_DRIVER');
     $info = $Picture->upload(
+        $uid,
         $_FILES,
-        C('PRODUCT_PICTURE_UPLOAD'),
+        C("{$type}_PICTURE_UPLOAD"),
         C('PICTURE_UPLOAD_DRIVER'),
         C("UPLOAD_{$pic_driver}_CONFIG")
     );

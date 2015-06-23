@@ -154,7 +154,6 @@ class Upload {
 
             /* 获取上传文件后缀，允许上传无后缀文件 */
             $file['ext']    =   pathinfo($file['name'], PATHINFO_EXTENSION);
-
             /* 文件上传检测 */
             if (!$this->check($file)){
                 continue;
