@@ -6,11 +6,16 @@ use Think\Controller;
 class RegionController extends AdminController
 {
     //区域列表
-    public function index()
+    public function index($id=0)
     {
         //查询出所有的区域
-        $tree = D('Region')->getTree(0, 'id,name,pid,level,status,astext(lnglat) as lnglat');
-        $this->assign('tree', $tree);
+        //$tree = D('Region')->getTree(0, 'id,name,pid,level,status,astext(lnglat) as lnglat');
+        $map=array('pid' => $id);
+        $where=array('status' => array('gt', -1));
+        $map=array_merge($map,$where);
+        $list = $this->lists('Region',$map,'id asc','id,name,pid,level,status,astext(lnglat) as lnglat');
+        $list = int_to_string($list);
+        $this->assign('_list', $list);
         $this->meta_title = '区域管理';
         $this->display();
     }

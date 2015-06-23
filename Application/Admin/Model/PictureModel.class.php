@@ -40,13 +40,13 @@ class PictureModel extends Model
         if ($info) { //文件上传成功，记录文件信息
             foreach ($info as $key => &$value) {
                 /* 已经存在文件记录 */
-//                if (isset($value['id']) && is_numeric($value['id'])) {
-//                    continue;
-//                }
+                if (isset($value['id']) && is_numeric($value['id'])) {
+                    continue;
+                }
 
                 /* 记录文件信息 */
                 $value['create_ip'] = get_client_ip(1,true);
-                $value['type'] = C('auth_group_type')['MERCHANT'];
+                $value['type'] = C('PICTURE_TYPE')['PRODUCT_PICTURE'];
                 $value['uid'] = UID;
                 $value['path'] = substr($setting['rootPath'], 1) . $value['savepath'] . $value['savename'];    //在模板里的url路径
                 if ($this->create($value) && ($id = $this->add())) {

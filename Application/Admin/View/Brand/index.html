@@ -67,18 +67,11 @@
         }else{
             url += '?' + query;
         }
-        $("#rg-container-fun").load($('#rg-container-fun').attr("href"), {"name": $('#searchInput').val()}, function (response, status, xhr) {
 
-            if (status == "success") {
-
-                $('#rg-container-fun').html(response);
-            }
-            else {
-                $('#rg-container-fun').html("出错了: <br/>状态码：" + xhr.status + " <br/>具体说明:" + xhr.statusText)
-            }
-
-
-        });
+        var target=$('#rg-container-fun').attr("href")+"?name="+$('#searchInput').val();
+        if (target) {
+            contentload(target);
+        }
         //window.location.href = url;
     });
     //回车搜索
