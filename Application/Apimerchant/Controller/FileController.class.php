@@ -6,7 +6,7 @@
  * Time: 10:26 AM
  */
 
-namespace Apimember\Controller;
+namespace Apimerchant\Controller;
 
 
 class FileController extends ApiController{

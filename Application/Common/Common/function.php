@@ -1,4 +1,5 @@
 <?php
+use Common\Model\PictureModel;
 
 /**
  * 检查IP是否合法
@@ -936,4 +937,21 @@ function build_distance_sql_where($lng,$lat,$distance,&$bind,$lnglatField='lngla
     $bind[':lat']=$lat;
     $bind[':dist']=$distance;
     return $sql;
+}
+
+function upload_picture($uid){
+    /* 调用文件上传组件上传文件 */
+    $Picture = new PictureModel();
+    $pic_driver = C('PICTURE_UPLOAD_DRIVER');
+    $info = $Picture->upload(
+        $_FILES,
+        C('PRODUCT_PICTURE_UPLOAD'),
+        C('PICTURE_UPLOAD_DRIVER'),
+        C("UPLOAD_{$pic_driver}_CONFIG")
+    );
+
+    if($info==false)
+        E($Picture->getError());
+
+    return $info;
 }
