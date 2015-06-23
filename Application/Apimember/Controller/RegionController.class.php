@@ -70,11 +70,11 @@ class RegionController extends ApiController
      * @param null|array|string $level 要获取的层级，比如【0,1,2】表示获取省市区三级，以此类推
      * @param null|int $status 状态，默认为获取正常状态的区域
      * @param int|null $pageSize 分页大小，如果传【null】表示获取所有数据
-     * @param string $fileds 要读取的字段，可传数组 || 字符串
+     * @param string $fields 要读取的字段，可传数组 || 字符串
      */
-    public function lists($pid = null, $level = null, $status = null, $pageSize = 20, $fileds = '*')
+    public function lists($pid = null, $level = null, $status = null, $pageSize = 20, $fields = '*')
     {
-        $this->apiSuccess(RegionModel::getInstance()->getLists($pid, $level, $status, $pageSize, $fileds));
+        $this->apiSuccess(RegionModel::getInstance()->getLists($pid, $level, $status, $pageSize, $fields));
     }
 
     /**
