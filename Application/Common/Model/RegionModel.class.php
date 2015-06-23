@@ -162,7 +162,7 @@ class RegionModel extends Model
             case 'string':
                 $fields = trim($fields);
                 if ($fields === '*') {
-                    $fields = array_keys($this->fields);
+                    $fields = array_values($this->fields);
                 } else {
                     $fields = explode(',', $fields);
                 }
