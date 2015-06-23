@@ -22,7 +22,6 @@ class FileController extends ApiController{
         try{
             if(!IS_POST)
                 E('非法调用，请用POST调用');
-
             //验证登录用户
             //测试时注释$this->getToken();
 
