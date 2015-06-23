@@ -29,7 +29,7 @@
             '<a class=" ajax-get" href="{:U("Region/changeStatus")}&method=forbidregion&id=' + v.id + '">禁用</a>&nbsp;&nbsp;' +
             '<a class=" ajax-get" href="{:U("Region/changeStatus")}&method=deleteregion&id=' + v.id + '">删除</a>' + '</td>' +
             '<td>' + v.lnglat + '</td>' +
-            '<td><a href="javascript:void(0);" onclick="lnglat(\'' + v.id + '\',\'' + v.name + '\')">刷新坐标</a></td>' +
+            '<td><a href="javascript:void(0);" onclick="lnglat(' + v.id + ')">刷新坐标</a></td>' +
 
             '</tr>'
             if (v._child) {
@@ -46,12 +46,11 @@
     // 百度地图API功能
     var myGeo = new BMap.Geocoder();
     // 将地址解析
-    function lnglat(id, name) {
+    function lnglat(id) {
         var city;
         $.post("{:U('Region/MapCity')}", {'id': id}, function (rslt) {
-            if (rslt) {
-                city = rslt;
-                myGeo.getPoint(name, function (point) {
+            if (rslt.status) {
+                myGeo.getPoint(rslt.info.address, function (point) {
                     if (point) {
                         $.post("{:U('Region/lnglat')}", {'id': id, 'lnglat': point.lng + ',' + point.lat}, function (result) {
                             ajaxSuccess(result);
@@ -59,9 +58,9 @@
                     } else {
                         alert("您选择地址没有解析到结果!");
                     }
-                }, city);
+                }, rslt.info.city);
             } else {
-                alert("获取城市错误");
+                alert("后台获取数据错误");
                 return false;
             }
         });

@@ -130,44 +130,48 @@ class RegionController extends AdminController
             $Region = D('Region');
             /* 获取区域信息 */
             $info = $id ? $Region->info($id) : '-1';
-
+            $data=array();
             switch ($info['level']) {
                 case 0:
-                    $city = $info['name'];
+                    $data['city'] = $info['name'];
+                    $data['address']=$info['name'];
                     break; //系统级别禁用
                 case 1:
-                    $city =$info['name'];
+                    $data['city'] =$info['name'];
+                    $data['address']=$info['name'];
                     break;
                 case 2:
                     $info2=$Region->info($info['pid']);
-                    $city = $info2['name'];
+                    $data['city']  = $info2['name'];
+                    $data['address']=$info2['name'].$info['name'];
                     break;
                 case 3:
                     $info2=$Region->info($info['pid']);
                     $info3=$Region->info($info2['pid']);
-                    $city = $info3['name'];
+                    $data['city'] = $info3['name'];
+                    $data['address']=$info3['name'].$info2['name'].$info['name'];
                     break;
                 case 4:
                     $info2=$Region->info($info['pid']);
                     $info3=$Region->info($info2['pid']);
                     $info4=$Region->info($info3['pid']);
-                    $city = $info4['name'];
+                    $data['city'] = $info4['name'];
+                    $data['address']=$info4['name'].$info3['name'].$info2['name'].$info['name'];
                     break;
                 case 5:
                     $info2=$Region->info($info['pid']);
                     $info3=$Region->info($info2['pid']);
                     $info4=$Region->info($info3['pid']);
                     $info5=$Region->info($info4['pid']);
-                    $city = $info5['name'];
+                    $data['city'] = $info5['name'];
+                    $data['address']=$info5['name'].$info4['name'].$info3['name'].$info2['name'].$info['name'];
                     break;
                 default:
-                    $city = '-1';
                     break; // 0-接口参数错误（调试阶段使用）
             }
-
-            echo $city;
+            $this->success($data);
         } else {
-            echo "-1";
+            $this->error('非法请求');
         }
     }
 
