@@ -355,13 +355,14 @@ class MerchantDepotModel extends RelationModel
         //$this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
         $this->join('JOIN sq_brand as brand on brand.id=sq_product.brand_id');
         $this->join('JOIN sq_norms as norm on norm.id=sq_product.norms_id');
+        $this->join('left JOIN sq_picture on sq_picture.id = sq_product.picture');
 
         $this->where($where);
         $this->bind($bindValues);
 
         $this->field(['sq_merchant_depot.product_id'
             ,'sq_product.title as product','brand.id as brand_id'
-            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm']);
+            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm','ifnull(sq_picture.path,\'\') as picture_path','sq_product.picture as picture_id']);
 
         $this->group('sq_merchant_depot.product_id')
             //->order('sq_merchant_depot.product_id,sq_merchant_depot.price')
