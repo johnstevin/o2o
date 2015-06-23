@@ -97,7 +97,7 @@ function list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root 
         $refer = [];
         foreach ($list as $key => $data) {
             $refer[$data[$pk]] =& $list[$key];
-            $refer[$data[$pk]][$child]=[];
+            $refer[$data[$pk]][$child] = [];
         }
         foreach ($list as $key => $data) {
             // 判断是否存在parent
@@ -298,12 +298,13 @@ function is_admin_login()
 /**
  * @return int
  */
-function is_merchant_login($token){
-    $user = F('User/Login/merchant_auth'.$token);
+function is_merchant_login($token)
+{
+    $user = F('User/Login/merchant_auth' . $token);
     if (empty($user)) {
         return 0;
     } else {
-        return F('User/Login/merchant_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return F('User/Login/merchant_auth_sign' . $token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
 }
 
@@ -313,9 +314,10 @@ function is_merchant_login($token){
  * @param $token
  * @param $auth
  */
-function set_merchant_login($token, $auth){
-    F('User/Login/merchant_auth'.$token, $auth);
-    F('User/Login/merchant_auth_sign'.$token, data_auth_sign($auth));
+function set_merchant_login($token, $auth)
+{
+    F('User/Login/merchant_auth' . $token, $auth);
+    F('User/Login/merchant_auth_sign' . $token, data_auth_sign($auth));
 }
 
 /**
@@ -323,20 +325,22 @@ function set_merchant_login($token, $auth){
  * @author WangJiang
  * @param $token
  */
-function clear_merchant_login($token){
-    F('User/Login/merchant_auth'.$token, null);
-    F('User/Login/merchant_auth_sign'.$token, null);
+function clear_merchant_login($token)
+{
+    F('User/Login/merchant_auth' . $token, null);
+    F('User/Login/merchant_auth_sign' . $token, null);
 }
 
 /**
  * @return int
  */
-function is_member_login($token){
-    $user = F('User/Login/member_auth'.$token);
+function is_member_login($token)
+{
+    $user = F('User/Login/member_auth' . $token);
     if (empty($user)) {
         return 0;
     } else {
-        return F('User/Login/member_auth_sign'.$token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return F('User/Login/member_auth_sign' . $token) == data_auth_sign($user) ? $user['uid'] : 0;
     }
 }
 
@@ -346,9 +350,10 @@ function is_member_login($token){
  * @param $token
  * @param $auth
  */
-function set_member_login($token, $auth){
-    F('User/Login/member_auth'.$token, $auth);
-    F('User/Login/member_auth_sign'.$token, data_auth_sign($auth));
+function set_member_login($token, $auth)
+{
+    F('User/Login/member_auth' . $token, $auth);
+    F('User/Login/member_auth_sign' . $token, data_auth_sign($auth));
 }
 
 /**
@@ -356,9 +361,10 @@ function set_member_login($token, $auth){
  * @author WangJiang
  * @param $token
  */
-function clear_member_login($token){
-    F('User/Login/member_auth'.$token, null);
-    F('User/Login/member_auth_sign'.$token, null);
+function clear_member_login($token)
+{
+    F('User/Login/member_auth' . $token, null);
+    F('User/Login/member_auth_sign' . $token, null);
 }
 
 /**
@@ -689,10 +695,11 @@ function decode_token($token)
  * @param $uid
  * @param $sid
  */
-function can_modify_shop($uid,$sid){
+function can_modify_shop($uid, $sid)
+{
 
-    $shop=D('MerchantShop')->find($sid);
-    except_merchant_manager($uid,$shop['group_id']);
+    $shop = D('MerchantShop')->find($sid);
+    except_merchant_manager($uid, $shop['group_id']);
 }
 
 /**
@@ -701,19 +708,23 @@ function can_modify_shop($uid,$sid){
  * @param $uid
  * @param $gid
  */
-function except_merchant_manager($uid,$gid){
-    $role=D('AuthAccess')->where(['uid'=>$uid,'group_id'=>$gid])->first();
+function except_merchant_manager($uid, $gid)
+{
+    $role = D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid])->first();
     //print_r($role);die;
-    if($role['role_id']!=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'))
+    if ($role['role_id'] != C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'))
         E('用户无权限操作该店铺');
 }
 
-class DBException extends RuntimeException{
+class DBException extends RuntimeException
+{
     public $errorCode;
     public $errorInfo;
-    public function __constructor($errorCode,$errorInfo){
-        $this->$errorCode=$errorCode;
-        $this->$errorInfo=$errorInfo;
+
+    public function __constructor($errorCode, $errorInfo)
+    {
+        $this->$errorCode = $errorCode;
+        $this->$errorInfo = $errorInfo;
     }
 }
 
@@ -727,7 +738,8 @@ class DBException extends RuntimeException{
  * @throws Exception
  * @return int newId
  */
-function db_transaction($sql, $bind,$success=null,$success_safe=true){
+function db_transaction($sql, $bind, $success = null, $success_safe = true)
+{
     //TODO:目前ThinkPHP不支持空间类型字段
     $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'));
     $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
@@ -737,22 +749,23 @@ function db_transaction($sql, $bind,$success=null,$success_safe=true){
         $stmt->bindValue($k, $v);
     }
 
-    $newid=null;
+    $newid = null;
     try {
         $dbh->beginTransaction();
-        $r=$stmt->execute();
-        $newid= $dbh->lastInsertId();
+        $r = $stmt->execute();
+        $newid = $dbh->lastInsertId();
         //test for transaction
         //throw new Exception();
-        if($r==true and is_callable($success))
-            if($success_safe){
-                try{
+        if ($r == true and is_callable($success))
+            if ($success_safe) {
+                try {
                     call_user_func($success);
-                }catch (\Exception $e){}
-            }else
+                } catch (\Exception $e) {
+                }
+            } else
                 call_user_func($success);
-        if($r==false)
-            throw new DBException($dbh->errorCode(),$dbh->errorInfo());
+        if ($r == false)
+            throw new DBException($dbh->errorCode(), $dbh->errorInfo());
         $dbh->commit();
         return $newid;
     } catch (\Exception $e) {
@@ -837,7 +850,7 @@ function send_get($url)
  */
 function get_pdo()
 {
-    return new PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
+    return new PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';charset=' . C('DB_CHARSET'), C('DB_USER'), C('DB_PWD'));
 }
 
 /**
@@ -863,37 +876,42 @@ function typeToRole($type)
  * @param $s0
  * @return null|string
  */
-function getfirstchar($s0){
+function getfirstchar($s0)
+{
     $fchar = ord($s0{0});
-    if($fchar >= ord("A") and $fchar <= ord("z") )return strtoupper($s0{0});
-    $s1 = iconv("UTF-8","gb2312", $s0);
-    $s2 = iconv("gb2312","UTF-8", $s1);
-    if($s2 == $s0){$s = $s1;}else{$s = $s0;}
+    if ($fchar >= ord("A") and $fchar <= ord("z")) return strtoupper($s0{0});
+    $s1 = iconv("UTF-8", "gb2312", $s0);
+    $s2 = iconv("gb2312", "UTF-8", $s1);
+    if ($s2 == $s0) {
+        $s = $s1;
+    } else {
+        $s = $s0;
+    }
     $asc = ord($s{0}) * 256 + ord($s{1}) - 65536;
-    if($asc >= -20319 and $asc <= -20284) return "A";
-    if($asc >= -20283 and $asc <= -19776) return "B";
-    if($asc >= -19775 and $asc <= -19219) return "C";
-    if($asc >= -19218 and $asc <= -18711) return "D";
-    if($asc >= -18710 and $asc <= -18527) return "E";
-    if($asc >= -18526 and $asc <= -18240) return "F";
-    if($asc >= -18239 and $asc <= -17923) return "G";
-    if($asc >= -17922 and $asc <= -17418) return "H";
-    if($asc >= -17922 and $asc <= -17418) return "I";
-    if($asc >= -17417 and $asc <= -16475) return "J";
-    if($asc >= -16474 and $asc <= -16213) return "K";
-    if($asc >= -16212 and $asc <= -15641) return "L";
-    if($asc >= -15640 and $asc <= -15166) return "M";
-    if($asc >= -15165 and $asc <= -14923) return "N";
-    if($asc >= -14922 and $asc <= -14915) return "O";
-    if($asc >= -14914 and $asc <= -14631) return "P";
-    if($asc >= -14630 and $asc <= -14150) return "Q";
-    if($asc >= -14149 and $asc <= -14091) return "R";
-    if($asc >= -14090 and $asc <= -13319) return "S";
-    if($asc >= -13318 and $asc <= -12839) return "T";
-    if($asc >= -12838 and $asc <= -12557) return "W";
-    if($asc >= -12556 and $asc <= -11848) return "X";
-    if($asc >= -11847 and $asc <= -11056) return "Y";
-    if($asc >= -11055 and $asc <= -10247) return "Z";
+    if ($asc >= -20319 and $asc <= -20284) return "A";
+    if ($asc >= -20283 and $asc <= -19776) return "B";
+    if ($asc >= -19775 and $asc <= -19219) return "C";
+    if ($asc >= -19218 and $asc <= -18711) return "D";
+    if ($asc >= -18710 and $asc <= -18527) return "E";
+    if ($asc >= -18526 and $asc <= -18240) return "F";
+    if ($asc >= -18239 and $asc <= -17923) return "G";
+    if ($asc >= -17922 and $asc <= -17418) return "H";
+    if ($asc >= -17922 and $asc <= -17418) return "I";
+    if ($asc >= -17417 and $asc <= -16475) return "J";
+    if ($asc >= -16474 and $asc <= -16213) return "K";
+    if ($asc >= -16212 and $asc <= -15641) return "L";
+    if ($asc >= -15640 and $asc <= -15166) return "M";
+    if ($asc >= -15165 and $asc <= -14923) return "N";
+    if ($asc >= -14922 and $asc <= -14915) return "O";
+    if ($asc >= -14914 and $asc <= -14631) return "P";
+    if ($asc >= -14630 and $asc <= -14150) return "Q";
+    if ($asc >= -14149 and $asc <= -14091) return "R";
+    if ($asc >= -14090 and $asc <= -13319) return "S";
+    if ($asc >= -13318 and $asc <= -12839) return "T";
+    if ($asc >= -12838 and $asc <= -12557) return "W";
+    if ($asc >= -12556 and $asc <= -11848) return "X";
+    if ($asc >= -11847 and $asc <= -11056) return "Y";
+    if ($asc >= -11055 and $asc <= -10247) return "Z";
     return NULL;
     //return $s0;
 }
@@ -903,18 +921,21 @@ function getfirstchar($s0){
  * @param $zh
  * @return string
  */
-function pinyin_long($zh){
+function pinyin_long($zh)
+{
     $ret = "";
-    $s1 = iconv("UTF-8","gb2312", $zh);
-    $s2 = iconv("gb2312","UTF-8", $s1);
-    if($s2 == $zh){$zh = $s1;}
-    for($i = 0; $i < strlen($zh); $i++){
-        $s1 = substr($zh,$i,1);
+    $s1 = iconv("UTF-8", "gb2312", $zh);
+    $s2 = iconv("gb2312", "UTF-8", $s1);
+    if ($s2 == $zh) {
+        $zh = $s1;
+    }
+    for ($i = 0; $i < strlen($zh); $i++) {
+        $s1 = substr($zh, $i, 1);
         $p = ord($s1);
-        if($p > 160){
-            $s2 = substr($zh,$i++,2);
+        if ($p > 160) {
+            $s2 = substr($zh, $i++, 2);
             $ret .= getfirstchar($s2);
-        }else{
+        } else {
             $ret .= $s1;
         }
     }
