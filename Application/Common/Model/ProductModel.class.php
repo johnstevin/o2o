@@ -29,6 +29,7 @@ class ProductModel extends RelationModel
         'edit_time',
         'status',
         'picture',
+        'number',
         '_type' => [
             'id' => 'int',
             'title' => 'varchar',
@@ -41,7 +42,8 @@ class ProductModel extends RelationModel
             'edit_time' => 'int',
             'edit_ip' => 'bigint',
             'status' => 'tinyint',
-            'picture'=>'int'
+            'picture' => 'int',
+            'number' => 'char'
         ]
     ];
     /**
@@ -153,6 +155,18 @@ class ProductModel extends RelationModel
             'relation_foreign_key' => 'category_id',
             'mapping_name' => '_categorys',
             'relation_table' => 'sq_product_category'
+        ],
+        'Norm' => [
+            'mapping_type' => self::BELONGS_TO,
+            'class_name' => 'Norms',
+            'foreign_key' => 'norms_id',
+            'mapping_name' => '_norm',
+        ],
+        'Picture' => [
+            'mapping_type' => self::BELONGS_TO,
+            'class_name' => 'Picture',
+            'foreign_key' => 'picture',
+            'mapping_name' => '_picture'
         ]
     ];
 
@@ -324,7 +338,7 @@ class ProductModel extends RelationModel
         $relation = [];
         if ($getCategory) $relation[] = '_categorys';
         if ($getBrand) $relation[] = '_brand';
-        return $id ? self::getInstance()->relation($relation)->where(['status' => ['in',[self::STATUS_ACTIVE,self::STATUS_VERIFY]]
+        return $id ? self::getInstance()->relation($relation)->where(['status' => ['in', [self::STATUS_ACTIVE, self::STATUS_VERIFY]]
             , 'id' => $id])->field($fields)->find() : null;
     }
 
@@ -335,17 +349,20 @@ class ProductModel extends RelationModel
      * @param string|array $fields 要查询的字段
      * @param bool $getCategorys 是否需要关联查询分类
      * @param bool $getBrand 是否需要关联查询品牌
+     * @param bool $getNorm 是否需要关联查询规格
      * @return array|mixed
      */
-    public function getByNumber($number, $fields = '*', $getCategorys = false, $getBrand = false)
+    public function getByNumber($number, $fields = '*', $getCategorys = false, $getBrand = false, $getNorm = false)
     {
         $number = is_string($number) ? trim($number) : $number;
         if (empty($number)) return [];
-        $relation = [];
+        $relation = [
+            '_picture'
+        ];
         if ($getBrand) $relation[] = '_brand';//关联查询品牌
         if ($getCategorys) $relation[] = '_categorys';
-        $model = self::getInstance();
-        return $model->relation($relation)->field($fields)->where(['number' => $number, 'status' => self::STATUS_ACTIVE])->find();
+        if ($getNorm) $relation[] = '_norm';
+        return self::getInstance()->relation($relation)->field($fields)->where(['number' => $number, 'status' => self::STATUS_ACTIVE])->find();
     }
 
     /**
