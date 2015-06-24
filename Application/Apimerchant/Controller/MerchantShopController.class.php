@@ -65,7 +65,7 @@ class MerchantShopController extends ApiController
 
                 $model->data($data);
                 $model->save();
-                $this->apiSuccess(null, '');
+                $this->apiSuccess(['data'=>[]], '');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {

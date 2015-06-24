@@ -342,7 +342,7 @@ class MerchantDepotController extends ApiController
                 if (!$model->create())
                     E('参数传递失败');
                 $model->save();
-                $this->apiSuccess(null, '');
+                $this->apiSuccess(['data'=>[]], '');
             } else
                 E('非法调用，请用POST调用该方法');
         } catch (\Exception $ex) {
