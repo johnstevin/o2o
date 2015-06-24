@@ -217,7 +217,7 @@ class OrderVehicleModel extends AdvModel{
     }
 
     /**
-     * 取消订单
+     * 用户取消订单
      * @author WangJiang
      * @param $oid
      * @param $uid
@@ -230,6 +230,82 @@ class OrderVehicleModel extends AdvModel{
         if($data['user_id']!=$uid)
             E('非本人操作');
         $data['status']=self::STATUS_CANCELED;
+        //经纬度不需要修改
+        unset($data['lnglat']);
+        $this->save($data);
+    }
+
+    /**
+     * 洗车工确认订单
+     * @author WangJiang
+     * @param $oid
+     * @param $uid
+     */
+    public function workerAccept($oid,$uid){
+        $data=$this->find($oid);
+        //print_r($data);die;
+        if($data['status']!=self::STATUS_HAS_WORKER)
+            E('该订单不在正确的状态。');
+        if($data['worker_id']!=$uid)
+            E('非本人操作');
+        $data['status']=self::STATUS_CONFIRM;
+        //经纬度不需要修改
+        unset($data['lnglat']);
+        $this->save($data);
+    }
+
+    /**
+     * 洗车工开始处理订单
+     * @author WangJiang
+     * @param $oid
+     * @param $uid
+     */
+    public function workerStart($oid,$uid){
+        $data=$this->find($oid);
+        //print_r($data);die;
+        if($data['status']!=self::STATUS_CONFIRM)
+            E('该订单不在正确的状态。');
+        if($data['worker_id']!=$uid)
+            E('非本人操作');
+        $data['status']=self::STATUS_TREATING;
+        //经纬度不需要修改
+        unset($data['lnglat']);
+        $this->save($data);
+    }
+
+    /**
+     * 洗车工处理完成订单
+     * @author WangJiang
+     * @param $oid
+     * @param $uid
+     */
+    public function workerEnd($oid,$uid){
+        $data=$this->find($oid);
+        //print_r($data);die;
+        if($data['status']!=self::STATUS_TREATING)
+            E('该订单不在正确的状态。');
+        if($data['worker_id']!=$uid)
+            E('非本人操作');
+        $data['status']=self::STATUS_DONE;
+        //经纬度不需要修改
+        unset($data['lnglat']);
+        $this->save($data);
+    }
+
+    /**
+     * 洗车工拒绝订单，一种情况，系统自动排单，洗车工发现不属于自己负责地区，可以选择拒绝
+     * @author WangJiang
+     * @param $oid
+     * @param $uid
+     */
+    public function workerReject($oid,$uid){
+        $data=$this->find($oid);
+        //print_r($data);die;
+        if($data['status']!=self::STATUS_HAS_WORKER)
+            E('该订单不在正确的状态。');
+        if($data['worker_id']!=$uid)
+            E('非本人操作');
+        $data['status']=self::STATUS_NO_WORKER;
         //经纬度不需要修改
         unset($data['lnglat']);
         $this->save($data);
