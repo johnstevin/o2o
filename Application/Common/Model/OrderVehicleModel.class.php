@@ -20,7 +20,13 @@ class OrderVehicleModel extends AdvModel{
     const STATUS_DONE = 4;
     const STATUS_CLOSED = 5;
     const STATUS_CANCELED = 6;
-
+    const STATUS_CHAIN=[
+        ['id'=>0,[1]],
+        ['id'=>1,[2,6,0]],
+        ['id'=>2,[3]],
+        ['id'=>3,[4]],
+        ['id'=>4,[5]]
+    ];
     protected $pk     = 'id';
 
     protected $fields = [
@@ -222,11 +228,10 @@ class OrderVehicleModel extends AdvModel{
      * @param $oid
      * @param $uid
      */
-    public function cancel($oid,$uid){
+    public function userCancel($oid,$uid){
         $data=$this->find($oid);
         //print_r($data);die;
-        if($data['status']>=self::STATUS_CONFIRM)
-            E('该订单已经开始处理，不能取消。');
+        $this->_assert_new_status($data['status'],self::STATUS_CANCELED);
         if($data['user_id']!=$uid)
             E('非本人操作');
         $data['status']=self::STATUS_CANCELED;
@@ -236,78 +241,36 @@ class OrderVehicleModel extends AdvModel{
     }
 
     /**
-     * 洗车工确认订单
-     * @author WangJiang
+     * @param $oldStatus
+     * @param $newStatus
+     */
+    private function _assert_new_status($oldStatus,$newStatus){
+        foreach(self::STATUS_CHAIN as $i){
+            if($i['id']==$oldStatus){
+                if(!in_array($newStatus,$i[0]))
+                    E('当前状态不能改变为指定状态');
+                return;
+            }
+        }
+        E('当前状态不能在改变');
+    }
+
+    /**
+     * 洗车工修改订单状态
+     * @autjor WangJiang
      * @param $oid
      * @param $uid
+     * @param $status
      */
-    public function workerAccept($oid,$uid){
+    public function workerChaneStatus($oid,$uid,$status){
         $data=$this->find($oid);
-        //print_r($data);die;
-        if($data['status']!=self::STATUS_HAS_WORKER)
-            E('该订单不在正确的状态。');
         if($data['worker_id']!=$uid)
             E('非本人操作');
-        $data['status']=self::STATUS_CONFIRM;
+        $this->_assert_new_status($data['status'],$status);
+        $data['status']=$status;
         //经纬度不需要修改
         unset($data['lnglat']);
         $this->save($data);
     }
 
-    /**
-     * 洗车工开始处理订单
-     * @author WangJiang
-     * @param $oid
-     * @param $uid
-     */
-    public function workerStart($oid,$uid){
-        $data=$this->find($oid);
-        //print_r($data);die;
-        if($data['status']!=self::STATUS_CONFIRM)
-            E('该订单不在正确的状态。');
-        if($data['worker_id']!=$uid)
-            E('非本人操作');
-        $data['status']=self::STATUS_TREATING;
-        //经纬度不需要修改
-        unset($data['lnglat']);
-        $this->save($data);
-    }
-
-    /**
-     * 洗车工处理完成订单
-     * @author WangJiang
-     * @param $oid
-     * @param $uid
-     */
-    public function workerEnd($oid,$uid){
-        $data=$this->find($oid);
-        //print_r($data);die;
-        if($data['status']!=self::STATUS_TREATING)
-            E('该订单不在正确的状态。');
-        if($data['worker_id']!=$uid)
-            E('非本人操作');
-        $data['status']=self::STATUS_DONE;
-        //经纬度不需要修改
-        unset($data['lnglat']);
-        $this->save($data);
-    }
-
-    /**
-     * 洗车工拒绝订单，一种情况，系统自动排单，洗车工发现不属于自己负责地区，可以选择拒绝
-     * @author WangJiang
-     * @param $oid
-     * @param $uid
-     */
-    public function workerReject($oid,$uid){
-        $data=$this->find($oid);
-        //print_r($data);die;
-        if($data['status']!=self::STATUS_HAS_WORKER)
-            E('该订单不在正确的状态。');
-        if($data['worker_id']!=$uid)
-            E('非本人操作');
-        $data['status']=self::STATUS_NO_WORKER;
-        //经纬度不需要修改
-        unset($data['lnglat']);
-        $this->save($data);
-    }
 }

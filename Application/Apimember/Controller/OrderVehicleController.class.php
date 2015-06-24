@@ -173,7 +173,8 @@ class OrderVehicleController extends ApiController
 
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
-                    $wid=(new MerchantModel())->getAvalibleWorker($data['lnglat'],$data['preset_time']);
+                    list($lng,$lat)=explode(' ',$data['lnglat']);
+                    $wid=(new MerchantModel())->getAvailableWorker($lng,$lat,$data['preset_time']);
                     if(is_null($wid))
                         $data['status']=OrderVehicleModel::STATUS_NO_WORKER;
                     else{
@@ -214,7 +215,7 @@ class OrderVehicleController extends ApiController
                 E('非法调用，请用POST调用');
             $oid=I('post.orderId');
             $m=new OrderVehicleModel();
-            $m->cancel($oid,$this->getUserId());
+            $m->userCancel($oid,$this->getUserId());
             $this->apiSuccess(null,'成功');
         }catch (\Exception $ex) {
             $this->apiError(51022, $ex->getMessage());

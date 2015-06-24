@@ -159,7 +159,8 @@ class MerchantModel extends AdvModel
         $this->join('LEFT JOIN sq_appraise on sq_appraise.merchant_id = sq_merchant.id');
 
         $bind=[':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')];
-        $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)';
+        $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
+            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)';
 
         if(!is_null($number))
             $where['sq_merchant.number']=$number;
@@ -168,6 +169,7 @@ class MerchantModel extends AdvModel
             $where['sq_ucenter_member.real_name']=['like',"%$name%"];
 
         $data=$this->where($where)->field(['sq_merchant.id'
+            ,'sq_merchant.number'
             ,'sq_ucenter_member.mobile'
             ,'sq_ucenter_member.real_name'
             ,'sq_ucenter_member.photo'
@@ -179,6 +181,7 @@ class MerchantModel extends AdvModel
             ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade'
         ])->bind($bind)
             ->limit($page,$pageSize)
+            ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
             ->group('sq_merchant.id')
             ->select();
 
@@ -187,9 +190,18 @@ class MerchantModel extends AdvModel
         return $data;
     }
 
-    public function getAvalibleWorker($lnglat,$presetTime){
-        //TODO 完成自动匹配洗车工算法
-        return null;
+    public function getAvailableWorker($lng,$lat,$presetTime){
+        //TODO 该值放到配置文件
+        $range=1000;
+        $timeRange=1000;
+
+        $bind=[':presetTime'=>$presetTime-$timeRange];
+        $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
+            ' and sq_merchant.id not in (select worker_id from sq_order_vehicle where preset_time>:presetTime and worker_id=sq_merchant.id and sq_order_vehicle.status in (1,2,3)) ';
+        $data=$this->where($where)->bind($bind)->field(['sq_merchant.id'])
+            ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
+            ->find();
+        return $data ? $data['id'] : null;
     }
 
     /**
