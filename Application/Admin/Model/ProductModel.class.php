@@ -99,7 +99,7 @@ class ProductModel extends Model
         if (empty($data['id'])) {
 
             if($this->where(array('number'=>$data['number']))->count()){
-                $this->error('该商品的已经存在');
+                $this->error='该商品的已经存在';
                 return false;
             }
 
