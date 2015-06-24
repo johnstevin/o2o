@@ -216,6 +216,10 @@ class MerchantShopController extends ApiController
                     'delivery_amount_cost',
                     'message',
                     'picture',
+                    'yyzz_picture',
+                    'spwsxkz_picture',
+                    'id_cart_front_picture',
+                    'id_cart_back_picture',
                     'st_astext(lnglat) as lnglat'])
                     ->where($where)->limit($page,$pageSize)->select();
 

@@ -201,7 +201,8 @@ class MerchantDepotController extends ApiController
                         $cateChain = $this->_get_cate_chain([$category_id]);
                         $insertMerchantDepotProCategory=D('MerchantDepotProCategory')->where(['product_id' => $productId, 'category_id' => $category_id])->count()==0;
 
-                        D()->startTrans();
+                        $model = MerchantDepotModel::getInstance();
+                        $model->startTrans();
                         try {
                             $productId = D('Product')->add(['title' => $title
                                 , 'brand_id' => $brand_id
@@ -220,7 +221,7 @@ class MerchantDepotController extends ApiController
                                     D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
                                 }
                             }
-                            $model = MerchantDepotModel::getInstance();
+
                             if (($data = $model->create(['shop_id' => $shopId
                                     , 'product_id' => $productId
                                     , 'price' => $price
@@ -234,12 +235,12 @@ class MerchantDepotController extends ApiController
                                 E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
 
                             //var_dump($depotId);die;
-                            D()->commit();
+                            $model->commit();
 
                             $this->apiSuccess(['data'=>['product_id' => $productId, 'id' => $depotId]], '');
 
                         } catch (\Exception $ex) {
-                            D()->rollback();
+                            $model->rollback();
                             throw $ex;
                         }
                     }
@@ -267,22 +268,23 @@ class MerchantDepotController extends ApiController
 
         //var_dump($status);
         //var_dump($productId);die;
+        $m=D('MerchantDepot');
+        $data = $m->create(['shop_id' => $shopId, 'product_id' => $productId,
+            'status'=>$status,'price' => $price, 'remark' => $remark]);
 
-        D()->startTrans();
+        $d=D();
+        $d->startTrans();
         try {
             foreach ($cateChain as $i) {
                 D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
             }
-            $m=D('MerchantDepot');
-            $data = $m->create(['shop_id' => $shopId, 'product_id' => $productId,
-                'status'=>$status,'price' => $price, 'remark' => $remark]);
             //var_dump($data);die;
             $newId = $m->add($data);
             //var_dump($newId);die;
-            D()->commit();
+            $d->commit();
             $this->apiSuccess(['data'=>['product_id' => $productId, 'id' => $newId]], '');
         } catch (\Exception $ex) {
-            D()->rollback();
+            $d->rollback();
             throw $ex;
         }
     }
@@ -336,9 +338,10 @@ class MerchantDepotController extends ApiController
             if (IS_POST) {
                 //TODO 验证用户权限
                 $uid = $this->getUserId();
-                can_modify_shop($uid, I('shop_id'));
-
                 $model = D('MerchantDepot');
+                $depot=$model->find(I('id'));
+                can_modify_shop($uid, $depot['shop_id']);
+
                 if (!$model->create())
                     E('参数传递失败');
                 $model->save();

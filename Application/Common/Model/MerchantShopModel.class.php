@@ -50,6 +50,26 @@ class MerchantShopModel extends AdvModel
         'picture',
         'staff_register_url',
         'tags',
+        'pay_delivery_time',
+        'delivery_time_cost',
+        'delivery_distance_limit',
+        'pay_delivery_distance',
+        'delivery_distance_cost',
+        'free_delivery_amount',
+        'pay_delivery_amount',
+        'delivery_amount_cost',
+        'yyzz_picture',
+        'spwsxkz_picture',
+        'id_cart_front_picture',
+        'id_cart_back_picture',
+        'pay_delivery_time',
+        'delivery_time_cost',
+        'delivery_distance_limit',
+        'pay_delivery_distance',
+        'delivery_distance_cost',
+        'free_delivery_amount',
+        'pay_delivery_amount',
+        'delivery_amount_cost',
         '_type'=>[
             'id'=>'int',
             'title'=>'string',
@@ -69,6 +89,18 @@ class MerchantShopModel extends AdvModel
             'picture'=>'int',
             'staff_register_url'=>'string',
             'tags'=>'array',
+            'yyzz_picture'=>'int',
+            'spwsxkz_picture'=>'int',
+            'id_cart_front_picture'=>'int',
+            'id_cart_back_picture'=>'int',
+            'pay_delivery_time'=>'int',
+            'delivery_time_cost'=>'int',
+            'delivery_distance_limit'=>'int',
+            'pay_delivery_distance'=>'int',
+            'delivery_distance_cost'=>'int',
+            'free_delivery_amount'=>'int',
+            'pay_delivery_amount'=>'int',
+            'delivery_amount_cost'=>'int',
         ]
     ];
 
@@ -265,6 +297,8 @@ class MerchantShopModel extends AdvModel
      */
     public function add(){
 
+        $stat=[];
+
         $bind=[];
         $data=$this->data();
         $shopVals=[];
@@ -282,28 +316,45 @@ class MerchantShopModel extends AdvModel
             }
         }
 
-        $sql='INSERT INTO sq_merchant_shop('.implode(',',$shopFlds).') VALUES('.implode(',',$shopVals).');';
-        $sql.='SET @sid = last_insert_id();';
+        $stat[]=[
+            'sql'=>'INSERT INTO sq_merchant_shop('.implode(',',$shopFlds).') VALUES('.implode(',',$shopVals).');',
+            'bind'=>$bind,
+            'newId'=>true
+        ];
+        $stat[]=['sql'=>'SET @sid = last_insert_id();','bind'=>[]];
+
         foreach($data as $key=>$val){
             if($key=='tags'){
                 $a=explode(',',$val);
+                $bind=[];
+                $tagVals=[];
                 foreach($a as $i=>$tag){
                     $bindName=":$key$i";
-                    $sql.="INSERT INTO sq_shop_tag(shop_id, tag_id) VALUES (@sid,$bindName);";
                     $bind[$bindName]=$tag;
+                    $tagVals[]="(@sid,$bindName)";
                 }
+                $stat[]=[
+                    'sql'=>'INSERT INTO sq_shop_tag(shop_id, tag_id) VALUES '.implode(',',$tagVals).';',
+                    'bind'=>$bind
+                ];
+                break;
             }
         }
+
         //
 
-        $sql.='UPDATE sq_auth_access SET role_id=:role_id WHERE uid=:uid;';
-        $bind[':uid']=$data['add_uid'];
-        $bind[':role_id']=$data['type']==1
-            ?C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')
-            :C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');
+        $stat[]=[
+            'sql'=>'UPDATE sq_auth_access SET role_id=:role_id WHERE uid=:uid;',
+            'bind'=>[
+                ':uid'=>$data['add_uid'],
+                ':role_id'=>$data['type']==1
+                    ?C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')
+                    :C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER')
+            ]
+        ];
 
         //print_r($sql);var_dump($bind);die;
-        return $this->doTransaction($sql, $bind);
+        return do_transaction($stat);
     }
 
     /**
@@ -313,6 +364,8 @@ class MerchantShopModel extends AdvModel
      * @throws \Exception
      */
     public function save(){
+
+        $stat=[];
 
         $bind=[];
         $data=$this->data();
@@ -337,21 +390,32 @@ class MerchantShopModel extends AdvModel
 
         //var_dump($data);die;
 
-        $sql='UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;";
+        $stat[]=[
+            'sql'=>'UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;",
+            'bind'=>$bind
+        ];
 
         foreach($data as $key=>$val){
             if($key=='tags'){
-                $sql.="DELETE FROM sq_shop_tag WHERE shop_id=:id;";
+                $stat[]=['sql'=>'DELETE FROM sq_shop_tag WHERE shop_id=:id;','bind'=>[':id'=>$id]];
+
                 $a=explode(',',$val);
+                $bind=[':sid'=>$id];
+                $tagVals=[];
                 foreach($a as $i=>$tag){
                     $bindName=":$key$i";
-                    $sql.="INSERT INTO sq_shop_tag(shop_id, tag_id) VALUES (:id,$bindName);";
                     $bind[$bindName]=$tag;
+                    $tagVals[]="(:sid,$bindName)";
                 }
+                $stat[]=[
+                    'sql'=>'INSERT INTO sq_shop_tag(shop_id, tag_id) VALUES '.implode(',',$tagVals).';',
+                    'bind'=>$bind
+                ];
+                break;
             }
         }
 
-        $this->doTransaction($sql, $bind);
+        do_transaction($stat);
     }
 
     protected function _after_find(&$result,$options='') {
@@ -371,20 +435,6 @@ class MerchantShopModel extends AdvModel
         foreach($resultSet as &$row){
             $this->_after_query_row($row);
         }
-    }
-
-    /**
-     * 在实务环境下执行一条语句
-     * @author  WangJiang
-     * @param $sql  SQL语句
-     * @param $bind 绑定参数
-     * @throws Exception
-     * @throws \Exception
-     * @return int
-     */
-    public function doTransaction($sql, $bind)
-    {
-        db_transaction($sql, $bind);
     }
 
     /**

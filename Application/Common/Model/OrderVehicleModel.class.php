@@ -202,8 +202,10 @@ class OrderVehicleModel extends AdvModel{
      * @param $success 成功回调
      */
     public function insert($success){
-        $bind=[];
+
         $data=$this->data();
+
+        $bind=[];
         $orderVals=[];
         $orderFlds=[];
         foreach($data as $key=>$val){
@@ -218,8 +220,12 @@ class OrderVehicleModel extends AdvModel{
                 $orderFlds[]=$key;
             }
         }
-        $sql='INSERT INTO sq_order_vehicle('.implode(',',$orderFlds).') VALUES('.implode(',',$orderVals).');';
-        return db_transaction($sql, $bind,$success);
+
+        return do_transaction([
+            ['sql'=>'INSERT INTO sq_order_vehicle('.implode(',',$orderFlds).') VALUES('.implode(',',$orderVals).');',
+            'bind'=>$bind,
+            'newId'=>true]
+        ]);
     }
 
     /**

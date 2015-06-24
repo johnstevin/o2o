@@ -735,44 +735,40 @@ class DBException extends RuntimeException
 }
 
 /**
- * 数据库事务处理
+ * 提交事务
  * @author WangJiang
- * @param string $sql
- * @param array $bind
- * @param function $success 成功回调函数，缺省为null
- * @param boolean $success_safe 是否捕获回调的异常，缺省为true
- * @throws Exception
- * @return int newId
+ * @param $data
  */
-function db_transaction($sql, $bind, $success = null, $success_safe = true)
-{
-    //TODO:目前ThinkPHP不支持空间类型字段
-    $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'));
+function do_transaction($data,$success=null){
+    /*
+     * $data = [['sql'=>'<sql>','bind'=>[<bounds>],'newId'=><true|false>]...]
+     */
+    $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'),
+        C('DB_USER'), C('DB_PWD'),array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8';"));
     $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-    $stmt = $dbh->prepare($sql);
-    foreach ($bind as $k => $v) {
-        $stmt->bindValue($k, $v);
-    }
 
     $newid = null;
     try {
-        $dbh->beginTransaction();
-        $r = $stmt->execute();
-        $newid = $dbh->lastInsertId();
-        //test for transaction
-        //throw new Exception();
-        if ($r == true and is_callable($success))
-            if ($success_safe) {
-                try {
-                    call_user_func($success);
-                } catch (\Exception $e) {
-                }
-            } else
-                call_user_func($success);
-        if ($r == false)
+        if(false==$dbh->beginTransaction())
             throw new DBException($dbh->errorCode(), $dbh->errorInfo());
-        $dbh->commit();
+        foreach($data as $i){
+            $stmt = $dbh->prepare($i['sql']);
+            $r = $stmt->execute($i['bind']);
+            if ($r == false)
+                throw new DBException($dbh->errorCode(), $dbh->errorInfo());
+            if($i['newId'])
+                $newid=$dbh->lastInsertId();
+        }
+        if(false==$dbh->commit())
+            throw new DBException($dbh->errorCode(), $dbh->errorInfo());
+
+        if(is_callable($success)){
+            try {
+                call_user_func($success);
+            } catch (\Exception $e) {
+            }
+        }
+
         return $newid;
     } catch (\Exception $e) {
         $dbh->rollBack();
