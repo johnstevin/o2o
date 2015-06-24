@@ -192,8 +192,8 @@ class MerchantModel extends AdvModel
 
     public function getAvailableWorker($lng,$lat,$presetTime){
         //TODO 该值放到配置文件
-        $range=1000;
-        $timeRange=1000;
+        $range=C('AUTO_MERCHANT_SCAN.RANGE');
+        $timeRange=C('AUTO_MERCHANT_SCAN.PRESET_TIME');
 
         $bind=[':presetTime'=>$presetTime-$timeRange];
         $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
