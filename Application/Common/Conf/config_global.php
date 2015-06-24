@@ -173,5 +173,15 @@ return [
     //本地上传文件驱动配置
     'UPLOAD_LOCAL_CONFIG'=>array(),
 
+    //验证码过期时间，单位秒
+    'VERIFY_CODE_EXPIRE'=>60,
+
+    //系统自动查找洗车工参数
+    'AUTO_MERCHANT_SCAN'=>[
+        //查找最大范围，单位米
+        'RANGE'=>1000,
+        //时间匹配参数，单位秒，洗车工最后的订单时间与用户指定的时间之差必须大于该值才能匹配
+        'PRESET_TIME'=>1000
+    ],
 
 ];
