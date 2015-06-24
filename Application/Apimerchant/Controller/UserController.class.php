@@ -41,7 +41,7 @@ class UserController extends ApiController {
                 $Ucenter  = D('UcenterMember');
                 $token = $Ucenter->login($username, $password, 5);
                 if(0 < $token){
-                    $this->apiSuccess(['token'=>$token]);
+                    $this->apiSuccess(['data'=>['token'=>$token]]);
                 } else {
                     switch($token) {
                         case 0:$error = '参数错误！'; break; //系统级别禁用
