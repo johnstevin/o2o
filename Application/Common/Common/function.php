@@ -993,11 +993,25 @@ function upload_picture($uid,$type){
 
 require __ROOT__.'Addons/Sms/Common/function.php';
 
+define('CODE_EXPIRE',30);
+
+/**
+ * 获得缓存的验证码
+ * @author WangJiang
+ * @param $mobile
+ * @return mixed
+ */
 function get_sms_code($mobile){
     $ck="verify_code_$mobile";
     return S($ck,'',['expire'=>CODE_EXPIRE]);
 }
 
+/**
+ * 缓存验证码
+ * @author WangJiang
+ * @param $mobile
+ * @param $code
+ */
 function set_sms_code($mobile,$code){
     $ck="verify_code_$mobile";
     S($ck,$code,['expire'=>CODE_EXPIRE]);
@@ -1007,6 +1021,7 @@ function set_sms_code($mobile,$code){
  * 发送验证码
  * @author WangJiang
  * @param $mobile
+ * @return string
  */
 function send_sms_code($mobile){
     if(get_sms_code($mobile)!==false)
@@ -1029,7 +1044,7 @@ function send_sms_code($mobile){
  * @return bool
  */
 function verify_sms_code($mobile,$code){
-    return get_sms_code($mobile)!=$code;
+    return get_sms_code($mobile)==$code;
 }
 
 /**
