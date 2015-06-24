@@ -35,6 +35,7 @@ class OrderModel extends RelationModel
 {
     protected static $model;
     protected $autoinc = true;
+    protected $pk = 'id';
     protected $patchValidate = true;
 
     ## 状态常量
@@ -532,6 +533,138 @@ class OrderModel extends RelationModel
     {
         if (!$order = self::get($orderId, null, 'id', false, true)) return null;
         return $order['_products'];
+    }
+
+    public function initOrder($cart, $deliveryMode = self::DELIVERY_MODE_DELIVERY, $deliveryTime = null, $split = true)
+    {
+        $cart = is_array($cart) ? $cart : json_decode($cart, true);
+//        $cart = [
+//            [
+//                'product_id' => 1,
+//                'depot_id' => 1,
+//                'total' => 2,
+//                'shop_id' => [
+//                    5, 15, 45, 101, 102, 115
+//                ]
+//            ],
+//            [
+//                'product_id' => 2,
+//                'depot_id' => 16,
+//                'total' => 2,
+//                'shop_id' => [
+//                    1, 6, 9, 10, 11, 13, 15, 17, 18, 19, 20, 22, 23, 25, 29, 30
+//                ]
+//            ],
+//            [
+//                'product_id' => 3,
+//                'depot_id' => 131,
+//                'total' => 5,
+//                'shop_id' => [
+//                    2, 8, 12, 16, 19, 20, 23, 28, 31, 32
+//                ]
+//            ],
+//            [
+//                'product_id' => 4,
+//                'depot_id' => 185,
+//                'total' => 10,
+//                'shop_id' => [
+//                    1, 2, 3, 5, 8, 9, 10, 11, 13, 15, 18, 19, 20, 23, 24
+//                ]
+//            ],
+//            [
+//                'product_id' => 5,
+//                'depot_id' => 289,
+//                'total' => 10,
+//                'shop_id' => [
+//                    3, 7, 8, 10, 11, 14, 17, 21, 22, 24, 30, 32, 35, 39
+//                ]
+//            ],
+//            [
+//                'product_id' => 6,
+//                'depot_id' => 356,
+//                'total' => 10,
+//                'shop_id' => [
+//                    2, 17, 18, 23, 24, 33, 44
+//                ]
+//            ],
+//            [
+//                'product_id' => 7,
+//                'depot_id' => 372,
+//                'total' => 3,
+//                'shop_id' => [
+//                    2, 7, 11, 13, 14, 15, 16, 17, 20, 21, 23, 25, 26, 28, 30, 32, 33, 35
+//                ]
+//            ]
+//        ];
+        $depotModel = MerchantDepotModel::getInstance();
+        $shopModel = MerchantShopModel::getInstance();
+        if ($split) {//如果需要系统拆单
+            $products = [];//已经确定商家的商品
+            $shopIds = [];//购物车中涉及到的所有商家，用于计算每个商家距离之后分配商品
+            $hasProductShopIds = [];//购物车中已经确定商品归属的商家
+            $_cart = [];//需要拆单的商品
+            $notAllocationProducts = [];//需要拆单的商品列表
+
+            foreach ($cart as $key => $product) {
+                $shopIds = array_merge($shopIds, $product['shop_id']);//把商铺ID加入到商铺ID列表里
+                //如果这个商品只有这家有卖或者用户选定了这家商家，则直接放入已经确定商家的商品列表里
+                if (count($product['shop_id']) === 1) {
+                    $hasProductShopIds[] = current($product['shop_id']);
+                    $products[$product['depot_id']] = [
+                        'total' => $product['total'],
+                        'depot_id' => $product['depot_id'],
+                        'shop_id' => current($product['shop_id']),
+                        'product_id' => $product['product_id']
+                    ];
+                } else {//否则放入需要系统分配商家的列表里
+                    $_cart[] = $product;
+                    $notAllocationProducts[] = [
+                        'total' => $product['total'],
+                        'product_id' => $product['product_id'],
+                    ];
+                }
+            }
+
+            //统计目前已经确定要配货的商家要配送的货物数量【注意：这个有可能为空】
+            $hasProductShopTotal = array_count_values($hasProductShopIds);
+            arsort($hasProductShopTotal);//排序，方便找出要送货最多的商家
+            $shopIds = array_unique($shopIds);
+
+            //如果未分配的商品不为空
+            if (!empty($notAllocationProducts)) {
+                //如果配送时间不等于空
+                if (!empty($deliveryTime)) {
+                    $openShops = $shopModel->execute('SELECT id FROM ' . $shopModel->getTableName() . ' WHERE status=' . MerchantShopModel::STATUS_ACTIVE
+                        . ' and open_status=' . MerchantShopModel::OPEN_STATUS_OPEN . ' ');
+                }
+                //根据未分配商家的商品ID找出所有有这个商品的商家并按商品ID和价格排序
+                $_depots = $depotModel->field('id,shop_id,price,product_id')->where([
+                    'product_id' => ['IN', array_column($notAllocationProducts, 'product_id')],
+                    'shop_id' => ['IN', $shopIds],
+                    'status' => MerchantDepotModel::STATUS_ACTIVE
+                ])->order('product_id,price')->select();
+                $depots = [];
+                $shopLists = [];//商家统计
+                //根据商品ID对仓库的商品进行分组
+                foreach ($_depots as $key => &$depot) {
+                    $depots[$depot['product_id']][] = &$_depots[$key];
+                    $shopLists[] = $depot['shop_id'];
+                }
+                //统计每个商家出现的次数，出现的越多，本次订单能提供的商品就越多
+                $shopTotal = array_count_values($shopLists);
+                //把能提供最多商品的商家排在前面
+                arsort($shopTotal);
+                echo '<pre>';
+                print_r($depots);
+                die;
+                foreach ($depots as $depot) {
+
+                }
+            }
+            die;
+        } else {
+            $products = &$cart;
+        }
     }
 
     /**

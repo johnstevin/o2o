@@ -23,6 +23,10 @@ class MerchantShopModel extends AdvModel
     const STATUS_ACTIVE = 1;//审核通过,正常
     const STATUS_DENIED = 3;//审核未通过
 
+    ## 开放状态
+    const OPEN_STATUS_OPEN = 1;//营业
+    const OPEN_STATUS_CLOSE = 0;//歇业
+
     /**
      * @author  WangJiang
      * @var array
@@ -78,10 +82,10 @@ class MerchantShopModel extends AdvModel
      * @author  WangJiang
      * @var array
      */
-    protected $_auto = array (
+    protected $_auto = [
         ['type',1,self::MODEL_INSERT],
         ['status',self::STATUS_CLOSE,self::MODEL_INSERT]
-    );
+    ];
 
     protected $readonlyField=[
         'type',

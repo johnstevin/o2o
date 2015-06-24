@@ -696,17 +696,4 @@ class ProductController extends ApiController
     {
         $this->apiSuccess(['data' => ProductModel::get($id, $fields)]);
     }
-
-    /**
-     * 根据商品条形码查询商品
-     * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param int|string $number
-     * @param string $fileds 要查询的字段
-     * @param bool $getBrand 是否要获得品牌信息
-     * @param bool $getCategorys 是否要获得分类信息
-     */
-    public function findByNumber($number, $fileds = '*', $getBrand = true, $getCategorys = true)
-    {
-        $this->apiSuccess(['data' => ProductModel::getInstance()->getByNumber($number, $fileds, $getBrand, $getCategorys)]);
-    }
 }

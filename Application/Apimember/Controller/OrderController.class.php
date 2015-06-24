@@ -424,7 +424,7 @@ class OrderController extends ApiController
         $this->apiSuccess(['data' => OrderModel::updateOrderStatus($id, OrderModel::STATUS_CANCEL)]);
     }
 
-    public function initOrder($cart, $deliveryMode, $split)
+    public function initOrder($cart, $deliveryMode, $split = true)
     {
         $this->apiSuccess(['data' => OrderModel::getInstance()->initOrder($cart, $deliveryMode, $split)]);
     }
