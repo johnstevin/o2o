@@ -235,12 +235,16 @@ class RegionModel extends Model
     public function getTree($pid = 0, $level = null, $status = null, $pageSize = null, $fields = '*')
     {
         $_level = is_array($level) ? implode('_', $level) : str_replace(',', '_', $level);
-        $cacheKey = 'sys_region_tree_' . $pid . '_' . $_level;
-        $tree = S($cacheKey);
-        if (empty($tree[$pid])) {
+        $nowPage = isset($_GET['p']) ? $_GET['p'] : 1;
+        $cacheKey = 'sys_region_tree_' . $pid . '_' . $_level . $pageSize . $nowPage;
+        S(['expire' => C('DATA_CACHE_TIME') ?: 86400]);
+
+        if (!$tree = S($cacheKey)) {
             $lists = self::getInstance()->getLists(null, $level, $status, $pageSize, $fields);
-            S($cacheKey, $tree = list_to_tree($lists['data'], 'id', 'pid', '_childs', $pid));
+            $tree = list_to_tree($lists['data'], 'id', 'pid', '_childs', $pid);
+            S($cacheKey, $tree);
         }
+
         return [
             'data' => $tree
         ];

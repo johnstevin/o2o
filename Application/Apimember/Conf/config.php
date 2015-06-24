@@ -21,7 +21,6 @@ return array(
 
     /* 数据缓存设置 */
     'DATA_CACHE_PREFIX'    => 'o2o_member_', // 缓存前缀
-    'DATA_CACHE_TYPE'      => 'File', // 数据缓存类型
 
     /* 后台错误页面模板 ×××××××××××开发使用×××××××××× */
 
