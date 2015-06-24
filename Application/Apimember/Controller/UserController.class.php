@@ -144,7 +144,7 @@ class UserController extends ApiController {
     public function getUserInfo(){
         try {
             $map = $this->getUserId();
-            $fields = 'a.id,a.mobile,a.username,a.email,a.reg_time,a.reg_ip,b.nickname,b.sex,b.birthday,b.qq';
+            $fields = 'a.id,a.mobile,a.username,a.email,a.reg_time,a.reg_ip,a.photo,b.nickname,b.sex,b.birthday,b.qq';
             $uInfo = D('Member')->getMemberInfos($map, $fields);
             if(empty($uInfo))
                 $this->apiError(40015,'没有此用户');
@@ -163,8 +163,8 @@ class UserController extends ApiController {
      */
     public function editInfo(){
         try {
-            //$uid = $this->getUserId();
-            $uid = 80;
+            $uid = $this->getUserId();
+            //$uid = 80;
             $type = I('get.type');
             switch ( $type ) {
                 case 'photo' :
@@ -173,26 +173,26 @@ class UserController extends ApiController {
                     break;
                 case 'real_name' :
                     $model = D("UcenterMember");
-                    $real_name = I('get.real_name');
+                    $real_name = I('post.real_name');
                     $data['real_name'] = $real_name;
                     $data['id'] = $uid;
                     break;
                 case 'nickname' :
                     $model = D("Member");
-                    $nickname = I('get.nickname');
+                    $nickname = I('post.nickname');
                     $data['nickname'] = $nickname;
                     $data['uid'] = $uid;
                     break;
                 case 'email' :
                     $model = D("UcenterMember");
-                    $email = I('get.email');
+                    $email = I('post.email');
                     $data['email'] = $email;
                     $data['id'] = $uid;
                     break;
                 case 'password' :
                     $model = D("UcenterMember");
-                    $opassword = I('get.opassword');
-                    $npassword = I('get.npassword');
+                    $opassword = I('post.opassword');
+                    $npassword = I('post.npassword');
                     if ($opassword === $npassword)
                         E('新旧密码不能相同');
 
