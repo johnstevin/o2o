@@ -159,7 +159,7 @@ class MerchantModel extends AdvModel
         $this->join('LEFT JOIN sq_appraise on sq_appraise.merchant_id = sq_merchant.id');
 
         $bind=[':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')];
-        $where['_string']=build_distance_sql_where($lat, $lng, $range,$bind,'sq_merchant.lnglat').' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)';
+        $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)';
 
         if(!is_null($number))
             $where['sq_merchant.number']=$number;
