@@ -985,3 +985,53 @@ function upload_picture($uid,$type){
 
     return $info;
 }
+
+
+/**
+ * 短线验证码接口 >>
+ */
+
+require __ROOT__.'Addons/Sms/Common/function.php';
+
+function get_sms_code($mobile){
+    $ck="verify_code_$mobile";
+    return S($ck,'',['expire'=>CODE_EXPIRE]);
+}
+
+function set_sms_code($mobile,$code){
+    $ck="verify_code_$mobile";
+    S($ck,$code,['expire'=>CODE_EXPIRE]);
+}
+
+/**
+ * 发送验证码
+ * @author WangJiang
+ * @param $mobile
+ */
+function send_sms_code($mobile){
+    if(get_sms_code($mobile)!==false)
+        E(self::CODE_EXPIRE.'秒内不能重复获取');
+    $code=[];
+    while(count($code)<6){
+        $code[]=rand(1,9);
+    }
+    $code=implode('',$code);
+    set_sms_code($mobile,$code);
+    \Addons\Sms\Common\send_code([$mobile],$code);
+    return $code;
+}
+
+/**
+ * 检查验证码
+ * @author WangJiang
+ * @param $mobile
+ * @param $code
+ * @return bool
+ */
+function verify_sms_code($mobile,$code){
+    return get_sms_code($mobile)!=$code;
+}
+
+/**
+ * >> 短线验证码接口
+ */

@@ -74,7 +74,7 @@ class UserController extends ApiController {
             $password   = I('post.password');
             $code = I('post.code');
 
-            if($this->_get_code($mobile)!=$code)
+            if(verify_sms_code($mobile,$code))
                 E("验证码错误或已过期，请重新获取");
 
             $Ucenter = D('UcenterMember');
@@ -109,28 +109,9 @@ class UserController extends ApiController {
         }
     }
 
-    private function _get_code($mobile){
-        $ck="verify_code_$mobile";
-        return S($ck,'',['expire'=>CODE_EXPIRE]);
-    }
-
-    private function _set_code($mobile,$code){
-        $ck="verify_code_$mobile";
-        S($ck,$code,['expire'=>CODE_EXPIRE]);
-    }
-
     public function getVerifyCode($mobile){
         try{
-            if($this->_get_code($mobile)!==false)
-                E(self::CODE_EXPIRE.'秒内不能重复获取');
-            $code=[];
-            while(count($code)<6){
-                $code[]=rand(1,9);
-            }
-            $code=implode('',$code);
-            $this->_set_code($mobile,$code);
-            \Addons\Sms\Common\send_code([$mobile],$code);
-            $this->apiSuccess(['data'=>$code]);
+            $this->apiSuccess(['data'=>send_sms_code($mobile)]);
         }catch (\Exception $ex){
             $this->apiError(40009,$ex->getMessage());
         }
