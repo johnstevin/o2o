@@ -67,6 +67,7 @@ class MerchantDepotModel extends RelationModel
         ]
     ];
     protected $pk = 'id';
+
     /**
      * 只读字段
      * @author Fufeng Nie <niefufeng@gmail.com>
@@ -74,6 +75,21 @@ class MerchantDepotModel extends RelationModel
      */
     protected $readonlyField = ['shop_id', 'product_id', 'add_time', 'add_ip'];
 
+    protected function checkReadonlyField(&$data) {
+        if(!empty($this->readonlyField)) {
+            foreach ($this->readonlyField as $key=>$field){
+                if(isset($data[$field]))
+                    unset($data[$field]);
+            }
+        }
+        return $data;
+    }
+
+    // 更新前的回调方法
+    protected function _before_update(&$data,$options='') {
+        // 检查只读字段
+        $data = $this->checkReadonlyField($data);
+    }
     /**
      * 自动验证
      * @author Fufeng Nie <niefufeng@gmail.com>
