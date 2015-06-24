@@ -87,18 +87,11 @@
 
     $('select[name=group_id]').change(function () {
 
-        $("#rg-container-fun").load($('#rg-container-fun').attr("href"), {"group_id": this.value}, function (response, status, xhr) {
+        var target=$('#rg-container-fun').attr("href")+"?group_id="+this.value;
+        if (target) {
+            contentload(target);
+        }
 
-            if (status == "success") {
-
-                $('#rg-container-fun').html(response);
-            }
-            else {
-                $('#rg-container-fun').html("出错了: <br/>状态码：" + xhr.status + " <br/>具体说明:" + xhr.statusText)
-            }
-
-
-        });
     });
 
 </script>

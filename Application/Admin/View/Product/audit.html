@@ -1,0 +1,99 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title"> <h2><h2>{$meta_title}</h2></h2></h4>
+</div>
+<div class="modal-body">
+    <div class="container-fluid">
+        
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                <tr>
+                    <th width="10%">名称</th>
+                    <th>信息</th>
+
+                </tr>
+                </thead>
+                <tbody>
+
+                <tr>
+                    <td>产品id</td>
+                    <td>{$info.id}</td>
+                </tr>
+                <tr>
+                    <td>产品名称</td>
+                    <td>{$info.title}</td>
+                </tr>
+                <tr>
+                    <td>品牌</td>
+                    <td>{$info.brand_id}</td>
+                </tr>
+                <tr>
+                    <td>规格</td>
+                    <td>{$info.norms_id}</td>
+                </tr>
+                <tr>
+                    <td>详细</td>
+                    <td>{$info.detail}</td>
+                </tr>
+                <tr>
+                    <td>数量</td>
+                    <td>{$info.number}</td>
+                </tr>
+                <tr>
+                    <td>描述</td>
+                    <td>{$info.description}</td>
+                </tr>
+                <tr>
+                    <td>图片</td>
+                    <td>{$info.picture}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <hr>
+        <div>
+            <label for="reason" class="control-label">如果不通过请填写原因</label>
+            <textarea  id="reason" class="form-control" rows="4" placeholder="不通过原因"></textarea>
+        </div>
+
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">取&nbsp;&nbsp;&nbsp;消</button>
+    <button type="button" class="btn btn-warning btn-refuse" onclick="refuse()">不通过</button>
+    <button type="button" class="btn btn-success" onclick="pass()">通&nbsp;&nbsp;&nbsp;过</button>
+</div>
+<script>
+    var product_id = '{$info.id}';
+    var status='{$info.status}';
+    function pass(){
+        $.ajax({
+            type: "POST",
+            url: "{:U('audit')}",
+            dataType: "json",
+            data: {"product_id":product_id,"status":status,"method":'pass'},
+            success:function(data) {
+                onSuccess(data);
+            },
+            error : function() {
+                alert("异常！");
+            }
+        })
+    };
+    function refuse(){
+        $.ajax({
+            type: "POST",
+            url: "{:U('audit')}",
+            dataType: "json",
+            data: {"product_id":product_id,"status":status,"method":'UnPass',"reason":$("#reason").val()},
+            success:function(data) {
+                onSuccess(data);
+            },
+            error : function() {
+                alert("异常！");
+            }
+        });
+    };
+</script>

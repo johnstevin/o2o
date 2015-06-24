@@ -84,7 +84,7 @@ class MerchantShopModel extends AdvModel
     public function saveCheckInfo($shop_id)
     {
         //检查商户是否存在
-        $info = $this->info($shop_id, 'id,title,description,group_id,type,pid,add_uid,region_id');
+        $info = $this->info($shop_id, 'id,title,description,group_id,type,add_uid,region_id');
         if (empty($info)) {
             $this->error = '没有此商铺';
             return false;

@@ -1,64 +1,139 @@
-
-
-
 <script>
-    var arrTree = jQuery.parseJSON('{$tree|json_encode}');
+//    var arrTree = jQuery.parseJSON('{$tree|json_encode}');
+//
+//    var string = '';
+//
+//    function digui(list, level) {
+//        var level = level ? level : 0, prefix = '';
+//        for (i = 0; i < level; i++) {
+//            if (i == 0 && level == 1) {
+//                prefix += '&nbsp;&nbsp;&nbsp;&nbsp;|__';
+//            } else if (i == 0 && level > 1) {
+//                for (j = 0; j < level; j++) {
+//                    prefix += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+//                }
+//                prefix += '|';
+//            } else {
+//                prefix += '_';
+//            }
+//        }
+//        $.each(list, function (k, v) {
+//            string += '<tr>' +
+////                '<td> + </td><td>' + v.id + '</td>' +
+////                '<td>' + prefix+v.name + '</td>' +
+//            '<td>' + prefix + '<a class="region-ajax" href="{:U("index")}&pid=' + v.id + '">' + v.name + '</a></td>' +
+//            '<td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("add")}&pid=' + v.id + '">增加下级区域</a> </td>' +
+//            '<td>' + v.status_text + '</td>' +
+//            '<td>' + '<a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("edit")}&id=' + v.id + '&pid=' + v.pid + '">编辑</a>&nbsp;&nbsp;' +
+//            '<a class=" ajax-get" href="{:U("Region/changeStatus")}&method=resumeregion&id=' + v.id + '">启用</a>&nbsp;&nbsp;' +
+//            '<a class=" ajax-get" href="{:U("Region/changeStatus")}&method=forbidregion&id=' + v.id + '">禁用</a>&nbsp;&nbsp;' +
+//            '<a class=" ajax-get" href="{:U("Region/changeStatus")}&method=deleteregion&id=' + v.id + '">删除</a>' + '</td>' +
+//            '<td>' + v.lnglat + '</td>' +
+//            '<td><a href="javascript:void(0);" onclick="lnglat(' + v.id + ')">刷新坐标</a></td>' +
+//
+//            '</tr>'
+//            if (v._child) {
+//                digui(v._child, level + 1);
+//            }
+//        })
+//    }
+//    digui(arrTree);
+//    $('#table-header').after(string);
 
-        var string = '';
+    baseJs();
 
-        function digui(list, level) {
-            var level = level ? level : 0,prefix = '';
-            for(i=0;i<level;i++){
-                if(i==0 && level == 1){
-                    prefix += '&nbsp;&nbsp;&nbsp;&nbsp;|__';
-                }else if(i==0 &&  level > 1){
-                    for(j=0;j<level;j++){
-                        prefix += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+
+    // 百度地图API功能
+    var myGeo = new BMap.Geocoder();
+    // 将地址解析
+    function lnglat(id) {
+        var city;
+        $.post("{:U('Region/MapCity')}", {'id': id}, function (rslt) {
+            if (rslt.status) {
+                myGeo.getPoint(rslt.info.address, function (point) {
+                    if (point) {
+                        $.post("{:U('Region/lnglat')}", {'id': id, 'lnglat': point.lng + ',' + point.lat}, function (result) {
+                            ajaxSuccess(result);
+                        })
+                    } else {
+                        alert("您选择地址没有解析到结果!");
                     }
-                    prefix += '|';
-                }else {
-                    prefix += '_';
-                }
+                }, rslt.info.city);
+            } else {
+                alert("后台获取数据错误");
+                return false;
             }
-            $.each(list, function (k, v) {
-                string += '<tr>' +
-//                '<td> + </td><td>' + v.id + '</td>' +
-//                '<td>' + prefix+v.name + '</td>' +
-                '<td>'+prefix+'<a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">'+v.name+'</a></td>' +
-                '<td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("add")}&pid='+ v.id+'">增加下级区域</a> </td>'+
-//                '<td>' + v.pid + '</td>' +
-                '<td>' + v.status_text + '</td>'+
-                '<td>'+'<a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U("edit")}&id='+ v.id+'&pid='+ v.pid+'">编辑</a>&nbsp;&nbsp;'+
-                '<a class=" ajax-get" href="{:U("Region/changeStatus")}&method=resumeregion&id='+ v.id+'">启用</a>&nbsp;&nbsp;'+
-                '<a class=" ajax-get" href="{:U("Region/changeStatus")}&method=forbidregion&id='+ v.id+'">禁用</a>&nbsp;&nbsp;'+
-                '<a class=" ajax-get" href="{:U("Region/changeStatus")}&method=deleteregion&id='+ v.id+'">删除</a>'+'</td>' +
-                '</tr>'
-                if (v._child) {
-                    digui(v._child, level + 1);
-                }
-            })
-        }
-        digui(arrTree);
-        $('#table-header').after(string);
+        });
 
-        baseJs();
+    }
+
+
+
+    $('.region-ajax').click(function () {
+        var target;
+        if ((target = $(this).attr('href')) || (target = $(this).attr('url'))) {
+            contentload(target);
+        }
+
+        return false;
+    });
+
 </script>
+
 
 <div class="container-fluid">
     <div>
-        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-region" class="btn btn-success" href="{:U('add')}">新 增</a>
+        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-region" class="btn btn-success"
+           href="{:U('add')}">新 增</a>
+
+
+            <a class="region-ajax btn btn-success" href="{:U('index?id='.I('pid'))}">返回</a>
+
+
     </div>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <tr id="table-header">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                        <tr id="table-header">
                 <!--<th>折叠</th>-->
                 <!--<th>ID</th>-->
                 <th>名称</th>
                 <th>增加下级区域</th>
-                <!--<th>PID</th>-->
+
                 <th>状态</th>
                 <th>操作</th>
+
+                <th>百度坐标</th>
+                <th>刷新坐标</th>
             </tr>
+            </thead>
+            <tbody>
+            <notempty name="_list">
+                <volist name="_list" id="vo">
+                    <tr>
+                        <!--<td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}"/></td>-->
+                        <td><a class="region-ajax" href="{:U('index?id='.$vo['id'].'&pid='.$vo['pid'])}">{$vo.name}</a></td>
+                        <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('add?pid='.$vo['id'])}">增加下级区域</a></td>
+                        <td>{$vo.status_text}</td>
+                        <td>
+                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                               href="{:U('edit?id='.$vo['id'])}">编辑</a>
+                            <eq name="vo.status" value="1">
+                                <a href="{:U('Region/changeStatus?method=forbidregion&id='.$vo['id'])}"
+                                   class="ajax-get">禁用</a>
+                                <else/>
+                                <a href="{:U('Region/changeStatus?method=resumeregion&id='.$vo['id'])}"
+                                   class="ajax-get">启用</a>
+                            </eq>
+                            <a href="{:U('Region/changeStatus?method=deleteregion&id='.$vo['id'])}"
+                               class="confirm ajax-get">删除</a>
+                        </td>
+                        <td>{$vo.lnglat}</td>
+                        <td><a href="javascript:void(0);" onclick="lnglat('{$vo.id}')">刷新坐标</a></td>
+                </volist>
+                <else/>
+                <td colspan="6" class="text-center"> aOh! 暂时还没有内容!</td>
+            </notempty>
         </table>
     </div>
     <div class="page">

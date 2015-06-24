@@ -296,6 +296,35 @@ function onSuccess(result) {
 
 }
 
+/**
+ * @author liu hui
+ * 给中间的div加载内容
+ * @param result
+ */
+function ajaxSuccess(result) {
+    if (result.status) {
+        //更新内容
+        var target= $('#rg-container-fun').attr("href")
+        contentload(target);
+
+        Messenger().post({
+            message: result.info,
+            type: 'success',
+            showCloseButton: true,
+            hideAfter: 2
+        });
+    } else {
+        Messenger().post({
+            message: result.info,
+            type: 'error',
+            showCloseButton: true,
+            hideAfter: 2
+        });
+    }
+
+}
+
+
 
 /**
  * @author liu hui
@@ -365,22 +394,22 @@ function contentload(target){
 
 
     //ajax get请求
-    //$('.ajax-get').click(function () {
-    //    var target;
-    // //   var that = this;
-    //    if ($(this).hasClass('confirm')) {
-    //        if (!confirm('确认要执行该操作吗?')) {
-    //            return false;
-    //        }
-    //    }
-    //    if ((target = $(this).attr('href')) || (target = $(this).attr('url'))) {
-    //        $.get(target).success(function (data) {
-    //            onSuccess(data);
-    //        });
-    //    }
-    //
-    //    return false;
-    //});
+    $('.ajax-get').click(function () {
+        var target;
+    //   var that = this;
+        if ($(this).hasClass('confirm')) {
+            if (!confirm('确认要执行该操作吗?')) {
+                return false;
+            }
+        }
+        if ((target = $(this).attr('href')) || (target = $(this).attr('url'))) {
+            $.get(target).success(function (data) {
+                ajaxSuccess(data);
+            });
+        }
+
+        return false;
+    });
 }
 
 function Save(Url,selector){

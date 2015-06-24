@@ -60,7 +60,7 @@ class FileController extends AdminController {
         $pic_driver = C('PICTURE_UPLOAD_DRIVER');
         $info = $Picture->upload(
             $_FILES,
-            C('PICTURE_UPLOAD'),
+            C('PRODUCT_PICTURE_UPLOAD'),
             C('PICTURE_UPLOAD_DRIVER'),
             C("UPLOAD_{$pic_driver}_CONFIG")
         ); //TODO:上传到远程服务器

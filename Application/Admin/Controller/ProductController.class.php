@@ -1,6 +1,7 @@
 <?php
 
 namespace Admin\Controller;
+
 use Admin\Model\ProductModel;
 
 /**
@@ -56,17 +57,17 @@ class ProductController extends AdminController
             }
         } else {
             /*获取分类信息*/
-            $category = M('category')->where(array('status' => array('egt', 1),'pid'=>'0'))->order('title asc')->select();
+            $category = M('category')->where(array('status' => array('egt', 1), 'pid' => '0'))->order('title asc')->select();
             /* 获取品牌信息 */
-           // $brands = M('Brand')->where(array('status' => array('egt', 1)))->order('title asc')->select();
+            // $brands = M('Brand')->where(array('status' => array('egt', 1)))->order('title asc')->select();
             /*获取规格信息*/
-           // $norms=M('Norms')->select();
+            // $norms=M('Norms')->select();
             /* 获取分类信息 */
             $this->assign('info', null);
             $this->assign('list_brand', null);
             $this->assign('list_category', $category);
-            $this->assign('list_norm',null);
-            $this->assign('category',null);
+            $this->assign('list_norm', null);
+            $this->assign('category', null);
             $this->meta_title = '新增用户组';
             $this->display('edit');
         }
@@ -76,7 +77,8 @@ class ProductController extends AdminController
      * 返回所有上级等于pid的数据
      * @param array $pid 要查询的上级pid的数组
      */
-    public function getCategoryChild($pid=array(0)){
+    public function getCategoryChild($pid = array(0))
+    {
         $Category_Info = D('Product')->getCategoryChild($pid);
         //print_r($Category_Info);die;
         $this->ajaxReturn($Category_Info);
@@ -86,8 +88,9 @@ class ProductController extends AdminController
      * 返回所有上级等于pid的规格
      * @param array $pid 要查询的上级pid的数组
      */
-    public function getNorms($pid=array(0),$brand){
-        $Norms_Info = D('Product')->getNorms($pid,$brand);
+    public function getNorms($pid = array(0), $brand)
+    {
+        $Norms_Info = D('Product')->getNorms($pid, $brand);
         //print_r($Category_Info);die;
         $this->ajaxReturn($Norms_Info);
     }
@@ -112,7 +115,7 @@ class ProductController extends AdminController
                     $error = $Product->getError();
                     $this->error(empty($error) ? '未知错误' : $error);
                 }
-            }else {
+            } else {
                 M()->rollback();
                 $error = $Product->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
@@ -120,31 +123,31 @@ class ProductController extends AdminController
         } else {
 
             /*获取分类信息*/
-            $category = M('category')->where(array('status' => array('egt', -1),'pid'=>'0'))->order('title asc')->select();
-            $product_category=$Product->CategoryInfo($id);
+            $category = M('category')->where(array('status' => array('egt', -1), 'pid' => '0'))->order('title asc')->select();
+            $product_category = $Product->CategoryInfo($id);
             /* 获取品牌信息 */
-          //  $brands = M('Brand')->where(array('status' => array('egt', -1)))->order('title asc')->select();
+            //  $brands = M('Brand')->where(array('status' => array('egt', -1)))->order('title asc')->select();
 
             /*获取规格信息*/
             //$norms=M('Norms')->select();
             /* 获取商品信息 */
             $info = $id ? $Product->info($id) : '';
 
-            $temp=M('ProductCategory')->field('category_id')->where(array('product_id'=>$id))->select();
-            $ids=array();
-            foreach($temp as &$k){
-                $ids[]=$k['category_id'];
+            $temp = M('ProductCategory')->field('category_id')->where(array('product_id' => $id))->select();
+            $ids = array();
+            foreach ($temp as &$k) {
+                $ids[] = $k['category_id'];
             }
-            $ids_str= is_array($ids)?implode(',',$ids):trim($ids,',');
-            $brand =$Product->getBrand($ids_str);
-            $norm=$Product->getNorms($ids_str,$info['brand_id']);
+            $ids_str = is_array($ids) ? implode(',', $ids) : trim($ids, ',');
+            $brand = $Product->getBrand($ids_str);
+            $norm = $Product->getNorms($ids_str, $info['brand_id']);
             $this->assign('info', $info);
             $this->assign('list_brand', $brand);
             $this->assign('list_norm', $norm);
             //$this->assign('list_norm',$norms);
             $this->assign('list_category', $category);
             //print_r($product_category['level3']);die;
-            $this->assign('this_category',$product_category);
+            $this->assign('this_category', $product_category);
             $this->meta_title = '编辑商品';
             $this->display();
         }
@@ -172,4 +175,46 @@ class ProductController extends AdminController
                 $this->error($method . '参数非法');
         }
     }
+
+
+    /**
+     *审核商品
+     */
+    public function audit($id = null)
+    {
+        $Product = D('Product');
+        if (IS_POST) { //提交表单
+            $Product_id = is_numeric(I('post.product_id')) ? I('post.product_id') : 0;
+            $status = is_numeric(I('post.status')) ? I('post.status') : 0;
+            ($Product_id !== 0) ?: $this->error('禁止操作');
+            $method = I('method');
+            if (strtolower($method) == 'pass') {
+                ($status !== '1') ?: $this->error('已经审核过的不能再次审核');
+                if (false !== $Product->auditProduct($Product_id)) {
+                    $this->success('保存成功');
+                } else {
+                    $error = $Product->getError();
+                    $this->error(empty($error) ? '未知错误' : $error);
+                };
+            } else if (strtolower($method) == 'unpass') {
+                ($status !== '1') ?: $this->error('已经审核过的不能再次审核');
+                if (false !== $Product->saveUnPassReason($Product_id)) {
+                    $this->success('保存成功');
+                } else {
+                    $error = $Product->getError();
+                    $this->error(empty($error) ? '未知错误' : $error);
+                };
+            } else {
+                $this->error('参数非法！');
+            }
+        } else {
+
+            /* 获取产品信息 */
+            $info = $id ? $Product->info($id) : '';
+            $this->assign('info', $info);
+            $this->meta_title = '审核商品';
+            $this->display();
+        }
+    }
+
 }
