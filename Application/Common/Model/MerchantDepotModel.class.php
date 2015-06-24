@@ -332,6 +332,14 @@ class MerchantDepotModel extends RelationModel
             $where.=' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id in (select product_id from sq_product_category where category_id=:categoryId)';
             $bindValues[':categoryId']=$categoryId;
         }
+        if (!is_null($priceMin)) {
+            $where .= ' and sq_merchant_depot.price>:priceMin';
+            $bindValues[':priceMin'] = $priceMin;
+        }
+        if (!is_null($priceMax)) {
+            $where .= ' and sq_merchant_depot.price<:priceMax';
+            $bindValues[':priceMax'] = $priceMax;
+        }
 
         //TODO 加上品牌规格查询
         $product_sql='JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1';
@@ -361,7 +369,7 @@ class MerchantDepotModel extends RelationModel
         $this->bind($bindValues);
 
         $this->field(['sq_merchant_depot.product_id'
-            ,'sq_product.title as product','brand.id as brand_id'
+            ,'sq_product.title as product','sq_merchant_depot.status','sq_product.description','brand.id as brand_id'
             , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm','ifnull(sq_picture.path,\'\') as picture_path','sq_product.picture as picture_id']);
 
         $this->group('sq_merchant_depot.product_id')
