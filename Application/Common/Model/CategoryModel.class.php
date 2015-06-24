@@ -249,12 +249,26 @@ class CategoryModel extends AdvModel
     /**
      * 获得分组列表
      * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int|null $pid 父级ID，为空则不限制
+     * @param int|null $level 层级，为空则不限制
      * @param string|array $fields 要查询的字段
+     * @param null|int $pageSize 分页大小
      * @return null|array
      */
-    public static function getLists($fields = '*')
+    public static function getLists($pid = null, $level = null, $pageSize = null, $fields = '*')
     {
-        return self::getInstance()->where(['status' => self::STATUS_ACTIVE])->field($fields)->order(['sort'])->select();
+        $where = [
+            'status' => self::STATUS_ACTIVE
+        ];
+        if ($pid !== null) $where['pid'] = intval($pid);
+        if ($level !== null) {
+            $level = is_array($level) ? $level : explode(',', $level);
+            $where['level'] = [
+                'IN',
+                $level
+            ];
+        }
+        return self::getInstance()->where($where)->field($fields)->order(['sort'])->select();
     }
 
     /**
@@ -281,9 +295,10 @@ class CategoryModel extends AdvModel
      */
     public static function getTree($parentId = 0, $fields = '*')
     {
+        S(['expire' => C('DATA_CACHE_TIME') ?: 86400]);
         $categorys = S('sys_category_tree');
         if (!isset($categorys[$parentId])) {
-            $categorys[$parentId] = list_to_tree(self::getLists($fields), 'id', 'pid', '_child', $parentId);
+            $categorys[$parentId] = list_to_tree(self::getLists(null, null, null, $fields), 'id', 'pid', '_child', $parentId);
             S('sys_category_tree', $categorys);
         }
         return empty($categorys[$parentId]) ? [] : $categorys[$parentId];
