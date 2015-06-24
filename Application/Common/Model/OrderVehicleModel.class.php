@@ -157,7 +157,11 @@ class OrderVehicleModel extends AdvModel{
         'user_id',
         'add_time',
         'add_ip',
-        'order_code'
+        'order_code',
+        'address',
+        'lnglat',
+        'car_number',
+        'shop_id'
     ];
 
 //    protected function _after_find(&$result,$options='') {

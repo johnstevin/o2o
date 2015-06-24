@@ -37,8 +37,7 @@ class OrderVehicleController extends ApiController{
      *                  "address": "<车辆地址>",
      *                  "car_number": "<车牌号>",
      *                  "price": "<洗车价格>",
-     *                  "user_picture_ids": "<用户上传的图片，多个用[,]隔开>",
-     *                  "worder_picture_ids": "<洗车工上传的图片，多个用[,]隔开>",
+     *                  "user_pictures": ["url"...],
      *                  "add_time": "<新增时间>",
      *                  "update_time": "<修改时间>"
      *              },...
@@ -69,8 +68,7 @@ class OrderVehicleController extends ApiController{
      *              "address": "",
      *              "car_number": "A12345",
      *              "price": "15.00",
-     *              "user_picture_ids": "",
-     *              "worder_picture_ids": "",
+     *              "user_pictures": [],
      *              "add_time": "1388505600",
      *              "update_time": "1388505600"
      *
@@ -90,8 +88,7 @@ class OrderVehicleController extends ApiController{
      *          "address": "",
      *          "car_number": "A12345",
      *          "price": "15.00",
-     *          "user_picture_ids": "",
-     *          "worder_picture_ids": "",
+     *          "user_pictures": [],
      *          "add_time": "1388592000",
      *          "update_time": "1388592000"
      *          }
@@ -123,12 +120,23 @@ class OrderVehicleController extends ApiController{
                     'address',
                     'car_number',
                     'price',
-                    'user_picture_ids',
-                    'worder_picture_ids',
+                    'ifnull(user_picture_ids,\'\') as user_picture_ids',
                     'add_time',
                     'update_time',
                 ])
-                ->where($where)->limit($page, $pageSize)->select();
+                ->where($where)
+                ->limit($page, $pageSize)->select();
+
+            foreach($data as &$i){
+                $i['user_pictures']=[];
+                foreach(D('Picture')
+                            ->field(['path'])
+                            ->where(['id'=>['in',$i['user_picture_ids']]])
+                            ->select() as $p){
+                    $i['user_pictures'][]=$p['path'];
+                }
+                unset($i['user_picture_ids']);
+            }
 
             $this->apiSuccess(['data' => $data], '');
         } catch (\Exception $ex) {
