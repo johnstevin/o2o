@@ -54,7 +54,7 @@ class MerchantShopModel extends AdvModel
 
 
 
-        $result = $this->where($map)->field($field)->select();
+        $result = $this->where($map)->order('id desc')->field($field)->select();
 //        return $result;
 
           return [
