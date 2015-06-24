@@ -698,9 +698,15 @@ function decode_token($token)
  */
 function can_modify_shop($uid, $sid)
 {
-
-    $shop = D('MerchantShop')->find($sid);
-    except_merchant_manager($uid, $shop['group_id']);
+    if(is_array($sid)){
+        foreach($sid as $i){
+            $shop = D('MerchantShop')->find($i);
+            except_merchant_manager($uid, $shop['group_id']);
+        }
+    }else{
+        $shop = D('MerchantShop')->find($sid);
+        except_merchant_manager($uid, $shop['group_id']);
+    }
 }
 
 /**
@@ -711,9 +717,8 @@ function can_modify_shop($uid, $sid)
  */
 function except_merchant_manager($uid, $gid)
 {
-    $role = D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid])->first();
-    //print_r($role);die;
-    if ($role['role_id'] != C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'))
+    if(!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid,
+        'role_id'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')])->find())
         E('用户无权限操作该店铺');
 }
 
