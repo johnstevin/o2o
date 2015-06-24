@@ -111,7 +111,8 @@ class UserController extends ApiController {
      */
     public function getVerifyCode($mobile){
         try{
-            $this->apiSuccess(['data'=>send_sms_code($mobile)]);
+            send_sms_code($mobile);
+            $this->apiSuccess(['data'=>''],'');
         }catch (\Exception $ex){
             $this->apiError(40009,$ex->getMessage());
         }
