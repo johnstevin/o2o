@@ -182,6 +182,7 @@ class OrderVehicleController extends ApiController
                     }
                 }else
                     $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
+
                 //判断是否推送消息
                 $sendMsg=$data['status']==OrderVehicleModel::STATUS_HAS_WORKER;
 
