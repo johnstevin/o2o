@@ -158,7 +158,8 @@ class MerchantModel extends AdvModel
         $this->join('JOIN sq_ucenter_member on sq_ucenter_member.id=sq_merchant.id');
         $this->join('LEFT JOIN sq_appraise on sq_appraise.merchant_id = sq_merchant.id');
 
-        $where['_string']='ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))<:dist and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)';
+        $bind=[':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')];
+        $where['_string']=build_distance_sql_where($lat, $lng, $range,$bind,'sq_merchant.lnglat').' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)';
 
         if(!is_null($number))
             $where['sq_merchant.number']=$number;
@@ -176,7 +177,7 @@ class MerchantModel extends AdvModel
             ,'avg(sq_appraise.grade_2) as grade_2'
             ,'avg(sq_appraise.grade_3) as grade_3'
             ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade'
-        ])->bind([':lng'=>$lng,':lat'=>$lat,':dist'=>$range,':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')])
+        ])->bind($bind)
             ->limit($page,$pageSize)
             ->group('sq_merchant.id')
             ->select();
@@ -184,6 +185,11 @@ class MerchantModel extends AdvModel
         //print_r($this->getLastSql());die;
 
         return $data;
+    }
+
+    public function getAvalibleWorker($lnglat,$presetTime){
+        //TODO 完成自动匹配洗车工算法
+        return null;
     }
 
     /**

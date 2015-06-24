@@ -85,7 +85,9 @@ class MerchantDepotController extends ApiController
                     , 'norms_id' => $norm_id
                     , 'price' => $price
                     , 'picture' => $picture
-                    , 'status' => ProductModel::STATUS_VERIFY]);
+                    , 'status' => ProductModel::STATUS_VERIFY
+                    ,'create_uid'=>$uid
+                    ,'source'=>2]);
 
                 D('ProductCategory')->add(['product_id' => $productId, 'category_id' => $category_id]);
 
@@ -123,23 +125,23 @@ class MerchantDepotController extends ApiController
     /**
      * <pre>
      * 新增商家商品,POST参数,需要accesstoken
-     * @param int shop_id 商铺id
-     * @param int product_id 商品ID
-     * @param float price 商品价格
-     * @param string remark 备注
+     * int shop_id 商铺id
+     * int product_id 商品ID
+     * float price 商品价格
+     * string remark 备注
      * </pre>
      * @author WangJiang
      * @return json
-     * <pre>
      * 调用样例
      * POST apimchant.php?s=/MerchantDepot/create
+     * ``` json
      * 返回样例
      * {
      * "success": true,
      * "error_code": 0,
      * "message": ""
      * }
-     * </pre>
+     * ```
      */
     public function create()
     {

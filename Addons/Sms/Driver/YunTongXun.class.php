@@ -30,20 +30,24 @@ class YunTongXun implements SmsServer{
 
     public function sendMessage(array $targets,$message){
         $result = $this->_peer->sendTemplateSMS(implode(',',$targets),[$message],$this->_templateId);
-        if($result == NULL ) {
-            echo "result error!";
-        }
-        if($result->statusCode!=0) {
-            echo "error code :" . $result->statusCode . "<br>";
-            echo "error msg :" . $result->statusMsg . "<br>";
-            //TODO 添加错误处理逻辑
-        }else{
-            echo "Sendind TemplateSMS success!<br/>";
-            // 获取返回信息
-            $smsmessage = $result->TemplateSMS;
-            echo "dateCreated:".$smsmessage->dateCreated."<br/>";
-            echo "smsMessageSid:".$smsmessage->smsMessageSid."<br/>";
-            //TODO 添加成功处理逻辑
-        }
+        if($result == NULL)
+            E('发送短信失败，未知错误');
+        if($result->statusCode!=0)
+            E("发送短信失败，$result->statusMsg($result->statusCode)");
+//        if($result == NULL ) {
+//            echo "result error!";
+//        }
+//        if($result->statusCode!=0) {
+//            echo "error code :" . $result->statusCode . "<br>";
+//            echo "error msg :" . $result->statusMsg . "<br>";
+//            //TODO 添加错误处理逻辑
+//        }else{
+//            echo "Sendind TemplateSMS success!<br/>";
+//            // 获取返回信息
+//            $smsmessage = $result->TemplateSMS;
+//            echo "dateCreated:".$smsmessage->dateCreated."<br/>";
+//            echo "smsMessageSid:".$smsmessage->smsMessageSid."<br/>";
+//            //TODO 添加成功处理逻辑
+//        }
     }
 }

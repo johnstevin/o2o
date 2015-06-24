@@ -1,4 +1,5 @@
 <?php
+use Common\Model\PictureModel;
 
 /**
  * 检查IP是否合法
@@ -919,4 +920,42 @@ function pinyin_long($zh){
         }
     }
     return $ret;
+}
+
+/**
+ * 构建距离查询语句
+ * @author WangJiang
+ * @param $lng
+ * @param $lat
+ * @param $distance
+ * @param $bind
+ * @return string
+ */
+function build_distance_sql_where($lng,$lat,$distance,&$bind,$lnglatField='lnglat'){
+    $sql="ST_Distance_Sphere($lnglatField,POINT(:lng,:lat))<:dist";
+    $bind[':lng']=$lng;
+    $bind[':lat']=$lat;
+    $bind[':dist']=$distance;
+    return $sql;
+}
+
+function upload_picture($uid,$type){
+    $type=strtoupper($type);
+    //print_r("{$type}_PICTURE_UPLOAD");
+    //print_r($_FILES);
+    /* 调用文件上传组件上传文件 */
+    $Picture = new PictureModel();
+    $pic_driver = C('PICTURE_UPLOAD_DRIVER');
+    $info = $Picture->upload(
+        $uid,
+        $_FILES,
+        C("{$type}_PICTURE_UPLOAD"),
+        C('PICTURE_UPLOAD_DRIVER'),
+        C("UPLOAD_{$pic_driver}_CONFIG")
+    );
+
+    if($info==false)
+        E($Picture->getError());
+
+    return $info;
 }

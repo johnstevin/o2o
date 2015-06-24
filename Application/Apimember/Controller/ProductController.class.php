@@ -553,7 +553,7 @@ class ProductController extends ApiController
      */
     public function getProductList($shopIds = null, $categoryId = null, $brandId = null, $normId = null, $title = null
         , $priceMin = null, $priceMax = null
-        , $returnAlters = 'true', $page = 1,$pageSize=30)
+        , $returnAlters = 'true',$page = 1,$pageSize=30)
     {
         try {
             empty($shopIds) and E('参数shopIds不能为空');
@@ -565,7 +565,21 @@ class ProductController extends ApiController
 
             $this->apiSuccess(['data'=>(new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
                 , $priceMin, $priceMax
-                , $returnAlters, $page, $pageSize),'page'=>$page+1]);
+                , $returnAlters,$page, $pageSize),'page'=>$page+1]);
+
+        } catch (Exception $ex) {
+            $this->apiError(50005, $ex->getMessage());
+        }
+    }
+
+    public function getShopProductList($shopIds = null, $categoryId = null, $title = null
+        , $priceMin = null, $priceMax = null){
+        try {
+            empty($shopIds) and E('参数shopIds不能为空');
+            $shopIds = explode(',', $shopIds);
+
+            $this->apiSuccess(['data'=>(new MerchantShopModel())->getProductList($shopIds, $categoryId,  $title
+                , $priceMin, $priceMax)]);
 
         } catch (Exception $ex) {
             $this->apiError(50005, $ex->getMessage());
