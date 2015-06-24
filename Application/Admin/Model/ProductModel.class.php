@@ -22,8 +22,6 @@ class ProductModel extends Model
      * @var array
      */
     protected $_validata = array(
-
-        array('number', '', '该商品的已经存在', self::EXISTS_VALIDATE, 'unique'),
         array('title', 'require', '必须设置商品标题', self::MUST_VALIDATE, 'regex', self::MODEL_INSERT),
         array('price', 'currency', '商品价格必须是货币形式', self::MUST_VALIDATE, 'regex', self::MODEL_INSERT),
     );
@@ -99,6 +97,12 @@ class ProductModel extends Model
 
         /* 添加或更新数据 */
         if (empty($data['id'])) {
+
+            if($this->where(array('number'=>$data['number']))->count()){
+                $this->error('该商品的已经存在');
+                return false;
+            }
+
             $res = $this->add();
         } else {
             $res = $this->save();
