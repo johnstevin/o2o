@@ -119,10 +119,18 @@ class MerchantShopModel extends AdvModel
         ['status',self::STATUS_CLOSE,self::MODEL_INSERT]
     ];
 
+    protected $autoinc=true;
+
     protected $readonlyField=[
         'type',
         'add_uid',
         'region_id',
+        'address',
+        'title',
+        'delivery_distance_cost',
+        'free_delivery_amount',
+        'pay_delivery_amount',
+        'delivery_amount_cost',
     ];
 
     /**
@@ -140,14 +148,6 @@ class MerchantShopModel extends AdvModel
 //            self::MODEL_UPDATE
 //        ],
 //        [
-//            'pid',
-//            'is_null',
-//            '不允许修改pid',
-//            self::MUST_VALIDATE,
-//            'function',
-//            self::MODEL_UPDATE
-//        ],
-//        [
 //            'add_uid',
 //            'is_null',
 //            '不允许修改add_uid',
@@ -157,6 +157,14 @@ class MerchantShopModel extends AdvModel
 //        ],
 //        [
 //            'region_id',
+//            'is_null',
+//            '不允许修改region_id',
+//            self::MUST_VALIDATE,
+//            'function',
+//            self::MODEL_UPDATE
+//        ],
+//        [
+//            'address',
 //            'is_null',
 //            '不允许修改region_id',
 //            self::MUST_VALIDATE,
@@ -369,6 +377,10 @@ class MerchantShopModel extends AdvModel
 
         $bind=[];
         $data=$this->data();
+
+        $this->_before_update($data);
+
+        //var_dump($data);die;
         $id=$data['id'];
         $set=[];
         $where=null;
