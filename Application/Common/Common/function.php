@@ -991,7 +991,7 @@ function upload_picture($uid,$type){
  * 短线验证码接口 >>
  */
 
-require __ROOT__.'Addons/Sms/Common/function.php';
+require_once(__ROOT__.'Addons/Sms/Common/function.php');
 
 define('CODE_EXPIRE',30);
 
