@@ -33,7 +33,7 @@
 </form>
         </div>
     </div>
-<div class = "text-danger" id="msg"></div>
+<div class = "alert" id="msg"></div>
 </div>
 </body>
 </html>
@@ -60,7 +60,7 @@
 
         $.ajax({
             type: "POST",
-            url: '{:U('Public/login')}',
+            url: '{:U("Public/login")}',
             dataType: "json",
             data: {"username":username,"password":password},
             beforeSend: function(){
@@ -69,10 +69,10 @@
             success: function(json){
             if(json.status==1){
                 $('#msg').html("登陆成功，正在跳转...");
-                alert('登陆成功！');
+               // alert('登陆成功！');
                 location.href="{:U('Index/index')}";
             }else{
-                $('#msg').html("注册失败！Error:"+json.info);
+                $('#msg').html("登陆成功！Error:"+json.info);
                 return false;
             }
         }

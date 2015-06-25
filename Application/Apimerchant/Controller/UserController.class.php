@@ -8,7 +8,6 @@ namespace Apimerchant\Controller;
 use Common\Model\MerchantShopModel;
 use Common\Model\MerchantModel;
 
-require __ROOT__.'Addons/Sms/Common/function.php';
 
 /**
  * 商户用户
@@ -263,6 +262,12 @@ class UserController extends ApiController {
      */
     public function staffAdd(){
         if( IS_POST ){
+            /* 检测验证码 */
+            $mobile     = I('post.mobile');
+            $verify_code=I('verify_code');
+            if(!$verify_code||!verify_sms_code($mobile,$verify_code)){
+                $this->apiError('40029','验证码输入错误！');
+            }
             $shop_id  = is_numeric(I('post.shop_id')) ? I('post.shop_id') : 0;
             if($shop_id==0)
                 $this->apiError('40030', '非法操作');
@@ -280,13 +285,14 @@ class UserController extends ApiController {
 
             //TODO 这里注册可以写个公共调用
             // Start
-            $mobile     = I('post.mobile');
+
             $password   = I('post.password');
+            $real_name   = I('post.real_name');
 
             $Ucenter = D('UcenterMember');
             D()->startTrans();
 
-            $uid = $Ucenter->register($mobile, $password);
+            $uid = $Ucenter->register($mobile, $password,$real_name);
             if(0 < $uid){
                 $auth = D('AuthAccess');
                 $data[] = array(

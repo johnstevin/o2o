@@ -13,7 +13,6 @@
 <div class="container">
 
     <div class="row">
-
         <div class="col-xs-12 col-sm-offset-2 col-sm-10 col-md-offset-3 col-md-6">
             <nav class="navbar">
                 <div class="text-center"><h3>员工注册</h3></div>
@@ -26,11 +25,11 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="col-xs-7 col-sm-8 col-md-8">
-                            <input type="number" class="form-control" id="verify_code" name="verify_code"
+                            <input type="text" class="form-control" id="verify_code" name="verify_code"
                                    placeholder="验证码">
                         </div>
                         <div class="col-xs-5 col-sm-4 col-md-4">
-                            <button type="button" class="btn btn-primary btn-block" onclick="register()">获取验证码
+                            <button type="button" class="btn btn-primary btn-block" onclick="getVerifyCode()">获取验证码
                             </button>
                         </div>
                     </div>
@@ -42,16 +41,16 @@
                            placeholder="6-16为数字、英文字母大小写">
                 </div>
                 <div class="form-group">
-                    <label for="name">姓名</label>
-                    <input type="text" class="form-control" id="name" name="name" placeholder="你的真实姓名">
+                    <label for="real_name">姓名</label>
+                    <input type="text" class="form-control" id="real_name" name="real_name" placeholder="你的真实姓名">
                 </div>
                 <button type="button" class="btn btn-primary btn-lg btn-block" onclick="register()">下一步</button>
             </form>
 
-
+            <div id="msg" class="alert"></div>
         </div>
     </div>
-    <div id="msg" class="alert"></div>
+
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="__STATIC__/js/jquery.min.js"></script>
     <script src="__STATIC__/js/jquery.md5.js"></script>
@@ -65,13 +64,44 @@
 
     });
 
-    function register() {
+    function getVerifyCode() {
+        var target = "{:U('getVerifyCode')}";
         var mobile = $("#mobile").val();
-        var password = $("#password").val();
-
         if (mobile == "") {
             $('#msg').html("手机号不能为空！");
             $("#mobile").focus();
+            return false;
+        }
+        $.get(target, {"mobile": mobile}, function (data) {
+            //TODO
+           if(data.success){
+               $('#msg').html("发送成功！");
+           }else{
+               $('#msg').html("发送失败！错误原因:" + data.message);
+           }
+        });
+    }
+
+
+    function register() {
+        var mobile = $("#mobile").val();
+        var password = $("#password").val();
+        var real_name = $("#real_name").val();
+        var verify_code = $('#verify_code').val();
+        var shop_id = "{:I('shop_id')}";
+        if (shop_id == '' || shop_id == null) {
+            $('#msg').html("注册失败！非法注册,请重新扫描！");
+            //};
+            return false;
+        }
+        if (mobile == "") {
+            $('#msg').html("手机号不能为空！");
+            $("#mobile").focus();
+            return false;
+        }
+        if (verify_code == ""||verify_code ==null) {
+            $('#msg').html("验证码不能为空！");
+            $("#verify_code").focus();
             return false;
         }
         if (password == "") {
@@ -79,13 +109,25 @@
             $("#password").focus();
             return false;
         }
+        if (real_name == "") {
+            $('#msg').html("姓名不能为空！");
+            $("#real_name").focus();
+            return false;
+        }
+
         password = $.md5(password);
 
         $.ajax({
             type: "POST",
             url: '{:U("User/staffAdd")}',
             dataType: "json",
-            data: {"mobile": mobile, "password": password, "shop_id": 50},
+            data: {
+                "mobile": mobile,
+                "password": password,
+                "shop_id": shop_id,
+                "real_name": real_name,
+                "verify_code": verify_code
+            },
             beforeSend: function () {
                 $('#msg').html("正在注册...");
             },
@@ -94,7 +136,7 @@
                     $('#msg').html("注册成功，正在跳转...");
                     alert('注册成功！请下载APP应用登陆...');
                 } else {
-                    $('#msg').html("注册失败！Error:" + json.message);
+                    $('#msg').html("注册失败！错误原因:" + json.message);
                     return false;
                 }
             }
