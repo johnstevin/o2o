@@ -37,11 +37,11 @@ class UcenterMemberModel extends AdvModel {
     /* 用户模型自动完成 */
     protected $_auto = array(
         array('password', 'getPwd', self::MODEL_INSERT, 'callback'),
-        array('saltkey', SALTKEY),
+        array('saltkey', SALTKEY, self::MODEL_INSERT),
         array('reg_time', NOW_TIME, self::MODEL_INSERT),
         array('reg_ip', 'get_client_ip', self::MODEL_INSERT, 'function', 1),
         array('update_time', NOW_TIME),
-        array('is_member', 1),
+        array('is_member', 1, self::MODEL_INSERT),
     );
 
     public final function getPwd( $pwd ){
@@ -183,6 +183,7 @@ class UcenterMemberModel extends AdvModel {
                 $this->saltkey = SALTKEY;
                 $this->password = $this->getPwd($data['password']);
             }
+
             if(empty($data))
                 E('创建对象失败');
             if(empty($data['id'])){
@@ -190,7 +191,7 @@ class UcenterMemberModel extends AdvModel {
                 if(!$id)
                     E('新增失败');
             } else {
-                $status = $this->save();
+                $status = $this->fetchSql(false)->save();
                 if(false === $status)
                     E('更新失败');
                 return true;

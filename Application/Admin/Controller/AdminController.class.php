@@ -28,7 +28,7 @@ class AdminController extends Controller
         $config = S('DB_CONFIG_DATA');
         if (!$config) {
             $config = api('Config/lists');
-            S('DB_CONFIG_DATA', $config);
+            S('DB_CONFIG_DATA', $config, 5);
         }
         C($config);
 

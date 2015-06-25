@@ -164,12 +164,11 @@ class UserController extends ApiController {
     public function editInfo(){
         try {
             $uid = $this->getUserId();
-            //$uid = 80;
             $type = I('get.type');
             switch ( $type ) {
                 case 'photo' :
                     // TODO
-                    
+
                     break;
                 case 'real_name' :
                     $model = D("UcenterMember");
@@ -196,6 +195,16 @@ class UserController extends ApiController {
                     if ($opassword === $npassword)
                         E('新旧密码不能相同');
 
+                    $user = $model->where(array('id'=>$uid))->find();
+                    if(is_array($user) && $user['is_member']){
+                        if(generate_password($opassword, $user['saltkey']) !== $user['password'])
+                            E('旧密码错误'); //密码错误
+
+                    } else {
+                        E('用户不存在或不是用户'); //用户不存在或不是管理员
+                    }
+                    //46f94c8de14fb36680850768ff1b7f2a  123qwe
+                    //e10adc3949ba59abbe56e057f20f883e  123456
                     $data['password'] = $npassword;
                     $data['id'] = $uid;
                     break;
