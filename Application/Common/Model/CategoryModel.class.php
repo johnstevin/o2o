@@ -260,6 +260,7 @@ class CategoryModel extends AdvModel
         $where = [
             'status' => self::STATUS_ACTIVE
         ];
+        $nowPage = empty($_GET['p']) ? 1 : intval($_GET['p']);
         if ($pid !== null) $where['pid'] = intval($pid);
         if ($level !== null) {
             $level = is_array($level) ? $level : explode(',', $level);
@@ -268,7 +269,9 @@ class CategoryModel extends AdvModel
                 $level
             ];
         }
-        return self::getInstance()->where($where)->field($fields)->order(['sort'])->select();
+        return [
+            'data' => self::getInstance()->where($where)->field($fields)->page($nowPage, $pageSize)->order(['sort'])->select()
+        ];
     }
 
     /**
@@ -290,18 +293,21 @@ class CategoryModel extends AdvModel
      * 获取分类树
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $parentId 父级ID
+     * @param null|string|array
      * @param string|array $fields 要查询的字段（请注意至少要查询id、pid两个字段）
      * @return array
      */
-    public static function getTree($parentId = 0, $fields = '*')
+    public static function getTree($parentId = 0, $level = null, $fields = '*')
     {
-        S(['expire' => C('DATA_CACHE_TIME') ?: 86400]);
-        $categorys = S('sys_category_tree');
-        if (!isset($categorys[$parentId])) {
-            $categorys[$parentId] = list_to_tree(self::getLists(null, null, null, $fields), 'id', 'pid', '_child', $parentId);
-            S('sys_category_tree', $categorys);
+        //缓存一周（如果后台更新了分类数据，应该手动点击清理缓存）
+        $level = is_array($level) ? implode('_', $level) : $level;
+        $key = 'sys_category_tree_' . $parentId . trim($level);
+        $categorys = S($key);
+        if (empty($categorys)) {
+            $categorys = list_to_tree(self::getLists(null, $level, null, $fields)['data'], 'id', 'pid', '_childs', $parentId);
+            S($key, $categorys, 604800);
         }
-        return empty($categorys[$parentId]) ? [] : $categorys[$parentId];
+        return ['data' => $categorys];
     }
 
     /**
