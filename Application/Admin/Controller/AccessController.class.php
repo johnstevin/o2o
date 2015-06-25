@@ -85,18 +85,11 @@ class AccessController extends AdminController
             $key['_roles'] = $AuthRole->field('id,title,group_id')->where(array('group_id' => $key['id'], 'status' => '1'))->select();
         }
 
-        echo "<pre>";
-        print_r($auth_Groups);
-        echo "</pre>";
-
+        /*格式化数据*/
         $Tree = D('Tree');
         $auth_Groups = $Tree->toFormatTree($auth_Groups);
-//        $auth_Groups = $Tree->toTree($auth_Groups, $pk = 'id', $pid = 'pid', $child = '_child');
+//      $auth_Groups = $Tree->toTree($auth_Groups, $pk = 'id', $pid = 'pid', $child = '_child');
 
-
-//        echo "<pre>";
-//        print_r($auth_Groups);
-//        echo "</pre>";
 
         /*非超管级管理员只列出拥有权限的组织*/
         if (!IS_ROOT) {
@@ -109,9 +102,9 @@ class AccessController extends AdminController
             }
         }
 
-        echo "<pre>";
-        print_r($auth_Groups);
-        echo "</pre>";
+//        echo "<pre>";
+//        print_r($auth_Groups);
+//        echo "</pre>";
 
         $this->assign('user_roles', $hasAccess);
         $this->assign('node_list', $auth_Groups);
