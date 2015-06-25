@@ -49,7 +49,7 @@ abstract class RestController  extends Controller{
      * @return int|void
      */
     protected function getUserId(){
-        if(defined('UID')) return ;
+        if(defined('UID')) return UID;
 
         $token=$this->getToken();
         $loginId=decode_token($token);
