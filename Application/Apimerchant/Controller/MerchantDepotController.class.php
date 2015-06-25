@@ -86,8 +86,8 @@ class MerchantDepotController extends ApiController
                     , 'price' => $price
                     , 'picture' => $picture
                     , 'status' => ProductModel::STATUS_VERIFY
-                    ,'create_uid'=>$uid
-                    ,'source'=>2]);
+                    , 'create_uid' => $uid
+                    , 'source' => 2]);
 
                 D('ProductCategory')->add(['product_id' => $productId, 'category_id' => $category_id]);
 
@@ -335,6 +335,51 @@ class MerchantDepotController extends ApiController
                 unset($cateChain[$k]);
         }
         return $cateChain;
+    }
+
+    /**
+     * ## 获取仓库商品列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param null|int $shopId 商铺ID，可选参数
+     * @param null|int|string|array $categoryIds 分类ID，可选参数。可传多个ID，格式为数组或者半角【,】隔开的ID字符串
+     * @param null|int $status 状态，可选参数
+     * @param null|string $title 标题，可选参数
+     * @param string $sort 添加时间排序，可选参数，可传【ASC】或者【DESC】
+     * @param bool $getCategorys 是否获得分类信息，可选参数
+     * @param bool $getBrand 是否获得品牌信息，可选参数
+     * @param int $pageSize 分页大小，可选参数
+     * @param bool $getPicture 是否获取商品图片，可选参数
+     * @param bool $getNorm 是否获取规格信息，可选参数
+     * @param bool $getShop 是否获取商铺信息，可选参数
+     */
+    public function lists($shopId = null, $categoryIds = null, $status = null, $title = null, $sort = 'asc', $getCategorys = true, $getBrand = true, $pageSize = 20, $getPicture = true, $getNorm = true, $getShop = false)
+    {
+        $this->apiSuccess(MerchantDepotModel::getInstance()->getLists($shopId, $categoryIds, $status, $title, $sort, $pageSize, $getPicture, $getCategorys, $getBrand, $getNorm, $getShop));
+    }
+
+    /**
+     * ## 下架商品，只能下架【已上架】的商品。`需要验证权限`
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 商品ID
+     */
+    public function offShelf($id)
+    {
+        if (!IS_POST) E('非法请求', 400);
+        can_modify_depot($this->getUserId(), $id);
+        $this->apiSuccess(['data' => MerchantDepotModel::getInstance()->offShelf($id)]);
+    }
+
+    /**
+     * ## 上架商品。只能上架【已下架】的商品。`需要验证权限`
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 商品ID
+     */
+    public function onShelf($id)
+    {
+        if (!IS_POST) E('非法请求', 400);
+        can_modify_depot($this->getUserId(), $id);
+        $this->apiSuccess(['data' => MerchantDepotModel::getInstance()->onShelf($id)]);
     }
 
 }
