@@ -191,7 +191,7 @@ class UcenterMemberModel extends AdvModel {
                 if(!$id)
                     E('新增失败');
             } else {
-                $status = $this->fetchSql(false)->save();
+                $status = $this->save();
                 if(false === $status)
                     E('更新失败');
                 return true;

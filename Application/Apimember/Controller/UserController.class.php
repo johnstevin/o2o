@@ -144,7 +144,7 @@ class UserController extends ApiController {
     public function getUserInfo(){
         try {
             $map = $this->getUserId();
-            $fields = 'a.id,a.mobile,a.username,a.email,a.reg_time,a.reg_ip,a.photo,b.nickname,b.sex,b.birthday,b.qq';
+            $fields = 'a.id,a.mobile,a.username,a.email,a.reg_time,a.reg_ip,a.photo,b.nickname,b.sex,b.birthday,b.qq,real_name';
             $uInfo = D('Member')->getMemberInfos($map, $fields);
             if(empty($uInfo))
                 $this->apiError(40015,'没有此用户');

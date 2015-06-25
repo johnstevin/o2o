@@ -110,6 +110,7 @@ class MemberModel extends RelationModel
                 $status = $this->save();
                 if(false === $status)
                     E('更新失败');
+                return true;
             }
 
 
