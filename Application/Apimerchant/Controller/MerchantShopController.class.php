@@ -61,11 +61,13 @@ class MerchantShopController extends ApiController
                 $model = D('MerchantShop');
                 if (!($data=$model->create()))
                     E('参数传递失败');
+
                 can_modify_shop($this->getUserId(),$data['id']);
 
                 $model->data($data);
+                //var_dump($data);die;
                 $model->save();
-                $this->apiSuccess(null, '');
+                $this->apiSuccess(['data'=>[]], '');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {
@@ -76,7 +78,28 @@ class MerchantShopController extends ApiController
     /**
      * 新增商铺信息,需要accesstoken
      * @internal 参数按照Form表单的格式提交，参数列表参考{@link update()}
-     * @see MerchantShopController::update
+     * string title 店面名称
+     * string description 店面介绍
+     * string lnglat 格式为'lng lat'，店面坐标，采用百度地图经纬度
+     * int open_status 营业状态：0-关闭，1-开放
+     * int open_time_mode 营业时间模式，1-有时间段，2-7X24小时
+     * int begin_open_time 营业开始时间，24小时内，单位秒,缺省9点
+     * int end_open_time 营业结束时间，24小时内，单位秒，缺省18点
+     * string phone_number 店面电话，客户可以直接联系
+     * string address 店面地址，供客户参考
+     * pay_delivery_time 付费送货开始时间，24小时内，单位秒，缺省0点，即不设置,
+     * delivery_time_cost 送货时间加价金额:单位元,
+     * delivery_distance_limit 送货范围上限:单位米,
+     * free_delivery_distance 免费送货距离:单位米,
+     * pay_delivery_distance 付费送货距离:单位米,
+     * delivery_distance_cost 送货距离加价金额:单位元,
+     * pay_delivery_amount 免费送货总金额:单位元,
+     * delivery_amount_cost 送货总金额加价金额:单位元,
+     * pay_delivery_mode 送货加价模式：1-总金额优先，2-距离优先，3-时间段优先,
+     * yyzz_picture  '营业执照',
+     * spwsxkz_picture  '食品卫生许可证',
+     * id_cart_front_picture '法人身份证照片正面',
+     * id_cart_back_picture '法人身份证照片背面',
      * @author WangJiang
      * @return json
      * <pre>
@@ -216,6 +239,10 @@ class MerchantShopController extends ApiController
                     'delivery_amount_cost',
                     'message',
                     'picture',
+                    'yyzz_picture',
+                    'spwsxkz_picture',
+                    'id_cart_front_picture',
+                    'id_cart_back_picture',
                     'st_astext(lnglat) as lnglat'])
                     ->where($where)->limit($page,$pageSize)->select();
 

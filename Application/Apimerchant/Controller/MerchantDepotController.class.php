@@ -64,6 +64,7 @@ class MerchantDepotController extends ApiController
             $brand_id = I('brand_id', null);
             $norm_id = I('norm_id', null);
             $picture = I('picture', '0');
+            $number = I('number', null);
 
             if (is_null($price))
                 E('商品价格必须提供');
@@ -75,6 +76,8 @@ class MerchantDepotController extends ApiController
                 E('商品品牌必须提供');
             if (is_null($norm_id))
                 E('商品规格必须提供');
+            if (is_null($number))
+                E('商品编码不能为空');
 
             $cateChain = $this->_get_cate_chain([$category_id]);
 
@@ -85,6 +88,7 @@ class MerchantDepotController extends ApiController
                     , 'norms_id' => $norm_id
                     , 'price' => $price
                     , 'picture' => $picture
+                    , 'number' => $number
                     , 'status' => ProductModel::STATUS_VERIFY
                     ,'create_uid'=>$uid
                     ,'source'=>2]);
@@ -152,33 +156,136 @@ class MerchantDepotController extends ApiController
                 $shopId = I('shop_id');
                 can_modify_shop($uid, $shopId);
 
-                $productId = I('product_id');
-                $price = I('price');
-                $remark = I('remark', '');
+                $productId = I('product_id',null);
+                if(is_null($productId)){
+                    $price = I('price', null);
+                    $remark = I('remark', '');
+                    $description = I('description', '');
+                    $title = I('title', null);
+                    $category_id = I('category_id', null);
+                    $brand_id = I('brand_id', null);
+                    $norm_id = I('norm_id', null);
+                    $picture = I('picture', '0');
+                    $number = I('number', null);
 
-                $cateChain = $this->_filter_cates($productId, $shopId);
+                    if (is_null($price))
+                        E('商品价格必须提供');
+                    if (is_null($title))
+                        E('商品名称必须提供');
+                    if (is_null($category_id))
+                        E('商品分类必须提供');
+                    if (is_null($brand_id))
+                        E('商品品牌必须提供');
+                    if (is_null($norm_id))
+                        E('商品规格必须提供');
+                    if (is_null($number))
+                        E('商品编码必须提供');
 
-                D()->startTrans();
-                try {
-                    foreach ($cateChain as $i) {
-                        D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
+                    if(!D('Norms')->find($norm_id))
+                        E('规格不存在');
+                    if(!D('Brand')->find($brand_id))
+                        E('商品不存在');
+                    if(!D('Category')->find($category_id))
+                        E('分类不存在');
+
+                    $productSameNumber=D('Product')->where(['number'=>$number])->find();
+
+                    //var_dump($productSameNumber);
+
+                    //根据刘辉的建议，判断是否已经有一个带审核的同number商品
+                    if($productSameNumber)
+                        $this->_add_depot($productSameNumber['id'],
+                            $shopId,$productSameNumber['status']==ProductModel::STATUS_ACTIVE ?
+                                MerchantDepotModel::STATUS_ACTIVE : MerchantDepotModel::STATUS_VERIFY);
+                    else{
+                        $cateChain = $this->_get_cate_chain([$category_id]);
+                        $insertMerchantDepotProCategory=D('MerchantDepotProCategory')->where(['product_id' => $productId, 'category_id' => $category_id])->count()==0;
+
+                        $model = MerchantDepotModel::getInstance();
+                        $model->startTrans();
+                        try {
+                            $productId = D('Product')->add(['title' => $title
+                                , 'brand_id' => $brand_id
+                                , 'norms_id' => $norm_id
+                                , 'price' => $price
+                                , 'picture' => $picture
+                                , 'description' => $description
+                                , 'number' => $number
+                                , 'status' => ProductModel::STATUS_VERIFY
+                                ,'create_uid'=>$uid
+                                ,'source'=>2]);
+
+                            D('ProductCategory')->add(['product_id' => $productId, 'category_id' => $category_id]);
+                            if($insertMerchantDepotProCategory){
+                                foreach ($cateChain as $i) {
+                                    D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
+                                }
+                            }
+
+                            if (($data = $model->create(['shop_id' => $shopId
+                                    , 'product_id' => $productId
+                                    , 'price' => $price
+                                    , 'remark' => $remark
+                                    , 'status' => MerchantDepotModel::STATUS_VERIFY])) == false
+                            )
+                                E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
+
+                            //var_dump($data);die;
+                            if (($depotId = $model->add($data)) == false)
+                                E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
+
+                            //var_dump($depotId);die;
+                            $model->commit();
+
+                            $this->apiSuccess(['data'=>['product_id' => $productId, 'id' => $depotId]], '');
+
+                        } catch (\Exception $ex) {
+                            $model->rollback();
+                            throw $ex;
+                        }
                     }
-                    $data = D('MerchantDepot')
-                        ->create(['shop_id' => $shopId, 'product_id' => $productId, 'price' => $price, 'remark' => $remark]);
-                    //var_dump($data);die;
-                    $newId = D('MerchantDepot')->add($data);
-                    //var_dump($newId);die;
-                    D()->commit();
-                    $this->apiSuccess(['id' => $newId], '');
-                } catch (\Exception $ex) {
-                    D()->rollback();
-                    throw $ex;
-                }
-                //$this->apiSuccess(['id' => MerchantDepotModel::addDepot($shopId, $productId, $price, $remark)]);
+
+                }else
+                    $this->_add_depot($productId,$shopId);
+                //$this->apiSuccess(['data'=>['id' => MerchantDepotModel::addDepot($shopId, $productId, $price, $remark)]]);
             } else
                 E('非法调用，请用POST调用该方法');
         } catch (\Exception $ex) {
             $this->apiError(50030, $ex->getMessage());
+        }
+    }
+
+    private function _add_depot($productId,$shopId,$status=MerchantDepotModel::STATUS_ACTIVE){
+        if(D('MerchantDepot')->where(['product_id' => $productId, 'shop_id' => $shopId])->count()>0)
+            E('该商品已添加');
+        if(!D('Product')->find($productId))
+            E('该商品不存在');
+
+        $price = I('price');
+        $remark = I('remark', '');
+
+        $cateChain = $this->_filter_cates($productId, $shopId);
+
+        //var_dump($status);
+        //var_dump($productId);die;
+        $m=D('MerchantDepot');
+        $data = $m->create(['shop_id' => $shopId, 'product_id' => $productId,
+            'status'=>$status,'price' => $price, 'remark' => $remark]);
+
+        $d=D();
+        $d->startTrans();
+        try {
+            foreach ($cateChain as $i) {
+                D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
+            }
+            //var_dump($data);die;
+            $newId = $m->add($data);
+            //var_dump($newId);die;
+            $d->commit();
+            $this->apiSuccess(['data'=>['product_id' => $productId, 'id' => $newId]], '');
+        } catch (\Exception $ex) {
+            $d->rollback();
+            throw $ex;
         }
     }
 
@@ -231,13 +338,14 @@ class MerchantDepotController extends ApiController
             if (IS_POST) {
                 //TODO 验证用户权限
                 $uid = $this->getUserId();
-                can_modify_shop($uid, I('shop_id'));
-
                 $model = D('MerchantDepot');
+                $depot=$model->find(I('id'));
+                can_modify_shop($uid, $depot['shop_id']);
+
                 if (!$model->create())
                     E('参数传递失败');
                 $model->save();
-                $this->apiSuccess(null, '');
+                $this->apiSuccess(['data'=>[]], '');
             } else
                 E('非法调用，请用POST调用该方法');
         } catch (\Exception $ex) {
@@ -306,8 +414,9 @@ class MerchantDepotController extends ApiController
 
             $shopIds = explode(',', $shopIds);
             //print_r($shopIds);die;
-            $this->apiSuccess(['data' => (new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
-                , $priceMin, $priceMax, false, $page, $pageSize, $status, $groupIds)]);
+            $this->apiSuccess(['data' => MerchantDepotModel::getListsByShopId($shopIds,$pageSize,$status)],'');
+            //$this->apiSuccess(['data' => (new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
+            //  , $priceMin, $priceMax, false, $page, $pageSize, $status, $groupIds)]);
         } catch (\Exception $ex) {
             $this->apiError(50032, $ex->getMessage());
         }

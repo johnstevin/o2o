@@ -40,8 +40,7 @@ class OrderVehicleController extends ApiController
      *                  "address": "<车辆地址>",
      *                  "car_number": "<车牌号>",
      *                  "price": "<洗车价格>",
-     *                  "user_picture_ids": "<用户上传的图片，多个用[,]隔开>",
-     *                  "worder_picture_ids": "<洗车工上传的图片，多个用[,]隔开>",
+     *                  "worder_pictures": ["url"...],
      *                  "add_time": "<新增时间>",
      *                  "update_time": "<修改时间>"
      *              },...
@@ -72,8 +71,7 @@ class OrderVehicleController extends ApiController
      *              "address": "",
      *              "car_number": "A12345",
      *              "price": "15.00",
-     *              "user_picture_ids": "",
-     *              "worder_picture_ids": "",
+     *              "worder_pictures": [],
      *              "add_time": "1388505600",
      *              "update_time": "1388505600"
      *
@@ -93,8 +91,7 @@ class OrderVehicleController extends ApiController
      *          "address": "",
      *          "car_number": "A12345",
      *          "price": "15.00",
-     *          "user_picture_ids": "",
-     *          "worder_picture_ids": "",
+     *          "worder_pictures": [],
      *          "add_time": "1388592000",
      *          "update_time": "1388592000"
      *          }
@@ -128,12 +125,25 @@ class OrderVehicleController extends ApiController
                     'address',
                     'car_number',
                     'price',
-                    'user_picture_ids',
-                    'worder_picture_ids',
+                    'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
                     'add_time',
                     'update_time',
                 ])
-                ->where($where)->limit($page, $pageSize)->select();
+                ->where($where)
+                ->limit($page, $pageSize)->select();
+
+            foreach($data as &$i){
+                $i['worder_pictures']=[];
+                foreach(D('Picture')
+                    ->field(['path'])
+                    ->where(['id'=>['in',$i['worder_picture_ids']]])
+                    ->select() as $p){
+                    $i['worder_pictures'][]=$p['path'];
+                }
+                unset($i['worder_picture_ids']);
+            }
+
+
 
             //print_r($m->getLastSql());die;
 
@@ -173,7 +183,8 @@ class OrderVehicleController extends ApiController
 
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
-                    $wid=(new MerchantModel())->getAvalibleWorker($data['lnglat'],$data['preset_time']);
+                    list($lng,$lat)=explode(' ',$data['lnglat']);
+                    $wid=(new MerchantModel())->getAvailableWorker($lng,$lat,$data['preset_time']);
                     if(is_null($wid))
                         $data['status']=OrderVehicleModel::STATUS_NO_WORKER;
                     else{
@@ -182,6 +193,7 @@ class OrderVehicleController extends ApiController
                     }
                 }else
                     $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
+
                 //判断是否推送消息
                 $sendMsg=$data['status']==OrderVehicleModel::STATUS_HAS_WORKER;
 
@@ -213,7 +225,7 @@ class OrderVehicleController extends ApiController
                 E('非法调用，请用POST调用');
             $oid=I('post.orderId');
             $m=new OrderVehicleModel();
-            $m->cancel($oid,$this->getUserId());
+            $m->userCancel($oid,$this->getUserId());
             $this->apiSuccess(null,'成功');
         }catch (\Exception $ex) {
             $this->apiError(51022, $ex->getMessage());

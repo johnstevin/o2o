@@ -67,6 +67,7 @@ class MerchantDepotModel extends RelationModel
         ]
     ];
     protected $pk = 'id';
+
     /**
      * 只读字段
      * @author Fufeng Nie <niefufeng@gmail.com>
@@ -74,6 +75,21 @@ class MerchantDepotModel extends RelationModel
      */
     protected $readonlyField = ['shop_id', 'product_id', 'add_time', 'add_ip'];
 
+    protected function checkReadonlyField(&$data) {
+        if(!empty($this->readonlyField)) {
+            foreach ($this->readonlyField as $key=>$field){
+                if(isset($data[$field]))
+                    unset($data[$field]);
+            }
+        }
+        return $data;
+    }
+
+    // 更新前的回调方法
+    protected function _before_update(&$data,$options='') {
+        // 检查只读字段
+        $data = $this->checkReadonlyField($data);
+    }
     /**
      * 自动验证
      * @author Fufeng Nie <niefufeng@gmail.com>
@@ -332,6 +348,14 @@ class MerchantDepotModel extends RelationModel
             $where.=' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id in (select product_id from sq_product_category where category_id=:categoryId)';
             $bindValues[':categoryId']=$categoryId;
         }
+        if (!is_null($priceMin)) {
+            $where .= ' and sq_merchant_depot.price>:priceMin';
+            $bindValues[':priceMin'] = $priceMin;
+        }
+        if (!is_null($priceMax)) {
+            $where .= ' and sq_merchant_depot.price<:priceMax';
+            $bindValues[':priceMax'] = $priceMax;
+        }
 
         //TODO 加上品牌规格查询
         $product_sql='JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1';
@@ -355,13 +379,14 @@ class MerchantDepotModel extends RelationModel
         //$this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
         $this->join('JOIN sq_brand as brand on brand.id=sq_product.brand_id');
         $this->join('JOIN sq_norms as norm on norm.id=sq_product.norms_id');
+        $this->join('left JOIN sq_picture on sq_picture.id = sq_product.picture');
 
         $this->where($where);
         $this->bind($bindValues);
 
         $this->field(['sq_merchant_depot.product_id'
-            ,'sq_product.title as product','brand.id as brand_id'
-            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm']);
+            ,'sq_product.title as product','sq_merchant_depot.status','sq_product.description','brand.id as brand_id'
+            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm','ifnull(sq_picture.path,\'\') as picture_path','sq_product.picture as picture_id']);
 
         $this->group('sq_merchant_depot.product_id')
             //->order('sq_merchant_depot.product_id,sq_merchant_depot.price')

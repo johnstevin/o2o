@@ -20,7 +20,13 @@ class OrderVehicleModel extends AdvModel{
     const STATUS_DONE = 4;
     const STATUS_CLOSED = 5;
     const STATUS_CANCELED = 6;
-
+    const STATUS_CHAIN=[
+        ['id'=>0,[1]],
+        ['id'=>1,[2,6,0]],
+        ['id'=>2,[3]],
+        ['id'=>3,[4]],
+        ['id'=>4,[5]]
+    ];
     protected $pk     = 'id';
 
     protected $fields = [
@@ -151,7 +157,11 @@ class OrderVehicleModel extends AdvModel{
         'user_id',
         'add_time',
         'add_ip',
-        'order_code'
+        'order_code',
+        'address',
+        'lnglat',
+        'car_number',
+        'shop_id'
     ];
 
 //    protected function _after_find(&$result,$options='') {
@@ -196,8 +206,10 @@ class OrderVehicleModel extends AdvModel{
      * @param $success 成功回调
      */
     public function insert($success){
-        $bind=[];
+
         $data=$this->data();
+
+        $bind=[];
         $orderVals=[];
         $orderFlds=[];
         foreach($data as $key=>$val){
@@ -212,21 +224,24 @@ class OrderVehicleModel extends AdvModel{
                 $orderFlds[]=$key;
             }
         }
-        $sql='INSERT INTO sq_order_vehicle('.implode(',',$orderFlds).') VALUES('.implode(',',$orderVals).');';
-        return db_transaction($sql, $bind,$success);
+
+        return do_transaction([
+            ['sql'=>'INSERT INTO sq_order_vehicle('.implode(',',$orderFlds).') VALUES('.implode(',',$orderVals).');',
+            'bind'=>$bind,
+            'newId'=>true]
+        ]);
     }
 
     /**
-     * 取消订单
+     * 用户取消订单
      * @author WangJiang
      * @param $oid
      * @param $uid
      */
-    public function cancel($oid,$uid){
+    public function userCancel($oid,$uid){
         $data=$this->find($oid);
         //print_r($data);die;
-        if($data['status']>=self::STATUS_CONFIRM)
-            E('该订单已经开始处理，不能取消。');
+        $this->_assert_new_status($data['status'],self::STATUS_CANCELED);
         if($data['user_id']!=$uid)
             E('非本人操作');
         $data['status']=self::STATUS_CANCELED;
@@ -234,4 +249,38 @@ class OrderVehicleModel extends AdvModel{
         unset($data['lnglat']);
         $this->save($data);
     }
+
+    /**
+     * @param $oldStatus
+     * @param $newStatus
+     */
+    private function _assert_new_status($oldStatus,$newStatus){
+        foreach(self::STATUS_CHAIN as $i){
+            if($i['id']==$oldStatus){
+                if(!in_array($newStatus,$i[0]))
+                    E('当前状态不能改变为指定状态');
+                return;
+            }
+        }
+        E('当前状态不能在改变');
+    }
+
+    /**
+     * 洗车工修改订单状态
+     * @autjor WangJiang
+     * @param $oid
+     * @param $uid
+     * @param $status
+     */
+    public function workerChaneStatus($oid,$uid,$status){
+        $data=$this->find($oid);
+        if($data['worker_id']!=$uid)
+            E('非本人操作');
+        $this->_assert_new_status($data['status'],$status);
+        $data['status']=$status;
+        //经纬度不需要修改
+        unset($data['lnglat']);
+        $this->save($data);
+    }
+
 }

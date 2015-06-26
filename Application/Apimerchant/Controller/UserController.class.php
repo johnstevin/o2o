@@ -8,18 +8,12 @@ namespace Apimerchant\Controller;
 use Common\Model\MerchantShopModel;
 use Common\Model\MerchantModel;
 
-require __ROOT__.'Addons/Sms/Common/function.php';
-
 /**
  * 商户用户
  * Class UserController
  * @package Api\Controller
  */
 class UserController extends ApiController {
-
-
-    const CODE_EXPIRE=10;
-
     /**
      * <pre>
      * 商户登陆,参数用POST提交
@@ -74,7 +68,7 @@ class UserController extends ApiController {
             $password   = I('post.password');
             $code = I('post.code');
 
-            if($this->_get_code($mobile)!=$code)
+            if(!verify_sms_code($mobile,$code))
                 E("验证码错误或已过期，请重新获取");
 
             $Ucenter = D('UcenterMember');
@@ -109,28 +103,16 @@ class UserController extends ApiController {
         }
     }
 
-    private function _get_code($mobile){
-        $ck="verify_code_$mobile";
-        return S($ck,'',['expire'=>CODE_EXPIRE]);
-    }
-
-    private function _set_code($mobile,$code){
-        $ck="verify_code_$mobile";
-        S($ck,$code,['expire'=>CODE_EXPIRE]);
-    }
-
+    /**
+     * 获得验证码
+     * @author WangJiang
+     * @param $mobile
+     * @return json
+     */
     public function getVerifyCode($mobile){
         try{
-            if($this->_get_code($mobile)!==false)
-                E(self::CODE_EXPIRE.'秒内不能重复获取');
-            $code=[];
-            while(count($code)<6){
-                $code[]=rand(1,9);
-            }
-            $code=implode('',$code);
-            $this->_set_code($mobile,$code);
-            \Addons\Sms\Common\send_code([$mobile],$code);
-            $this->apiSuccess(['data'=>$code]);
+            send_sms_code($mobile);
+            $this->apiSuccess(['data'=>''],'');
         }catch (\Exception $ex){
             $this->apiError(40009,$ex->getMessage());
         }

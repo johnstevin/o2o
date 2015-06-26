@@ -698,9 +698,15 @@ function decode_token($token)
  */
 function can_modify_shop($uid, $sid)
 {
-
-    $shop = D('MerchantShop')->find($sid);
-    except_merchant_manager($uid, $shop['group_id']);
+    if(is_array($sid)){
+        foreach($sid as $i){
+            $shop = D('MerchantShop')->find($i);
+            except_merchant_manager($uid, $shop['group_id']);
+        }
+    }else{
+        $shop = D('MerchantShop')->find($sid);
+        except_merchant_manager($uid, $shop['group_id']);
+    }
 }
 
 /**
@@ -711,9 +717,8 @@ function can_modify_shop($uid, $sid)
  */
 function except_merchant_manager($uid, $gid)
 {
-    $role = D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid])->first();
-    //print_r($role);die;
-    if ($role['role_id'] != C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'))
+    if(!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid,
+        'role_id'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')])->find())
         E('用户无权限操作该店铺');
 }
 
@@ -730,44 +735,40 @@ class DBException extends RuntimeException
 }
 
 /**
- * 数据库事务处理
+ * 提交事务
  * @author WangJiang
- * @param string $sql
- * @param array $bind
- * @param function $success 成功回调函数，缺省为null
- * @param boolean $success_safe 是否捕获回调的异常，缺省为true
- * @throws Exception
- * @return int newId
+ * @param $data
  */
-function db_transaction($sql, $bind, $success = null, $success_safe = true)
-{
-    //TODO:目前ThinkPHP不支持空间类型字段
-    $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'));
+function do_transaction($data,$success=null){
+    /*
+     * $data = [['sql'=>'<sql>','bind'=>[<bounds>],'newId'=><true|false>]...]
+     */
+    $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'),
+        C('DB_USER'), C('DB_PWD'),array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8';"));
     $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-    $stmt = $dbh->prepare($sql);
-    foreach ($bind as $k => $v) {
-        $stmt->bindValue($k, $v);
-    }
 
     $newid = null;
     try {
-        $dbh->beginTransaction();
-        $r = $stmt->execute();
-        $newid = $dbh->lastInsertId();
-        //test for transaction
-        //throw new Exception();
-        if ($r == true and is_callable($success))
-            if ($success_safe) {
-                try {
-                    call_user_func($success);
-                } catch (\Exception $e) {
-                }
-            } else
-                call_user_func($success);
-        if ($r == false)
+        if(false==$dbh->beginTransaction())
             throw new DBException($dbh->errorCode(), $dbh->errorInfo());
-        $dbh->commit();
+        foreach($data as $i){
+            $stmt = $dbh->prepare($i['sql']);
+            $r = $stmt->execute($i['bind']);
+            if ($r == false)
+                throw new DBException($dbh->errorCode(), $dbh->errorInfo());
+            if($i['newId'])
+                $newid=$dbh->lastInsertId();
+        }
+        if(false==$dbh->commit())
+            throw new DBException($dbh->errorCode(), $dbh->errorInfo());
+
+        if(is_callable($success)){
+            try {
+                call_user_func($success);
+            } catch (\Exception $e) {
+            }
+        }
+
         return $newid;
     } catch (\Exception $e) {
         $dbh->rollBack();
@@ -980,3 +981,66 @@ function upload_picture($uid,$type){
 
     return $info;
 }
+
+
+/**
+ * 短线验证码接口 >>
+ */
+
+require_once(__ROOT__.'Addons/Sms/Common/function.php');
+
+/**
+ * 获得缓存的验证码
+ * @author WangJiang
+ * @param $mobile
+ * @return mixed
+ */
+function get_sms_code($mobile){
+    $ck="verify_code_$mobile";
+    return S($ck,'',['expire'=>C('VERIFY_CODE_EXPIRE')]);
+}
+
+/**
+ * 缓存验证码
+ * @author WangJiang
+ * @param $mobile
+ * @param $code
+ */
+function set_sms_code($mobile,$code){
+    $ck="verify_code_$mobile";
+    S($ck,$code,['expire'=>C('VERIFY_CODE_EXPIRE')]);
+}
+
+/**
+ * 发送验证码
+ * @author WangJiang
+ * @param $mobile
+ * @return string
+ */
+function send_sms_code($mobile){
+    if(get_sms_code($mobile)!==false)
+        E(self::CODE_EXPIRE.'秒内不能重复获取');
+    $code=[];
+    while(count($code)<6){
+        $code[]=rand(1,9);
+    }
+    $code=implode('',$code);
+    set_sms_code($mobile,$code);
+    \Addons\Sms\Common\send_code([$mobile],$code);
+    return $code;
+}
+
+/**
+ * 检查验证码
+ * @author WangJiang
+ * @param $mobile
+ * @param $code
+ * @return bool
+ */
+function verify_sms_code($mobile,$code){
+    return get_sms_code($mobile)==$code;
+}
+
+/**
+ * >> 短线验证码接口
+ */
