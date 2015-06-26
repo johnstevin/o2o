@@ -74,7 +74,13 @@ class MerchantShopModel extends AdvModel
         $id = (int)($id);
         $map = array();
         $map['id'] = $id;
-        return $this->where($map)->field($field)->find();
+        $MerchantShop= $this->where($map)->field($field)->find();
+        $MerchantShop['_picture'] = M('Picture')->where(array('id' => $MerchantShop['picture']))->find();
+        $MerchantShop['_yyzz_picture'] = M('Picture')->where(array('id' => $MerchantShop['yyzz_picture']))->find();
+        $MerchantShop['_spwsxkz_picture'] = M('Picture')->where(array('id' => $MerchantShop['spwsxkz_picture']))->find();
+        $MerchantShop['_id_cart_front_picture'] = M('Picture')->where(array('id' => $MerchantShop['id_cart_front_picture']))->find();
+        $MerchantShop['_id_cart_back_picture'] = M('Picture')->where(array('id' => $MerchantShop['id_cart_back_picture']))->find();
+        return $MerchantShop;
     }
 
     /**
