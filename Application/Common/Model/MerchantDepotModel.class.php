@@ -695,26 +695,39 @@ class MerchantDepotModel extends RelationModel
      * 根据ID获取列表
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param string|array $ids
-     * @param string|array $fields 要查询的字段
+     * @param bool $getCategorys 是否获得分类信息
+     * @param bool $getBrand 是否获得品牌信息
+     * @param bool $getNorm 是否获得规格信息
      * @return null|array
      */
-    public function getListsByIds($ids, $fields = '*')
+    public function getListsByIds($ids, $getCategorys = false, $getBrand = false, $getNorm = false)
     {
         $ids = is_array($ids) ? $ids : explode(',', $ids);
         $ids = array_unique($ids);
-        $model = self::getInstance();
+        $model = self::getInstance()->alias('md');
         $where = [
             'id' => [
                 'IN',
                 $ids
             ],
         ];
-        $data = $model->relation('_product')->where($where)->field($fields)->select();
-        foreach ($data as &$item) {
-            $item['title'] = $item['_product']['title'];
-            $item['detail'] = $item['_product']['detail'];
-            unset($item['_product']);
-        }
+        $fields = [
+            'md.id',
+            'md.shop_id',
+            'md.product_id',
+            'md.status',
+            'md.price',
+            'md.remark',
+            'p.title',
+            'p.brand_id',
+            'p.norms_id',
+            'p.detail',
+            'p.number',
+            'p.description',
+            'p.message'
+        ];
+        $model->join('LEFT JOIN' . ProductModel::getInstance()->getTableName() . ' p ON d.product_id=p.id');
+        $data = $model->where($where)->field($fields)->select();
         return $data;
     }
 
@@ -722,24 +735,34 @@ class MerchantDepotModel extends RelationModel
      * 商品下架，只能下架【已上架】的商品
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
-     * @param int $id depot ID
+     * @param int|array|string $ids depot IDs 可传多个ID
      * @return bool
      */
-    public function offShelf($id)
+    public function offShelf($ids)
     {
-        return $id = intval($id) && self::getInstance()->where(['id' => $id, 'status' => self::STATUS_ACTIVE])->save(['status' => self::STATUS_CLOSE]);
+        if (!is_array($ids)) $ids = explode(',', $ids);
+        $ids = array_unique($ids);
+        return self::getInstance()->where([
+            'id' => ['IN', $ids],
+            'status' => self::STATUS_ACTIVE
+        ])->save(['status' => self::STATUS_CLOSE]);
     }
 
     /**
      * 商品上架，只能上架状态为【已下架】的商品
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
-     * @param int $id 商品仓库ID
+     * @param int|string|array $ids 商品仓库ID
      * @return bool
      */
-    public function onShelf($id)
+    public function onShelf($ids)
     {
-        return $id = intval($id) && self::getInstance()->where(['id' => $id, 'status' => self::STATUS_CLOSE])->save(['status' => self::STATUS_ACTIVE]);
+        if (!is_array($ids)) $ids = explode(',', $ids);
+        $ids = array_unique($ids);
+        return self::getInstance()->where([
+            'id' => ['IN', $ids],
+            'status' => self::STATUS_CLOSE
+        ])->save(['status' => self::STATUS_ACTIVE]);
     }
 
     /**
