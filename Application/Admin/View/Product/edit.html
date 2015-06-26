@@ -161,7 +161,6 @@
         var data = $.parseJSON(data);
         var src = '';
         if (data.status) {
-            alert(data.id);
             $("#cover_id").val(data.id);
             src = data.url || '__ROOT__' + data.path
             $("#cover_id").parent().find('.upload-img-box').html(
