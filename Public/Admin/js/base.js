@@ -422,7 +422,13 @@ function Save(Url,selector){
             onSuccess(data);
         },
         error : function() {
-            alert("异常！");
+         //   alert("内部错误！");
+            Messenger().post({
+                message: "对不起,出错了,请稍后重试,如果一直出现此异常,请联系我们!",
+                type: 'error',
+                showCloseButton: true,
+                hideAfter: 2
+            });
         }
     })
 }

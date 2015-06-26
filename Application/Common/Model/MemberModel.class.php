@@ -11,6 +11,8 @@ class MemberModel extends RelationModel
 {
     protected static $model;
     ## 状态常量
+
+    const DEFAULT_PHOTO = 'Uploads/Product/2015/06/24/233.jpg';
     const STATUS_DELETE = -1;
     const STATUS_LOCK = 0;
     const STATUS_ACTIVE = 1;
@@ -78,37 +80,45 @@ class MemberModel extends RelationModel
         ];
     }
 
-    public function getMemberInfos( $mapUid, $field = '*' ) {
-        try{
-            $userInfo=$this
+    public function getMemberInfos($mapUid, $field = '*')
+    {
+        try {
+            $userInfo = $this
                 ->field($field)
                 ->table('__UCENTER_MEMBER__ a')
-                ->join('__MEMBER__ b ON  a.id = b.uid','LEFT')
-                ->where(array('a.is_member'=>array('eq', '1'),'b.status'=>array('eq', '1'),'a.id'=>$mapUid))
-                ->select();
-            if(empty($userInfo))
+                ->join('__MEMBER__ b ON  a.id = b.uid', 'LEFT')
+                ->join('__PICTURE__ c ON  a.photo = c.id', 'LEFT')
+                ->where(array('a.is_member' => array('eq', '1'), 'b.status' => array('eq', '1'), 'a.id' => $mapUid))
+                ->find();
+            //头像为空时返回默认图片
+            if (empty($userInfo['photo'])) {
+            $userInfo['photo'] = self::DEFAULT_PHOTO;
+            }
+
+            if (empty($userInfo))
                 E(-1);
             return $userInfo;
 
-        }catch (\Exception $ex){
+        } catch (\Exception $ex) {
             return $ex->getMessage();
         }
     }
 
-    public function saveInfo ($data) {
+    public function saveInfo($data)
+    {
         try {
 
             empty($data) ? E('修改字段不能为空') : '';
             $data = $this->create($data);
-            if(empty($data))
+            if (empty($data))
                 E('创建对象失败');
-            if(empty($data['uid'])){
+            if (empty($data['uid'])) {
                 $id = $this->add();
-                if(!$id)
+                if (!$id)
                     E('新增失败');
             } else {
                 $status = $this->save();
-                if(false === $status)
+                if (false === $status)
                     E('更新失败');
                 return true;
             }

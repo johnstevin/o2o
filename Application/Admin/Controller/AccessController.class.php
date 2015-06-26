@@ -56,13 +56,13 @@ class AccessController extends AdminController
         $map = array();
         switch (strtolower($_type)) {
             case '1':
-                $map = array('type' => C('auth_group_type')['ADMIN']);
+                $map = array('type' => C('AUTH_GROUP_TYPE')['ADMIN']);
                 break;
             case'3':
-                $map = array('type' =>  C('auth_group_type')['MEMBER']);
+                $map = array('type' =>  C('AUTH_GROUP_TYPE')['MEMBER']);
                 break;
             case'2':
-                $map = array('type' =>  C('auth_group_type')['MERCHANT']);
+                $map = array('type' =>  C('AUTH_GROUP_TYPE')['MERCHANT']);
                 break;
             default:
                 $this->error('参数错误');
@@ -85,11 +85,10 @@ class AccessController extends AdminController
             $key['_roles'] = $AuthRole->field('id,title,group_id')->where(array('group_id' => $key['id'], 'status' => '1'))->select();
         }
 
-
+        /*格式化数据*/
         $Tree = D('Tree');
         $auth_Groups = $Tree->toFormatTree($auth_Groups);
-//        $auth_Groups = $Tree->toTree($auth_Groups, $pk = 'id', $pid = 'pid', $child = '_child');
-
+//      $auth_Groups = $Tree->toTree($auth_Groups, $pk = 'id', $pid = 'pid', $child = '_child');
 
 
         /*非超管级管理员只列出拥有权限的组织*/

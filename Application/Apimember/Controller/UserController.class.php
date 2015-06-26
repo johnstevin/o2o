@@ -144,11 +144,11 @@ class UserController extends ApiController {
     public function getUserInfo(){
         try {
             $map = $this->getUserId();
-            $fields = 'a.id,a.mobile,a.username,a.email,a.reg_time,a.reg_ip,a.photo,b.nickname,b.sex,b.birthday,b.qq,real_name';
+            $fields = 'a.id,a.mobile,a.username,a.email,a.reg_time,a.reg_ip,b.nickname,b.sex,b.birthday,b.qq,c.path as photo,real_name';
             $uInfo = D('Member')->getMemberInfos($map, $fields);
             if(empty($uInfo))
                 $this->apiError(40015,'没有此用户');
-            $this->apiSuccess(array('data'=>$uInfo[0]), '获取成功');
+            $this->apiSuccess(array('data'=>$uInfo), '成功');
         } catch (\Exception $ex) {
             $this->apiError(50115, $ex->getMessage());
         }
@@ -219,7 +219,7 @@ class UserController extends ApiController {
 
             $result = $model->saveInfo($data);
             if($result===true){
-                $this->apiSuccess(array('data'=>''), '获取成功');
+                $this->apiSuccess(array('data'=>''), '成功');
             }else{
                 E($model->getError());
             }

@@ -1,62 +1,146 @@
 <!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
     <title>{:C('WEB_SITE_TITLE')}</title>
-    <script src="__STATIC__/js/jquery.min.js"></script>
-    <script src="__STATIC__/js/jquery.md5.js"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" href="__STATIC__/bootstrap/css/bootstrap.min.css">
 </head>
 <body>
+<div class="container">
 
-<form action="?" method="post" name="form">
+    <div class="row">
+        <div class="col-xs-12 col-sm-offset-2 col-sm-10 col-md-offset-3 col-md-6">
+            <nav class="navbar">
+                <div class="text-center"><h3>{:I('shop_name')}员工注册</h3></div>
+            </nav>
+            <form action="?" method="post" name="form">
+                <div class="form-group">
+                    <label for="mobile">账号</label>
+                    <input type="text" class="form-control" id="mobile" name="mobile" placeholder="手机号">
+                </div>
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-xs-7 col-sm-8 col-md-8">
+                            <input type="text" class="form-control" id="verify_code" name="verify_code"
+                                   placeholder="验证码">
+                        </div>
+                        <div class="col-xs-5 col-sm-4 col-md-4">
+                            <button type="button" class="btn btn-primary btn-block" onclick="getVerifyCode()">获取验证码
+                            </button>
+                        </div>
+                    </div>
 
-    手机：<input type="text" name="mobile" id="mobile" value="" />　<br />
-    密码：<input type="password" name="password" id="password" value="" />
-         <input type="button" value="提交" onclick="register()" />
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" class="form-control" id="password" name="password"
+                           placeholder="6-16为数字、英文字母大小写">
+                </div>
+                <div class="form-group">
+                    <label for="real_name">姓名</label>
+                    <input type="text" class="form-control" id="real_name" name="real_name" placeholder="你的真实姓名">
+                </div>
+                <button type="button" class="btn btn-primary btn-lg btn-block" onclick="register()">下一步</button>
+            </form>
 
-</form>
-<div id="msg"></div>
+            <div id="msg" class="alert"></div>
+        </div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="__STATIC__/js/jquery.min.js"></script>
+    <script src="__STATIC__/js/jquery.md5.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script type="text/javascript" src="__STATIC__/bootstrap/js/bootstrap.min.js"></script>
+</div>
 </body>
 </html>
 <script>
-$(document).ready(function(){
+    $(document).ready(function () {
 
-});
-
-function register(){
-    var mobile = $("#mobile").val();
-    var password = $("#password").val();
-
-    if(mobile==""){
-        $('#msg').html("手机号不能为空！");
-        $("#mobile").focus();
-        return false;
-    }
-    if(password==""){
-        $('#msg').html("密码不能为空！");
-        $("#password").focus();
-        return false;
-    }
-    password = $.md5(password);
-
-    $.ajax({
-        type: "POST",
-        url: '{:U('User/staffAdd')}',
-        dataType: "json",
-        data: {"mobile":mobile,"password":password,"shop_id":50},
-        beforeSend: function(){
-            $('#msg').html("正在注册...");
-        },
-        success: function(json){
-            if(json.success==1){
-                $('#msg').html("注册成功，正在跳转...");
-                alert('注册成功！请下载APP应用登陆...');
-            }else{
-                $('#msg').html("注册失败！Error:"+json.message);
-                return false;
-            }
-        }
     });
-}
+
+    function getVerifyCode() {
+        var target = "{:U('getVerifyCode')}";
+        var mobile = $("#mobile").val();
+        if (mobile == "") {
+            $('#msg').html("手机号不能为空！");
+            $("#mobile").focus();
+            return false;
+        }
+        $.get(target, {"mobile": mobile}, function (data) {
+            //TODO
+           if(data.success){
+               $('#msg').html("发送成功！");
+           }else{
+               $('#msg').html("发送失败！错误原因:" + data.message);
+           }
+        });
+    }
+
+
+    function register() {
+        var mobile = $("#mobile").val();
+        var password = $("#password").val();
+        var real_name = $("#real_name").val();
+        var verify_code = $('#verify_code').val();
+        var shop_id = "{:I('shop_id')}";
+        if (shop_id == '' || shop_id == null) {
+            $('#msg').html("注册失败！非法注册,请重新扫描！");
+            //};
+            return false;
+        }
+        if (mobile == "") {
+            $('#msg').html("手机号不能为空！");
+            $("#mobile").focus();
+            return false;
+        }
+        if (verify_code == ""||verify_code ==null) {
+            $('#msg').html("验证码不能为空！");
+            $("#verify_code").focus();
+            return false;
+        }
+        if (password == "") {
+            $('#msg').html("密码不能为空！");
+            $("#password").focus();
+            return false;
+        }
+        if (real_name == "") {
+            $('#msg').html("姓名不能为空！");
+            $("#real_name").focus();
+            return false;
+        }
+
+        password = $.md5(password);
+
+        $.ajax({
+            type: "POST",
+            url: '{:U("User/staffAdd")}',
+            dataType: "json",
+            data: {
+                "mobile": mobile,
+                "password": password,
+                "shop_id": shop_id,
+                "real_name": real_name,
+                "verify_code": verify_code
+            },
+            beforeSend: function () {
+                $('#msg').html("正在注册...");
+            },
+            success: function (json) {
+                if (json.success == 1) {
+                    $('#msg').html("注册成功，正在跳转...");
+                    alert('注册成功！请下载APP应用登陆...');
+                } else {
+                    $('#msg').html("注册失败！错误原因:" + json.message);
+                    return false;
+                }
+            }
+        });
+    }
 
 </script>
