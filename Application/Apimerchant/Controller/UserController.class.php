@@ -244,7 +244,7 @@ class UserController extends ApiController {
         if(empty($result))
             $this->apiError('40021', '找不到此店铺');
         if( $result['staff_register_url'] != null ){
-            $this->apiSuccess(array('data'=>$result['staff_register_url']),'获取Url成功');
+            $this->apiSuccess(array('data'=>$result['staff_register_url'].'/shop_name/'.$result['title']),'获取Url成功');
         }else{
             //生成url
             $this->apiSuccess(array('data'=>'apimchant.php?s=User/staffAdd/shop_id/' . $shop_id.'/shop_name/'.$result['title']),'生成Url成功');
