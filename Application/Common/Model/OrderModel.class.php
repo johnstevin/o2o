@@ -594,6 +594,30 @@ class OrderModel extends RelationModel
 //                'shop_id' => [
 //                    2, 7, 11, 13, 14, 15, 16, 17, 20, 21, 23, 25, 26, 28, 30, 32, 33, 35
 //                ]
+//            ],
+//            [
+//                'product_id' => 8,
+//                'depot_id' => 452,
+//                'total' => 5,
+//                'shop_id' => [
+//                    5
+//                ]
+//            ],
+//            [
+//                'product_id' => 9,
+//                'depot_id' => 534,
+//                'total' => 3,
+//                'shop_id' => [
+//                    15
+//                ]
+//            ],
+//            [
+//                'product_id' => 12,
+//                'depot_id' => 722,
+//                'total' => 5,
+//                'shop_id' => [
+//                    15
+//                ]
 //            ]
 //        ];
         $depotModel = MerchantDepotModel::getInstance();
@@ -652,11 +676,12 @@ class OrderModel extends RelationModel
                 }
                 //统计每个商家出现的次数，出现的越多，本次订单能提供的商品就越多
                 $shopTotal = array_count_values($shopLists);
+                foreach ($hasProductShopTotal as $shopId => $total) {
+
+                }
+
                 //把能提供最多商品的商家排在前面
                 arsort($shopTotal);
-                echo '<pre>';
-                print_r($depots);
-                die;
                 foreach ($depots as $depot) {
 
                 }
