@@ -359,26 +359,26 @@ class MerchantDepotController extends ApiController
     }
 
     /**
-     * ## 下架商品，只能下架【已上架】的商品。`需要验证权限`
+     * ## 下架商品（可批量），只能下架【已上架】的商品。`需要验证权限`
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 商品ID
      */
     public function offShelf($id)
     {
         if (!IS_POST) E('非法请求', 400);
-        can_modify_depot($this->getUserId(), $id);
+        bacth_check_can_modify_depot(113, $id);
         $this->apiSuccess(['data' => MerchantDepotModel::getInstance()->offShelf($id)]);
     }
 
     /**
-     * ## 上架商品。只能上架【已下架】的商品。`需要验证权限`
+     * ## 上架商品（可批量）。只能上架【已下架】的商品。`需要验证权限`
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 商品ID
      */
     public function onShelf($id)
     {
         if (!IS_POST) E('非法请求', 400);
-        can_modify_depot($this->getUserId(), $id);
+        bacth_check_can_modify_depot($this->getUserId(), $id);
         $this->apiSuccess(['data' => MerchantDepotModel::getInstance()->onShelf($id)]);
     }
 
