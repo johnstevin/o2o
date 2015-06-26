@@ -96,7 +96,18 @@ abstract class RestController  extends Controller{
         return $access;
     }
 
-    public function _initialize() {
+    public function _initialize()
+    {
+        set_exception_handler(function ($e) {
+            header('Content-Type:application/json; charset=utf-8');
+//            header('HTTP/1.1 ' . $e->getCode() . ' Not Found');
+//            header('Status:' . $e->getCode() . ' Not Found');
+            exit(json_encode([
+                'success' => false,
+                'error_code' => $e->getCode(),
+                'message' => $e->getMessage(),
+            ]));
+        });
     }
 
     public function setInternalCallApi($value=true) {
