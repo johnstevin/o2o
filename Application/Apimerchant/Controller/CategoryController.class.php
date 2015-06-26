@@ -18,4 +18,17 @@ class CategoryController extends ApiController
     {
         $this->apiSuccess(CategoryModel::getInstance()->getLists($pid, $level, $pageSize, $fields));
     }
+
+    /**
+     * ## 获得分类树
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $pid 父级ID
+     * @param null|string|array $level 层级
+     * @param string $fields 要查询的字段
+     */
+    public function tree($pid = 0, $level = null, $fields = 'id,title,pid')
+    {
+        $this->apiSuccess(CategoryModel::getTree($pid, $level, $fields));
+    }
 }

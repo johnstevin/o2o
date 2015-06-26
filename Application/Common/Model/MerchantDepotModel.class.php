@@ -1,7 +1,6 @@
 <?php
 namespace Common\Model;
 
-use Think\Exception;
 use Think\Model\RelationModel;
 use Think\Page;
 
@@ -337,16 +336,17 @@ class MerchantDepotModel extends RelationModel
 
     public function getProductList($shopIds, $categoryId, $brandId, $normId, $title
         , $priceMin, $priceMax
-        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = []){
+        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = [])
+    {
 
         $shopIds = $this->_filter_shops($shopIds, $groupIds);
         list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
 
-        $where='sq_merchant_depot.shop_id in (' . implode(',', $shopBindNames) . ')';
+        $where = 'sq_merchant_depot.shop_id in (' . implode(',', $shopBindNames) . ')';
 
         if (!empty($categoryId)) {
-            $where.=' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id in (select product_id from sq_product_category where category_id=:categoryId)';
-            $bindValues[':categoryId']=$categoryId;
+            $where .= ' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id in (select product_id from sq_product_category where category_id=:categoryId)';
+            $bindValues[':categoryId'] = $categoryId;
         }
         if (!is_null($priceMin)) {
             $where .= ' and sq_merchant_depot.price>:priceMin';
@@ -358,13 +358,13 @@ class MerchantDepotModel extends RelationModel
         }
 
         //TODO 加上品牌规格查询
-        $product_sql='JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1';
+        $product_sql = 'JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1';
         if (!empty($categoryId)) {
-            $product_sql.=' and sq_product.id in (select product_id from sq_product_category where category_id=:categoryId)';
-            $bindValues[':categoryId']=$categoryId;
+            $product_sql .= ' and sq_product.id in (select product_id from sq_product_category where category_id=:categoryId)';
+            $bindValues[':categoryId'] = $categoryId;
         }
         if (!empty($title)) {
-            $product_sql.=' and sq_product.title like :title';
+            $product_sql .= ' and sq_product.title like :title';
             $bindValues[':title'] = '%' . $title . '%';
         }
         if (!empty($brandId)) {
@@ -393,25 +393,25 @@ class MerchantDepotModel extends RelationModel
             ->limit($page, $pageSize);
         //echo '<pre>';
         //var_dump($bindValues);die;
-        $data=$this->select();
+        $data = $this->select();
         //print_r($this->getLastSql());die;
 
-        foreach($data as &$dpt){
+        foreach ($data as &$dpt) {
             list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
             $this->field(['sq_merchant_depot.id'
-                ,'sq_merchant_depot.price'
-                ,'sq_merchant_shop.id as shop_id'
-                ,'sq_merchant_shop.title as shop']);
+                , 'sq_merchant_depot.price'
+                , 'sq_merchant_shop.id as shop_id'
+                , 'sq_merchant_shop.title as shop']);
             $this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
             $this->where('shop_id in (' . implode(',', $shopBindNames) . ') and product_id =:productId');
-            $bindValues[':productId']=$dpt['product_id'];
+            $bindValues[':productId'] = $dpt['product_id'];
             $this->bind($bindValues);
-            $alters=$this->select();
+            $alters = $this->select();
 
             $minPrice = null;
             $maxPrice = null;
-            $depot=null;
-            foreach($alters as &$al){
+            $depot = null;
+            foreach ($alters as &$al) {
                 if (is_null($minPrice))
                     $minPrice = $al['price'];
                 else
@@ -421,17 +421,17 @@ class MerchantDepotModel extends RelationModel
                     $maxPrice = $al['price'];
                 else
                     $maxPrice = max($maxPrice, $al['price']);
-                if(is_null($depot))
-                    $depot=$al;
-                if($al['price']<=$minPrice)
-                    $depot=$al;
+                if (is_null($depot))
+                    $depot = $al;
+                if ($al['price'] <= $minPrice)
+                    $depot = $al;
             }
-            $dpt['id']=$depot['id'];
-            $dpt['price']=$depot['price'];
-            $dpt['shop_id']=$depot['shop_id'];
-            $dpt['shop']=$depot['shop'];
+            $dpt['id'] = $depot['id'];
+            $dpt['price'] = $depot['price'];
+            $dpt['shop_id'] = $depot['shop_id'];
+            $dpt['shop'] = $depot['shop'];
             $dpt['price_range'] = [$minPrice, $maxPrice];
-            $dpt['alters']=$alters;
+            $dpt['alters'] = $alters;
         }
         return $data;
     }
@@ -606,6 +606,7 @@ class MerchantDepotModel extends RelationModel
      * @param null|float|integer $price 价格
      * @param string $remark 备注
      * @return bool|integer
+     * @throws \Exception
      */
     public static function addDepot($shopId, $productId, $price = null, $remark = '')
     {
@@ -671,7 +672,7 @@ class MerchantDepotModel extends RelationModel
         if (!empty($price)) $data['status'] = $price;
         if (!empty($remark)) $data['remark'] = $remark;
         if (!empty($productId)) $data['product_id'] = intval($productId);
-        if (!$model->create($data)) E($model->getError());
+        if (!$model->create($data)) E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         return $model->save();
     }
 
@@ -719,26 +720,224 @@ class MerchantDepotModel extends RelationModel
      * 根据ID获取列表
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param string|array $ids
-     * @param string|array $fields 要查询的字段
+     * @param bool $getCategorys 是否获得分类信息
+     * @param bool $getBrand 是否获得品牌信息
+     * @param bool $getNorm 是否获得规格信息
      * @return null|array
      */
-    public function getListsByIds($ids, $fields = '*')
+    public function getListsByIds($ids, $getCategorys = false, $getBrand = false, $getNorm = false)
     {
         $ids = is_array($ids) ? $ids : explode(',', $ids);
         $ids = array_unique($ids);
-        $model = self::getInstance();
+        $model = self::getInstance()->alias('md');
         $where = [
             'id' => [
                 'IN',
                 $ids
             ],
         ];
-        $data = $model->relation('_product')->where($where)->field($fields)->select();
-        foreach ($data as &$item) {
-            $item['title'] = $item['_product']['title'];
-            $item['detail'] = $item['_product']['detail'];
-            unset($item['_product']);
-        }
+        $fields = [
+            'md.id',
+            'md.shop_id',
+            'md.product_id',
+            'md.status',
+            'md.price',
+            'md.remark',
+            'p.title',
+            'p.brand_id',
+            'p.norms_id',
+            'p.detail',
+            'p.number',
+            'p.description',
+            'p.message'
+        ];
+        $model->join('LEFT JOIN' . ProductModel::getInstance()->getTableName() . ' p ON d.product_id=p.id');
+        $data = $model->where($where)->field($fields)->select();
         return $data;
+    }
+
+    /**
+     * 商品下架，只能下架【已上架】的商品
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int|array|string $ids depot IDs 可传多个ID
+     * @return bool
+     */
+    public function offShelf($ids)
+    {
+        if (!is_array($ids)) $ids = explode(',', $ids);
+        $ids = array_unique($ids);
+        return self::getInstance()->where([
+            'id' => ['IN', $ids],
+            'status' => self::STATUS_ACTIVE
+        ])->save(['status' => self::STATUS_CLOSE]);
+    }
+
+    /**
+     * 商品上架，只能上架状态为【已下架】的商品
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int|string|array $ids 商品仓库ID
+     * @return bool
+     */
+    public function onShelf($ids)
+    {
+        if (!is_array($ids)) $ids = explode(',', $ids);
+        $ids = array_unique($ids);
+        return self::getInstance()->where([
+            'id' => ['IN', $ids],
+            'status' => self::STATUS_CLOSE
+        ])->save(['status' => self::STATUS_ACTIVE]);
+    }
+
+    /**
+     * 获取仓库商品列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param null|int $shopId 商铺ID
+     * @param null|string|array $categoryIds 分类ID
+     * @param null|int $status 状态
+     * @param null|string $title 标题
+     * @param string $sort 创建时间排序，可传【asc】和【desc】
+     * @param int $pageSize 分页大小
+     * @param bool $getPicture 是否获产品得图片
+     * @param bool $getCategorys 是否获得分类信息
+     * @param bool $getBrand 是否获得品牌信息
+     * @param bool $getNorm 是否获得规格信息
+     * @param bool $getShop 是否获得商铺信息
+     * @return array
+     */
+    public function getLists($shopId = null, $categoryIds = null, $status = null, $title = null, $sort = 'asc', $pageSize = 20, $getPicture = false, $getCategorys = false, $getBrand = false, $getNorm = false, $getShop = false)
+    {
+        $nowPage = $_GET['p'] ? intval($_GET['p']) : 1;
+        $where = [
+            'p.status' => ProductModel::STATUS_ACTIVE
+        ];
+        $sort = strtoupper($sort) === 'DESC' ? 'DESC' : 'ASC';
+        $fields = [//要查询的字段
+            'md.id',
+            'md.shop_id',
+            'md.product_id',
+            'md.status',
+            'md.price',
+            'md.remark',
+            'md.add_time',
+            'p.title',
+            'p.detail',
+            'p.number',
+            'p.description',
+            'p.message',
+        ];
+        $model = self::getInstance()->alias('md');//给当前表取一个别名
+        $model->join('LEFT JOIN sq_product p ON md.product_id=p.id');
+        if ($getPicture) {//如果需要获取图片
+            $model->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id');
+            $fields = array_merge($fields, [
+                'product_picture.id picture_id',
+                'product_picture.path picture_path'
+            ]);
+        }
+        //如果状态不为null并且状态在系统状态列表里则读取指定状态的数据，否则读取上架或者下架的数据
+        if ($status !== null && array_key_exists($status, self::getStatusOptions())) {
+            $where['md.status'] = intval($status);
+        } else {
+            $where['md.status'] = [
+                'IN',
+                [
+                    self::STATUS_ACTIVE,
+                    self::STATUS_CLOSE
+                ]
+            ];
+        }
+        if (!empty($shopId)) {
+            $where['md.shop_id'] = intval($shopId);
+        }
+        if (!empty($categoryIds)) {
+            $categoryIds = array_unique(is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds));
+            $model->join('LEFT JOIN sq_product_category pc ON md.product_id = pc.product_id');
+            $where['pc.category_id'] = [
+                'IN',
+                $categoryIds
+            ];
+        }
+        if (!empty($title) && is_string($title)) {
+            $where['p.title'] = [
+                'LIKE',
+                '%' . trim($title) . '%'
+            ];
+        }
+        if ($getBrand) {
+            $model->join('LEFT JOIN sq_brand brand ON brand.id=p.brand_id');
+            $fields = array_merge($fields, [
+                'brand.title _brand_title',
+                'brand.id _brand_id',
+                'brand.description _brand_description'
+            ]);
+        }
+        if ($getNorm) {
+            $model->join('LEFT JOIN sq_norms norm ON p.norms_id=norm.id');
+            $fields = array_merge($fields, [
+                'norm.title _norm_title',
+                'norm.id _norm_id'
+            ]);
+        }
+        if ($getShop) {
+            $model->join('LEFT JOIN sq_merchant_shop shop ON md.shop_id=shop.id');
+            $fields = array_merge($fields, [
+                'shop.id _shop_id',
+                'shop.title _shop_title',
+                'shop.address _shop_address',
+                'shop.status _shop_status',
+                'shop.phone_number _shop_phone'
+            ]);
+        }
+        $model->field($fields)->where($where)->order('md.add_time ' . $sort);
+        $totalModel = clone $model;
+        $list = $model->page($nowPage - 1, $pageSize)->select();
+        $total = $totalModel->count('*');
+
+        if ($getBrand || $getCategorys || $getShop || $getNorm) {
+            $pdo = get_pdo();
+            foreach ($list as &$item) {//循环列表并且整合数据
+
+                if ($getBrand) {
+                    $item['_brand'] = [
+                        'id' => $item['_brand_id'],
+                        'title' => $item['_brand_title'],
+                        'description' => $item['_brand_description']
+                    ];
+                    unset($item['_brand_id'], $item['_brand_title'], $item['_brand_description']);
+                }
+
+                if ($getNorm) {
+                    $item['_norm'] = [
+                        'id' => $item['_norm_id'],
+                        'title' => $item['_norm_title']
+                    ];
+                    unset($item['_norm_id'], $item['_norm_title']);
+                }
+
+                if ($getShop) {
+                    $item['_shop'] = [
+                        'id' => $item['_shop_id'],
+                        'title' => $item['_shop_title'],
+                        'address' => $item['_shop_address'],
+                        'status' => $item['_shop_status'],
+                        'phone' => $item['_shop_phone']
+                    ];
+                    unset($item['_shop_id'], $item['_shop_title'], $item['_shop_address'], $item['_shop_status'], $item['_shop_phone']);
+                }
+
+                if ($getCategorys) {
+                    $sth = $pdo->prepare('SELECT c.id,c.title,c.pid,c.icon,c.level FROM sq_category c WHERE id IN (SELECT category_id FROM sq_product_category WHERE product_id=' . $item['product_id'] . ')');
+                    $sth->execute();
+                    $item['_categorys'] = $sth->fetchAll(\PDO::FETCH_ASSOC);
+                }
+            }
+        }
+        return [
+            'total' => $total,
+            'data' => $list
+        ];
     }
 }

@@ -14,7 +14,6 @@ class MemberAddressController extends ApiController
     /**
      * 添加地址、
      * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param int $uid 用户ID
      * @param string $name 收货人姓名
      * @param string $address 收货地址
      * @param string|int $mobile 联系方式
@@ -22,9 +21,9 @@ class MemberAddressController extends ApiController
      * @param float $lng 经度
      * @param float $lat 纬度
      */
-    public function add($uid, $name, $address, $mobile, $regionId, $lng, $lat)
+    public function add($name, $address, $mobile, $regionId, $lng, $lat)
     {
-        $this->apiSuccess(['data' => MemberAddressModel::getInstance()->addAddress($uid, $name, $address, $mobile, $regionId, $lng, $lat)]);
+        $this->apiSuccess(['data' => MemberAddressModel::getInstance()->addAddress($this->getUserId(), $name, $address, $mobile, $regionId, $lng, $lat)]);
     }
 
     /**
@@ -66,7 +65,6 @@ class MemberAddressController extends ApiController
     /**
      * 获取地址列表
      * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param null|int $userId 用户ID
      * @param null|string $name 收货人姓名
      * @param null|int $regionId 区域ID
      * @param int $status 状态
@@ -74,8 +72,8 @@ class MemberAddressController extends ApiController
      * @param int $pageSize 分页大小
      * @return null|array
      */
-    public function lists($userId = null, $name = null, $regionId = null, $status = null, $fields = '*', $pageSize = 20)
+    public function lists($name = null, $regionId = null, $status = null, $fields = '*', $pageSize = 20)
     {
-        $this->apiSuccess(MemberAddressModel::getInstance()->getLists($userId, $name, $regionId, $status, $fields, $pageSize));
+        $this->apiSuccess(MemberAddressModel::getInstance()->getLists($this->getUserId(), $name, $regionId, $status, $fields, $pageSize));
     }
 }

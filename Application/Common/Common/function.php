@@ -693,8 +693,8 @@ function decode_token($token)
 /**
  * 验证用户是否允许修改商铺数据，不满足条件抛异常
  * @author WangJiang
- * @param $uid
- * @param $sid
+ * @param int $uid 用户ID
+ * @param int $sid 商铺ID
  */
 function can_modify_shop($uid, $sid)
 {
@@ -710,15 +710,37 @@ function can_modify_shop($uid, $sid)
 }
 
 /**
+ * 验证是否能修改仓库的商品
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @param int $uid 用户ID
+ * @param int $depotId 仓库商品ID
+ */
+function can_modify_depot($uid, $depotId)
+{
+    if ($depot = \Common\Model\MerchantDepotModel::getInstance()->getById($depotId, ['shop_id'])) {
+        except_merchant_manager($uid, $depot['shop_id']);
+    }
+    E('您无权限操作该商品');
+}
+
+function bacth_check_can_modify_depot($uid, $depotId)
+{
+    $shops = \Common\Model\MerchantDepotModel::getInstance()->alias('md')->field(['ms.group_id'])->group('ms.group_id')->join('LEFT JOIN sq_merchant_shop ms ON ms.id=md.shop_id')->where(['md.id' => ['IN', (array)$depotId]])->select();
+    if (!$shops || count($shops) > 1) {
+        E('没有权限修改商品或者不能同时修改多个店铺的商品');
+    }
+    except_merchant_manager($uid, current($shops)['group_id']);
+}
+
+/**
  * 是否店长，抛异常
  * @author WangJiang
- * @param $uid
- * @param $gid
+ * @param int $uid 用户ID
+ * @param int $gid 分组ID
  */
 function except_merchant_manager($uid, $gid)
 {
-    if(!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid,
-        'role_id'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')])->find())
+    if (!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid, 'role_id' => C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')])->find())
         E('用户无权限操作该店铺');
 }
 
@@ -852,7 +874,9 @@ function send_get($url)
  */
 function get_pdo()
 {
-    return new PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';charset=' . C('DB_CHARSET'), C('DB_USER'), C('DB_PWD'));
+    return new PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';charset=' . C('DB_CHARSET') . ';port' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'), [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ]);
 }
 
 /**
@@ -953,16 +977,18 @@ function pinyin_long($zh)
  * @param $bind
  * @return string
  */
-function build_distance_sql_where($lng,$lat,$distance,&$bind,$lnglatField='lnglat'){
-    $sql="ST_Distance_Sphere($lnglatField,POINT(:lng,:lat))<:dist";
-    $bind[':lng']=$lng;
-    $bind[':lat']=$lat;
-    $bind[':dist']=$distance;
+function build_distance_sql_where($lng, $lat, $distance, &$bind, $lnglatField = 'lnglat')
+{
+    $sql = "ST_Distance_Sphere($lnglatField,POINT(:lng,:lat))<:dist";
+    $bind[':lng'] = $lng;
+    $bind[':lat'] = $lat;
+    $bind[':dist'] = $distance;
     return $sql;
 }
 
-function upload_picture($uid,$type){
-    $type=strtoupper($type);
+function upload_picture($uid, $type)
+{
+    $type = strtoupper($type);
     //print_r("{$type}_PICTURE_UPLOAD");
     //print_r($_FILES);
     /* 调用文件上传组件上传文件 */
@@ -976,7 +1002,7 @@ function upload_picture($uid,$type){
         C("UPLOAD_{$pic_driver}_CONFIG")
     );
 
-    if($info==false)
+    if ($info == false)
         E($Picture->getError());
 
     return $info;
