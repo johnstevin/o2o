@@ -717,6 +717,15 @@ function can_modify_depot($uid, $depotId)
     E('您无权限操作该商品');
 }
 
+function bacth_check_can_modify_depot($uid, $depotId)
+{
+    $shops = \Common\Model\MerchantDepotModel::getInstance()->alias('md')->field(['ms.group_id'])->group('ms.group_id')->join('LEFT JOIN sq_merchant_shop ms ON ms.id=md.shop_id')->where(['md.id' => ['IN', (array)$depotId]])->select();
+    if (!$shops || count($shops) > 1) {
+        E('没有权限修改商品或者不能同时修改多个店铺的商品');
+    }
+    except_merchant_manager($uid, current($shops)['group_id']);
+}
+
 /**
  * 是否店长，抛异常
  * @author WangJiang
