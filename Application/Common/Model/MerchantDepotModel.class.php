@@ -74,10 +74,11 @@ class MerchantDepotModel extends RelationModel
      */
     protected $readonlyField = ['shop_id', 'product_id', 'add_time', 'add_ip'];
 
-    protected function checkReadonlyField(&$data) {
-        if(!empty($this->readonlyField)) {
-            foreach ($this->readonlyField as $key=>$field){
-                if(isset($data[$field]))
+    protected function checkReadonlyField(&$data)
+    {
+        if (!empty($this->readonlyField)) {
+            foreach ($this->readonlyField as $key => $field) {
+                if (isset($data[$field]))
                     unset($data[$field]);
             }
         }
@@ -85,10 +86,12 @@ class MerchantDepotModel extends RelationModel
     }
 
     // 更新前的回调方法
-    protected function _before_update(&$data,$options='') {
+    protected function _before_update(&$data, $options = '')
+    {
         // 检查只读字段
         $data = $this->checkReadonlyField($data);
     }
+
     /**
      * 自动验证
      * @author Fufeng Nie <niefufeng@gmail.com>
@@ -385,8 +388,8 @@ class MerchantDepotModel extends RelationModel
         $this->bind($bindValues);
 
         $this->field(['sq_merchant_depot.product_id'
-            ,'sq_product.title as product','sq_merchant_depot.status','sq_product.description','brand.id as brand_id'
-            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm','ifnull(sq_picture.path,\'\') as picture_path','sq_product.picture as picture_id']);
+            , 'sq_product.title as product', 'sq_merchant_depot.status', 'sq_product.description', 'brand.id as brand_id'
+            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm', 'ifnull(sq_picture.path,\'\') as picture_path', 'sq_product.picture as picture_id']);
 
         $this->group('sq_merchant_depot.product_id')
             //->order('sq_merchant_depot.product_id,sq_merchant_depot.price')
@@ -938,6 +941,122 @@ class MerchantDepotModel extends RelationModel
         return [
             'total' => $total,
             'data' => $list
+        ];
+    }
+
+    /**
+     * 根据商品条形码获取商品信息
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $number 条形码
+     * @param null|int $shopId 商铺ID，可选。默认为查出所有有这个商品的店家
+     * @param bool $getPicture 是否获得商品图片信息
+     * @param bool $getCategorys 是否获得分类信息
+     * @param bool $getBrand 是否获得品牌信息
+     * @param bool $getNorm 是否获得规格信息
+     * @param bool $getShop 是否获得商铺信息
+     * @return array
+     */
+    public function getByNumber($number, $shopId = null, $getPicture = false, $getCategorys = false, $getBrand = false, $getNorm = false, $getShop = false)
+    {
+        $where = [
+            'p.number' => $number,
+            'p.status' => ProductModel::STATUS_ACTIVE
+        ];
+        if ($shopId) {
+            $where['md.shop_id'] = intval($shopId);
+        }
+        $fields = [
+            'md.id',
+            'md.shop_id',
+            'md.product_id',
+            'md.status',
+            'md.price',
+            'md.remark',
+            'md.add_time',
+            'p.title',
+            'p.brand_id',
+            'p.norms_id',
+            'p.number',
+            'p.description',
+            'p.detail'
+        ];
+        $model = $this->getInstance()->join('LEFT JOIN sq_product p ON p.id=md.product_id');
+        if ($getPicture) {
+            $fields = array_merge($fields, [
+                'p_picture.path picture_path',
+                'p_picture.id picture_id'
+            ]);
+            $model->join('LEFT JOIN sq_picture p_picture ON p.picture=p_picture.id');
+        }
+        if ($getBrand) {
+            $fields = array_merge($fields, [
+                'b.id _brand_id',
+                'b.title _brand_title',
+                'b.description _brand_description'
+            ]);
+            $model->join('LEFT JOIN sq_brand b ON p.brand_id=b.id');
+            $where['b.status'] = BrandModel::STATUS_ACTIVE;
+        }
+        if ($getNorm) {
+            $fields = array_merge($fields, [
+                'n.id _norm_id',
+                'n.title _norm_title'
+            ]);
+            $model->join('LEFT JOIN sq_norms n ON n.id=p.norms_id');
+        }
+        if ($getShop) {
+            $model->join('LEFT JOIN sq_merchant_shop ms ON ms.id=md.shop_id');
+            $fields = array_merge($fields, [
+                'ms.id _shop_id',
+                'ms.title _shop_title',
+                'ms.status _shop_status',
+                'ms.phone_number _shop_phone',
+                'ms.address _shop_address',
+                'ms.region_id _shop_region_id'
+            ]);
+        }
+        $lists = $model->alias('md')->field($fields)->where($where)->select();
+        if ($getBrand || $getNorm || $getCategorys || $getPicture || $getShop) {
+            $pdo = get_pdo();
+            foreach ($lists as &$item) {
+                if ($getBrand) {
+                    $item['_brand'] = [
+                        'id' => $item['_brand_id'],
+                        'title' => $item['_brand_title'],
+                        'description' => $item['_brand_description']
+                    ];
+                    unset($item['_brand_id'], $item['_brand_title'], $item['_brand_description']);
+                }
+                if ($getNorm) {
+                    $item['_norm'] = [
+                        'id' => $item['_norm_id'],
+                        'title' => $item['_norm_title']
+                    ];
+                    unset($item['_norm_id'], $item['_norm_title']);
+                }
+                if ($getShop) {
+                    $item['_shop'] = [
+                        'id' => $item['_shop_id'],
+                        'title' => $item['_shop_title'],
+                        'address' => $item['_shop_address'],
+                        'status' => $item['_shop_status'],
+                        'phone' => $item['_shop_phone'],
+                        'type' => $item['_shop_type'],
+                        'region_id' => $item['_shop_region_id'],
+                    ];
+                    unset($item['_shop_id'], $item['_shop_title'], $item['_shop_address'], $item['_shop_status'], $item['_shop_phone'], $item['_shop_region_id']);
+                }
+                if ($getCategorys) {
+                    $sth = $pdo->prepare('SELECT c.id,c.title,c.pid,c.icon,c.level FROM sq_category c WHERE id IN (SELECT category_id FROM sq_product_category WHERE product_id=' . $item['product_id'] . ')');
+                    $sth->execute();
+                    $item['_categorys'] = $sth->fetchAll(\PDO::FETCH_ASSOC);
+                }
+            }
+
+        }
+        return [
+            'data' => $lists
         ];
     }
 }
