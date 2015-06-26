@@ -492,4 +492,20 @@ class MerchantDepotController extends ApiController
         $this->apiSuccess(['data' => MerchantDepotModel::getInstance()->onShelf($id)]);
     }
 
+    /**
+     * 根据条形码
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $number 条形码
+     * @param null|int $shopId 商铺ID，可选参数，如果不传则查询所有有这个商品的店家里的这个商品。。。好绕
+     * @param bool $getPicture 是否获得商品的图片信息，可选参数，默认为是
+     * @param bool $getCategorys 是否获得商品的分类信息，可选参数，默认为是
+     * @param bool $getBrand 是否获得商品的品牌信息，可选参数，默认为是
+     * @param bool $getNorm 是否获得商品的规格信息，可选参数，默认为是
+     * @param bool $getShop 是否获得商品的商铺信息，可选参数，默认为否
+     */
+    public function findByNumber($number, $shopId = null, $getPicture = true, $getCategorys = true, $getBrand = true, $getNorm = true, $getShop = false)
+    {
+        $this->apiSuccess(MerchantDepotModel::getInstance()->getByNumber($number, $shopId, $getPicture, $getCategorys, $getBrand, $getNorm, $getShop));
+    }
 }
