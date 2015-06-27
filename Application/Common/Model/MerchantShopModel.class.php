@@ -380,10 +380,10 @@ class MerchantShopModel extends AdvModel
 
         $bind=[];
         $data=$this->data();
-
+        //var_dump($data);die;
         $this->_before_update($data);
 
-        //var_dump($data);die;
+
         $id=$data['id'];
         $set=[];
         $where=null;
@@ -403,12 +403,12 @@ class MerchantShopModel extends AdvModel
         $where=' id=:id';
         $bind[':id']=$id;
 
-        //var_dump($data);die;
-
-        $stat[]=[
-            'sql'=>'UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;",
-            'bind'=>$bind
-        ];
+        if(!empty($set)){
+            $stat[]=[
+                'sql'=>'UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;",
+                'bind'=>$bind
+            ];
+        }
 
         foreach($data as $key=>$val){
             if($key=='tags'){
@@ -430,6 +430,7 @@ class MerchantShopModel extends AdvModel
             }
         }
 
+        //var_dump($stat);die;
         do_transaction($stat);
     }
 
