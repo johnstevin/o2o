@@ -168,18 +168,23 @@ class MerchantModel extends AdvModel
         if(!is_null($name))
             $where['sq_ucenter_member.real_name']=['like',"%$name%"];
 
-        $data=$this->where($where)->field(['sq_merchant.id'
-            ,'sq_merchant.number'
-            ,'sq_ucenter_member.mobile'
-            ,'sq_ucenter_member.real_name'
-            ,'sq_ucenter_member.photo'
-            ,'ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat)) as distance'
-            ,'st_astext(sq_merchant.lnglat) as lnglat'
-            ,'avg(sq_appraise.grade_1) as grade_1'
-            ,'avg(sq_appraise.grade_2) as grade_2'
-            ,'avg(sq_appraise.grade_3) as grade_3'
-            ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade'
-        ])->bind($bind)
+        $data=$this->join('left join sq_merchant_shop on sq_merchant_shop.group_id in
+                (select sq_auth_access.group_id from sq_auth_access where
+                        sq_auth_access.uid=sq_merchant.id and
+                        sq_auth_access.role_id=:roleId)')
+            ->where($where)->field(['sq_merchant.id'
+                ,'sq_merchant_shop.id as shop_id'
+                ,'sq_merchant.number'
+                ,'sq_ucenter_member.mobile'
+                ,'sq_ucenter_member.real_name'
+                ,'sq_ucenter_member.photo'
+                ,'ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat)) as distance'
+                ,'st_astext(sq_merchant.lnglat) as lnglat'
+                ,'avg(sq_appraise.grade_1) as grade_1'
+                ,'avg(sq_appraise.grade_2) as grade_2'
+                ,'avg(sq_appraise.grade_3) as grade_3'
+                ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade'
+            ])->bind($bind)
             ->limit($page,$pageSize)
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
             ->group('sq_merchant.id')
@@ -203,7 +208,6 @@ class MerchantModel extends AdvModel
         $data=$this
             ->join('join sq_merchant_shop on sq_merchant_shop.group_id in
                 (select sq_auth_access.group_id from sq_auth_access where
-                    sq_auth_access.group_id=sq_merchant_shop.group_id and
                         sq_auth_access.uid=sq_merchant.id and
                         sq_auth_access.role_id=:roleId)')
             ->where($where)->bind($bind)
