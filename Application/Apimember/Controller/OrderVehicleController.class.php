@@ -10,6 +10,7 @@ namespace Apimember\Controller;
 
 
 use Common\Model\MerchantModel;
+use Common\Model\MerchantShopModel;
 use Common\Model\OrderVehicleModel;
 
 class OrderVehicleController extends ApiController
@@ -184,15 +185,22 @@ class OrderVehicleController extends ApiController
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
                     list($lng,$lat)=explode(' ',$data['lnglat']);
-                    $wid=(new MerchantModel())->getAvailableWorker($lng,$lat,$data['preset_time']);
-                    if(is_null($wid))
+                    $worker=(new MerchantModel())->getAvailableWorker($lng,$lat,$data['preset_time']);
+                    if(empty($worker)){
                         $data['status']=OrderVehicleModel::STATUS_NO_WORKER;
-                    else{
+                        $shops=(new MerchantShopModel())->getNearby($lat,$lng,C('AUTO_MERCHANT_SCAN.RANGE'),null, null, 0, MerchantShopModel::TYPE_CAR_WASH);
+                        if(count($shops))
+                            $data['shop_id']=$shops[0]['id'];
+                    }else{
+
                         $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
-                        $data['worker_id']=$wid;
+                        $data['worker_id']=$worker['id'];
+                        $data['shop_id']=$worker['shop_id'];
                     }
                 }else
                     $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
+
+                $wid=$data['worker_id'];
 
                 //判断是否推送消息
                 $sendMsg=$data['status']==OrderVehicleModel::STATUS_HAS_WORKER;

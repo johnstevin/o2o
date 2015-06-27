@@ -191,17 +191,30 @@ class MerchantModel extends AdvModel
     }
 
     public function getAvailableWorker($lng,$lat,$presetTime){
-        //TODO 该值放到配置文件
         $range=C('AUTO_MERCHANT_SCAN.RANGE');
         $timeRange=C('AUTO_MERCHANT_SCAN.PRESET_TIME');
 
-        $bind=[':presetTime'=>$presetTime-$timeRange];
-        $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
-            ' and sq_merchant.id not in (select worker_id from sq_order_vehicle where preset_time>:presetTime and worker_id=sq_merchant.id and sq_order_vehicle.status in (1,2,3)) ';
-        $data=$this->where($where)->bind($bind)->field(['sq_merchant.id'])
+        $bind[':presetTime']=$presetTime-$timeRange;
+        $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
+            ' and sq_merchant.id not in (select worker_id from sq_order_vehicle
+            where preset_time>:presetTime and worker_id=sq_merchant.id and sq_order_vehicle.status in (1,2,3)) ';
+
+        $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
+        $data=$this
+            ->join('join sq_merchant_shop on sq_merchant_shop.group_id in
+                (select sq_auth_access.group_id from sq_auth_access where
+                    sq_auth_access.group_id=sq_merchant_shop.group_id and
+                        sq_auth_access.uid=sq_merchant.id and
+                        sq_auth_access.role_id=:roleId)')
+            ->where($where)->bind($bind)
+            ->field(['sq_merchant.id','sq_merchant_shop.id as shop_id'])
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
+            //->fetchSql()
             ->find();
-        return $data ? $data['id'] : null;
+
+        //var_dump($data);die;
+
+        return $data;
     }
 
     /**

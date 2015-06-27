@@ -144,6 +144,17 @@ class OrderVehicleController extends ApiController{
         }
     }
 
+    public function getList($status = null,$page = 1, $pageSize = 10){
+        $pageSize > 50 and $pageSize = 50;
+        $page--;
+        $page *= $pageSize;
+        $uid = $this->getUserId();
+
+
+
+        $this->apiSuccess(['data' => $data], '');
+    }
+
     /**
      * <pre>
      * 洗车工修改订单状态,POST数据，需要accesstoken

@@ -27,6 +27,9 @@ class MerchantShopModel extends AdvModel
     const OPEN_STATUS_OPEN = 1;//营业
     const OPEN_STATUS_CLOSE = 0;//歇业
 
+    const TYPE_MALL=1;
+    const TYPE_CAR_WASH=2;
+
     /**
      * @author  WangJiang
      * @var array
