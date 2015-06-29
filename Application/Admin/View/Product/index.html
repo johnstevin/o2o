@@ -1,7 +1,26 @@
 <!-- 操作  -->
-<div>
-    <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add" class="btn btn-success"
-       href="{:U('add')}">新 增</a>
+<!--<div>-->
+    <!--<a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add" class="btn btn-success"-->
+       <!--href="{:U('add')}">新 增</a>-->
+<!--</div>-->
+
+<div class="row">
+    <div class="col-xs-8 col-sm-6 col-lg-4">
+        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-category" class="btn btn-success"
+           href="{:U('add')}">新 增</a>
+    </div>
+    <!-- 高级搜索 -->
+
+    <div class="search-form fr cf col-xs-4 col-sm-6 col-lg-8">
+        <div class="input-group">
+            <input type="text" id="searchInput" name="name" class="form-control search-input" value="{:I('name')}" placeholder="请输入产品编号或名称">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default sch-btn" class="sch-btn" href="javascript:void(0);" id="search" type="button"  url="{:U('Product/index')}">搜索</button>
+                    </span>
+        </div>
+        <!--<input type="text" name="name" class="search-input" value="{:I('name')}" placeholder="请输入配置名称">-->
+        <!--<a class="sch-btn" href="javascript:;" id="search" url="{:U('config/index')}"><i class="btn-search"></i></a>-->
+    </div>
 </div>
 <div class="table-responsive">
     <table class="table table-striped table-hover">
@@ -57,7 +76,7 @@
                 </tr>
             </volist>
             <else/>
-            <td colspan="6" class="text-center"> aOh! 暂时还没有内容!</td>
+            <td colspan="11" class="text-center"> aOh! 暂时还没有内容!</td>
         </notempty>
         </tbody>
     </table>
@@ -65,4 +84,31 @@
 <div class="page">
     {$_page}
 </div>
-<script>baseJs();</script>
+<script>
+    //搜索功能
+    $("#search").click(function(){
+        var url = $(this).attr('url');
+        var query  = $('.search-form').find('input').serialize();
+        query = query.replace(/(&|^)(\w*?\d*?\-*?_*?)*?=?((?=&)|(?=$))/g,'');
+        query = query.replace(/^&/g,'');
+        if( url.indexOf('?')>0 ){
+            url += '&' + query;
+        }else{
+            url += '?' + query;
+        }
+
+        var target=$('#rg-container-fun').attr("href")+"?name="+$('#searchInput').val();
+        if (target) {
+            contentload(target);
+        }
+        //window.location.href = url;
+    });
+    //回车搜索
+    $(".search-input").keyup(function(e){
+        if(e.keyCode === 13){
+            $("#search").click();
+            return false;
+        }
+    });
+    baseJs();
+</script>
