@@ -540,6 +540,8 @@ class MerchantShopModel extends AdvModel
                 'norm'=>$i['norm'],
                 'brand_id'=>$i['brand_id'],
                 'brand'=>$i['brand'],
+                'shop_id'=>$i['shop_id'],
+                'shop'=>$i['shop_title'],
             ];
         }
         return array_values($shop);

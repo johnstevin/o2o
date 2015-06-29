@@ -249,6 +249,7 @@ class MerchantShopController extends ApiController
                     $sid=$i['id'];
                     $tags=D()->query("select tag_id from sq_shop_tag where shop_id=$sid;");
                     //print_r($i);print_r($tags);die;
+                    $i['tags']=[];
                     foreach($tags as $t){
                         $i['tags'][]=$t['tag_id'];
                     }

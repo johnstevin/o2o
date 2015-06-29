@@ -237,7 +237,7 @@ class ProductController extends ApiController
      * ```
      * @author  stevin WangJiang
      */
-    public function getDepotCategory($level = null, $pid = null, $shopIds = '', $returnMore = 'false')
+    public function getDepotCategory($level = null, $pid = 0, $shopIds = '', $returnMore = 'false')
     {
         //TODO:开发平台上测试的效率不理想，需要进一步优化，修改sq_merchant_depot_pro_category的数据，每次商品上架，该表必须保存指定分类以及他的所有上级节点
         try {
@@ -247,80 +247,26 @@ class ProductController extends ApiController
 
             list($bindNames, $bindValues) = build_sql_bind($shopIds);
 
+            $where='a.shop_id in (' . implode(',', $bindNames) . ') and a.category_id=b.id';
+
+            if(!empty($pid)){
+                $where.=' and b.pid=:pid';
+                $bindValues[':pid']=$pid;
+            }
+
             $sql = M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
-                ->where('a.shop_id in (' . implode(',', $bindNames) . ') and a.category_id=b.id')
+                ->where($where)
                 ->field(['b.id', 'b.title', 'b.pid', 'b.level'])
-                ->group('b.id')
+                //->group('b.id')->fetchSql()
                 ->bind($bindValues);
 
             $data = $sql->select();
 
-            $ret['categories']=list_to_tree($data);
+            //var_dump($data);die;
 
-//            $ret = [];
-//            $cats = [];
-//            $topHint = [];
-//            $catIds = [];
-//            if (!is_null($level)) {
-//                //$begin = microtime(true);
-//                foreach ($data as $i) {
-//                    //echo json_encode(CategoryModel::get($i['id']));
-//                    if ($i['level'] == $level) {
-//                        if (!in_array($i['id'], $topHint)) {
-//                            $cats[] = $i;
-//                            $topHint[] = $i['id'];
-//                        }
-//                        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
-//                    } else if ($i['level'] >= $level) {
-//                        $temp = [$i['id']];
-//                        $top = $this->_find_level_top($i, $level, $temp);
-//                        if (!is_null($top)) {
-//                            if (!in_array($top['id'], $topHint)) {
-//                                $cats[] = $top;
-//                                $topHint[] = $top['id'];
-//                            }
-//                            foreach ($temp as $id) {
-//                                !in_array($id, $catIds) and $catIds[] = $id;
-//                            }
-//                        }
-//                    }
-//                }
-//
-//                //echo (microtime(true) - $begin);die;
-//            } else if (!is_null($pid)) {
-//                foreach ($data as $i) {
-//                    //echo json_encode(CategoryModel::get($i['id']));
-//                    if ($i['pid'] == $pid) {
-//                        if (!in_array($i['id'], $topHint)) {
-//                            $cats[] = $i;
-//                            $topHint[] = $i['id'];
-//                        }
-//                        !in_array($i['id'], $catIds) and $catIds[] = $i['id'];
-//                    } else if ($i['pid'] > 0) {
-//                        $temp = [$i['id']];
-//                        $top = $this->_find_parent_top($i, $pid, $temp);
-//                        if (!is_null($top)) {
-//                            if (!in_array($top['id'], $topHint)) {
-//                                $cats[] = $top;
-//                                $topHint[] = $top['id'];
-//                            }
-//                            foreach ($temp as $id) {
-//                                !in_array($id, $catIds) and $catIds[] = $id;
-//                            }
-//                        }
-//                    }
-//                }
-//            } else{
-//                $cats=$data;
-//            }
-//
-//            $ret['categories'] = $cats;
-//
-//            //print_r($catIds);die;
-//
-            $brands = [];
-            $norms = [];
-            if ($returnMore) {
+            //print_r($sql->getLastSql());die;
+
+            if ($returnMore and !empty($data)) {
 
                 if(empty($catIds)){
                     foreach($data as $i){
@@ -331,7 +277,7 @@ class ProductController extends ApiController
                 //print_r($catIds);
                 list($bindNames, $bindValues) = build_sql_bind($catIds);
                 $sql = M()->table('sq_category_brand_norms as l')
-                    ->field(['sq_brand.id as bid', 'sq_brand.title as brand', 'sq_norms.id as nid', 'sq_norms.title as norm'])
+                    ->field(['sq_brand.id as bid', 'sq_brand.title as brand', 'sq_norms.id as nid', 'sq_norms.title as norm','l.category_id as cid'])
                     ->join('LEFT JOIN sq_norms on sq_norms.id=l.norms_id')
                     ->join('left JOIN sq_brand on sq_brand.id=l.brand_id')
                     ->where('l.norms_id<>0 and l.category_id in (' . implode(',', $bindNames) . ')')
@@ -339,22 +285,47 @@ class ProductController extends ApiController
 
                 $temp = $sql->select();
 
-                $bidHint = [];
-                $nidHint = [];
-                foreach ($temp as $i) {
-                    if (!in_array($i['bid'], $bidHint)) {
-                        $bidHint[] = $i['bid'];
-                        $brands[] = ['id' => $i['bid'], 'title' => $i['brand']];
+                $cates=[];
+                foreach ($catIds as $i) {
+                    $cid=$i;
+                    if(!array_key_exists($cid,$cates)){
+                        $cates[$cid]['norms']=[];
+                        $cates[$cid]['brands']=[];
                     }
+                    $brandHint=[];
+                    foreach($temp as $cbn){
+                        if($cid==$cbn['cid']){
+                            $cates[$cid]['norms'][]=['id' => $cbn['nid'], 'title' => $cbn['norm'],'bid'=>$cbn['bid']];
+                            if(!in_array($cbn['bid'],$brandHint)){
+                                $brandHint[]=$cbn['bid'];
+                                $cates[$cid]['brands'][]=['id' => $cbn['bid'], 'title' => $cbn['brand']];
+                            }
+                        }
+                    }
+                }
 
-                    if (!in_array($i['nid'], $nidHint)) {
-                        $nidHint[] = $i['nid'];
-                        $norms[] = ['id' => $i['nid'], 'title' => $i['norm']];
+                foreach($cates as &$v){
+                    $brands=&$v['brands'];
+                    $norms=$v['norms'];
+                    foreach($brands as &$b){
+                        foreach($norms as $n){
+                            if($n['bid']==$b['id']){
+                                $b['norms'][]=$n;
+                            }
+                        }
+                    }
+                    unset($v['norms']);
+                }
+
+                foreach($data as &$i){
+                    foreach ($cates as $k=>$v) {
+                        if ($k==$i['id']) {
+                            $i['brands'][] = $v['brands'];
+                        }
                     }
                 }
             }
-            $ret['brands'] = $brands;
-            $ret['norms'] = $norms;
+            $ret['categories']=list_to_tree($data,'id', 'pid', '_child', $root = $pid);
 
             $this->apiSuccess(['data' => $ret]);
 

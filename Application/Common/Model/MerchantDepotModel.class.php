@@ -344,9 +344,13 @@ class MerchantDepotModel extends RelationModel
 
         $where = 'sq_merchant_depot.shop_id in (' . implode(',', $shopBindNames) . ')';
 
+        $cateChain=[$categoryId];
+        get_cate_chain_up([$categoryId],$cateChain);
+
         if (!empty($categoryId)) {
-            $where .= ' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id in (select product_id from sq_product_category where category_id=:categoryId)';
-            $bindValues[':categoryId'] = $categoryId;
+            $where .= ' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id
+                in (select product_id from sq_product_category where category_id in (:cateIds))';
+            $bindValues[':cateIds'] = $cateChain;
         }
         if (!is_null($priceMin)) {
             $where .= ' and sq_merchant_depot.price>:priceMin';
