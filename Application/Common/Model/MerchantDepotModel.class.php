@@ -896,7 +896,7 @@ class MerchantDepotModel extends RelationModel
         }
         $model->field($fields)->where($where)->order('md.add_time ' . $sort);
         $totalModel = clone $model;
-        $list = $model->page($nowPage - 1, $pageSize)->select();
+        $list = $model->page($nowPage, $pageSize)->select();
         $total = $totalModel->count('*');
 
         if ($getBrand || $getCategorys || $getShop || $getNorm) {
