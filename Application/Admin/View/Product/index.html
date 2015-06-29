@@ -29,7 +29,7 @@
                     <td>{$vo.id}</td>
                     <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
                            href="{:U('edit?id='.$vo['id'])}">{$vo.title}</a></td>
-                    <td><span>{:mb_strimwidth($vo['detail'],0,60,"...","utf-8")}</span></td>
+                    <td><span>{:mb_strimwidth($vo['description'],0,60,"...","utf-8")}</span></td>
                     <td>{$vo.brand}</td>
                     <td>{$vo.norm}</td>
                     <td>{$vo.price}</td>

@@ -18,10 +18,13 @@ class UserController extends AdminController
         $ucentermember=D('UcenterMember');
         $list = $ucentermember->userList('Member');
         int_to_string($list);
-        $this->assign('_list', $list);
+        $this->assign('_list', $list['data']);
+        $this->assign('_page', $list['_page']);
         $this->meta_title = '用户信息';
         $this->display();
     }
+
+
 
     /**
      * 商家用户管理首页
@@ -31,7 +34,8 @@ class UserController extends AdminController
         $ucentermember=D('UcenterMember');
         $list = $ucentermember->userList('merchant');
         int_to_string($list);
-        $this->assign('_list', $list);
+        $this->assign('_list', $list['data']);
+        $this->assign('_page', $list['_page']);
         $this->meta_title = '商户信息';
         $this->display();
     }
@@ -44,9 +48,35 @@ class UserController extends AdminController
         $ucentermember=D('UcenterMember');
         $list = $ucentermember->userList('admin');
         int_to_string($list);
-        $this->assign('_list', $list);
+
+        $this->assign('_list', $list['data']);
+        $this->assign('_page', $list['_page']);
+
         $this->meta_title = '管理员信息';
         $this->display();
+    }
+
+
+    public function editadmin()
+    {
+
+//        $ucentermember=D('UcenterMember');
+//        if (IS_POST) {
+//            if (false !== $ucentermember->update()) {
+//                $this->success('新增成功！', U('index'));
+//            } else {
+//                $error = $ucentermember->getError();
+//                $this->error(empty($error) ? '未知错误！' : $error);
+//            }
+//        } else {
+//
+//            $info = $id ? $ucentermember->info($id) : '';
+//
+//            $this->assign('info', $info);
+            $this->meta_title = '编辑信息';
+            $this->display();
+//        }
+
     }
 
     /**
