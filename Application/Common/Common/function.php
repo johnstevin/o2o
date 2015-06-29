@@ -723,6 +723,12 @@ function can_modify_depot($uid, $depotId)
     E('您无权限操作该商品');
 }
 
+/**
+ * 批量验证用户是否能修改（读取）仓库的商品
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @param int $uid 用户ID
+ * @param int|string|array $depotId 仓库ID
+ */
 function bacth_check_can_modify_depot($uid, $depotId)
 {
     $shops = \Common\Model\MerchantDepotModel::getInstance()->alias('md')->field(['ms.group_id'])->group('ms.group_id')->join('LEFT JOIN sq_merchant_shop ms ON ms.id=md.shop_id')->where(['md.id' => ['IN', (array)$depotId]])->select();
@@ -766,7 +772,7 @@ function do_transaction($data,$success=null){
      * $data = [['sql'=>'<sql>','bind'=>[<bounds>],'newId'=><true|false>]...]
      */
     $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'),
-        C('DB_USER'), C('DB_PWD'),array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8';"));
+        C('DB_USER'), C('DB_PWD'),[PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8';"]);
     $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
     $newid = null;
