@@ -144,8 +144,6 @@ class OrderVehicleController extends ApiController
                 unset($i['worder_picture_ids']);
             }
 
-
-
             //print_r($m->getLastSql());die;
 
             $this->apiSuccess(['data' => $data], '');
@@ -188,11 +186,11 @@ class OrderVehicleController extends ApiController
                     $worker=(new MerchantModel())->getAvailableWorker($lng,$lat,$data['preset_time']);
                     if(empty($worker)){
                         $data['status']=OrderVehicleModel::STATUS_NO_WORKER;
-                        $shops=(new MerchantShopModel())->getNearby($lat,$lng,C('AUTO_MERCHANT_SCAN.RANGE'),null, null, 0, MerchantShopModel::TYPE_CAR_WASH);
+                        $shops=(new MerchantShopModel())->getNearby($lat,$lng,C('AUTO_MERCHANT_SCAN.RANGE')
+                            ,null, null, 0, MerchantShopModel::TYPE_CAR_WASH);
                         if(count($shops))
                             $data['shop_id']=$shops[0]['id'];
                     }else{
-
                         $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
                         $data['worker_id']=$worker['id'];
                         $data['shop_id']=$worker['shop_id'];
