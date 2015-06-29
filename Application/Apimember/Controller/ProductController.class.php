@@ -257,7 +257,7 @@ class ProductController extends ApiController
             $sql = M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
                 ->where($where)
                 ->field(['b.id', 'b.title', 'b.pid', 'b.level'])
-                //->group('b.id')->fetchSql()
+                ->group('b.id')//->fetchSql()
                 ->bind($bindValues);
 
             $data = $sql->select();
@@ -355,31 +355,44 @@ class ProductController extends ApiController
     }
 
     /**
-     * @ignore
      * 根据获取的商家仓库的商品获取商品品牌接口
-     * @param array|string $shopIds 商铺ID，可以通过getMerchantList获得
      * @param int $categoryId 分类ID
      * @return mixed
      * @author  stevin WangJiang
-     * @deprecated 统一到getDepotCategory中
      */
-    public function getDepotBrand($shopIds, $categoryId)
+    public function getBrand($categoryId)
     {
         try {
-            empty($shopIds) and E('参数shopIds不能为空');
             empty($categoryId) and E('参数categoryId不能为空');
 
-            $shopIds = explode(',', $shopIds);
-            list($bindNames, $bindValues) = build_sql_bind($shopIds);
+            $sql = M()->table('sq_category_brand_norms as l')
+                ->join('LEFT JOIN sq_norms on sq_norms.id=l.norms_id')
+                ->join('left JOIN sq_brand on sq_brand.id=l.brand_id')
+                ->field(['sq_brand.id as bid', 'sq_brand.title as brand', 'sq_norms.id as nid', 'sq_norms.title as norm'])
+                ->where('l.category_id=:cid')
+                ->bind([':cid'=>$categoryId]);
 
-            $bindValues[':categoryId'] = $categoryId;
+            $data = $sql->select();
 
-            $sql = M()->table('sq_merchant_depot_pro_category as a,sq_category as b,sq_category_brand_norms as c,sq_brand as d')
-                ->where('a.shop_id in (' . implode(',', $bindNames) . ') and a.category_id=b.id and b.id=:categoryId and a.category_id=c.category_id and d.id=c.brand_id')
-                ->field(['b.id', 'b.title', 'd.title as brand'])
-                ->bind($bindValues);
+            $brandHint=[];
+            foreach($data as $i){
+                if(!array_key_exists($i['bid'],$brandHint)){
+                    $brandHint[$i['bid']]=['id'=>$i['bid'],'title'=>$i['brand'],'norms'=>[]];
+                }
+            }
 
-            $this->apiSuccess(['data' => $sql->select()]);
+            foreach($data as $i){
+                if(!is_null($i['nid']) and !array_key_exists($i['nid'],$brandHint[$i['bid']]['norms'])){
+                    $brandHint[$i['bid']]['norms'][]=['id'=>$i['nid'],'title'=>$i['norm']];
+                }
+            }
+
+            $ret=[];
+            foreach($brandHint as $i){
+                $ret[]=$i;
+            }
+
+            $this->apiSuccess(['data' => $ret]);
 
             //print_r($sql->getLastSql());
 
