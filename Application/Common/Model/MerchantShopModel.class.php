@@ -27,6 +27,9 @@ class MerchantShopModel extends AdvModel
     const OPEN_STATUS_OPEN = 1;//营业
     const OPEN_STATUS_CLOSE = 0;//歇业
 
+    const TYPE_MALL=1;
+    const TYPE_CAR_WASH=2;
+
     /**
      * @author  WangJiang
      * @var array
@@ -377,10 +380,10 @@ class MerchantShopModel extends AdvModel
 
         $bind=[];
         $data=$this->data();
-
+        //var_dump($data);die;
         $this->_before_update($data);
 
-        //var_dump($data);die;
+
         $id=$data['id'];
         $set=[];
         $where=null;
@@ -400,12 +403,12 @@ class MerchantShopModel extends AdvModel
         $where=' id=:id';
         $bind[':id']=$id;
 
-        //var_dump($data);die;
-
-        $stat[]=[
-            'sql'=>'UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;",
-            'bind'=>$bind
-        ];
+        if(!empty($set)){
+            $stat[]=[
+                'sql'=>'UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;",
+                'bind'=>$bind
+            ];
+        }
 
         foreach($data as $key=>$val){
             if($key=='tags'){
@@ -427,6 +430,7 @@ class MerchantShopModel extends AdvModel
             }
         }
 
+        //var_dump($stat);die;
         do_transaction($stat);
     }
 
@@ -536,6 +540,8 @@ class MerchantShopModel extends AdvModel
                 'norm'=>$i['norm'],
                 'brand_id'=>$i['brand_id'],
                 'brand'=>$i['brand'],
+                'shop_id'=>$i['shop_id'],
+                'shop'=>$i['shop_title'],
             ];
         }
         return array_values($shop);

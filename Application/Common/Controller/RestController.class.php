@@ -63,9 +63,8 @@ abstract class RestController  extends Controller{
      * 获得用户分组，未登录抛异常
      * @return array
      */
-    protected function getUserGroupIds(){
-        $access=$this->getUserAccess();
-
+    protected function getUserGroupIds($roleId=null){
+        $access=$this->getUserAccess($roleId);
         $ret=[];
         foreach($access as $i){
             $ret[]=$i['group_id'];
@@ -77,8 +76,8 @@ abstract class RestController  extends Controller{
      * 获得用户角色，未登录抛异常
      * @return array
      */
-    protected function getUserRoleIds(){
-        $access=$this->getUserAccess();
+    protected function getUserRoleIds($groupId=null){
+        $access=$this->getUserAccess(null,$groupId);
         $ret=[];
         foreach($access as $i){
             $ret[]=$i['role_id'];
@@ -88,11 +87,18 @@ abstract class RestController  extends Controller{
 
     /**
      * 获得分组和角色，未登录抛异常
+     * @param null $roleId 指定角色ID
+     * @param null $groupId 指定分组ID
      * @return mixed
      */
-    protected function getUserAccess(){
+    protected function getUserAccess($roleId=null,$groupId=null){
         $uid=$this->getUserId();
-        $access= M()->table('sq_auth_access')->where(['uid'=>$uid])->select();
+        $where['uid']=$uid;
+        if(!is_null($roleId))
+            $where['role_id']=$roleId;
+        if(!is_null($groupId))
+            $where['group_id']=$groupId;
+        $access= M()->table('sq_auth_access')->where($where)->select();
         return $access;
     }
 

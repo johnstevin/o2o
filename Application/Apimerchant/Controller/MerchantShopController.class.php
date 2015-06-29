@@ -206,21 +206,22 @@ class MerchantShopController extends ApiController
                 $page--;
                 $page *= $pageSize;
 
-                $groupIds=$this->getUserGroupIds();
+                //获得担任店长的商铺组
+                $groupIds=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'));
                 $model = D('MerchantShop');
 
                 $where['group_id'] = ['in',$groupIds];
 
                 !is_null($regionId) and $where['region_id'] = $regionId;
-                $type !== '0' and $where['type'] = $type;
+                $type !== '0' and $where['sq_merchant_shop.type'] = $type;
                 !is_null($title) and $where['title'] = ['like', "%$title%"];
-                !is_null($status) and $where['status']=$status;
-                $data = $model->field(['id',
+                !is_null($status) and $where['sq_merchant_shop.status']=$status;
+                $data = $model->field(['sq_merchant_shop.id',
                     'title',
                     'description',
                     'group_id',
-                    'status',
-                    'type',
+                    'sq_merchant_shop.status',
+                    'sq_merchant_shop.type',
                     'open_status',
                     'open_time_mode',
                     'begin_open_time',
@@ -239,17 +240,16 @@ class MerchantShopController extends ApiController
                     'delivery_amount_cost',
                     'message',
                     'picture',
-                    'yyzz_picture',
-                    'spwsxkz_picture',
-                    'id_cart_front_picture',
-                    'id_cart_back_picture',
-                    'st_astext(lnglat) as lnglat'])
+                    'ifnull(sq_picture.path,\'\') as picture_path',
+                    'st_astext(sq_merchant_shop.lnglat) as lnglat'])
+                    ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
                     ->where($where)->limit($page,$pageSize)->select();
 
                 foreach($data as &$i){
                     $sid=$i['id'];
                     $tags=D()->query("select tag_id from sq_shop_tag where shop_id=$sid;");
                     //print_r($i);print_r($tags);die;
+                    $i['tags']=[];
                     foreach($tags as $t){
                         $i['tags'][]=$t['tag_id'];
                     }

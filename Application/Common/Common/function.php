@@ -1013,8 +1013,6 @@ function upload_picture($uid, $type)
  * 短线验证码接口 >>
  */
 
-require_once(__ROOT__.'Addons/Sms/Common/function.php');
-
 /**
  * 获得缓存的验证码
  * @author WangJiang
@@ -1044,6 +1042,7 @@ function set_sms_code($mobile,$code){
  * @return string
  */
 function send_sms_code($mobile){
+    require_once(__ROOT__.'Addons/Sms/Common/function.php');
     if(get_sms_code($mobile)!==false)
         E(self::CODE_EXPIRE.'秒内不能重复获取');
     $code=[];
@@ -1070,3 +1069,36 @@ function verify_sms_code($mobile,$code){
 /**
  * >> 短线验证码接口
  */
+
+/**
+ * 从上级分组获得分组链
+ * @author WangJiang
+ * @param $ids
+ * @param $ret
+ * @param null $catem
+ */
+function get_cate_chain_down($ids, &$ret, $catem = null)
+{
+    if (is_null($catem))
+        $catem = D('Category');
+    foreach ($ids as $id) {
+        $cate = $catem->find($id);
+        if ($cate['pid'] == 0) {
+            break;
+        }
+        if (!in_array($cate['pid'], $ret)) {
+            $ret[] = $cate['pid'];
+        }
+        $pids[] = $cate['pid'];
+    }
+    if ($pids)
+        get_cate_chain_down($pids, $ret, $catem);
+}
+
+function get_cate_chain_up($ids, &$ret, $catem = null){
+    if (is_null($catem))
+        $catem = D('Category');
+    foreach ($ids as $id){
+
+    }
+}

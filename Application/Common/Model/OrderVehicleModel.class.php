@@ -20,13 +20,7 @@ class OrderVehicleModel extends AdvModel{
     const STATUS_DONE = 4;
     const STATUS_CLOSED = 5;
     const STATUS_CANCELED = 6;
-    const STATUS_CHAIN=[
-        ['id'=>0,[1]],
-        ['id'=>1,[2,6,0]],
-        ['id'=>2,[3]],
-        ['id'=>3,[4]],
-        ['id'=>4,[5]]
-    ];
+
     protected $pk     = 'id';
 
     protected $fields = [
@@ -250,12 +244,22 @@ class OrderVehicleModel extends AdvModel{
         $this->save($data);
     }
 
+    private static function _get_status_chain(){
+        return [
+            ['id'=>0,[1]],
+            ['id'=>1,[2,6,0]],
+            ['id'=>2,[3]],
+            ['id'=>3,[4]],
+            ['id'=>4,[5]]
+        ];
+    }
+
     /**
      * @param $oldStatus
      * @param $newStatus
      */
     private function _assert_new_status($oldStatus,$newStatus){
-        foreach(self::STATUS_CHAIN as $i){
+        foreach(self::_get_status_chain() as $i){
             if($i['id']==$oldStatus){
                 if(!in_array($newStatus,$i[0]))
                     E('当前状态不能改变为指定状态');

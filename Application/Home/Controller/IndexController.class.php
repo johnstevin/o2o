@@ -2,6 +2,7 @@
 
 namespace Home\Controller;
 use OT\DataDictionary;
+require __ROOT__.'Addons/Sms/Common/function.php';
 
 /**
  * 前台首页控制器
@@ -33,19 +34,19 @@ class IndexController extends HomeController {
      * @author WangJiang
      * @param $text
      */
-    public function scws($text){
-        $so = scws_new();
-        $so->set_charset('utf8');
-        $so->send_text($text);
-        echo '<pre>';
-        while ($tmp = $so->get_result())
-        {
-            foreach($tmp as $i){
-                print_r($i['word']);echo '<br/>';
-            }
-            break;
-        }
-        $so->close();
-    }
+//    public function scws($text){
+//        $so = scws_new();
+//        $so->set_charset('utf8');
+//        $so->send_text($text);
+//        echo '<pre>';
+//        while ($tmp = $so->get_result())
+//        {
+//            foreach($tmp as $i){
+//                print_r($i['word']);echo '<br/>';
+//            }
+//            break;
+//        }
+//        $so->close();
+//    }
 
 }

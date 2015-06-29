@@ -79,7 +79,8 @@ class MerchantDepotController extends ApiController
             if (is_null($number))
                 E('商品编码不能为空');
 
-            $cateChain = $this->_get_cate_chain([$category_id]);
+            $cateChain=[$category_id];
+            get_cate_chain_down([$category_id],$cateChain);
 
             D()->startTrans();
             try {
@@ -198,8 +199,10 @@ class MerchantDepotController extends ApiController
                             $shopId,$productSameNumber['status']==ProductModel::STATUS_ACTIVE ?
                                 MerchantDepotModel::STATUS_ACTIVE : MerchantDepotModel::STATUS_VERIFY);
                     else{
-                        $cateChain = $this->_get_cate_chain([$category_id]);
-                        $insertMerchantDepotProCategory=D('MerchantDepotProCategory')->where(['product_id' => $productId, 'category_id' => $category_id])->count()==0;
+                        $cateChain=[$category_id];
+                        get_cate_chain_down([$category_id],$cateChain);
+//var_dump($cateChain);die;
+
 
                         $model = MerchantDepotModel::getInstance();
                         $model->startTrans();
@@ -216,9 +219,13 @@ class MerchantDepotController extends ApiController
                                 ,'source'=>2]);
 
                             D('ProductCategory')->add(['product_id' => $productId, 'category_id' => $category_id]);
-                            if($insertMerchantDepotProCategory){
+                            {
                                 foreach ($cateChain as $i) {
-                                    D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
+                                    $insertMerchantDepotProCategory=D('MerchantDepotProCategory')
+                                            ->where(['category_id' => $i,'shop_id'=>$shopId])->count()==0;
+//var_dump([$insertMerchantDepotProCategory,$i,$shopId]);
+                                    if($insertMerchantDepotProCategory)
+                                        D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
                                 }
                             }
 
@@ -275,8 +282,13 @@ class MerchantDepotController extends ApiController
         $d=D();
         $d->startTrans();
         try {
-            foreach ($cateChain as $i) {
-                D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
+            {
+                foreach ($cateChain as $i) {
+                    $insertMerchantDepotProCategory=D('MerchantDepotProCategory')
+                            ->where(['category_id' => $i,'shop_id'=>$shopId])->count()==0;
+                    if($insertMerchantDepotProCategory)
+                        D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
+                }
             }
             //var_dump($data);die;
             $newId = $m->add($data);
@@ -289,25 +301,24 @@ class MerchantDepotController extends ApiController
         }
     }
 
-    private function _get_cate_chain($ids, &$ret = [], $catem = null)
-    {
-        if (is_null($catem))
-            $catem = D('Category');
-        foreach ($ids as $id) {
-            $cate = $catem->find($id);
-            if ($cate['pid'] == 0) {
-                break;
-            }
-
-            if (!in_array($cate['pid'], $ret)) {
-                $ret[] = $cate['pid'];
-            }
-            $pids[] = $cate['pid'];
-        }
-        if ($pids)
-            $this->_get_cate_chain($pids, $ret, $catem);
-        return $ret;
-    }
+//    private function _get_cate_chain($ids, &$ret, $catem = null)
+//    {
+//        if (is_null($catem))
+//            $catem = D('Category');
+//        foreach ($ids as $id) {
+//            $cate = $catem->find($id);
+//            if ($cate['pid'] == 0) {
+//                break;
+//            }
+//
+//            if (!in_array($cate['pid'], $ret)) {
+//                $ret[] = $cate['pid'];
+//            }
+//            $pids[] = $cate['pid'];
+//        }
+//        if ($pids)
+//            $this->_get_cate_chain($pids, $ret, $catem);
+//    }
 
     /**
      * <pre>
@@ -436,7 +447,7 @@ class MerchantDepotController extends ApiController
         }
         //print_r($cateIds);
         $cateChain = $cateIds;
-        $this->_get_cate_chain($cateIds, $cateChain);
+        get_cate_chain_down($cateIds, $cateChain);
         $depotCates = D('MerchantDepotProCategory')->where(['shop_id' => $shopId])->field(['category_id'])->select();
         foreach ($depotCates as $i) {
             $k = array_search($i['category_id'], $cateChain);
