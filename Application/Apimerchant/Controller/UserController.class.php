@@ -69,7 +69,7 @@ class UserController extends ApiController {
             $code = I('post.code');
 
             if(!verify_sms_code($mobile,$code))
-                E("验证码错误或已过期，请重新获取");
+                $this->apiError(40009,$this->showRegError(-14));
 
             $Ucenter = D('UcenterMember');
             D()->startTrans();
@@ -125,11 +125,13 @@ class UserController extends ApiController {
      */
     private function showRegError($code = 0){
         switch ($code) {
+            case -4:  $error = '密码长度不够！'; break;
             case -9:  $error = '手机格式不正确！'; break;
             case -10: $error = '手机被禁止注册！'; break;
             case -11: $error = '手机号被占用！'; break;
             case -12: $error = '用户注册失败！code:-12'; break;
             case -13: $error = '分配授权失败！code:-13'; break;
+            case -14: $error = '验证码错误或已过期，请重新获取'; break;
             default:  $error = '未知错误';
         }
         return $error;

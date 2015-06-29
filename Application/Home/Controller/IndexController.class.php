@@ -2,7 +2,6 @@
 
 namespace Home\Controller;
 use OT\DataDictionary;
-require __ROOT__.'Addons/Sms/Common/function.php';
 
 /**
  * 前台首页控制器
