@@ -17,7 +17,15 @@ class ProductController extends AdminController
      */
     public function index()
     {
-        $list = $this->lists('Product');
+        /* 查询条件初始化 */
+        $name       =   I('name');
+        $map['status']  =   array('egt',-1);
+        if(is_numeric($name)){
+            $map['id|title']=   array(intval($name),array('like','%'.$name.'%'),'_multi'=>true);
+        }else{
+            $map['title']    =   array('like', '%'.(string)$name.'%');
+        }
+        $list = $this->lists('Product',$map);
         $Brands = D('Brand');
         $norms = D('Norms');
         foreach ($list as &$v) {

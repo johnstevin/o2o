@@ -392,7 +392,7 @@ class Upload {
         if ($this->autoSub && !empty($rule)) {
             $subpath = $this->getName($rule, $filename) . '/';
 
-            if(!empty($subpath) && !$this->uploader->mkdir($this->savePath . $subpath)){
+            if(!empty($subpath) && !$this->uploader->mkdir($this->savePath . $subpath)&& !@chmod($this->savePath . $subpath,775) ){
                 $this->error = $this->uploader->getError();
                 return false;
             }

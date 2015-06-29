@@ -280,34 +280,127 @@ class UcenterMemberModel extends Model{
         $UserInfo=array();
         switch (strtolower($method)) {
             case 'admin':
+
+                $map=array('is_admin'=>array('eq', '1'));
+
+
+                /*分页*/
+                $total = $this->where($map)->count();
+
+                if (isset($REQUEST['r'])) {
+                    $listRows = (int)$REQUEST['r'];
+                } else {
+                    $listRows = C('LIST_ROWS') > 0 ? C('LIST_ROWS') : 10;
+                }
+
+                $page = new \Think\Page($total, $listRows);
+
+                $page->setConfig('theme', '%FIRST% %UP_PAGE% %LINK_PAGE% %DOWN_PAGE% %END% %HEADER%');
+
+                $options['limit'] = $page->firstRow . ',' . $page->listRows;
+
+                $this->setProperty('options', $options);
+
+
+               /*查询*/
                 $UserInfo=$this
                     ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
                     ->table('__UCENTER_MEMBER__ a')
                     ->join('__ADMIN__ b ON  a.id = b.login','LEFT')
-                    ->where(array('a.is_admin'=>array('eq', '1')))
+                    ->where($map)
                     ->select();
+
+
+                /*返回结果*/
+                return [
+                    'data' => $UserInfo,
+                    '_page' => $page->show()
+                ];
                 break;
+
+
             case'member':
+
+                $map=array('is_member'=>array('eq', '1'));
+
+
+                /*分页*/
+                $total = $this->where($map)->count();
+
+                if (isset($REQUEST['r'])) {
+                    $listRows = (int)$REQUEST['r'];
+                } else {
+                    $listRows = C('LIST_ROWS') > 0 ? C('LIST_ROWS') : 10;
+                }
+
+                $page = new \Think\Page($total, $listRows);
+
+                $page->setConfig('theme', '%FIRST% %UP_PAGE% %LINK_PAGE% %DOWN_PAGE% %END% %HEADER%');
+
+                $options['limit'] = $page->firstRow . ',' . $page->listRows;
+
+                $this->setProperty('options', $options);
+
+
                 $UserInfo=$this
                     ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
                     ->table('__UCENTER_MEMBER__ a')
                     ->join('__MEMBER__ b ON  a.id = b.login','LEFT')
                     //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('neq', '1'),'a.is_member'=>array('eq', '1')))
-                    ->where(array('a.is_member'=>array('eq', '1')))
+                    ->where($map)
                     ->select();
+
+
+                /*返回结果*/
+                return [
+                    'data' => $UserInfo,
+                    '_page' => $page->show()
+                ];
                 break;
+
+
             case'merchant':
+
+                $map=array('is_merchant'=>array('eq', '1'));
+
+                /*分页*/
+                $total = $this->where($map)->count();
+
+                if (isset($REQUEST['r'])) {
+                    $listRows = (int)$REQUEST['r'];
+                } else {
+                    $listRows = C('LIST_ROWS') > 0 ? C('LIST_ROWS') : 10;
+                }
+
+                $page = new \Think\Page($total, $listRows);
+
+                $page->setConfig('theme', '%FIRST% %UP_PAGE% %LINK_PAGE% %DOWN_PAGE% %END% %HEADER%');
+
+                $options['limit'] = $page->firstRow . ',' . $page->listRows;
+
+                $this->setProperty('options', $options);
+
                 $UserInfo=$this
                     ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
                     ->table('__UCENTER_MEMBER__ a')
                     ->join('__MERCHANT__ b ON  a.id = b.login','LEFT')
                     //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('eq', '1')))
-                    ->where(array('a.is_merchant'=>array('eq', '1')))
+                    ->where($map)
                     ->select();
+
+
+                /*返回结果*/
+                return [
+                    'data' => $UserInfo,
+                    '_page' => $page->show()
+                ];
                 break;
+
+
             default:
                 $this->error('参数错误');
                 break;
+
         }
         return $UserInfo;
 
