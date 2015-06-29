@@ -229,6 +229,8 @@ class RegionModel extends Model
      * @param null|int|string|array $level 需要获取的等级，可传多个
      * @param null|int $status 状态
      * @param null|int $pageSize 分页大小
+     * @param float $lng 经度
+     * @param float $lat 纬度
      * @param string|array $fields 要查询的字段
      * @return array
      */
