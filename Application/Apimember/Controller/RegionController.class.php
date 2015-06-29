@@ -86,8 +86,51 @@ class RegionController extends ApiController
      * @param null|int $status 状态
      * @param string $fileds 要查询的字段，注意，`id`、`pid`为必查字段
      */
-    public function tree($pid = 0, $level = null, $status = null, $fileds = '*')
+    public function tree($pid = 0, $level = null, $lng = null, $lat = null, $status = null, $fileds = '*')
     {
-        $this->apiSuccess(RegionModel::getInstance()->getTree($pid, $level, $status, null, $fileds));
+        if ($_REQUEST['format'] == 'xml') {
+            header('Content-Type:text/xml; charset=utf-8');
+            echo '<?xml version="1.0" encoding="utf-8"?>';
+            echo '<root success="1" error_code="0">', self::treeToXml(RegionModel::getInstance()->getTree($pid, $level, $status, $pageSize = null, $lng, $lat, $fileds)['data'], 1), '</root>';
+        } else {
+            $this->apiSuccess(RegionModel::getInstance()->getTree($pid, $level, $status, $pageSize = null, $lng, $lat, $fileds));
+        }
+    }
+
+    /**
+     * 组成区域的xml，因为android的要求特殊，所以单独写一个
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param array $list 树状结构的数组
+     * @param int $level 层级（并非数据库存的那个层级）
+     * @return string
+     */
+    private static function treeToXml($list, $level = 1)
+    {
+        $xml = '';
+        if (!is_array($list)) return '';
+        switch ($level) {
+            case 1:
+                $name = 'province';
+                break;
+            case 2:
+                $name = 'city';
+                break;
+            case 3:
+                $name = 'district';
+                break;
+            default:
+                $name = 'level' . $level;
+                break;
+        }
+        foreach ($list as $item) {
+            $xml .= '<' . $name . ' name="' . $item['name'] . '" id="' . $item['id'] . '"';
+            if (!empty($item['_childs'])) {
+                $xml .= ' >' . self::treeToXml($item['_childs'], $level + 1) . '</' . $name . '>';
+            } else {
+                $xml .= ' />';
+            }
+        }
+        return $xml;
     }
 }
