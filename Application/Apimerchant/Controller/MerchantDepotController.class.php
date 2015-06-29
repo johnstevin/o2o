@@ -493,7 +493,7 @@ class MerchantDepotController extends ApiController
     }
 
     /**
-     * 根据条形码
+     * 根据条形码查询商品
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param int $number 条形码
