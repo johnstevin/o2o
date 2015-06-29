@@ -229,25 +229,77 @@ class RegionModel extends Model
      * @param null|int|string|array $level 需要获取的等级，可传多个
      * @param null|int $status 状态
      * @param null|int $pageSize 分页大小
+     * @param float $lng 经度
+     * @param float $lat 纬度
      * @param string|array $fields 要查询的字段
      * @return array
      */
-    public function getTree($pid = 0, $level = null, $status = null, $pageSize = null, $fields = '*')
+    public function getTree($pid = 0, $level = null, $status = null, $pageSize = null, $lng = null, $lat = null, $fields = 'id,name,pid,level')
     {
-        $_level = is_array($level) ? implode('_', $level) : str_replace(',', '_', $level);
+        $level = $level === null ? [0, 1, 2, 3, 4, 5] : $level;
+        $level = array_unique(is_array($level) ?: explode(',', $level));
+        asort($level);
         $nowPage = isset($_GET['p']) ? $_GET['p'] : 1;
-        $cacheKey = 'sys_region_tree_' . $pid . '_' . $_level . $pageSize . $nowPage;
-        S(['expire' => C('DATA_CACHE_TIME') ?: 86400]);
-
+        $cacheKey = 'data_region_tree_level' . implode('', $level);
         if (!$tree = S($cacheKey)) {
             $lists = self::getInstance()->getLists(null, $level, $status, $pageSize, $fields);
             $tree = list_to_tree($lists['data'], 'id', 'pid', '_childs', $pid);
-            S($cacheKey, $tree);
+            S($cacheKey, $tree, 86400);
+        }
+        //因为最后一层需要按距离排序
+        if (in_array(5, $level) && $lng && $lat) {
+            $communitys = $this->getNearbyCommunityByLnglat($lng, $lat);
+            $this->addRegionToTree($tree, $communitys, array_unique(array_column($communitys, 'pid')), array_column($communitys, 'id'));
         }
 
         return [
             'data' => $tree
         ];
+    }
+
+    /**
+     * 往树里添加区域
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param arrary $tree 树状结构
+     * @param array $regions 需要添加进去的区域数组
+     * @param array $pids 所有的父级ID列表，在外面传可以避免递归的时候每次计算
+     * @param array $addIds 所有要添加进去的ID列表，在外面传可以避免递归的时候每次计算
+     */
+    protected static function addRegionToTree(&$tree, $regions, $pids, $addIds)
+    {
+        foreach ($tree as &$item) {
+            if (!empty($item['_childs'])) {
+                self::addRegionToTree($item['_childs'], $regions, $pids, $addIds);
+            }
+            if ($item['level'] == 4 && in_array($item['id'], $pids)) {
+                $hasIds = array_column($item['_childs'], 'id');
+                $ids = array_diff($hasIds, $addIds);
+                foreach ($regions as $region) {
+                    if (!in_array($regions['id'], $ids)) {
+                        array_unshift($item['_childs'], $region);
+                    }
+                }
+
+            }
+        }
+    }
+
+    /**
+     * 获得附近xx米之内的小区
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param float $lng 经度
+     * @param float $lat 纬度
+     * @param int $distance 距离
+     * @return array
+     */
+    protected static function getNearbyCommunityByLnglat($lng, $lat, $distance = 2000)
+    {
+        return self::getInstance()->where([
+            'status' => self::STATUS_ACTIVE,
+            'level' => 5,
+            'ST_Distance_Sphere(lnglat,point(' . $lng . ',' . $lat . ')) <= ' . $distance
+        ])->field(['id', 'name'])->select();
     }
 }
 

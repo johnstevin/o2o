@@ -68,11 +68,16 @@ class BrandModel extends RelationModel
         ];
         if ($categoryIds !== null) {
             $categoryIds = array_unique(is_array($categoryIds) ? $categoryIds : explode(',', $categoryIds));
+            $ids = M('CategoryBrandNorms')->where(['category_id' => ['IN', $categoryIds]])->field('brand_id')->group('brand_id')->select();
+            if (empty($ids)) return [
+                'data' => []
+            ];
             $where['id'] = [
                 'IN',
-                array_column(M('CategoryBrandNorms')->where(['category_id' => ['IN', $categoryIds]])->field('brand_id')->group('brand_id')->select(), 'brand_id')
+                array_column($ids, 'brand_id')
             ];
         }
+
         $model = self::getInstance();
         if ($pageSize !== null) {
             $model->page(isset($_GET['p']) ? $_GET['p'] : 1, $pageSize);
