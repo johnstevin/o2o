@@ -156,12 +156,11 @@ class OrderVehicleController extends ApiController{
         $pageSize > 50 and $pageSize = 50;
         $page--;
         $page *= $pageSize;
-        $gids=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER'));//获得管理分组
-        //TODO 如果订单里面没有有shop_id，则判定属于最高分组管理，如何确定该用户属于有最高分组
-        $m = D('OrderVehicle');
-        $data=$m
+        $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
+        $gids=$this->getUserGroupIds($mgrRoleId);//获得管理分组
+        $data=D('OrderVehicle')
             ->join('inner join sq_merchant_shop on sq_merchant_shop.group_id in (:groupIds)')
-            //->where('shop_id in (select id from sq_merchant_shop where group_id in (:groupIds))')
+            ->where('shop_id in (select id from sq_merchant_shop where group_id in (:groupIds))')
             ->bind([':groupIds'=>implode(',',$gids)])
             //->fetchSql()
             ->select();

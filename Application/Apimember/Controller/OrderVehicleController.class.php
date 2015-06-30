@@ -177,8 +177,17 @@ class OrderVehicleController extends ApiController
         try {
             if (IS_POST) {
                 $model = new OrderVehicleModel();
+
+                $province=I('province','');
+                $city=I('city','');
+                $district=I('district','');
+
                 if (!($data=$model->create()))
                     E('参数传递失败');
+
+                unset($data['province']);
+                unset($data['city']);
+                unset($data['district']);
 
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
@@ -186,10 +195,11 @@ class OrderVehicleController extends ApiController
                     $worker=(new MerchantModel())->getAvailableWorker($lng,$lat,$data['preset_time']);
                     if(empty($worker)){
                         $data['status']=OrderVehicleModel::STATUS_NO_WORKER;
-                        $shops=(new MerchantShopModel())->getNearby($lat,$lng,C('AUTO_MERCHANT_SCAN.RANGE')
-                            ,null, null, 0, MerchantShopModel::TYPE_CAR_WASH);
-                        if(count($shops))
-                            $data['shop_id']=$shops[0]['id'];
+                        $shopId=$this->_get_car_wash_shop($province,$city,$district);
+                        //实在找不到可以处理的公司，只能甩给最高分组去负责了
+                        if(empty($shopId))
+                            $shopId=C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_VEHICLE');
+                        $data['shop_id']=$shopId;
                     }else{
                         $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
                         $data['worker_id']=$worker['id'];
@@ -214,6 +224,20 @@ class OrderVehicleController extends ApiController
         } catch (\Exception $ex) {
             $this->apiError(51021, $ex->getMessage());
         }
+    }
+
+    /**
+     * 根据地址查找责任公司
+     * @param $province
+     * @param $city
+     * @param $district
+     */
+    private function _get_car_wash_shop($province,$city,$district){
+        $shop=D('MerchantShop')
+            ->where(' group_id in (select group_id from sq_auth_group_region where region_id in (select id from sq_region where name=:city))')
+            ->bind([':city'=>$city])
+            ->find();
+        return $shop ? $shop['id'] : null;
     }
 
     /**
