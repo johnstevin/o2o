@@ -96,8 +96,9 @@ class RegionModel extends Model
      * @param string|array $fields 要查询的字段
      * @return array
      */
-    public function getById($id, $status, $fields = '*')
+    public function getById($id, $status = self::STATUS_ACTIVE, $fields = '*')
     {
+        if (!$id = intval($id)) E('ID非法');
         $pdo = get_pdo();
         $fieldsString = '';
         switch (gettype($fields)) {
@@ -116,16 +117,17 @@ class RegionModel extends Model
                 }
             case 'array':
                 foreach ($this->fields as $key => $field) {
-                    if ($key === '_type' || !in_array($key, $fields)) continue;
-                    if ($this->fields['_type'][$key] === 'point') {
-                        $fieldsString .= 'AsText(' . $key . ') ' . $key . ',';
+                    if ($key === '_type' || !in_array($field, $fields)) continue;
+                    if ($this->fields['_type'][$field] === 'point') {
+                        $fieldsString .= 'AsText(' . $field . ') ' . $field . ',';
                     } else {
-                        $fieldsString .= $key . ',';
+                        $fieldsString .= $field . ',';
                     }
                 }
+                $fieldsString = rtrim($fieldsString, ',');
                 break;
         }
-        $sql = 'SELECT ' . $fields . ' FROM ' . self::getInstance()->tableName . ' WHERE id=:id AND status=:status';
+        $sql = 'SELECT ' . $fieldsString . ' FROM ' . self::getInstance()->getTableName() . ' WHERE id=:id AND status=:status';
         if ($status !== null && in_array($status, self::getStatusOptions())) {
             $bind[':status'] = $status;
         } else {
@@ -133,7 +135,15 @@ class RegionModel extends Model
         }
         $sth = $pdo->prepare($sql);
         $sth->execute([':id' => $id, ':status' => self::STATUS_ACTIVE]);
-        return $sth->fetch(\PDO::FETCH_ASSOC);
+        $result = $sth->fetch(\PDO::FETCH_ASSOC);
+        if (in_array('lnglat', $fields)) {
+            list($lng, $lat) = explode(' ', substr($result['lnglat'], 6, -1));
+            $result['lnglat'] = [
+                'lng' => $lng,
+                'lat' => $lat
+            ];
+        }
+        return $result;
     }
 
     /**
@@ -149,9 +159,23 @@ class RegionModel extends Model
      */
     public function getLists($pid = null, $level = null, $status = null, $pageSize = 20, $fields = '*')
     {
+        if ($level === null) $level = [0, 1, 2, 3, 4, 5];
+        $level = is_array($level) ? $level : explode(',', $level);
+        asort($level);
         $bind = [];
         $fieldsString = '';
         $nowPage = $_GET['p'] ? intval($_GET['p']) : 1;
+        $cacheKey = md5(serialize([
+            'name' => 'region_list',
+            'pid' => $pid,
+            'level' => $level,
+            'status' => $status,
+            'pageSize' => $pageSize,
+            'fields' => $fields
+        ]));
+        if ($lists = S($cacheKey)) {
+            return $lists;
+        }
         switch (gettype($fields)) {
             case 'boolean':
                 if ($fields === true) {//如果为真，就查询所有字段，否则就只查询名称
@@ -215,10 +239,40 @@ class RegionModel extends Model
                 }
             }
         }
-        return [
+        $result = [
             'total' => (int)current($totalSth->fetch(\PDO::FETCH_ASSOC)),
             'data' => $lists,
         ];
+        S($cacheKey, $result, 86400);
+        return $result;
+    }
+
+    /**
+     * 获取区域的上级 & 上级 & 上级 & 。。。
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 当前区域的ID
+     * @return array
+     */
+    public function getRegionPath($id)
+    {
+        $path = [];
+        self::_getRegionPath($id, $path);
+        return $path;
+    }
+
+    /**
+     * 递归获取区域的上级 & 上级 & 。。。
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 当前区域的ID
+     * @param array $region 用于存区域的数组
+     */
+    private static function _getRegionPath($id, &$region)
+    {
+        $_region = self::getInstance()->getById($id, self::STATUS_ACTIVE, ['id', 'name', 'pid']);
+        $region[] = $_region;
+        if ($_region && $_region['pid'] != 0) {
+            self::_getRegionPath($_region['pid'], $region);
+        }
     }
 
     /**
