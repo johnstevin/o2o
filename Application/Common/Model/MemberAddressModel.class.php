@@ -184,6 +184,7 @@ class MemberAddressModel extends RelationModel
     {
         $bind = [];
         $nowPage = isset($_GET['p']) ? intval($_GET['p']) : 1;
+        $fieldStr = '';
         switch (gettype($fields)) {
             case 'boolean':
                 $fields = '*';
@@ -200,9 +201,12 @@ class MemberAddressModel extends RelationModel
                 foreach ($fields as $key => &$field) {
                     if (!in_array($field, $this->fields)) unset($fields[$key]);
                     if ($this->fields['_type'][$field] === 'point') {
-                        $field = 'AsText(' . $field . ') lnglat';
+                        $fieldStr .= 'astext(' . $field . ') lnglat,';
+                    } else {
+                        $fieldStr .= $field . ',';
                     }
                 }
+                $fieldStr = rtrim($fieldStr, ',');
                 break;
         }
         $where = '';
@@ -216,9 +220,9 @@ class MemberAddressModel extends RelationModel
             $where .= ' AND name=:name';
             $bind[':name'] = trim($name);
         }
-        if ($regionId !== null) $where .= ' AND reqion_id=' . intval($regionId);
+        if ($regionId !== null) $where .= ' AND region_id=' . intval($regionId);
 
-        $sql = 'SELECT ' . implode(',', $fields) . ' FROM ' . self::getInstance()->getTableName() . $where . ' LIMIT ' . ($nowPage - 1) * $pageSize . ',' . $pageSize;
+        $sql = 'SELECT ' . $fieldStr . ' FROM ' . self::getInstance()->getTableName() . $where . ' LIMIT ' . ($nowPage - 1) * $pageSize . ',' . $pageSize;
         $totalSql = 'SELECT count(*) total FROM ' . self::getInstance()->getTableName() . $where;
         $pdo = get_pdo();
         $sth = $pdo->prepare($sql);
@@ -226,9 +230,18 @@ class MemberAddressModel extends RelationModel
         $totalSth->execute($bind);
         $sth->execute($bind);
         $lists = $sth->fetchAll(\PDO::FETCH_ASSOC);
-        if (in_array('lnglat', $fields)) {
+        if ((in_array('lnglat', $fields) || in_array('region_id', $fields)) && $lists) {
             foreach ($lists as &$list) {
-                $list['lnglat'] = explode(' ', substr($list['lnglat'], 6, -1));
+                if (!empty($list['lnglat'])) {
+                    list($lng, $lat) = explode(' ', substr($list['lnglat'], 6, -1));
+                    $list['lnglat'] = [
+                        'lng' => $lng,
+                        'lat' => $lat
+                    ];
+                }
+                if (!empty($list['region_id'])) {
+                    $list['region'] = RegionModel::getInstance()->getRegionPath(3528);
+                }
             }
         }
         return [
@@ -247,9 +260,10 @@ class MemberAddressModel extends RelationModel
      * @param int $regionId 区域ID
      * @param float $lng 经度
      * @param float $lat 纬度
+     * @param bool $isDefault 是否为默认地址
      * @return int|bool 添加成功返回地址ID，否则返回false
      */
-    public function addAddress($uid, $name, $address, $mobile, $regionId, $lng, $lat)
+    public function addAddress($uid, $name, $address, $mobile, $regionId, $lng, $lat, $isDefault = false)
     {
         $data = [
             'uid' => intval($uid),
@@ -257,8 +271,13 @@ class MemberAddressModel extends RelationModel
             'address' => trim($address),
             'mobile' => $mobile,
             'region_id' => intval($regionId),
-            'lnglat' => 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')'
+            'lnglat' => 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')',
+            'patientia' => intval($isDefault),
+            'status' => self::STATUS_ACTIVE
         ];
+        if ($isDefault) {//如果用户把新添加的地址设为默认，就把其它的地址取消默认
+            self::getInstance()->where(['uid' => intval($uid)])->save(['patientia' => self::DEFAULT_FALSE]);
+        }
         $model = self::getInstance();
         if (!$model->create($data)) {
             E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
@@ -295,9 +314,10 @@ class MemberAddressModel extends RelationModel
      * @param int $regionId 区域ID
      * @param float $lng 经度
      * @param float $lat 纬度
+     * @param bool $isDefault 是否为默认地址
      * @return bool 是否更新成功
      */
-    public function updateAddress($id, $name = null, $address = null, $mobile = null, $regionId = null, $lng = null, $lat = null)
+    public function updateAddress($id, $name = null, $address = null, $mobile = null, $regionId = null, $lng = null, $lat = null, $isDefault = null)
     {
         $model = self::getInstance();
         $data = [];
@@ -307,8 +327,13 @@ class MemberAddressModel extends RelationModel
         if (!empty($mobile)) $data['mobile'] = $mobile;
         if (!empty($regionId)) $data['region_id'] = intval($regionId);
         if (!empty($lng) && !empty($lat)) $data['lnglat'] = 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')';
+        if ($isDefault !== null) $data['patientia'] = intval($isDefault);
         if (!$model->create($data)) {//利用模型的规则检测数据是否合法
             E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
+        }
+        if (!$addressInfo = self::getInstance()->getById(intval($id), 'uid')) E('地址记录不存在');
+        if ($isDefault) {//如果用户把新添加的地址设为默认，就把其它的地址取消默认
+            self::getInstance()->where(['uid' => intval($addressInfo['uid'])])->save(['patientia' => self::DEFAULT_FALSE]);
         }
         $field = [];//要更新的字段
         $bind = [];//要绑定的数据
