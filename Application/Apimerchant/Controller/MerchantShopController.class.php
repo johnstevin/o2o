@@ -239,10 +239,16 @@ class MerchantShopController extends ApiController
                     'pay_delivery_amount',
                     'delivery_amount_cost',
                     'message',
-                    'picture',
-                    'ifnull(sq_picture.path,\'\') as picture_path',
+                    'photo.id as picture',
+                    //TODO 暂时这么做，后期删除
+                    'sq_merchant_shop.status',
+                    //end
+                    'ifnull(photo.path,\'\') as picture_path',
+                    'yyzz_picture.id as yyzz_picture_id',
+                    'ifnull(yyzz_picture.path,\'\') as yyzz_picture_path',
                     'st_astext(sq_merchant_shop.lnglat) as lnglat'])
-                    ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
+                    ->join('left join sq_picture as photo on photo.id=sq_merchant_shop.picture')
+                    ->join('left join sq_picture as yyzz_picture on yyzz_picture.id=sq_merchant_shop.yyzz_picture')
                     ->where($where)->limit($page,$pageSize)->select();
 
                 foreach($data as &$i){
