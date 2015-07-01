@@ -63,12 +63,14 @@ abstract class RestController  extends Controller{
      * 获得用户分组，未登录抛异常
      * @return array
      */
-    protected function getUserGroupIds($roleId=null){
+    protected function getUserGroupIds($roleId=null,$throwEmpty=false){
         $access=$this->getUserAccess($roleId);
         $ret=[];
         foreach($access as $i){
             $ret[]=$i['group_id'];
         }
+        if($throwEmpty and empty($ret))
+            E('用户无足够权限');
         return $ret;
     }
 
@@ -76,12 +78,14 @@ abstract class RestController  extends Controller{
      * 获得用户角色，未登录抛异常
      * @return array
      */
-    protected function getUserRoleIds($groupId=null){
+    protected function getUserRoleIds($groupId=null,$throwEmpty=false){
         $access=$this->getUserAccess(null,$groupId);
         $ret=[];
         foreach($access as $i){
             $ret[]=$i['role_id'];
         }
+        if($throwEmpty and empty($ret))
+            E('用户无足够权限');
         return $ret;
     }
 

@@ -125,15 +125,7 @@ class MerchantShopModel extends AdvModel
     protected $autoinc=true;
 
     protected $readonlyField=[
-        'type',
         'add_uid',
-        'region_id',
-        'address',
-        'title',
-        'delivery_distance_cost',
-        'free_delivery_amount',
-        'pay_delivery_amount',
-        'delivery_amount_cost',
     ];
 
     /**
@@ -375,16 +367,28 @@ class MerchantShopModel extends AdvModel
      * @throws \Exception
      */
     public function save(){
-
-        $stat=[];
-
-        $bind=[];
         $data=$this->data();
         //var_dump($data);die;
         $this->_before_update($data);
-
-
         $id=$data['id'];
+
+        $md=$this
+            //->fetchSql()
+            ->find($id);
+
+        //var_dump($md);die;
+
+        //只有审核中和为通过的店铺才能修改下列字段
+        if(!in_array($md['status'],[self::STATUS_CLOSE,self::STATUS_DENIED])){
+            //var_dump($data);
+            //var_dump($md);
+            unset($data['region_id']);
+            unset($data['type']);
+            unset($data['address']);
+            unset($data['title']);
+        }else
+            $data['status']=self::STATUS_CLOSE;
+
         $set=[];
         $where=null;
         foreach($data as $key=>$val){
@@ -403,6 +407,7 @@ class MerchantShopModel extends AdvModel
         $where=' id=:id';
         $bind[':id']=$id;
 
+        $stat=[];
         if(!empty($set)){
             $stat[]=[
                 'sql'=>'UPDATE sq_merchant_shop set '.implode(',',$set)." WHERE $where;",

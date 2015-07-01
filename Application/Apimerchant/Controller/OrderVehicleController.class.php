@@ -97,51 +97,47 @@ class OrderVehicleController extends ApiController{
      * ```
      */
     public function getSelfList($status = null,$page = 1, $pageSize = 10){
-        try {
-            $pageSize > 50 and $pageSize = 50;
-            $page--;
-            $page *= $pageSize;
-            $uid = $this->getUserId();
+        $pageSize > 50 and $pageSize = 50;
+        $page--;
+        $page *= $pageSize;
+        $uid = $this->getUserId();
 
-            $where['worker_id']=$uid;
+        $where['worker_id']=$uid;
 
-            if(!is_null($status))
-                $where['status']=$status;
+        if(!is_null($status))
+            $where['status']=$status;
 
-            $m = D('OrderVehicle');
-            $data = $m
-                ->field(['st_astext(lnglat) as lnglat',
-                    'id',
-                    'order_code',
-                    'user_id',
-                    'shop_id',
-                    'status',
-                    'worker_id',
-                    'address',
-                    'car_number',
-                    'price',
-                    'ifnull(user_picture_ids,\'\') as user_picture_ids',
-                    'add_time',
-                    'update_time',
-                ])
-                ->where($where)
-                ->limit($page, $pageSize)->select();
+        $m = D('OrderVehicle');
+        $data = $m
+            ->field(['st_astext(lnglat) as lnglat',
+                'id',
+                'order_code',
+                'user_id',
+                'shop_id',
+                'status',
+                'worker_id',
+                'address',
+                'car_number',
+                'price',
+                'ifnull(user_picture_ids,\'\') as user_picture_ids',
+                'add_time',
+                'update_time',
+            ])
+            ->where($where)
+            ->limit($page, $pageSize)->select();
 
-            foreach($data as &$i){
-                $i['user_pictures']=[];
-                foreach(D('Picture')
-                            ->field(['path'])
-                            ->where(['id'=>['in',$i['user_picture_ids']]])
-                            ->select() as $p){
-                    $i['user_pictures'][]=$p['path'];
-                }
-                unset($i['user_picture_ids']);
+        foreach($data as &$i){
+            $i['user_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['user_picture_ids']]])
+                        ->select() as $p){
+                $i['user_pictures'][]=$p['path'];
             }
-
-            $this->apiSuccess(['data' => $data], '');
-        } catch (\Exception $ex) {
-            $this->apiError(51102, $ex->getMessage());
+            unset($i['user_picture_ids']);
         }
+
+        $this->apiSuccess(['data' => $data], '');
     }
 
     /**
@@ -156,12 +152,11 @@ class OrderVehicleController extends ApiController{
         $pageSize > 50 and $pageSize = 50;
         $page--;
         $page *= $pageSize;
-        $gids=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER'));//获得管理分组
-        //TODO 如果订单里面没有有shop_id，则判定属于最高分组管理，如何确定该用户属于有最高分组
-        $m = D('OrderVehicle');
-        $data=$m
+        $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
+        $gids=$this->getUserGroupIds($mgrRoleId,true);//获得管理分组
+        $data=D('OrderVehicle')
             ->join('inner join sq_merchant_shop on sq_merchant_shop.group_id in (:groupIds)')
-            //->where('shop_id in (select id from sq_merchant_shop where group_id in (:groupIds))')
+            ->where('shop_id in (select id from sq_merchant_shop where group_id in (:groupIds))')
             ->bind([':groupIds'=>implode(',',$gids)])
             //->fetchSql()
             ->select();
@@ -178,17 +173,13 @@ class OrderVehicleController extends ApiController{
      * @author WangJiang
      */
     public function chaneStatus(){
-        try {
-            if(!IS_POST)
-                E('非法调用，请用POST命令');
-            $uid=$this->getUserId();
-            $oid=I('post.orderId');
-            $status=I('post.status');
-            (new OrderVehicleModel())->workerChaneStatus($oid,$uid,$status);
-            $this->apiSuccess(null, '操作成功');
-        } catch (\Exception $ex) {
-            $this->apiError(51103, $ex->getMessage());
-        }
+        if(!IS_POST)
+            E('非法调用，请用POST命令');
+        $uid=$this->getUserId();
+        $oid=I('post.orderId');
+        $status=I('post.status');
+        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,$status);
+        $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
     /**
@@ -199,17 +190,13 @@ class OrderVehicleController extends ApiController{
      * @author WangJiang
      */
     public function accept(){
-        try {
-            if(!IS_POST)
-                E('非法调用，请用POST命令');
-            $uid=$this->getUserId();
-            $oid=I('post.orderId');
-            (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_CONFIRM);
-            $this->apiSuccess(null, '操作成功');
-            //TODO 消息推送
-        } catch (\Exception $ex) {
-            $this->apiError(51103, $ex->getMessage());
-        }
+        if(!IS_POST)
+            E('非法调用，请用POST命令');
+        $uid=$this->getUserId();
+        $oid=I('post.orderId');
+        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_CONFIRM);
+        $this->apiSuccess(['data'=>[]], '操作成功');
+        //TODO 消息推送
     }
 
     /**
@@ -220,17 +207,13 @@ class OrderVehicleController extends ApiController{
      * @author WangJiang
      */
     public function start(){
-        try {
-            if(!IS_POST)
-                E('非法调用，请用POST命令');
-            $uid=$this->getUserId();
-            $oid=I('post.orderId');
-            (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_TREATING);
-            $this->apiSuccess(null, '操作成功');
-            //TODO 消息推送
-        } catch (\Exception $ex) {
-            $this->apiError(51103, $ex->getMessage());
-        }
+        if(!IS_POST)
+            E('非法调用，请用POST命令');
+        $uid=$this->getUserId();
+        $oid=I('post.orderId');
+        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_TREATING);
+        $this->apiSuccess(['data'=>[]], '操作成功');
+        //TODO 消息推送
     }
 
     /**
@@ -241,17 +224,13 @@ class OrderVehicleController extends ApiController{
      * @author WangJiang
      */
     public function end(){
-        try {
-            if(!IS_POST)
-                E('非法调用，请用POST命令');
-            $uid=$this->getUserId();
-            $oid=I('post.orderId');
-            (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_DONE);
-            $this->apiSuccess(null, '操作成功');
-            //TODO 消息推送
-        } catch (\Exception $ex) {
-            $this->apiError(51103, $ex->getMessage());
-        }
+        if(!IS_POST)
+            E('非法调用，请用POST命令');
+        $uid=$this->getUserId();
+        $oid=I('post.orderId');
+        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_DONE);
+        $this->apiSuccess(['data'=>[]], '操作成功');
+        //TODO 消息推送
     }
 
     /**
@@ -262,15 +241,46 @@ class OrderVehicleController extends ApiController{
      * @author WangJiang
      */
     public function reject(){
-        try {
-            if(!IS_POST)
-                E('非法调用，请用POST命令');
-            $uid=$this->getUserId();
-            $oid=I('post.orderId');
-            (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_NO_WORKER);
-            $this->apiSuccess(null, '操作成功');
-        } catch (\Exception $ex) {
-            $this->apiError(51103, $ex->getMessage());
-        }
+        if(!IS_POST)
+            E('非法调用，请用POST命令');
+        $uid=$this->getUserId();
+        $oid=I('post.orderId');
+        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_NO_WORKER);
+        $this->apiSuccess(['data'=>[]], '操作成功');
+    }
+
+    /**
+     * 管理员修改订单数据,POST数据，需要accesstoken
+     * <pre>
+     * shop_id int 公司ID
+     * status int
+     * worker_id int
+     * address string
+     * lnglat  "lng,lat"
+     * preset_time int
+     * car_number string 车牌
+     * price float 价格，目前没有卵用
+     * </pre>
+     * @author WangJiang
+     */
+    public function update(){
+        if(!IS_POST)
+            E('非法调用，请用POST命令');
+        $model=D('OrderVehicle');
+        if (!($data=$model->create()))
+            E('参数传递失败');
+
+        $id=$data['id'];
+
+        $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
+        $groupIds=$this->getUserGroupIds($mgrRoleId,true);
+        $order=$model->find($id);
+        $shop=D('MerchantShop')->find($order['shop_id']);
+        if(!in_array($shop['group_id'],$groupIds))
+            E('用户无权修改此订单');
+
+        $model->data($data);
+        $model->save();
+        $this->apiSuccess(['data'=>[]], '操作成功');
     }
 }
