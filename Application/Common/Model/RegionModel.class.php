@@ -14,18 +14,43 @@ class RegionModel extends Model
     protected static $model;
     ## 状态常量
     const STATUS_DELETE = -1;//逻辑删除
+    const STATUS_CLOSE = 0;//已经关闭的区域
     const STATUS_ACTIVE = 1;//正常
+    const STATUS_VERIFY = 2;//待验证的区域（用户添加的小区之类的需要验证）
 
     protected $_validate = [
         [
             'status',
             [
                 self::STATUS_DELETE,
-                self::STATUS_ACTIVE
+                self::STATUS_ACTIVE,
+                self::STATUS_CLOSE,
+                self::STATUS_VERIFY
             ],
             '状态非法',
             self::MODEL_BOTH,
             'in'
+        ],
+        [
+            'level',
+            [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+            ],
+            '层级非法',
+            self::MODEL_BOTH,
+            'in'
+        ],
+        [
+            'pid',
+            'checkPidExists',
+            '父级ID非法',
+            self::MODEL_BOTH,
+            'callback'
         ]
     ];
 
@@ -59,6 +84,32 @@ class RegionModel extends Model
     public static function getInstance()
     {
         return self::$model instanceof self ? self::$model : self::$model = new self;
+    }
+
+    /**
+     * 验证父级ID是否正确
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $pid 父级ID
+     * @return bool
+     */
+    public function checkPidExists($pid)
+    {
+        $pid = intval($pid);
+        return $pid === 0 || self::getInstance()->checkIdExists($pid);
+    }
+
+    /**
+     * 检查区域ID是否存在
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $id 区域ID
+     * @return bool
+     */
+    public function checkIdExists($id)
+    {
+        $id = intval($id);
+        return $id && (bool)self::getInstance()->getById($id, self::STATUS_ACTIVE, 'id');
     }
 
     /**
@@ -96,8 +147,9 @@ class RegionModel extends Model
      * @param string|array $fields 要查询的字段
      * @return array
      */
-    public function getById($id, $status, $fields = '*')
+    public function getById($id, $status = self::STATUS_ACTIVE, $fields = '*')
     {
+        if (!$id = intval($id)) E('ID非法');
         $pdo = get_pdo();
         $fieldsString = '';
         switch (gettype($fields)) {
@@ -116,16 +168,17 @@ class RegionModel extends Model
                 }
             case 'array':
                 foreach ($this->fields as $key => $field) {
-                    if ($key === '_type' || !in_array($key, $fields)) continue;
-                    if ($this->fields['_type'][$key] === 'point') {
-                        $fieldsString .= 'AsText(' . $key . ') ' . $key . ',';
+                    if ($key === '_type' || !in_array($field, $fields)) continue;
+                    if ($this->fields['_type'][$field] === 'point') {
+                        $fieldsString .= 'AsText(' . $field . ') ' . $field . ',';
                     } else {
-                        $fieldsString .= $key . ',';
+                        $fieldsString .= $field . ',';
                     }
                 }
+                $fieldsString = rtrim($fieldsString, ',');
                 break;
         }
-        $sql = 'SELECT ' . $fields . ' FROM ' . self::getInstance()->tableName . ' WHERE id=:id AND status=:status';
+        $sql = 'SELECT ' . $fieldsString . ' FROM ' . self::getInstance()->getTableName() . ' WHERE id=:id AND status=:status';
         if ($status !== null && in_array($status, self::getStatusOptions())) {
             $bind[':status'] = $status;
         } else {
@@ -133,7 +186,15 @@ class RegionModel extends Model
         }
         $sth = $pdo->prepare($sql);
         $sth->execute([':id' => $id, ':status' => self::STATUS_ACTIVE]);
-        return $sth->fetch(\PDO::FETCH_ASSOC);
+        $result = $sth->fetch(\PDO::FETCH_ASSOC);
+        if (in_array('lnglat', $fields)) {
+            list($lng, $lat) = explode(' ', substr($result['lnglat'], 6, -1));
+            $result['lnglat'] = [
+                'lng' => $lng,
+                'lat' => $lat
+            ];
+        }
+        return $result;
     }
 
     /**
@@ -149,9 +210,23 @@ class RegionModel extends Model
      */
     public function getLists($pid = null, $level = null, $status = null, $pageSize = 20, $fields = '*')
     {
+        if ($level === null) $level = [0, 1, 2, 3, 4, 5];
+        $level = is_array($level) ? $level : explode(',', $level);
+        asort($level);
         $bind = [];
         $fieldsString = '';
         $nowPage = $_GET['p'] ? intval($_GET['p']) : 1;
+        $cacheKey = md5(serialize([
+            'name' => 'region_list',
+            'pid' => $pid,
+            'level' => $level,
+            'status' => $status,
+            'pageSize' => $pageSize,
+            'fields' => $fields
+        ]));
+        if ($lists = S($cacheKey)) {
+            return $lists;
+        }
         switch (gettype($fields)) {
             case 'boolean':
                 if ($fields === true) {//如果为真，就查询所有字段，否则就只查询名称
@@ -215,10 +290,40 @@ class RegionModel extends Model
                 }
             }
         }
-        return [
+        $result = [
             'total' => (int)current($totalSth->fetch(\PDO::FETCH_ASSOC)),
             'data' => $lists,
         ];
+        S($cacheKey, $result, 86400);
+        return $result;
+    }
+
+    /**
+     * 获取区域的上级 & 上级 & 上级 & 。。。
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 当前区域的ID
+     * @return array
+     */
+    public function getRegionPath($id)
+    {
+        $path = [];
+        self::_getRegionPath($id, $path);
+        return $path;
+    }
+
+    /**
+     * 递归获取区域的上级 & 上级 & 。。。
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 当前区域的ID
+     * @param array $region 用于存区域的数组
+     */
+    private static function _getRegionPath($id, &$region)
+    {
+        $_region = self::getInstance()->getById($id, self::STATUS_ACTIVE, ['id', 'name', 'pid']);
+        $region[] = $_region;
+        if ($_region && $_region['pid'] != 0) {
+            self::_getRegionPath($_region['pid'], $region);
+        }
     }
 
     /**
@@ -240,7 +345,14 @@ class RegionModel extends Model
         $level = array_unique(is_array($level) ?: explode(',', $level));
         asort($level);
         $nowPage = isset($_GET['p']) ? $_GET['p'] : 1;
-        $cacheKey = 'data_region_tree_level' . implode('', $level);
+        $cacheKey = md5(serialize([
+            'name' => 'region_tree',
+            'pid' => $pid,
+            'level' => $level,
+            'status' => $status,
+            'pageSize' => $pageSize,
+            'nowPage' => $nowPage
+        ]));
         if (!$tree = S($cacheKey)) {
             $lists = self::getInstance()->getLists(null, $level, $status, $pageSize, $fields);
             $tree = list_to_tree($lists['data'], 'id', 'pid', '_childs', $pid);
@@ -300,6 +412,54 @@ class RegionModel extends Model
             'level' => 5,
             'ST_Distance_Sphere(lnglat,point(' . $lng . ',' . $lat . ')) <= ' . $distance
         ])->field(['id', 'name'])->select();
+    }
+
+    /**
+     * 添加区域
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string $name 区域名称
+     * @param int $pid 父级ID
+     * @param null|float $lng 经度
+     * @param null|float $lat 纬度
+     * @param null|string $code 什么鬼？
+     * @return int 最后插入的ID
+     */
+    public function addRegion($name, $pid, $lng = null, $lat = null, $code = null)
+    {
+        $name = trim($name);
+        $pid = intval($pid);
+        if ($name === '') E('区域名称不能为空');
+        $parent = self::getInstance()->getById($pid, self::STATUS_ACTIVE, 'id,level');
+        if ($pid !== 0 && !$parent) E('父级ID非法');
+        $level = intval($parent['level'] + 1);
+        if (!in_array($level, [0, 1, 2, 3, 4, 5])) E('level非法');
+        $sql = 'INSERT INTO ' . self::getInstance()->getTableName() . ' (name, pid, level, status, lnglat, code) VALUES (:name,:pid,:level,:status,point(:lng,:lat),:code)';
+        $bind = [
+            ':name' => $name,
+            ':pid' => $pid,
+            ':level' => $level,
+            ':status' => self::STATUS_VERIFY
+        ];
+        if (empty($lng)) {
+            $bind[':lng'] = 0;
+        } else {
+            $bind[':lng'] = floatval($lng);
+        }
+        if (empty($lat)) {
+            $bind[':lat'] = 0;
+        } else {
+            $bind[':lat'] = floatval($lat);
+        }
+        if (empty($code)) {
+            $bind[':code'] = '';
+        } else {
+            $bind[':code'] = $code;
+        }
+        $pdo = get_pdo();
+        $sth = $pdo->prepare($sql);
+        $sth->execute($bind);
+        return $pdo->lastInsertId();
     }
 }
 

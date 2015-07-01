@@ -59,7 +59,7 @@ class MerchantShopController extends ApiController
         try {
             if (IS_POST) {
                 $model = D('MerchantShop');
-                if (!($data=$model->create()))
+                if (!($data = $model->create()))
                     E('参数传递失败');
 
                 $id=$data['id'];
@@ -83,7 +83,7 @@ class MerchantShopController extends ApiController
                 $model->data($data);
                 //var_dump($data);die;
                 $model->save();
-                $this->apiSuccess(['data'=>[]], '');
+                $this->apiSuccess(['data' => []], '');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {
@@ -132,13 +132,13 @@ class MerchantShopController extends ApiController
         try {
             if (IS_POST) {
                 $model = D('MerchantShop');
-                if (!($data=$model->create()))
+                if (!($data = $model->create()))
                     E('参数传递失败');
                 //TODO 验证用户权限
-                $data['add_uid']=$this->getUserId();
-                $data['group_id']=$this->_get_group_id($data['type']);
+                $data['add_uid'] = $this->getUserId();
+                $data['group_id'] = $this->_get_group_id($data['type']);
                 $model->data($data);
-                $this->apiSuccess(['id' => intval($model->add())],'');
+                $this->apiSuccess(['id' => intval($model->add())], '');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {
@@ -146,10 +146,11 @@ class MerchantShopController extends ApiController
         }
     }
 
-    private function _get_group_id($type){
-        return $type==1
-            ?C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_SHOP')
-            :C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_VEHICLE');
+    private function _get_group_id($type)
+    {
+        return $type == 1
+            ? C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_SHOP')
+            : C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_VEHICLE');
     }
 
     /**
@@ -213,7 +214,7 @@ class MerchantShopController extends ApiController
      *}
      * '''
      */
-    public function getList($regionId = null, $type = 1, $title = null,$status=null,$page=1,$pageSize=10)
+    public function getList($regionId = null, $type = 1, $title = null, $status = null, $page = 1, $pageSize = 10)
     {
         try {
             if (IS_GET) {
@@ -226,12 +227,12 @@ class MerchantShopController extends ApiController
                 $groupIds=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'),true);
                 $model = D('MerchantShop');
 
-                $where['group_id'] = ['in',$groupIds];
+                $where['group_id'] = ['in', $groupIds];
 
                 !is_null($regionId) and $where['region_id'] = $regionId;
                 $type !== '0' and $where['sq_merchant_shop.type'] = $type;
                 !is_null($title) and $where['title'] = ['like', "%$title%"];
-                !is_null($status) and $where['sq_merchant_shop.status']=$status;
+                !is_null($status) and $where['sq_merchant_shop.status'] = $status;
                 $data = $model->field(['sq_merchant_shop.id',
                     'title',
                     'description',
@@ -266,19 +267,19 @@ class MerchantShopController extends ApiController
                     ->join('left join sq_picture as yyzz_pic on yyzz_pic.id=sq_merchant_shop.yyzz_picture')
                     ->where($where)->limit($page,$pageSize)->select();
 
-                foreach($data as &$i){
-                    $sid=$i['id'];
-                    $tags=D()->query("select tag_id from sq_shop_tag where shop_id=$sid;");
+                foreach ($data as &$i) {
+                    $sid = $i['id'];
+                    $tags = D()->query("select tag_id from sq_shop_tag where shop_id=$sid;");
                     //print_r($i);print_r($tags);die;
-                    $i['tags']=[];
-                    foreach($tags as $t){
-                        $i['tags'][]=$t['tag_id'];
+                    $i['tags'] = [];
+                    foreach ($tags as $t) {
+                        $i['tags'][] = $t['tag_id'];
                     }
                 }
 
                 //print_r($model->getLastSql());die;
                 //print_r($data);die;
-                $this->apiSuccess(['data' => $data],'');
+                $this->apiSuccess(['data' => $data], '');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {
@@ -365,5 +366,15 @@ class MerchantShopController extends ApiController
 //            $this->apiError(50023,$ex->getMessage());
 //        }
 //    }
+
+    /**
+     * 获取商铺状态
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 商铺的ID
+     */
+    public function getStatus($id)
+    {
+        $this->apiSuccess(['data' => MerchantShopModel::getInstance()->get($id, ['status'])['status']]);
+    }
 
 }

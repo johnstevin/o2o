@@ -79,8 +79,8 @@ class MerchantDepotController extends ApiController
             if (is_null($number))
                 E('商品编码不能为空');
 
-            $cateChain=[$category_id];
-            get_cate_chain_down([$category_id],$cateChain);
+            $cateChain = [$category_id];
+            get_cate_chain_down([$category_id], $cateChain);
 
             D()->startTrans();
             try {
@@ -198,9 +198,9 @@ class MerchantDepotController extends ApiController
                         $this->_add_depot($productSameNumber['id'],
                             $shopId, $productSameNumber['status'] == ProductModel::STATUS_ACTIVE ?
                                 MerchantDepotModel::STATUS_ACTIVE : MerchantDepotModel::STATUS_VERIFY);
-                    else{
-                        $cateChain=[$category_id];
-                        get_cate_chain_down([$category_id],$cateChain);
+                    else {
+                        $cateChain = [$category_id];
+                        get_cate_chain_down([$category_id], $cateChain);
                         //var_dump($cateChain);die;
 
                         $model = MerchantDepotModel::getInstance();
@@ -221,10 +221,10 @@ class MerchantDepotController extends ApiController
 
 
                             foreach ($cateChain as $i) {
-                                $insertMerchantDepotProCategory=D('MerchantDepotProCategory')
-                                        ->where(['category_id' => $i,'shop_id'=>$shopId])->count()==0;
+                                $insertMerchantDepotProCategory = D('MerchantDepotProCategory')
+                                        ->where(['category_id' => $i, 'shop_id' => $shopId])->count() == 0;
                                 //var_dump([$insertMerchantDepotProCategory,$i,$shopId]);
-                                if($insertMerchantDepotProCategory)
+                                if ($insertMerchantDepotProCategory)
                                     D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
                             }
 
@@ -263,7 +263,14 @@ class MerchantDepotController extends ApiController
 
     private function _add_depot($productId, $shopId, $status = MerchantDepotModel::STATUS_ACTIVE)
     {
-        if (D('MerchantDepot')->where(['product_id' => $productId, 'shop_id' => $shopId])->count() > 0)
+        if (D('MerchantDepot')->where([
+                'product_id' => $productId,
+                'shop_id' => $shopId,
+                'status' => ['IN', [
+                    MerchantDepotModel::STATUS_ACTIVE,
+                    MerchantDepotModel::STATUS_VERIFY
+                ]]])->count() > 0
+        )
             E('该商品已添加');
         if (!D('Product')->find($productId))
             E('该商品不存在');
@@ -284,9 +291,9 @@ class MerchantDepotController extends ApiController
         try {
             {
                 foreach ($cateChain as $i) {
-                    $insertMerchantDepotProCategory=D('MerchantDepotProCategory')
-                            ->where(['category_id' => $i,'shop_id'=>$shopId])->count()==0;
-                    if($insertMerchantDepotProCategory)
+                    $insertMerchantDepotProCategory = D('MerchantDepotProCategory')
+                            ->where(['category_id' => $i, 'shop_id' => $shopId])->count() == 0;
+                    if ($insertMerchantDepotProCategory)
                         D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
                 }
             }

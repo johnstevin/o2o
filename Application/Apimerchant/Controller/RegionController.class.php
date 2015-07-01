@@ -61,4 +61,18 @@ class RegionController extends ApiController
             $this->apiError(50030, $ex->getMessage());
         }
     }
+
+    /**
+     * ## 添加小区
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string $name 小区名称
+     * @param int $pid 父级ID（应该是街道的ID）
+     * @param float $lng 经度
+     * @param float $lat 纬度
+     */
+    public function addCommunity($name, $pid, $lng, $lat)
+    {
+        $this->apiSuccess(['data' => RegionModel::getInstance()->addRegion($name, $pid, $lng, $lat)]);
+    }
 }
