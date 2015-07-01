@@ -29,19 +29,22 @@ class UserController extends ApiController {
     public function login(){
         try{
             if(IS_POST){
+                //46f94c8de14fb36680850768ff1b7f2a  123qwe
+                //e10adc3949ba59abbe56e057f20f883e  123456
                 $username = I('post.username');
                 $password = I('post.password');
 
                 $Ucenter  = D('UcenterMember');
                 $token = $Ucenter->login($username, $password, 5);
                 if(0 < $token){
-                    $this->apiSuccess(array('data'=>array('token'=>$token)));
+                    $this->apiSuccess(array('data'=>array('token'=>$token,'auth'=>F('User/Login/merchant_auth' . $token))));
                 } else {
                     switch($token) {
                         case 0:$error = '参数错误！'; break; //系统级别禁用
                         case -1: $error = '用户不存在或被禁用！'; break; //系统级别禁用
                         case -2: $error = '密码错误！'; break;
                         case -3: $error = '插入或更新管理员信息失败'; break;
+                        case -7: $error = '获取权限失败'; break;
                         default: $error = '未知错误！'; break; // 0-接口参数错误（调试阶段使用）
                     }
                     E($error);

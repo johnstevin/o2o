@@ -150,12 +150,36 @@ class UcenterMemberModel extends AdvModel {
 
         if ($admin->getDbError())
             return -3;  //插入或更新管理员信息失败
+        /* 是否有总店未审核 */
+        $shopFields = 'id,group_id,status';
+        $shopMaps   = array('status'=>array('in','2,3'),'add_uid'=>$user['id']);
+        $shopModel  = M('MerchantShop');
+        $shopRes    = $shopModel->field($shopFields)->where($shopMaps)->find();
+
+        if (empty($shopRes)) {
+            /* 获取组织关系 */
+            $acMap    = array('uid'=>$user['id'],'status'=>1);
+            $acFields = 'uid,group_id,role_id';
+            $acRes    = D("AuthAccess")->get($acMap, $acFields);
+            if ( empty($acRes) )
+                return -7;  //获取权限失败
+            $group_tree = array();
+
+        } else {
+            $group_tree = array(
+                'group_id'    => $shopRes['group_id'],
+                'role_id'     => '',
+                'shop_id'     => $shopRes['id'],
+                'shop_status' => $shopRes['status'],
+            );
+        }
 
         /* 记录登录SESSION和COOKIES */
         $auth = array(
             'uid'             => $user['id'],
             'mobile'          => $user['mobile'],
             'last_login_time' => $data['last_login_time'],
+            'group_tree'      => $group_tree,
         );
 
         $token=$user['id'];

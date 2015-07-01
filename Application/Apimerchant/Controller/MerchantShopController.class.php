@@ -240,6 +240,9 @@ class MerchantShopController extends ApiController
                     'delivery_amount_cost',
                     'message',
                     'picture',
+                    //TODO 暂时这么做，后期删除
+                    'sq_merchant_shop.status',
+                    //end
                     'ifnull(sq_picture.path,\'\') as picture_path',
                     'st_astext(sq_merchant_shop.lnglat) as lnglat'])
                     ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')

@@ -51,7 +51,7 @@ class AuthAccessModel extends AdvModel {
      * @param $field
      * @return array|int
      */
-    public function get( $map, $field ){
+    public function get( $map, $field='*' ){
         $result = $this->field($field)->where($map)->select();
         if( empty($result) ){
             return -1; //
