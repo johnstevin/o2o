@@ -30,14 +30,12 @@ class AccessController extends AdminController
         /*获取之前用户已经存在的*/
         $child_list = M('AuthRoleRule')->where(array('role_id' => (int)I('group_id')))->select();
         $child_tree = array_column($child_list, 'rule_id');
-//        foreach ($child_list as &$value) {
-//            $child_tree[] = $value['rule_id'];
-//        }
+
         $child_tree = is_array($child_tree) ? implode(',', $child_tree) : trim($child_tree, ',');
         $this->assign('node_list', $tree);
         $this->assign('child_list', $child_tree);
         //$this->assign('auth_group', $auth_group);
-        $this->assign('this_group', I('group_id'));
+//        $this->assign('this_group', I('group_id'));
         $this->meta_title = '访问授权';
         $this->display();
     }
@@ -172,7 +170,7 @@ class AccessController extends AdminController
             $this->error($AuthRule->error);
         }
         if ($AuthRule->addToRule($role, $rule)) {
-            $this->success('操作成功', U('index'));
+            $this->success('操作成功');
         } else {
             $this->error($AuthRule->getError());
         }

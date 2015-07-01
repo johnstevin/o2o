@@ -13,7 +13,8 @@ class NormsController extends AdminController
     public function index()
     {
         //查询出所有的规格
-        $list = $this->lists('Norms', array('module' => 'admin'), 'id asc');
+        $map['status']  =   array('GT',-1);
+        $list = $this->lists('Norms', $map, 'id asc');
         $list = int_to_string($list);
         $this->assign('_list', $list);
         $this->meta_title = '规格管理';

@@ -65,6 +65,7 @@ class PublicController extends Controller {
             $verify      = I('post.verify');
             $mobile      = I('post.mobile');
             $password    = I('post.password');
+            $repassword    = I('post.repassword');
             $username    = I('post.username');
             $email       = I('post.email');
             $group_id    = I('post.group_id');
@@ -74,6 +75,14 @@ class PublicController extends Controller {
             //if(!check_verify($verify)){
             //    $this->error('验证码输入错误！');
             //}
+
+            empty($password) && $this->error('请输入新密码');
+
+            empty($repassword) && $this->error('请输入确认密码');
+
+            if($password== $repassword){
+                $this->error('您输入的新密码与确认密码不一致');
+            }
 
             $Ucenter = D('UcenterMember');
             D()->startTrans();
@@ -85,8 +94,8 @@ class PublicController extends Controller {
                 $auth = D('AuthAccess');
                 $data[] = array(
                     'uid'          => $uid,
-                    'group_id'     => C('AUTH_GROUP_ID.CLIENT_GROUP_ID'),
-                    'role_id'      => C('AUTH_ROLE_ID.CLIENT_ROLE_ID'),
+                    'group_id'     => C('AUTH_GROUP_ID.GROUP_ID_MEMBER_CLIENT'),
+                    'role_id'      => C('AUTH_ROLE_ID.ROLE_ID_MEMBER_CLIENT'),
                     'status'       => 1,
                 );
                 $data[] = array(

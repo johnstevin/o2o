@@ -17,7 +17,6 @@
     <link rel="stylesheet" type="text/css" href="__STATIC__/uploadify/uploadify.css" media="all">
 
 
-
     <script type="text/javascript" src="__STATIC__/js/jquery.min.js"></script>
 
     <script type="text/javascript" src="__STATIC__/bootstrap/js/bootstrap.min.js"></script>
@@ -45,7 +44,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="javascript:void(0)" onclick="showSubMenu(0, false)">一点社区</a>
+                <a class="navbar-brand" href="javascript:void(0)" onclick="showSubMenu(0, false)"><img alt="一点社区" class="logo"></a>
             </div>
 
             <!-- Collect the nav links, forms, and other content for toggling -->
@@ -59,8 +58,8 @@
                                 class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
                             <!--<li class="manager">你好，<em title="{:session('user_auth.username')}">{:session('user_auth.username')}</em></li>-->
-                            <li><a href="{:U('User/updatePassword')}">修改密码</a></li>
-                            <li><a href="{:U('User/updateNickname')}">修改昵称</a></li>
+                            <li><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('User/updatePassword')}">修改密码</a></li>
+                            <!--<li><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('User/updateNickname')}">修改昵称</a></li>-->
                             <li><a href="{:U('Public/logout')}">退出</a></li>
                         </ul>
                     </li>
@@ -75,17 +74,27 @@
 <div class="container-fluid" id="rg-container-main">
     <div class="row">
         <div id="rg-col-nav-sub" class="col-sm-3 col-md-2 col-lg-2">
-            <ol class="breadcrumb rg-header-title">
-                <li class="active" id="rg-title-nav-sub"></li>
-            </ol>
-            <div class="list-group rg-header-title" id="rg-menu-nav-sub"></div>
+            <div class="row">
+                <div class="col-md-12">
+                    <ol class="breadcrumb rg-header-title">
+                        <li class="active" id="rg-title-nav-sub"></li>
+                    </ol>
+                    <div class="list-group rg-header-title" id="rg-menu-nav-sub"></div>
+                </div>
+            </div>
         </div>
         <div class="col-sm-9 col-md-10 col-lg-10" id="rg-col-main">
-            <ol class="breadcrumb rg-header-title" id="rg-position">
-                <li></li>
-            </ol>
-            <div border="false" id="rg-container-fun">
+            <div class="row hidden-xs">
+                <div class="col-sm-12">
+                    <ol class="breadcrumb rg-header-title" id="rg-position">
+                        <li></li>
+                    </ol>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12" id="rg-container-fun">
 
+                </div>
             </div>
         </div>
     </div>
@@ -109,6 +118,6 @@
 <script>
     var cookiesPrefix = 'ytgc_{:UID}_';
     var result = '{$menu_list}';
-    var menuJson = "",rootMenuIndex = -1/*显示的菜单*/,subMenuIndex = -1/*运行的功能*/;
+    var menuJson = "", rootMenuIndex = -1/*显示的菜单*/, subMenuIndex = -1/*运行的功能*/;
 
 </script>

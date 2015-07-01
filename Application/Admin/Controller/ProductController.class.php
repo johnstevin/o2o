@@ -18,14 +18,21 @@ class ProductController extends AdminController
     public function index()
     {
         /* 查询条件初始化 */
-        $name       =   I('name');
-        $map['status']  =   array('egt',-1);
-        if(is_numeric($name)){
-            $map['id|title']=   array(intval($name),array('like','%'.$name.'%'),'_multi'=>true);
-        }else{
-            $map['title']    =   array('like', '%'.(string)$name.'%');
+        $name = I('name');
+        $map['status'] = array('GT', -1);
+        if (is_numeric($name)) {
+
+            if (strlen($name) >= 13) {
+                $map['number'] = array('like', '%' . (string)$name . '%');
+            } else {
+                $map['id|title'] = array(intval($name), array('like', '%' . $name . '%'), '_multi' => true);
+            }
+
+        } else {
+            $map['title'] = array('like', '%' . (string)$name . '%');
         }
-        $list = $this->lists('Product',$map);
+
+        $list = $this->lists('Product', $map);
         $Brands = D('Brand');
         $norms = D('Norms');
         foreach ($list as &$v) {
@@ -177,7 +184,13 @@ class ProductController extends AdminController
                 $this->resume('Product');
                 break;
             case 'delete':
-                $this->delete('Product');
+                $Product = D('Product');
+                if ($Product->deleteProduct(I('id'))) {
+                    $this->success('删除成功！', U('index'));
+                } else {
+                    $error = $Product->getError();
+                    $this->error(empty($error) ? '未知错误' : $error);
+                }
                 break;
             default:
                 $this->error($method . '参数非法');

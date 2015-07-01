@@ -42,7 +42,7 @@
 
         $.ajax({
             type: "POST",
-            url: '{:U('User/login')}',
+            url: '{:U("User/login")}',
             dataType: "json",
             data: {"username":username,"password":password},
             beforeSend: function(){

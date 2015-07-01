@@ -13,7 +13,7 @@ class BrandController extends AdminController
     {
         /* 查询条件初始化 */
         $name       =   I('name');
-        $map['status']  =   array('egt',-1);
+        $map['status']  =   array('GT',-1);
         if(is_numeric($name)){
             $map['id|title']=   array(intval($name),array('like','%'.$name.'%'),'_multi'=>true);
         }else{
