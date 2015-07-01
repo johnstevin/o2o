@@ -357,4 +357,39 @@ class ProductModel extends Model
         $data['status'] = 3;
         return $this->save($data);
     }
+
+    /**
+     * @param int $product_id 产品id
+     * @return bool|void
+     */
+    public function deleteProduct($product_id)
+    {
+        //检查商品是否存在
+        $info = $this->info($product_id);
+        if (empty($info)) {
+            $this->error = '没有此商品';
+            return false;
+        }
+        //修改状态
+        $info['status'] = -1;
+
+
+        M()->startTrans();
+
+        if (false !== $this->save($info)) {
+           if(false!==(D('MerchantDepot')->where(array('product_id' => $product_id))->setField('status', -1))){
+               M()->commit();
+               return true;
+           } else {
+               M()->rollback();
+               $this->error = '删除失败 ';
+               return false;
+           }
+
+        } else {
+            M()->rollback();
+            $this->error = '删除失败 ';
+            return false;
+        }
+    }
 }

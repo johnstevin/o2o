@@ -18,6 +18,7 @@ class GroupController extends AdminController
         $tree = D('AuthGroup')->getTree(0, 'id,group_code,title,description,level,pid,status,public,type');
         $this->assign('_list', $tree);
         $this->meta_title = '组织机构管理';
+        $this->assign('http_host', $_SERVER['HTTP_HOST']);
         $this->display();
     }
 

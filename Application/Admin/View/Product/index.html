@@ -1,111 +1,113 @@
-<!-- 操作  -->
-<!--<div>-->
-    <!--<a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add" class="btn btn-success"-->
-       <!--href="{:U('add')}">新 增</a>-->
-<!--</div>-->
 
-<div class="row">
-    <div class="col-xs-8 col-sm-6 col-lg-4">
-        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-category" class="btn btn-success"
-           href="{:U('add')}">新 增</a>
-    </div>
-    <!-- 高级搜索 -->
-
-    <div class="search-form fr cf col-xs-4 col-sm-6 col-lg-8">
-        <div class="input-group">
-            <input type="text" id="searchInput" name="name" class="form-control search-input" value="{:I('name')}" placeholder="请输入产品编号或名称">
-                    <span class="input-group-btn">
-                        <button class="btn btn-default sch-btn" class="sch-btn" href="javascript:void(0);" id="search" type="button"  url="{:U('Product/index')}">搜索</button>
-                    </span>
+    <div class="row">
+        <div class=" col-sm-6 col-lg-4">
+            <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-category"
+               class="btn btn-success"
+               href="{:U('add')}">新 增</a>
         </div>
-        <!--<input type="text" name="name" class="search-input" value="{:I('name')}" placeholder="请输入配置名称">-->
-        <!--<a class="sch-btn" href="javascript:;" id="search" url="{:U('config/index')}"><i class="btn-search"></i></a>-->
+        <!-- 高级搜索 -->
+        <div class="search-form fr cf  col-sm-6 col-lg-8">
+            <div class="input-group">
+                <input type="text" id="searchInput" name="name" class="form-control search-input" value="{:I('name')}"
+                       placeholder="请输入产品编号或名称或编码">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default sch-btn" class="sch-btn" href="javascript:void(0);" id="search"
+                                type="button" url="{:U('Product/index')}">搜索
+                        </button>
+                    </span>
+            </div>
+        </div>
     </div>
-</div>
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead>
-        <tr>
-            <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
-            <th>商品id</th>
-            <th>商品名称</th>
-            <th>详细信息</th>
-            <th>品牌</th>
-            <th>商品规格</th>
-            <th>价格</th>
-            <th>商品编码</th>
-            <th>最后编辑时间</th>
-            <th>状态</th>
-            <th>操作</th>
-            <th>商品审核</th>
-        </tr>
-        </thead>
-        <tbody>
-        <notempty name="_list">
-            <volist name="_list" id="vo">
-                <tr>
-                    <td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}"/></td>
-                    <td>{$vo.id}</td>
-                    <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                           href="{:U('edit?id='.$vo['id'])}">{$vo.title}</a></td>
-                    <td><span>{:mb_strimwidth($vo['description'],0,60,"...","utf-8")}</span></td>
-                    <td>{$vo.brand}</td>
-                    <td>{$vo.norm}</td>
-                    <td>{$vo.price}</td>
-                    <td><span>{$vo.number}</span></td>
-                    <td>{$vo.edit_time|time_format}</td>
-                    <td>{$vo.status_text}</td>
-                    <td>
-                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                           href="{:U('edit?id='.$vo['id'])}">编辑</a>
-                        <eq name="vo.status" value="1">
-                            <a href="{:U('Product/changeStatus?method=forbid&id='.$vo['id'])}"
-                               class="ajax-get">禁用</a>
-                            <else/>
-                            <a href="{:U('Product/changeStatus?method=resume&id='.$vo['id'])}"
-                               class="ajax-get">启用</a>
-                        </eq>
-                        <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
-                           class="confirm ajax-get">删除</a>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                    <tr>
+                        <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
+                        <th>商品编号</th>
+                        <th>商品名称</th>
+                        <th>详细信息</th>
+                        <th>品牌</th>
+                        <th>商品规格</th>
+                        <th>价格</th>
+                        <th>商品编码</th>
+                        <th>最后编辑时间</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                        <th>商品审核</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <notempty name="_list">
+                        <volist name="_list" id="vo">
+                            <tr>
+                                <td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}"/></td>
+                                <td>{$vo.id}</td>
+                                <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                                       href="{:U('edit?id='.$vo['id'])}">{$vo.title}</a></td>
+                                <td><span>{:mb_strimwidth($vo['description'],0,60,"...","utf-8")}</span></td>
+                                <td>{$vo.brand}</td>
+                                <td>{$vo.norm}</td>
+                                <td>{$vo.price}</td>
+                                <td><span>{$vo.number}</span></td>
+                                <td>{$vo.edit_time|time_format}</td>
+                                <td>{$vo.status_text}</td>
+                                <td>
+                                    <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                                       href="{:U('edit?id='.$vo['id'])}">编辑</a>
+                                    <eq name="vo.status" value="1">
+                                        <a href="{:U('Product/changeStatus?method=forbid&id='.$vo['id'])}"
+                                           class="ajax-get">禁用</a>
+                                        <else/>
+                                        <a href="{:U('Product/changeStatus?method=resume&id='.$vo['id'])}"
+                                           class="ajax-get">启用</a>
+                                    </eq>
+                                    <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
+                                       class="confirm ajax-get">删除</a>
 
-                    </td>
-                    <td> <egt name="vo.status" value="2">
-                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                           href="{:U('audit?id='.$vo['id'])}">审核商品</a>
-                    </egt></td>
-                </tr>
-            </volist>
-            <else/>
-            <td colspan="11" class="text-center"> aOh! 暂时还没有内容!</td>
-        </notempty>
-        </tbody>
-    </table>
-</div>
-<div class="page">
-    {$_page}
-</div>
+                                </td>
+                                <td>
+                                    <egt name="vo.status" value="2">
+                                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                                           href="{:U('audit?id='.$vo['id'])}">审核商品</a>
+                                    </egt>
+                                </td>
+                            </tr>
+                        </volist>
+                        <else/>
+                        <td colspan="11" class="text-center"> aOh! 暂时还没有内容!</td>
+                    </notempty>
+                    </tbody>
+                </table>
+            </div>
+            <div class="page">
+                {$_page}
+            </div>
+        </div>
+    </div>
 <script>
     //搜索功能
-    $("#search").click(function(){
+    $("#search").click(function () {
         var url = $(this).attr('url');
-        var query  = $('.search-form').find('input').serialize();
-        query = query.replace(/(&|^)(\w*?\d*?\-*?_*?)*?=?((?=&)|(?=$))/g,'');
-        query = query.replace(/^&/g,'');
-        if( url.indexOf('?')>0 ){
+        var query = $('.search-form').find('input').serialize();
+        query = query.replace(/(&|^)(\w*?\d*?\-*?_*?)*?=?((?=&)|(?=$))/g, '');
+        query = query.replace(/^&/g, '');
+        if (url.indexOf('?') > 0) {
             url += '&' + query;
-        }else{
+        } else {
             url += '?' + query;
         }
-
-        var target=$('#rg-container-fun').attr("href")+"?name="+$('#searchInput').val();
+        var target =url;
+       // var target = $('#rg-container-fun').attr("href") + "?name=" + $('#searchInput').val();
         if (target) {
             contentload(target);
         }
         //window.location.href = url;
     });
     //回车搜索
-    $(".search-input").keyup(function(e){
-        if(e.keyCode === 13){
+    $(".search-input").keyup(function (e) {
+        if (e.keyCode === 13) {
             $("#search").click();
             return false;
         }

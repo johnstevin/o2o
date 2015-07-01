@@ -24,12 +24,12 @@ class UcenterMemberModel extends Model{
 	protected $_validate = array(
 
 		/* 验证密码 */
-		array('password', '6,32', -4, self::EXISTS_VALIDATE, 'length'), //密码长度不合法
+		array('password', '6,32', '密码长度不合法', self::EXISTS_VALIDATE, 'length'), //密码长度不合法
 
 		/* 验证手机号码 */
-		array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', -9, self::EXISTS_VALIDATE), //手机格式不正确 TODO:
-		array('mobile', 'checkDenyMobile', -10, self::EXISTS_VALIDATE, 'callback'), //过滤手机黑名单
-		array('mobile', '', -11, self::EXISTS_VALIDATE, 'unique'), //手机号被占用
+		array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', '手机格式不正确', self::EXISTS_VALIDATE), //手机格式不正确 TODO:
+		array('mobile', 'checkDenyMobile', '手机处于黑名单', self::EXISTS_VALIDATE, 'callback'), //过滤手机黑名单
+		array('mobile', '', '手机号被占用', self::EXISTS_VALIDATE, 'unique'), //手机号被占用
 	);
 
 	/* 用户模型自动完成 */
@@ -241,8 +241,14 @@ class UcenterMemberModel extends Model{
 		//更新用户信息
 		$data = $this->create($data);
 		if($data){
+
+            if($data['password']){
+                $this->saltkey = SALTKEY;
+                $this->password = $this->getPwd($data['password']);
+            }
 			return $this->where(array('id'=>$uid))->save($data);
 		}
+
 		return false;
 	}
 
@@ -254,10 +260,14 @@ class UcenterMemberModel extends Model{
 	 * @author huajie <banhuajie@163.com>
 	 */
 	protected function verifyUser($uid, $password_in){
-		$password = $this->getFieldById($uid, 'password');
-		if(think_ucenter_md5($password_in, UC_AUTH_KEY) === $password){
-			return true;
-		}
+
+
+        $user = $this->getByid($uid);
+
+        if(generate_password($password_in, $user['saltkey']) === $user['password']){
+            return true;
+        }
+
 		return false;
 	}
 
@@ -405,4 +415,5 @@ class UcenterMemberModel extends Model{
         return $UserInfo;
 
     }
+
 }

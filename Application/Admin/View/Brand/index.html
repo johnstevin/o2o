@@ -1,4 +1,3 @@
-<div class="container-fluid">
 
     <div class="row">
         <div class="col-xs-8 col-sm-6 col-lg-4">
@@ -14,12 +13,11 @@
                         <button class="btn btn-default sch-btn" class="sch-btn" href="javascript:;" id="search" type="button"  url="{:U('Brand/index')}">搜索</button>
                     </span>
             </div>
-            <!--<input type="text" name="name" class="search-input" value="{:I('name')}" placeholder="请输入配置名称">-->
-            <!--<a class="sch-btn" href="javascript:;" id="search" url="{:U('config/index')}"><i class="btn-search"></i></a>-->
         </div>
     </div>
     <div class="table-responsive">
         <table class="table table-striped table-hover">
+            <thead>
             <tr>
                 <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
                 <th>名称</th>
@@ -27,6 +25,7 @@
                 <th>状态</th>
                 <th>操作</th>
             </tr>
+            </thead>
             <tbody>
             <notempty name="_list">
                 <volist name="_list" id="vo">
@@ -54,7 +53,6 @@
     <div class="page">
         {$_page}
     </div>
-</div>
 <script>
     //搜索功能
     $("#search").click(function(){

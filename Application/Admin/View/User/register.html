@@ -1,69 +1,127 @@
+
 <!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
     <title>{:C('WEB_SITE_TITLE')}</title>
-    <script src="__STATIC__/js/jquery.min.js"></script>
-    <script src="__STATIC__/js/jquery.md5.js"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" href="__STATIC__/bootstrap/css/bootstrap.min.css">
 </head>
 <body>
+<div class="container">
+    <h3>用户注册</h3>
+    <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <form action="?" method="post" name="form">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="用户名">
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" class="form-control" id="password" name="password"
+                           placeholder="6-16为数字、英文字母大小写">
+                </div>
+                <div class="form-group">
+                    <label for="password">确认密码</label>
+                    <input type="password" class="form-control" id="repassword" name="repassword"
+                           placeholder="请输入确认密码">
+                </div>
+                <div class="form-group">
+                    <label for="email">邮箱</label>
+                    <input type="text" class="form-control" id="email" name="email" placeholder="邮箱">
+                </div>
+                <div class="form-group">
+                    <label for="mobile">手机</label>
+                    <input type="text" class="form-control" id="mobile" name="mobile" placeholder="手机号码">
+                </div>
 
-<form action="?" method="post" name="form">
+                <button type="button" class="btn btn-default" onclick="register()">注册</button>
+            </form>
 
-    所属组织：<input type="text" name="group_id" id="group_id" value="7" />　<br /><!--成都市管理组-->
-    用户名：<input type="text" name="username" id="username" value="" />　<br />
-    手机：<input type="text" name="mobile" id="mobile" value="" />　<br />
-    邮箱：<input type="text" name="email" id="email" value="" />　<br />
-    密码：<input type="password" name="password" id="password" value="" />
-    验证码：<input type="" name="verify" id="verify" />
-           <img src="{:U('Public/verify')}" />
-        <input type="hidden" name="is_admin" value="1" />
-        <input type="button" value="提交" onclick="register()" />
+            <div  id="msg"  class="alert" role="alert"></div>
+        </div>
+        <div class="colcol-md-offset-2 col-md-4">
+            已经有账号？<br>
+            <a type="button" href="{:U('Public/login')}" class="btn btn-default" >立即登陆</a>
+        </div>
+    </div>
 
-</form>
-<div id="msg"></div>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="__STATIC__/js/jquery.min.js"></script>
+    <script src="__STATIC__/js/jquery.md5.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script type="text/javascript" src="__STATIC__/bootstrap/js/bootstrap.min.js"></script>
+</div>
 </body>
 </html>
 <script>
-$(document).ready(function(){
 
-});
-
-function register(){
-    var mobile = $("#mobile").val();
-    var password = $("#password").val();
-
-    if(mobile==""){
-        $('#msg').html("手机号不能为空！");
-        $("#mobile").focus();
-        return false;
-    }
-    if(password==""){
-        $('#msg').html("密码不能为空！");
-        $("#password").focus();
-        return false;
-    }
-    password = $.md5(password);
-
-    $.ajax({
-        type: "POST",
-        url: '{:U('Public/register')}',
-        dataType: "json",
-        data: {"mobile":mobile,"password":password},
-        beforeSend: function(){
-            $('#msg').html("正在注册...");
-        },
-        success: function(json){
-            if(json.status==1){
-                $('#msg').html("注册成功，正在跳转...");
-                alert('注册成功！');
-                location.href="{:U('Public/login')}";
-            }else{
-                $('#msg').html("注册失败！Error:"+json.info);
-                return false;
-            }
+    function register() {
+        var username=$("#username").val();
+        var mobile = $("#mobile").val();
+        var password = $("#password").val();
+        var repassword = $("#repassword").val();
+        var email=$("#email").val();
+        var verify_code = $('#verify_code').val();
+        var group_id = "{:I('group_id')}";
+        if (group_id == '' || group_id == null) {
+            $('#msg').html("注册失败！非法注册,请重新刷新！");
+            //};
+            return false;
         }
-    });
-}
+
+        if (mobile == "") {
+            $('#msg').html("手机号不能为空！");
+            $("#mobile").focus();
+            return false;
+        }
+        if (password == "") {
+            $('#msg').html("密码不能为空！");
+            $("#password").focus();
+            return false;
+        }
+
+        if(password!=repassword){
+            ('#msg').html("两次密码输入不一致！");
+            $("#repassword").focus();
+            return false;
+        }
+
+        password = $.md5(password);
+
+        repassword = $.md5(repassword);
+
+        $.ajax({
+            type: "POST",
+            url: '{:U("Public/register")}',
+            dataType: "json",
+            data: {
+                "mobile": mobile,
+                "password": password,
+                "group_id": group_id,
+                "is_admin": '1',
+                "email":email,
+                "repassword":repassword
+            },
+            beforeSend: function () {
+                $('#msg').html("正在注册...");
+            },
+            success: function(json){
+                if(json.status==1){
+                    $('#msg').html("注册成功，正在跳转...");
+                    alert('注册成功！');
+                    location.href="{:U('Public/login')}";
+                }else{
+                    $('#msg').html("注册失败！Error:"+json.info);
+                    return false;
+                }
+            }
+        });
+    }
 
 </script>

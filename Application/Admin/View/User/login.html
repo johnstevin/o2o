@@ -15,43 +15,65 @@
     <hr>
     <div class="row">
         <div class="col-md-6 ">
-<form action="?"  method="post" name="form">
-    <div class="form-group">
-        <label class="control-label" for="username">用户名</label>
-        <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名/手机/邮箱">
-    </div>
-    <div class="form-group">
-        <label class="control-label" for="password">密码</label>
-        <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码">
-    </div>
-    <div>  <label class="control-label" for="vf">验证码</label></div>
-    <div class="form-group">
+            <form action="?" method="post" name="form">
+                <div class="form-group">
+                    <label class="control-label" for="username">用户名</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名/手机/邮箱">
+                </div>
+                <div class="form-group">
+                    <label class="control-label" for="password">密码</label>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码">
+                </div>
 
-        <img id="vf" src="{:U('Public/verify')}" />
-    </div>
-    <button type="button" class="btn btn-default" onclick="login()">登录</button>
-</form>
+                <div class="form-group">
+                    <label for="verify" class="control-label" for="verify">验证码</label>
+                    <input type="text" class="form-control" id="verify" name="verify" placeholder="请填写验证码" autocomplete="off">
+                </div >
+
+                <div class="form-group">
+                   <a href="javascript:void(0)"><img class="verifyimg reloadverify" alt="点击切换" src="{:U('Public/verify')}"></a>
+                    <a class="reloadverify" title="换一张" href="javascript:void(0)">换一张？</a>
+                </div>
+
+                <div class="form-group">
+                    <button type="button" class="btn btn-default" onclick="login()">登录</button>
+                </div>
+
+            </form>
         </div>
+        <!--<div class="colcol-md-offset-2 col-md-4">-->
+            <!--还没有账号？<br>-->
+            <!--<a type="button" href="{:U('Public/register')}" class="btn btn-default" >立即注册</a>-->
+        <!--</div>-->
     </div>
-<div class = "alert" id="msg"></div>
+    <div class="alert" id="msg"></div>
 </div>
 </body>
 </html>
 <script>
-    $(document).ready(function(){
+    $(function(){
+        //刷新验证码
+        var verifyimg = $(".verifyimg").attr("src");
+        $(".reloadverify").click(function(){
+            if( verifyimg.indexOf('?')>0){
+                $(".verifyimg").attr("src", verifyimg+'&random='+Math.random());
+            }else{
+                $(".verifyimg").attr("src", verifyimg.replace(/\?.*$/,'')+'?'+Math.random());
+            }
+        });
 
     });
 
-    function login(){
+    function login() {
         var username = $("#username").val();
         var password = $("#password").val();
 
-        if(username==""){
+        if (username == "") {
             $('#msg').html("手机号不能为空！");
             $("#username").focus();
             return false;
         }
-        if(password==""){
+        if (password == "") {
             $('#msg').html("密码不能为空！");
             $("#password").focus();
             return false;
@@ -62,20 +84,20 @@
             type: "POST",
             url: '{:U("Public/login")}',
             dataType: "json",
-            data: {"username":username,"password":password},
-            beforeSend: function(){
-               $('#msg').html("正在登陆...");
+            data: {"username": username, "password": password},
+            beforeSend: function () {
+                $('#msg').html("正在登陆...");
             },
-            success: function(json){
-            if(json.status==1){
-                $('#msg').html("登陆成功，正在跳转...");
-               // alert('登陆成功！');
-                location.href="{:U('Index/index')}";
-            }else{
-                $('#msg').html("登陆成功！Error:"+json.info);
-                return false;
+            success: function (json) {
+                if (json.status == 1) {
+                    $('#msg').html("登陆成功，正在跳转...");
+                    // alert('登陆成功！');
+                    location.href = "{:U('Index/index')}";
+                } else {
+                    $('#msg').html("登陆失败！Error:" + json.info);
+                    return false;
+                }
             }
-        }
         });
     }
 

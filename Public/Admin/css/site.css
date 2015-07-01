@@ -14,7 +14,6 @@
 
 #rg-container-fun { /* 真实的功能面板，因为easyui布局面板右侧的特殊性，右侧要多16个像素 */
     overflow: auto;
-    padding: 0;
 }
 
 @media (min-width: 768px) { /*宽度大于等于768px,采用如下样式*/
@@ -40,14 +39,6 @@ footer {
     color: #ffffff;
     width: 100%;
 }
-
 #DlgModal .modal-body { /*模态框内容*/
     overflow-y: auto;
-}
-
-#DlgModal .rg-loading { /*加载框*/
-    height: 123px;/*modal-header高56加1的下边框，modal-footer高65加1的上边框，加起来123*/
-    background-image: url(../images/loading3.gif);
-    background-position: center center;
-    background-repeat: no-repeat;
 }
