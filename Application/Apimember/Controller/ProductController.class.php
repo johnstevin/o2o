@@ -136,7 +136,7 @@ class ProductController extends ApiController
                     'sq_appraise.id','ifnull(sq_appraise.content,\'\') as content',
                     'sq_appraise.grade_1','sq_appraise.grade_2','sq_appraise.grade_3',
                     '(sq_appraise.grade_1+sq_appraise.grade_2+sq_appraise.grade_3)/3 as grade',
-                    'sq_appraise.update_time','sq_picture.path as picture_path','sq_member.nickname'
+                    'sq_appraise.update_time','ifnull(sq_picture.path,\'\') as picture_path','sq_member.nickname'
                 ])
                 ->select()]);
         } catch (\Exception $ex) {

@@ -74,9 +74,18 @@ class MerchantController extends ApiController {
             $page *= $pageSize;
 
             $this->apiSuccess(['data' =>D('Appraise')
+                ->join('join sq_member on sq_member.uid=sq_appraise.user_id')
+                ->join('join sq_ucenter_member on sq_ucenter_member.id=sq_appraise.user_id')
+                ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
                 ->where(['merchant_id'=>$merchantId])
                 ->limit($page, $pageSize)
                 ->order('update_time')
+                ->field([
+                    'sq_appraise.id','ifnull(sq_appraise.content,\'\') as content',
+                    'sq_appraise.grade_1','sq_appraise.grade_2','sq_appraise.grade_3',
+                    '(sq_appraise.grade_1+sq_appraise.grade_2+sq_appraise.grade_3)/3 as grade',
+                    'sq_appraise.update_time','ifnull(sq_picture.path,\'\') as picture_path','sq_member.nickname'
+                ])
                 ->select()]);
         } catch (\Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
