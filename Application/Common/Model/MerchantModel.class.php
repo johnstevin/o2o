@@ -25,6 +25,8 @@ class MerchantModel extends AdvModel
         'last_login_ip',
         'last_login_time',
         'status',
+        'number',
+        'lnglat',
         '_type' => [
             'id' => 'int',
             'description' => 'varchar',
@@ -32,7 +34,9 @@ class MerchantModel extends AdvModel
             'login' => 'int',
             'last_login_ip' => 'int',
             'last_login_time' => 'int',
-            'status' => 'tinyint'
+            'status' => 'tinyint',
+            'number' => 'string',
+            'lnglat'=>'point',
         ]
     ];
     /**
@@ -145,6 +149,35 @@ class MerchantModel extends AdvModel
     ];
 
     /**
+     * 处理point类型字段值
+     * @param $resultSet
+     * @param string $options
+     */
+    protected function _after_select(&$resultSet,$options) {
+        parent::_after_select($resultSet,$options);
+        foreach($resultSet as &$row){
+            $this->_after_query_row($row);
+        }
+    }
+
+    /**
+     * @param $row
+     * @param $v
+     * @return array
+     */
+    protected function _after_query_row(&$row)
+    {
+        foreach ($row as $k => &$v) {
+            $type = $this->fields['_type'][$k];
+            if ($type == 'point') {
+                $lls = substr($v, 6, strlen($v) - 7);
+                $ll = explode(' ', $lls);
+                $v = [floatval($ll[0]), floatval($ll[1])];
+            }
+        }
+    }
+
+    /**
      * 获得附件洗车工
      * @author WangJiang
      * @param $lat
@@ -157,6 +190,8 @@ class MerchantModel extends AdvModel
     public function getCarWashersNearby($lat, $lng, $range,$name,$number,$page,$pageSize){
         $this->join('JOIN sq_ucenter_member on sq_ucenter_member.id=sq_merchant.id');
         $this->join('LEFT JOIN sq_appraise on sq_appraise.merchant_id = sq_merchant.id');
+        $this->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo');
+        //$this->join('left join sq_order_vehicle on worker_id=sq_merchant.id and sq_order_vehicle.status in (1,2,3)');
 
         $bind=[':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')];
         $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
@@ -168,11 +203,13 @@ class MerchantModel extends AdvModel
         if(!is_null($name))
             $where['sq_ucenter_member.real_name']=['like',"%$name%"];
 
-        $data=$this->join('left join sq_merchant_shop on sq_merchant_shop.group_id in
+        $data=$this
+            ->join('left join sq_merchant_shop on sq_merchant_shop.group_id in
                 (select sq_auth_access.group_id from sq_auth_access where
                         sq_auth_access.uid=sq_merchant.id and
                         sq_auth_access.role_id=:roleId)')
-            ->where($where)->field(['sq_merchant.id'
+            ->where($where)
+            ->field(['sq_merchant.id'
                 ,'sq_merchant_shop.id as shop_id'
                 ,'sq_merchant.number'
                 ,'sq_ucenter_member.mobile'
@@ -184,6 +221,7 @@ class MerchantModel extends AdvModel
                 ,'avg(sq_appraise.grade_2) as grade_2'
                 ,'avg(sq_appraise.grade_3) as grade_3'
                 ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade'
+                ,'ifnull(sq_picture.path,\'\') as photo_path'
             ])->bind($bind)
             ->limit($page,$pageSize)
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')

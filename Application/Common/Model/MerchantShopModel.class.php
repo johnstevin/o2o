@@ -239,6 +239,7 @@ class MerchantShopModel extends AdvModel
         $map['sq_merchant_shop.status&sq_merchant_shop.open_status']=1;
         $this->where($map)
             ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
+            ->join('LEFT JOIN sq_picture on sq_picture.id = sq_merchant_shop.picture')
             ->bind($bind)
             ->field([
                 'sq_merchant_shop.id'
@@ -264,7 +265,9 @@ class MerchantShopModel extends AdvModel
                 ,'avg(sq_appraise.grade_1) as grade_1'
                 ,'avg(sq_appraise.grade_2) as grade_2'
                 ,'avg(sq_appraise.grade_3) as grade_3'
-                ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade']);
+                ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade'
+                ,'ifnull(sq_picture.path,\'\') as picture_path'
+            ]);
 
         if(1==$order)
             $this->order('distance');
