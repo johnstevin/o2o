@@ -451,13 +451,14 @@ class OrderModel extends RelationModel
      * @param int $userId 用户ID
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
-     * @param bool|array|string $fields 要查询的字段
+     * @param bool $getShop 是否获得店铺信息
+     * @param bool $getUser 是否获得用户信息
      * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getListsByUserId($userId, $status = null, $payStatus = null, $fields = '*', $getProducts = true)
+    public static function getListsByUserId($userId, $status = null, $payStatus = null, $getShop = false, $getUser = false, $getProducts = true)
     {
-        return self::getLists(null, $userId, $status, $payStatus, $fields, $getProducts);
+        return self::getInstance()->getLists(null, $userId, $status, $payStatus, $getShop, $getUser, $getProducts);
     }
 
     /**
@@ -467,13 +468,14 @@ class OrderModel extends RelationModel
      * @param int $shopId 商铺ID
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
-     * @param bool|array|string $fields 要查询的字段
+     * @param bool $getShop 是否获得店铺信息
+     * @param bool $getUser 是否获得用户信息
      * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getListsByShopId($shopId, $status = null, $payStatus = null, $fields = '*', $getProducts = true)
+    public static function getListsByShopId($shopId, $status = null, $payStatus = null, $getShop = false, $getUser = false, $getProducts = true)
     {
-        return self::getLists($shopId, null, $status, $payStatus, $fields, $getProducts);
+        return self::getInstance()->getLists($shopId, null, $status, $payStatus, $getShop, $getUser, $getProducts);
     }
 
     /**
@@ -484,39 +486,106 @@ class OrderModel extends RelationModel
      * @param null|int $userId 用户ID
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
-     * @param bool|array|string $fields 要查询的字段，按照TP模型规则来，如果自定义，必须要包括pid字段
+     * @param bool $getShop 是否获得店铺信息
+     * @param bool $getUser 是否获得用户信息
      * @param bool $getProducts 是否查询订单下的商品列表
      * @param int $pageSize 分页大小
      * @return array|null
      */
-    public static function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = false, $pageSize = 10)
+    public function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $getShop = false, $getUser = false, $getProducts = false, $pageSize = 10)
     {
-        $where = [
-            'pid' => 0
-        ];
-        if (!empty($shopId)) $where['shop_id'] = intval($shopId);
-        if (!empty($userId)) $where['user_id'] = intval($userId);
-        if ($status !== null && in_array($status, array_keys(self::getStatusOptions()))) {
-            $where['status'] = $status;
-        } else {
-            $where['status'] = ['NEQ', self::STATUS_DELETE];
+        if (!empty($shopId)) {
+            $where['o.shop_id'] = intval($shopId);
+            $where['o.pid'] = [//如果是根据商铺来查，那么父级订单就不用查出来了
+                'NEQ',
+                0
+            ];
         }
-        if (!empty($payStatus) && in_array($payStatus, array_keys(self::getPayStatusOptions()))) $where['pay_status'] = $payStatus;
-        $model = self::getInstance();
-        $total = $model->where($where)->count('id');
+        if (!empty($userId)) {
+            $where['o.user_id'] = intval($userId);
+            $where['o.pid'] = 0;//如果根据用户来查，需要把父级也查出来
+        }
+        if (!empty($shopId) && !empty($userId)) {
+            $where['o.pid'] = 0;
+        }
+        if ($status !== null && in_array($status, array_keys(self::getStatusOptions()))) {
+            $where['o.status'] = $status;
+        } else {
+            $where['o.status'] = ['NEQ', self::STATUS_DELETE];
+        }
+        if (!empty($payStatus) && in_array($payStatus, array_keys(self::getPayStatusOptions()))) $where['o.pay_status'] = $payStatus;
+        $fields = [
+            'o.*'
+        ];
+        $model = self::getInstance()->alias('o')->where($where);
+        $totalModel = clone $model;
+        if ($getUser) {
+            $fields = array_merge($fields, [
+                'm.nickname _user_nickname',
+                'm.sex _user_sex',
+                'um.email _user_email',
+                'user_picture.path _user_photo'
+            ]);
+            $model->join('LEFT JOIN sq_ucenter_member um ON um.id=o.user_id');
+            $model->join('LEFT JOIN sq_member m ON m.uid=um.id');
+            $model->join('LEFT JOIN sq_picture user_picture ON um.photo=user_picture.id');
+        }
+        if ($getShop) {
+            $fields = array_merge($fields, [
+                'ms.title _shop_title',
+                'ms.description _shop_description',
+                'ms.status _shop_status',
+                'ms.type _shop_type',
+                'ms.phone_number _shop_phone',
+                'ms.address _shop_address',
+                'ms.open_status _shop_open_status',
+                'ms.region_id _shop_region_id',
+                'ms_picture.path _shop_picture'
+            ]);
+            $model->join('LEFT JOIN sq_merchant_shop ms ON ms.id=o.shop_id');
+            $model->join('LEFT JOIN sq_picture ms_picture ON ms.picture=ms_picture.id');
+        }
+        $total = $totalModel->count();
         $pagination = new Page($total, $pageSize);
-        $data = $model->relation('_childs')->where($where)->limit($pagination->firstRow . ',' . $pagination->listRows)->field($fields)->select();
-        if ($getProducts) {
-            foreach ($data as &$value) {
-                if (empty($value['_childs'])) {
-                    $value['_products'] = self::getProductsByOrderId($value['id']);
+        $data = $model->relation('_childs')->field($fields)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+        foreach ($data as &$item) {
+            if ($getUser) {
+                $item['_user'] = [
+                    'id' => $item['user_id'],
+                    'nickname' => $item['_user_nickname'],
+                    'sex' => $item['_user_sex'],
+                    'email' => $item['_user_email'],
+                    'photo' => $item['_user_photo']
+                ];
+                unset($item['user_id'], $item['_user_nickname'], $item['_user_sex'], $item['_user_email'], $item['_user_photo']);
+            }
+            if ($getShop) {
+                $item['_shop'] = [
+                    'id' => $item['shop_id'],
+                    'title' => $item['_shop_title'],
+                    'description' => $item['_shop_description'],
+                    'status' => $item['_shop_status'],
+                    'type' => $item['_shop_type'],
+                    'phone' => $item['_shop_phone'],
+                    'address' => $item['_shop_address'],
+                    'open_status' => $item['_shop_open_status'],
+                    'region_id' => $item['_shop_region_id'],
+                    'picture' => $item['_shop_picture']
+                ];
+                unset($item['_shop_title'], $item['_shop_description'], $item['_shop_status'], $item['_shop_type'], $item['_shop_phone'], $item['_shop_address'], $item['_shop_open_status'], $item['_shop_region_id'], $item['_shop_picture']);
+            }
+            if ($getProducts) {
+                if (empty($item['_childs'])) {
+                    $item['_products'] = self::getProductsByOrderId($item['id']);
                 } else {
-                    foreach ($value['_childs'] as &$child) {
+                    $item['_products'] = [];
+                    foreach ($item['_childs'] as &$child) {
                         $child['_products'] = self::getProductsByOrderId($child['id']);
                     }
                 }
             }
         }
+
         return [
             'data' => $data,
             'pagination' => $pagination->show()
