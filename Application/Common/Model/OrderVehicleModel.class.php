@@ -152,10 +152,6 @@ class OrderVehicleModel extends AdvModel{
         'add_time',
         'add_ip',
         'order_code',
-        'address',
-        'lnglat',
-        'car_number',
-        'shop_id'
     ];
 
 //    protected function _after_find(&$result,$options='') {
@@ -238,10 +234,7 @@ class OrderVehicleModel extends AdvModel{
         $this->_assert_new_status($data['status'],self::STATUS_CANCELED);
         if($data['user_id']!=$uid)
             E('非本人操作');
-        $data['status']=self::STATUS_CANCELED;
-        //经纬度不需要修改
-        unset($data['lnglat']);
-        $this->save($data);
+        $this->save(['id'=>$data['id'],'status'=>self::STATUS_CANCELED]);
     }
 
     private static function _get_status_chain(){
@@ -281,10 +274,7 @@ class OrderVehicleModel extends AdvModel{
         if($data['worker_id']!=$uid)
             E('非本人操作');
         $this->_assert_new_status($data['status'],$status);
-        $data['status']=$status;
-        //经纬度不需要修改
-        unset($data['lnglat']);
-        $this->save($data);
+        $this->save(['id'=>$data['id'],'status'=>$status]);
     }
 
 }
