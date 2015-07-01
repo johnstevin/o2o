@@ -348,8 +348,7 @@ class MemberAddressModel extends RelationModel
             $bind[$bindName] = $item;
         }
         $bind[':id'] = intval($id);
-        $pdo = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME'), C('DB_USER'), C('DB_PWD'));
-        $pdo->exec('SET NAMES ' . C('DB_CHARSET'));
+        $pdo = get_pdo();
         $sql = 'UPDATE ' . self::getInstance()->getTableName() . ' SET ' . implode(',', $field) . ' WHERE id = :id';
         $sth = $pdo->prepare($sql);
         $result = $sth->execute($bind);
