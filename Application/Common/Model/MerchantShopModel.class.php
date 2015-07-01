@@ -126,7 +126,6 @@ class MerchantShopModel extends AdvModel
 
     protected $readonlyField=[
         'add_uid',
-        'status',
     ];
 
     /**
@@ -373,7 +372,11 @@ class MerchantShopModel extends AdvModel
         $this->_before_update($data);
         $id=$data['id'];
 
-        $md=$this->find($id);
+        $md=$this
+            //->fetchSql()
+            ->find($id);
+
+        //var_dump($md);die;
 
         //只有审核中和为通过的店铺才能修改下列字段
         if(!in_array($md['status'],[self::STATUS_CLOSE,self::STATUS_DENIED])){
@@ -383,11 +386,8 @@ class MerchantShopModel extends AdvModel
             unset($data['type']);
             unset($data['address']);
             unset($data['title']);
-            unset($data['delivery_distance_cost']);
-            unset($data['free_delivery_amount']);
-            unset($data['pay_delivery_amount']);
-            unset($data['delivery_amount_cost']);
-        }
+        }else
+            $data['status']=self::STATUS_CLOSE;
 
         $set=[];
         $where=null;

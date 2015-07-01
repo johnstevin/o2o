@@ -62,7 +62,23 @@ class MerchantShopController extends ApiController
                 if (!($data=$model->create()))
                     E('参数传递失败');
 
-                can_modify_shop($this->getUserId(),$data['id']);
+                $id=$data['id'];
+
+                $md=$model->find($id);
+                $uid=$this->getUserId();
+
+//var_dump($md);var_dump($data);
+
+                //如果店铺状态为待审和审核未通过，则用户必须是店铺的add_uid否则，不能修改信息
+                if(in_array($md['status'],[MerchantShopModel::STATUS_CLOSE,MerchantShopModel::STATUS_DENIED])){
+                    //$roleIds=$this->getUserRoleIds(C('AUTH_GROUP_ID.GROUP_ID_MERCHANT'));
+//var_dump($roleIds);
+                    //if(!in_array(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO'),$roleIds))
+                    //    E('用户无权操作该商铺1');
+                    if($uid!=$md['add_uid'])
+                        E('用户无权操作该商铺，该店铺处于审核中，只能由添加用户修改');
+                }else
+                    can_modify_shop($uid,$id);
 
                 $model->data($data);
                 //var_dump($data);die;
@@ -207,7 +223,7 @@ class MerchantShopController extends ApiController
                 $page *= $pageSize;
 
                 //获得担任店长的商铺组
-                $groupIds=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'));
+                $groupIds=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'),true);
                 $model = D('MerchantShop');
 
                 $where['group_id'] = ['in',$groupIds];
@@ -239,16 +255,15 @@ class MerchantShopController extends ApiController
                     'pay_delivery_amount',
                     'delivery_amount_cost',
                     'message',
-                    'photo.id as picture',
+                    'picture',
                     //TODO 暂时这么做，后期删除
                     'sq_merchant_shop.status',
                     //end
-                    'ifnull(photo.path,\'\') as picture_path',
-                    'yyzz_picture.id as yyzz_picture_id',
-                    'ifnull(yyzz_picture.path,\'\') as yyzz_picture_path',
+                    'ifnull(sq_picture.path,\'\') as picture_path',
+                    'ifnull(yyzz_pic.path,\'\') as yyzz_picture_path',
                     'st_astext(sq_merchant_shop.lnglat) as lnglat'])
-                    ->join('left join sq_picture as photo on photo.id=sq_merchant_shop.picture')
-                    ->join('left join sq_picture as yyzz_picture on yyzz_picture.id=sq_merchant_shop.yyzz_picture')
+                    ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
+                    ->join('left join sq_picture as yyzz_pic on yyzz_pic.id=sq_merchant_shop.yyzz_picture')
                     ->where($where)->limit($page,$pageSize)->select();
 
                 foreach($data as &$i){
