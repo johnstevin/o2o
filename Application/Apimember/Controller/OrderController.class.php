@@ -151,11 +151,13 @@ class OrderController extends ApiController
     /**
      * ###获得订单列表,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
+     *
      * @param null|int $shopId 商铺ID
      * @param null|int $userId 用户ID
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
-     * @param string|array $fields 要查询的字段
+     * @param bool $getShop 是否获取商铺信息，默认为否
+     * @param bool $getUser 是否获取订单的购买者信息，默认为否
      * @param bool $getProducts 是否获取订单下的商品
      * ``` JSON
      * {
@@ -212,9 +214,9 @@ class OrderController extends ApiController
      * }
      * ```
      */
-    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $fields = '*', $getProducts = true)
+    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $getProducts = true, $getShop = false, $getUser = false)
     {
-        $lists = OrderModel::getLists($shopId, $userId, $status, $payStatus, $fields, $getProducts);
+        $lists = OrderModel::getInstance()->getLists($shopId, $userId, $status, $payStatus, $getShop, $getUser, $getProducts);
         //我滴个神啊，那些做手机端开发的非要只取两条产品信息-_-!
         if ($getProducts) {
             foreach ($lists['data'] as &$data) {
