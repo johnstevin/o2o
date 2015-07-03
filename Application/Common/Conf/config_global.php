@@ -64,8 +64,9 @@ return [
         'PRODUCT_PICTURE'                => 1,    //产品图片
         'MERCHANT_SHOP_PICTURE'          => 2,    //商家店铺图片
         'UCENTER_MEMBER_PHOTO'           => 3,    //用户头像
-        'CARWASH_MEMBER_PICTURE'         => 4,
-        'CARWASH_MERCHANT_PICTURE'       => 5,
+        'CARWASH_MEMBER_PICTURE'         => 4,    //洗车用户头像
+        'CARWASH_MERCHANT_PICTURE'       => 5,    //洗车工头像
+        'APK_PACKAGE'                    => 6,    //apk包
     ),
 
     'ALIPAY' => [
