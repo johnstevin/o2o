@@ -113,6 +113,7 @@ class AuthAccessModel extends Model
             }
             return false;
         } else {
+
             return true;
         }
     }

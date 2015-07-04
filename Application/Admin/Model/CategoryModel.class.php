@@ -60,6 +60,7 @@ class CategoryModel extends Model
     public function update()
     {
         $data = $this->create();
+
         if (!$data) { //数据对象创建错误
             return false;
         }

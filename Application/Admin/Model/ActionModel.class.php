@@ -53,12 +53,18 @@ class ActionModel extends Model {
                 $this->error = '新增行为出错！';
                 return false;
             }
+
+            //记录行为
+            action_log('admin_add_action','action',$id,UID,1);
+
         } else { //更新数据
             $status = $this->save(); //更新基础内容
             if(false === $status){
                 $this->error = '更新行为出错！';
                 return false;
             }
+            //记录行为
+            action_log('admin_update_action','action',$data['id'],UID,1);
         }
         //删除缓存
         S('action_list', null);

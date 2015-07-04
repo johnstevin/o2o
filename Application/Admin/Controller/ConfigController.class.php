@@ -46,8 +46,13 @@ class ConfigController extends AdminController
             $Config = D('Config');
             $data = $Config->create();
             if ($data) {
-                if ($Config->add()) {
+               $result= $Config->add();
+                if ($result) {
                     S('DB_CONFIG_DATA', null);
+
+                    //记录行为
+                    action_log('admin_add_config', 'config', $result, UID,1);
+
                     $this->success('新增成功', U('index'));
                 } else {
                     $this->error('新增失败');
@@ -75,7 +80,8 @@ class ConfigController extends AdminController
                 if ($Config->save()) {
                     S('DB_CONFIG_DATA', null);
                     //记录行为
-                    action_log('update_config', 'config', $data['id'], UID);
+                    action_log('admin_update_config', 'config', $data['id'], UID,1);
+
                     $this->success('更新成功', Cookie('__forward__'));
                 } else {
                     $this->error('更新失败');

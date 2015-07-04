@@ -24,6 +24,8 @@ class ActionController extends AdminController {
 //        }
         $this->assign('_list', $list);
         $this->meta_title = '行为日志';
+        // 记录当前列表页的cookie
+        Cookie('__forward__',$_SERVER['REQUEST_URI']);
         $this->display();
     }
 

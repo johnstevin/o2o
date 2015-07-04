@@ -24,6 +24,9 @@ class ProductModel extends Model
     protected $_validata = array(
         array('number','require', '必须输入商品编码', self::MUST_VALIDATE, 'regex', self::MODEL_INSERT),
         array('title', 'require', '必须设置商品标题', self::MUST_VALIDATE, 'regex', self::MODEL_INSERT),
+        array('brand_id','require', '必须选择品牌', self::MUST_VALIDATE, 'regex', self::MODEL_INSERT),
+        array('norms_id', 'require', '必须选择规格', self::MUST_VALIDATE, 'regex', self::MODEL_INSERT),
+        array('price', 'require', '必须输入商品价格', self::MUST_VALIDATE, 'regex', self::MODEL_INSERT),
         array('price', 'currency', '商品价格必须是货币形式', self::MUST_VALIDATE, 'regex', self::MODEL_INSERT),
     );
 
@@ -103,15 +106,19 @@ class ProductModel extends Model
         /* 添加或更新数据 */
         if (empty($data['id'])) {
 
-            if($this->where(array('number'=>$data['number']))->count()){
+            if($this->where(array('number'=>$data['number'],'status'=>array('GT', -1)))->count()){
                 $this->error='该商品的已经存在';
                 return false;
             }
 
             $res = $this->add();
+
+
         } else {
             $res = $this->save();
+
         }
+
 
         return $res;
     }
@@ -185,7 +192,7 @@ class ProductModel extends Model
             ->field('a.norms_id,m.title norms_title')
             ->table($prefix . self::CATEGORY_BRAND_NORMS . ' a')
             ->join($prefix . self::NORMS . " m on a.norms_id=m.id")
-            ->where(array('a.category_id' => array('in', $category_id), 'a.brand_id' => array('eq', $brand)))
+            ->where(array('a.category_id' => array('in', $category_id), 'a.brand_id' => array('eq', $brand),'m.status'=>'1'))
             ->distinct(true)
             ->select();
         return $result;
@@ -246,40 +253,64 @@ class ProductModel extends Model
     }
 
     /**
+     *版本一
      * 获取商品所属分类信息
      * @param  产品id
      * @return array
      */
     public function CategoryInfo($id)
     {
-        $category = array();
-        $product_category = M(self::PRODUCT_CATEGORY)->where(array('product_id' => $id))->select();
-        $category_arr = array();
-        foreach ($product_category as &$v) {
-            $category_arr[] = $v['category_id'];
-        }
+
+
+        $info = M()
+            ->field('b.id,b.level,b.pid')
+            ->table('__PRODUCT_CATEGORY__ a')
+            ->join('__CATEGORY__ b ON  a.category_id = b.id')
+            ->where(array('a.product_id' => $id))
+            ->select();
+
+        $category_arr=array_column($info,'id');
+
+
+        /*获取商品的分类信息        eg: Array ( [0] => 7,[1]=>24 ) */
+//        $product_category = M(self::PRODUCT_CATEGORY)->where(array('product_id' => $id))->select();
+        //       $category_arr=array_column($product_category,'category_id');
+
+
         //TODO  待优化
+        $category = array();
         $category['level2'] = array();
         $category['level3'] = array();
         $Category = M('Category');
-        $info = $Category->field('id,level,pid')->where(array('id' => array('in', $category_arr)))->select();
-        $pids = array();
-        $ids = array();
-        foreach ($info as &$k) {
-            $pids[] = $k['pid'];
-            $ids[] = $k['id'];
-        }
+
+//      找出这个产品的分类对应的信息
+        //       $info = $Category->field('id,level,pid')->where(array('id' => array('in', $category_arr)))->select();
+
+
+//        $pids = array();
+//        $ids = array();
+//        foreach ($info as &$k) {
+//            $pids[] = $k['pid'];
+//            $ids[] = $k['id'];
+//        }
+
+
+        $pids=array_column($info,'pid');
+        $ids =array_column($info,'id');
+
+
         $pids_str = is_array($pids) ? implode(',', $pids) : trim($pids, ',');
         $ids_str = is_array($ids) ? implode(',', $ids) : trim($ids, ',');
         if ($info[0]['level'] == 0) {
-            $category['level2'] = $Category->field('id,title')->where(array('pid' => array('in', $ids_str)))->select();
-            $lthreepids = array();
-            foreach ($category['level2'] as &$k) {
-                $lthreepids[] = $k['id'];
-            }
+            $category['level2'] = $Category->field('id,title')->where(array('pid' => array('in', $ids_str),'level'=>'1'))->select();
+
+
+            $lthreepids=array_column($category['level2'],'id');
+
+
             $lthreepids = is_array($lthreepids) ? implode(',', $lthreepids) : trim($lthreepids, ',');
             if (!empty($lthreepids)) {
-                $category['level3'] = $Category->field('id,title')->where(array('pid' => array('in', $lthreepids)))->select();
+                $category['level3'] = $Category->field('id,title')->where(array('pid' => array('in', $lthreepids),'level'=>'2'))->select();
             } else {
                 $category['level3'] = array();
             }
@@ -289,36 +320,242 @@ class ProductModel extends Model
         if ($info[0]['level'] == 1) {
             $pids_arrs = is_array($pids_str) ? $pids_str : explode(',', trim($pids_str, ','));
             $category_arr = array_merge($category_arr, $pids_arrs);
-            $category['level2'] = $Category->field('id,title')->where(array('pid' => array('in', $pids_str)))->select();
-            $lthreepids = array();
-            foreach ($category['level2'] as &$k) {
-                $lthreepids[] = $k['id'];
-            }
+            $category['level2'] = $Category->field('id,title')->where(array('pid' => array('in', $pids_str),'level'=>'1'))->select();
+
+
+            $lthreepids=array_column($category['level2'],'id');
+
+
             $lthreepids = is_array($lthreepids) ? implode(',', $lthreepids) : trim($lthreepids, ',');
-            $category['level3'] = $Category->field('id,title')->where(array('pid' => array('in', $lthreepids)))->select();
+            $category['level3'] = $Category->field('id,title')->where(array('pid' => array('in', $lthreepids),'level'=>'2'))->select();
 
         }
         if ($info[0]['level'] == 2) {
             $pid = $Category->field('id,pid')->where(array('id' => array('in', $pids_str)))->select();
+
             $two = array();
             foreach ($pid as &$k) {
                 $two[] = $k['pid'];
                 $category_arr[] = $k['id'];
             }
+
             $twos = is_array($two) ? implode(',', $two) : trim($two, ',');
             $one = $Category->field('id,title')->where(array('id' => array('in', $twos)))->select();
             foreach ($one as &$k) {
                 $category_arr[] = $k['id'];
             }
-            $category['level2'] = $Category->field('id,title')->where(array('pid' => array('in', $twos)))->select();
+            $category['level2'] = $Category->field('id,title')->where(array('pid' => array('in', $twos),'level'=>'1'))->select();
             //print_r($category['level2']);die;
-            $category['level3'] = $Category->field('id,title')->where(array('pid' => array('in', $pids_str)))->select();
+            $category['level3'] = $Category->field('id,title')->where(array('pid' => array('in', $pids_str),'level'=>'2'))->select();
 
         }
         $category_str = is_array($category_arr) ? implode(',', $category_arr) : trim($category_arr, ',');
         $category['selected'] = $category_str;
         return $category;
     }
+
+//    /**
+//     *版本二
+//     * 获取商品所属分类信息
+//     * @param  产品id
+//     * @return array
+//     */
+//    public function CategoryInfo($id)
+//    {
+//
+//
+//        $info = M()
+//            ->field('b.id,b.level,b.pid')
+//            ->table('__PRODUCT_CATEGORY__ a')
+//            ->join('__CATEGORY__ b ON  a.category_id = b.id')
+//            ->where(array('a.product_id' => $id))
+//            ->select();
+//
+//        $category_arr=array_column($info,'id');
+//
+//
+//        //TODO  待优化
+//        $category = array();
+//        $category['level2'] = array();
+//        $category['level3'] = array();
+//
+//
+//        $list= M('Category')->field('id,title,pid,level,status')->where(array('status'=>'1'))->select();
+//
+//
+//        $pids=array_column($info,'pid');
+//
+//
+//        if ($info[0]['level'] == 0) {
+//
+//
+//
+//            foreach($list as &$val){
+//                if(in_array($val['pid'],$category_arr)){
+//                    $category['level2'][]=$val;
+//                }
+//            }
+//
+//
+//
+//            $lthreepids=array_column($category['level2'],'id');
+//
+//
+//            if (!empty($lthreepids)) {
+//
+//
+//                foreach($list as &$tre){
+//                    if(in_array($tre['pid'],$lthreepids)){
+//                        $category['level3'][]=$tre;
+//                    }
+//                }
+//
+//
+//            } else {
+//                $category['level3'] = array();
+//            }
+//
+//
+//        }
+//        if ($info[0]['level'] == 1) {
+//
+//
+//
+//            $category_arr = array_merge($category_arr, $pids);
+//
+//
+//            foreach($list as &$val){
+//                if(in_array($val['pid'],$pids)){
+//                    $category['level2'][]=$val;
+//                }
+//            }
+//
+//
+//            $lthreepids=array_column($category['level2'],'id');
+//
+//
+//            foreach($list as &$tre){
+//                if(in_array($tre['pid'],$lthreepids)){
+//                    $category['level3'][]=$tre;
+//                }
+//            }
+//
+//
+//        }
+//        if ($info[0]['level'] == 2) {
+//
+//            $pid=array();
+//            foreach($list as &$val){
+//                if(in_array($val['id'],$pids)){
+//                    $pid[]=$val;
+//                }
+//                if(in_array($val['pid'],$pids)){
+//                    $category['level3'][]=$val;
+//                }
+//            }
+//
+//
+//            $two=array_column($pid,'pid');
+//            $category_arr=array_merge($category_arr,array_column($pid,'id'));
+//
+//            $one=array();
+//            foreach($list as &$tre){
+//                if(in_array($tre['id'],$two)){
+//                    $one[]=$tre;
+//                }
+//                if(in_array($tre['pid'],$two)){
+//                    $category['level2'][]=$tre;
+//                }
+//            }
+//
+//
+//            $category_arr=array_merge($category_arr,array_column($one,'id'));
+//
+//
+//        }
+//
+//
+//        $category_str = is_array($category_arr) ? implode(',', $category_arr) : trim($category_arr, ',');
+//        $category['selected'] = $category_str;
+//        return $category;
+//    }
+
+
+
+//    /**
+//     * 获取商品所属分类信息
+//     * @param  产品id
+//     * @return array
+//     */
+//    public function CategoryInfo($id)
+//    {
+//        $category = array();
+//        $product_category = M(self::PRODUCT_CATEGORY)->where(array('product_id' => $id))->select();
+//        $category_arr = array();
+//        foreach ($product_category as &$v) {
+//            $category_arr[] = $v['category_id'];
+//        }
+//        //TODO  待优化
+//        $category['level2'] = array();
+//        $category['level3'] = array();
+//        $Category = M('Category');
+//        $info = $Category->field('id,level,pid')->where(array('id' => array('in', $category_arr)))->select();
+//        $pids = array();
+//        $ids = array();
+//        foreach ($info as &$k) {
+//            $pids[] = $k['pid'];
+//            $ids[] = $k['id'];
+//        }
+//        $pids_str = is_array($pids) ? implode(',', $pids) : trim($pids, ',');
+//        $ids_str = is_array($ids) ? implode(',', $ids) : trim($ids, ',');
+//        if ($info[0]['level'] == 0) {
+//            $category['level2'] = $Category->field('id,title')->where(array('pid' => array('in', $ids_str),'level'=>'1'))->select();
+//            $lthreepids = array();
+//            foreach ($category['level2'] as &$k) {
+//                $lthreepids[] = $k['id'];
+//            }
+//            $lthreepids = is_array($lthreepids) ? implode(',', $lthreepids) : trim($lthreepids, ',');
+//            if (!empty($lthreepids)) {
+//                $category['level3'] = $Category->field('id,title')->where(array('pid' => array('in', $lthreepids),'level'=>'2'))->select();
+//            } else {
+//                $category['level3'] = array();
+//            }
+//
+//
+//        }
+//        if ($info[0]['level'] == 1) {
+//            $pids_arrs = is_array($pids_str) ? $pids_str : explode(',', trim($pids_str, ','));
+//            $category_arr = array_merge($category_arr, $pids_arrs);
+//            $category['level2'] = $Category->field('id,title')->where(array('pid' => array('in', $pids_str),'level'=>'1'))->select();
+//            $lthreepids = array();
+//            foreach ($category['level2'] as &$k) {
+//                $lthreepids[] = $k['id'];
+//            }
+//            $lthreepids = is_array($lthreepids) ? implode(',', $lthreepids) : trim($lthreepids, ',');
+//            $category['level3'] = $Category->field('id,title')->where(array('pid' => array('in', $lthreepids),'level'=>'2'))->select();
+//
+//        }
+//        if ($info[0]['level'] == 2) {
+//            $pid = $Category->field('id,pid')->where(array('id' => array('in', $pids_str)))->select();
+//            $two = array();
+//            foreach ($pid as &$k) {
+//                $two[] = $k['pid'];
+//                $category_arr[] = $k['id'];
+//            }
+//            $twos = is_array($two) ? implode(',', $two) : trim($two, ',');
+//            $one = $Category->field('id,title')->where(array('id' => array('in', $twos)))->select();
+//            foreach ($one as &$k) {
+//                $category_arr[] = $k['id'];
+//            }
+//            $category['level2'] = $Category->field('id,title')->where(array('pid' => array('in', $twos),'level'=>'1'))->select();
+//            //print_r($category['level2']);die;
+//            $category['level3'] = $Category->field('id,title')->where(array('pid' => array('in', $pids_str),'level'=>'2'))->select();
+//
+//        }
+//        $category_str = is_array($category_arr) ? implode(',', $category_arr) : trim($category_arr, ',');
+//        $category['selected'] = $category_str;
+//        return $category;
+//    }
 
     /**
      * 审核商品
@@ -337,6 +574,7 @@ class ProductModel extends Model
         $info['status'] = 1;
         if (false !== $this->save($info)) {
             D('MerchantDepot')->where(array('product_id' => $product_id))->setField('status', 1);
+
             return true;
         } else {
             $this->error = '审核失败 ';
@@ -353,9 +591,10 @@ class ProductModel extends Model
     {
         //修改状态
         $data['id'] = $product_id;
-        $data['message'] = I('reason');
+        $data['message'] = I('post.reason');
         $data['status'] = 3;
-        return $this->save($data);
+
+        return  $this->save($data);
     }
 
     /**

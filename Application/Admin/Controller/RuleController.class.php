@@ -16,6 +16,8 @@ class RuleController extends AdminController{
         $tree = D('AuthRule')->getTree(0,'id,title,level,pid,status,url');
         $this->assign('_list', $tree);
         $this->meta_title = '用户组管理';
+        // 记录当前列表页的cookie
+        Cookie('__forward__',$_SERVER['REQUEST_URI']);
         $this->display();
     }
     /**
@@ -26,7 +28,14 @@ class RuleController extends AdminController{
 
         $AuthRule = D('AuthRule');
         if (IS_POST) {
-            if(false !== $AuthRule->update()){
+
+            $result=$AuthRule->update();
+
+            if(false !== $result){
+
+                //记录行为
+                action_log('admin_add_menu','AuthRule',$result,UID,1);
+
                 $this->success('新增成功！');
             } else {
                 $error = $AuthRule->getError();
@@ -58,6 +67,10 @@ class RuleController extends AdminController{
 
         if(IS_POST){ //提交表单
             if(false !== $AuthRule->update()){
+
+                //记录行为
+                action_log('admin_update_menu','AuthRule',$id,UID,1);
+
                 $this->success('编辑成功！', U('index'));
             } else {
                 $error = $AuthRule->getError();

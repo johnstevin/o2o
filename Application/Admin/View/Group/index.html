@@ -28,7 +28,7 @@
                     '<a class="ajax-get" href="{:U("Group/changeStatus")}&method=forbid&id='+ v.id+'">禁用</a>&nbsp;&nbsp;'+
                     '<a class="ajax-get" href="{:U("Group/changeStatus")}&method=resume&id='+ v.id+'">启用</a>&nbsp;&nbsp;'+
                     '<a class="confirm ajax-get" href="{:U("Group/changeStatus")}&method=delete&id='+ v.id+'">删除</a></td>'+
-                    '<td>http://{$http_host}{:U("Public/register")}&group_id='+v.id+'</td>'+
+                    '<td><input type="text" value="http://{$http_host}{:U("Public/register")}&key='+v.group_key+'"/></td>'+
                     '</tr>';
                     if (v._child) {
                         digui(v._child, level + 1);

@@ -143,6 +143,12 @@ class AccessController extends AdminController
         }
 
         if ($AuthAccess->addToRole($uid, $gid)) {
+
+
+            //记录行为
+            action_log('admin_authorize','AuthAccess',$uid,UID,1);
+
+
             $this->success('操作成功');
         } else {
             $this->error($AuthAccess->getError());
@@ -170,6 +176,10 @@ class AccessController extends AdminController
             $this->error($AuthRule->error);
         }
         if ($AuthRule->addToRule($role, $rule)) {
+
+            //记录行为
+            action_log('admin_add_rule','AuthRoleRule',$role,UID,1);
+
             $this->success('操作成功');
         } else {
             $this->error($AuthRule->getError());

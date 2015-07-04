@@ -18,6 +18,8 @@ class NormsController extends AdminController
         $list = int_to_string($list);
         $this->assign('_list', $list);
         $this->meta_title = '规格管理';
+        // 记录当前列表页的cookie
+        Cookie('__forward__',$_SERVER['REQUEST_URI']);
         $this->display();
     }
 
@@ -27,7 +29,12 @@ class NormsController extends AdminController
 
         if (IS_POST) {
             $Norms = D('Norms');
-            if (false !== $Norms->update()) {
+            $result=$Norms->update();
+            if (false !== $result) {
+
+                //记录行为
+                action_log('admin_add_norm','norms',$result,UID,1);
+
                 $this->success('新增成功！', U('index'));
             } else {
                 $error = $Norms->getError();
@@ -46,6 +53,10 @@ class NormsController extends AdminController
         $Norms = D('Norms');
         if (IS_POST) { //提交表单
             if (false !== $Norms->update()) {
+
+                //记录行为
+                action_log('admin_update_norm','norms',$id,UID,1);
+
                 $this->success('编辑成功！', U('index'));
             } else {
                 $error = $Norms->getError();

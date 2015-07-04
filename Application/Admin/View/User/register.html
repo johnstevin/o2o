@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
-    <title>{:C('WEB_SITE_TITLE')}</title>
+    <title>社区O2O平台</title>
     <!-- Bootstrap -->
     <link rel="stylesheet" type="text/css" href="__STATIC__/bootstrap/css/bootstrap.min.css">
 </head>
@@ -35,15 +35,34 @@
                     <label for="email">邮箱</label>
                     <input type="text" class="form-control" id="email" name="email" placeholder="邮箱">
                 </div>
+
+
                 <div class="form-group">
-                    <label for="mobile">手机</label>
-                    <input type="text" class="form-control" id="mobile" name="mobile" placeholder="手机号码">
+                    <div>
+                        <label>手机</label>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-7 col-sm-8 col-md-8">
+                            <input type="text" class="form-control" id="mobile" name="mobile" placeholder="手机号码">
+                        </div>
+                        <div class="col-xs-5 col-sm-4 col-md-4">
+                            <button type="button" class="btn btn-default btn-block" onclick="getVerifyCode()">获取验证码
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
 
-                <button type="button" class="btn btn-default" onclick="register()">注册</button>
+                <div class="form-group">
+                    <label for="verify_code">短信验证码</label>
+                    <input type="text" class="form-control" id="verify_code" name="verify_code"
+                           placeholder="短信验证码">
+                </div>
+
+                <button type="button" class="btn btn-info btn-block" onclick="register()">注册</button>
             </form>
 
-            <div  id="msg"  class="alert" role="alert"></div>
+            <div  id="msg"  ></div>
         </div>
         <div class="colcol-md-offset-2 col-md-4">
             已经有账号？<br>
@@ -60,6 +79,23 @@
 </body>
 </html>
 <script>
+    function getVerifyCode() {
+        var target = "{:U('getVerifyCode')}";
+        var mobile = $("#mobile").val();
+        if (mobile == "") {
+            $('#msg').html("手机号不能为空！");
+            $("#mobile").focus();
+            return false;
+        }
+        $.get(target, {"mobile": mobile}, function (data) {
+            //TODO
+            if(data.status){
+                $('#msg').html("发送成功！");
+            }else{
+                $('#msg').html("发送失败！错误原因:" + data.info);
+            }
+        });
+    }
 
     function register() {
         var username=$("#username").val();
@@ -68,7 +104,7 @@
         var repassword = $("#repassword").val();
         var email=$("#email").val();
         var verify_code = $('#verify_code').val();
-        var group_id = "{:I('group_id')}";
+        var group_id = "{:I('key')}";
         if (group_id == '' || group_id == null) {
             $('#msg').html("注册失败！非法注册,请重新刷新！");
             //};
@@ -87,7 +123,7 @@
         }
 
         if(password!=repassword){
-            ('#msg').html("两次密码输入不一致！");
+            $('#msg').html("两次密码输入不一致！");
             $("#repassword").focus();
             return false;
         }
@@ -106,7 +142,8 @@
                 "group_id": group_id,
                 "is_admin": '1',
                 "email":email,
-                "repassword":repassword
+                "repassword":repassword,
+                "verify_code":verify_code
             },
             beforeSend: function () {
                 $('#msg').html("正在注册...");
