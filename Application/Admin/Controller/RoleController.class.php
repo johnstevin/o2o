@@ -45,12 +45,13 @@ class RoleController extends AdminController
 
         $cate = array_merge(array(0=>array('id'=>0,'title_show'=>'请选择组织')), $cate);
 
-        //Cookie('__forward__', $_SERVER['REQUEST.']);
         $this->assign('_list', $list);
         $this->assign('_use_tip', true);
         $this->assign('auth_group', $cate);
         $this->assign('selected_group', $group_id);
         $this->meta_title = '角色管理';
+        // 记录当前列表页的cookie
+        Cookie('__forward__',$_SERVER['REQUEST_URI']);
         $this->display();
 
     }
@@ -63,7 +64,13 @@ class RoleController extends AdminController
 
         $AuthRole = D('AuthRole');
         if (IS_POST) {
-            if (false !== $AuthRole->update()) {
+
+            $result=$AuthRole->update();
+            if (false !== $result) {
+
+                //记录行为
+                action_log('admin_add_role','AuthRole',$result,UID,1);
+
                 $this->success('新增成功！', U('index'));
             } else {
                 $error = $AuthRole->getError();
@@ -92,6 +99,10 @@ class RoleController extends AdminController
 
         if (IS_POST) { //提交表单
             if (false !== $AuthRole->update()) {
+
+                //记录行为
+                action_log('admin_update_role','AuthRole',$id,UID,1);
+
                 $this->success('编辑成功！', U('index'));
             } else {
                 $error = $AuthRole->getError();

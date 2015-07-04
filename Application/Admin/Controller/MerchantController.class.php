@@ -28,6 +28,8 @@ class MerchantController extends AdminController
             $this->assign('_meta_title', '商户列表');
             $this->assign('_list', $result['data']);
             $this->assign('_page', $result['_page']);
+            // 记录当前列表页的cookie
+            Cookie('__forward__',$_SERVER['REQUEST_URI']);
             $this->display();
         }
 
@@ -67,6 +69,11 @@ class MerchantController extends AdminController
             if (strtolower($method) == 'pass') {
                 ($status !=='1')?:$this->error('已经审核过的不能再次审核');
                 if (false !== $MerchantShop->saveCheckInfo($shop_id)) {
+
+
+                                    //记录行为
+                action_log('admin_pass_shop','MerchantShop',$shop_id,UID,1);
+
                     $this->success('保存成功');
                 } else {
                     $error = $MerchantShop->getError();
@@ -75,6 +82,11 @@ class MerchantController extends AdminController
             } else if (strtolower($method) == 'unpass') {
                 ($status !=='1')?:$this->error('已经审核过的不能再次审核');
                 if (false !== $MerchantShop->saveUnPassReason($shop_id)) {
+
+
+
+                    action_log('admin_unpass_shop','MerchantShop',$shop_id,UID,1);
+
                     $this->success('保存成功');
                 } else {
                     $error = $MerchantShop->getError();

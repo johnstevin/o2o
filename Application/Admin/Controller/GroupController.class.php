@@ -19,6 +19,8 @@ class GroupController extends AdminController
         $this->assign('_list', $tree);
         $this->meta_title = '组织机构管理';
         $this->assign('http_host', $_SERVER['HTTP_HOST']);
+        // 记录当前列表页的cookie
+        Cookie('__forward__',$_SERVER['REQUEST_URI']);
         $this->display();
     }
 
@@ -49,12 +51,20 @@ class GroupController extends AdminController
                 //商户组的不再保存区域
                 if (C('AUTH_GROUP_ID')['MERCHANT_GROUP_ID'] == $pid) {
                     M()->commit();
+
+                    //记录行为
+                    action_log('admin_add_group','AuthGroup',$result,UID,1);
+
                     $this->success('新增成功！');
                 }
 
                 /* 添加或更新数据 */
                 if (false !== $AuthGroup->saveRegion($result)) {
                     M()->commit();
+
+                    //记录行为
+                    action_log('admin_add_group','AuthGroup',$result,UID,1);
+
                     $this->success('新增成功！');
                 } else {
                     M()->rollback();
@@ -100,6 +110,11 @@ class GroupController extends AdminController
         //$Region=D('Region');
         if (IS_POST) { //提交表单
             if (false !== $AuthGroup->update()) {
+
+
+                //记录行为
+                action_log('admin_update_group','AuthGroup',$id,UID,1);
+
                 $this->success('编辑成功！');
             } else {
                 $error = $AuthGroup->getError();

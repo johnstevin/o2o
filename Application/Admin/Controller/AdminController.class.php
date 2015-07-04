@@ -203,11 +203,15 @@ class AdminController extends Controller
         } else {
             $listRows = C('LIST_ROWS') > 0 ? C('LIST_ROWS') : 10;
         }
-//        $page = new \Think\Page($total, $listRows, $REQUEST);
-        $page = new \Think\Page($total, $listRows);
+        $page = new \Think\Page($total, $listRows, $REQUEST['r']);
+//        $page = new \Think\Page($total, $listRows);
         //if ($total > $listRows) {
             $page->setConfig('theme', '%FIRST% %UP_PAGE% %LINK_PAGE% %DOWN_PAGE% %END% %HEADER%');
        // }
+
+        foreach($where as $key=>$val) {
+            $page->parameter[$key]   =   urlencode($val);
+        }
         $p = $page->show();
         $this->assign('_page', $p ? $p : '');
         $this->assign('_total', $total);
@@ -240,6 +244,13 @@ class AdminController extends Controller
 
         $msg = array_merge(array('success' => '操作成功！', 'error' => '操作失败！', 'url' => '', 'ajax' => IS_AJAX), (array)$msg);
         if (M($model)->where($where)->save($data) !== false) {
+
+
+
+            //记录行为
+            action_log('admin_update_status', $model, $id, UID,1);
+
+
             $this->success($msg['success'], $msg['url'], $msg['ajax']);
         } else {
             $this->error($msg['error'], $msg['url'], $msg['ajax']);

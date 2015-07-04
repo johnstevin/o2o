@@ -11,6 +11,8 @@ class CategoryController extends AdminController
         $tree = D('Category')->getTree(0, 'id,title,description,level,pid,status,sort');
         $this->assign('tree', $tree);
         $this->meta_title = '分类管理';
+        // 记录当前列表页的cookie
+        Cookie('__forward__',$_SERVER['REQUEST_URI']);
         $this->display();
     }
 
@@ -19,7 +21,12 @@ class CategoryController extends AdminController
     {
         $Category = D('Category');
         if (IS_POST) {
-            if (false !== $Category->update()) {
+            $result=$Category->update();
+            if (false !== $result) {
+
+                //记录行为
+                action_log('admin_add_category', 'category', $result, UID,1);
+
                 $this->success('新增成功！', U('index'));
             } else {
                 $error = $Category->getError();
@@ -50,6 +57,11 @@ class CategoryController extends AdminController
         $Category = D('Category');
         if (IS_POST) { //提交表单
             if (false !== $Category->update()) {
+
+                //记录行为
+                action_log('admin_update_category', 'category', $id, UID,1);
+
+
                 $this->success('编辑成功！', U('index'));
             } else {
                 $error = $Category->getError();
@@ -63,8 +75,9 @@ class CategoryController extends AdminController
                 if (!($cate && 1 == $cate['status'])) {
                     $this->error('指定的上级用户组不存在或被禁用！');
                 }
+                ++$cate['level'];
             }
-            ++$cate['level'];
+
             /* 获取分类信息 */
             $info = $id ? $Category->info($id) : '';
             $this->assign('info', $info);
@@ -126,6 +139,11 @@ class CategoryController extends AdminController
                 $this->error($Brand->error);
             }
             if ($Category->addCategoryBrand($id, $brands)) {
+
+                //记录行为
+                action_log('admin_relation_brand', 'CategoryBrandNorms', $id, UID,1);
+
+
                 $this->success('操作成功');
             } else {
                 $this->error($Category->getError());
@@ -173,6 +191,11 @@ class CategoryController extends AdminController
                 }
             }
             if ($Category->addCategoryNorm($id, $norms)) {
+
+                //记录行为
+                action_log('admin_relation_norm', 'CategoryBrandNorms', $id, UID,1);
+
+
                 $this->success('操作成功');
             } else {
                 $this->error($Category->getError());

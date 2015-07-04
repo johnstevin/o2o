@@ -75,9 +75,12 @@ class AuthRuleModel extends Model{
         /* 添加或更新数据 */
         if(empty($data['id'])){
             $res = $this->add();
+
         }else{
             $res = $this->save();
+
         }
+
 
         return $res;
     }
@@ -158,6 +161,7 @@ class AuthRuleModel extends Model{
             }
             return false;
         }else{
+
             return true;
         }
     }

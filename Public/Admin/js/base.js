@@ -219,7 +219,11 @@ function onSuccess(result) {
 	if (result.status) {
 		$('#DlgModal').modal('hide');
 		//更新内容
-	   var target= $('#rg-container-fun').attr("href")
+	   //var target= $('#rg-container-fun').attr("href");
+        var target=getCookie('o2o_admin___forward__')
+        if(target==""||target==null){
+            target= $('#rg-container-fun').attr("href");
+        }
 		contentload(target);
 
 		Messenger().post({
@@ -247,7 +251,11 @@ function onSuccess(result) {
 function ajaxSuccess(result) {
 	if (result.status) {
 		//更新内容
-		var target= $('#rg-container-fun').attr("href")
+		//var target= $('#rg-container-fun').attr("href");
+        var target=getCookie('o2o_admin___forward__')
+        if(target==""||target==null){
+            target= $('#rg-container-fun').attr("href");
+        }
 		contentload(target);
 
 		Messenger().post({

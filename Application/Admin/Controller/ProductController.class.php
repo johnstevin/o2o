@@ -42,6 +42,8 @@ class ProductController extends AdminController
         $list = int_to_string($list, array('status' => array(1 => '正常', -1 => '删除', 0 => '禁用', 2 => '待审核', 3 => '审核未通过')));
         $this->assign('_list', $list);
         $this->meta_title = '商品管理';
+        // 记录当前列表页的cookie
+        Cookie('__forward__',$_SERVER['REQUEST_URI']);
         $this->display();
     }
 
@@ -58,6 +60,10 @@ class ProductController extends AdminController
             if (false !== $result) {
                 /* 添加或更新数据 */
                 if ($Product->saveCategory($result)) {
+
+                    //记录行为
+                    action_log('admin_add_product','product',$result,UID,1);
+
                     M()->commit();
                     $this->success('新增成功！', U('index'));
                 } else {
@@ -124,6 +130,10 @@ class ProductController extends AdminController
                 /* 添加或更新数据 */
                 if ($Product->saveCategory($id)) {
                     M()->commit();
+
+                    //记录行为
+                    action_log('admin_edit_product','product',$id,UID,1);
+
                     $this->success('编辑成功！', U('index'));
                 } else {
                     M()->rollback();
@@ -185,7 +195,12 @@ class ProductController extends AdminController
                 break;
             case 'delete':
                 $Product = D('Product');
-                if ($Product->deleteProduct(I('id'))) {
+                $Product_id=I('id');
+                if ($Product->deleteProduct($Product_id)) {
+
+                    //记录行为
+                    action_log('admin_delete_product','product',$Product_id,UID,1);
+
                     $this->success('删除成功！', U('index'));
                 } else {
                     $error = $Product->getError();
@@ -212,6 +227,10 @@ class ProductController extends AdminController
             if (strtolower($method) == 'pass') {
                 ($status !== '1') ?: $this->error('已经审核过的不能再次审核');
                 if (false !== $Product->auditProduct($Product_id)) {
+
+                    //记录行为
+                    action_log('admin_pass_product','product',$Product_id,UID,1);
+
                     $this->success('保存成功');
                 } else {
                     $error = $Product->getError();
@@ -220,6 +239,10 @@ class ProductController extends AdminController
             } else if (strtolower($method) == 'unpass') {
                 ($status !== '1') ?: $this->error('已经审核过的不能再次审核');
                 if (false !== $Product->saveUnPassReason($Product_id)) {
+
+                    //记录行为
+                    action_log('admin_unpass_product','product',$Product_id,UID,1);
+
                     $this->success('保存成功');
                 } else {
                     $error = $Product->getError();

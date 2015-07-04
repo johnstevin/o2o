@@ -20,9 +20,9 @@ class PublicController extends Controller {
     public function login($username = null, $password = null, $verify = null){
         if(IS_POST){
             /* 检测验证码 TODO: */
-            //if(!check_verify($verify)){
-            //    $this->error('验证码输入错误！');
-            //}
+            if(!check_verify($verify)){
+                $this->error('验证码输入错误！');
+            }
             $Ucenter = D('UcenterMember');
             $uid = $Ucenter->login($username, $password, 5);
             if(0 < $uid){
@@ -62,25 +62,25 @@ class PublicController extends Controller {
     public function register(){
 
         if(IS_POST){
-            $verify      = I('post.verify');
+            $verify_code = I('post.verify_code');
             $mobile      = I('post.mobile');
             $password    = I('post.password');
-            $repassword    = I('post.repassword');
+            $repassword  = I('post.repassword');
             $username    = I('post.username');
             $email       = I('post.email');
             $group_id    = I('post.group_id');
             $is_admin    = I('post.is_admin',1);
 
-            /* 检测验证码 */
-            //if(!check_verify($verify)){
-            //    $this->error('验证码输入错误！');
-            //}
+            ///* 检测短信验证码 */
+            if(!$verify_code||!verify_sms_code($mobile,$verify_code)){
+                $this->error('验证码输入错误！');
+            }
 
             empty($password) && $this->error('请输入新密码');
 
             empty($repassword) && $this->error('请输入确认密码');
 
-            if($password== $repassword){
+            if($password!== $repassword){
                 $this->error('您输入的新密码与确认密码不一致');
             }
 
@@ -148,7 +148,21 @@ class PublicController extends Controller {
         }
         return $error;
     }
+    /**
+     * 获得验证码
+     * @author WangJiang
+     * @param $mobile
+     * @return json
+     */
+    public function getVerifyCode($mobile){
+        try{
+            send_sms_code($mobile);
+            $this->success("发送成功");
 
+        }catch (\Exception $ex){
+            $this->error("发送失败");
+        }
+    }
     /**
      * 退出登陆
      */

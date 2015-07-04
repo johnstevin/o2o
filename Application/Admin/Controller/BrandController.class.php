@@ -24,6 +24,8 @@ class BrandController extends AdminController
         $list = int_to_string($list);
         $this->assign('_list', $list);
         $this->meta_title = '品牌管理';
+        // 记录当前列表页的cookie
+        Cookie('__forward__',$_SERVER['REQUEST_URI']);
         $this->display();
     }
 
@@ -32,7 +34,12 @@ class BrandController extends AdminController
     {
         $Brand = D('Brand');
         if (IS_POST) {
-            if (false !== $Brand->update()) {
+            $result=$Brand->update();
+            if (false !== $result) {
+
+                //记录行为
+                action_log('admin_add_brand','brand',$result,UID,1);
+
                 $this->success('新增成功！', U('index'));
             } else {
                 $error = $Brand->getError();
@@ -51,6 +58,10 @@ class BrandController extends AdminController
         $Brand = D('Brand');
         if (IS_POST) { //提交表单
             if (false !== $Brand->update()) {
+
+                //记录行为
+                action_log('admin_update_brand','brand',$id,UID,1);
+
                 $this->success('编辑成功！', U('index'));
             } else {
                 $error = $Brand->getError();

@@ -22,6 +22,10 @@ return [
     /* 文档模型配置 (文档模型核心配置，请勿更改) */
     'DATE_FORMAT' => 'Y-m-d H:i:s',
 
+    /* 系统数据加密设置 */
+    'DATA_AUTH_KEY' => '$5sdhnr4%#^d9smjf&345sfsdb2f4%*)&*)@#@!$sanhgh645#@#sdf', //默认数据加密KEY
+
+
     /* 权限组配置-数据库id值 */
     'AUTH_GROUP_ID' => [
         'GROUP_ID_MERCHANT' => 2,   //总商户组

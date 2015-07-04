@@ -16,7 +16,7 @@ class RegionModel extends Model
      * @param bool $field 查询字段
      * @return mixed
      */
-    public function info($id, $field = true)
+    public function info($id, $field = 'id,name,pid,level,status,astext(lnglat) as lnglat,remark')
     {
         $map = array();
         if (is_numeric($id)) {//通过id来查询
@@ -24,7 +24,11 @@ class RegionModel extends Model
         } else {//通过标题来查询
             $map['name'] = $id;
         }
-        return $this->field($field)->where($map)->find();
+        $region=  $this->field($field)->where($map)->find();
+        if(!empty($region['lnglat'])){
+            $region['lnglat']= str_replace(' ',',',substr($region['lnglat'],6,-1));
+        }
+        return $region;
     }
 
 
@@ -64,15 +68,24 @@ class RegionModel extends Model
     public function update()
     {
         $data = $this->create();
+        $lnglat=I('lnglat');
+
         if (!$data) { //数据对象创建错误
             return false;
         }
         /* 添加或更新数据 */
         if (empty($data['id'])) {
-            $res = $this->add();
+
+            $res =$this->execute("INSERT INTO __REGION__ (name,pid,level,lnglat,remark,status) VALUES ('".$data['name']."','".$data['pid']."','".$data['level']."',point($lnglat),'".$data['remark']."',1)");
+//            $res = $this->add();
+
         } else {
-            $res = $this->save();
+            $region_id= $data['id'];
+            $res =  $this->execute("update __REGION__ set name='".$data['name']."',pid='".$data['pid']."',level='".$data['level']."', lnglat=point($lnglat),remark='".$data['name']."' where id=$region_id");
+//            $res = $this->save();
+
         }
+
         return $res;
     }
 
@@ -149,7 +162,11 @@ class RegionModel extends Model
             return $this->error="参数非法";
         }
        // $Model = new \Think\Model();
+
+
         return  $this->execute("update __REGION__ set lnglat=point($lnglat) where id=$region_id");
+
+
         // 要修改的数据对象属性赋值
 //        $data['lnglat'] = $lnglat;
 //        return  $this->where(array('id'=>$region_id))->save($data);

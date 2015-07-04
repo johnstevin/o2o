@@ -93,6 +93,7 @@ class AuthGroupModel extends Model
                     unset($list[$key]);
                     continue;
                 }
+                $data['group_key']=think_encrypt($data['id']);
             }
 
             $userGroup = D('Tree')->toTree($list, $pk = 'id', $pid = 'pid', $child = '_child');
@@ -104,7 +105,14 @@ class AuthGroupModel extends Model
                 $info = $this->info($id);
                 $id = $info['id'];
             }
+
+            foreach ($list as $key => &$data) {
+
+                $data['group_key']=think_encrypt($data['id']);
+            }
             $list = list_to_tree($list, $pk = 'id', $pid = 'pid', $child = '_child', $root = $id);
+
+
             /* 获取返回数据 */
             if (isset($info)) { //指定组织则返回当前组织极其子组织
                 $info['_child'] = $list;
@@ -142,6 +150,7 @@ class AuthGroupModel extends Model
             }
 
             $res = $this->add();
+
         } else {
 
             /* 权限控制*/
@@ -152,6 +161,7 @@ class AuthGroupModel extends Model
                 }
             }
             $res = $this->save();
+
         }
 
         return $res;
