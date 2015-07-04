@@ -451,14 +451,15 @@ class OrderModel extends RelationModel
      * @param int $userId 用户ID
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
+     * @param null|int $deliveryMode 配送方式
      * @param bool $getShop 是否获得店铺信息
      * @param bool $getUser 是否获得用户信息
      * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getListsByUserId($userId, $status = null, $payStatus = null, $getShop = false, $getUser = false, $getProducts = true)
+    public static function getListsByUserId($userId, $status = null, $payStatus = null, $deliveryMode = null, $getShop = false, $getUser = false, $getProducts = true)
     {
-        return self::getInstance()->getLists(null, $userId, $status, $payStatus, $getShop, $getUser, $getProducts);
+        return self::getInstance()->getLists(null, $userId, $status, $payStatus, $deliveryMode, $getShop, $getUser, $getProducts);
     }
 
     /**
@@ -468,14 +469,15 @@ class OrderModel extends RelationModel
      * @param int $shopId 商铺ID
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
+     * @param null|int $deliveryMode 配送方式
      * @param bool $getShop 是否获得店铺信息
      * @param bool $getUser 是否获得用户信息
      * @param bool $getProducts 是否查询订单下的商品列表
      * @return array|null
      */
-    public static function getListsByShopId($shopId, $status = null, $payStatus = null, $getShop = false, $getUser = false, $getProducts = true)
+    public static function getListsByShopId($shopId, $status = null, $payStatus = null, $deliveryMode = null, $getShop = false, $getUser = false, $getProducts = true)
     {
-        return self::getInstance()->getLists($shopId, null, $status, $payStatus, $getShop, $getUser, $getProducts);
+        return self::getInstance()->getLists($shopId, null, $status, $payStatus, $deliveryMode, $getShop, $getUser, $getProducts);
     }
 
     /**
@@ -486,13 +488,14 @@ class OrderModel extends RelationModel
      * @param null|int $userId 用户ID
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
+     * @param null|int $deliveryMode 配送方式
      * @param bool $getShop 是否获得店铺信息
      * @param bool $getUser 是否获得用户信息
      * @param bool $getProducts 是否查询订单下的商品列表
      * @param int $pageSize 分页大小
      * @return array|null
      */
-    public function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $getShop = false, $getUser = false, $getProducts = false, $pageSize = 10)
+    public function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $deliveryMode = null, $getShop = false, $getUser = false, $getProducts = false, $pageSize = 10)
     {
         if (!empty($shopId)) {
             $where['o.shop_id'] = intval($shopId);
@@ -508,12 +511,19 @@ class OrderModel extends RelationModel
         if (!empty($shopId) && !empty($userId)) {
             $where['o.pid'] = 0;
         }
-        if ($status !== null && in_array($status, array_keys(self::getStatusOptions()))) {
-            $where['o.status'] = $status;
+        if ($status !== null) {
+            $status = is_array($status) ?: explode(',', $status);
+            $where['o.status'] = [
+                'IN',
+                $status
+            ];
         } else {
             $where['o.status'] = ['NEQ', self::STATUS_DELETE];
         }
-        if (!empty($payStatus) && in_array($payStatus, array_keys(self::getPayStatusOptions()))) $where['o.pay_status'] = $payStatus;
+        if ($payStatus !== null && in_array($payStatus, array_keys(self::getPayStatusOptions()))) $where['o.pay_status'] = $payStatus;
+        if ($deliveryMode !== null) {
+            $where['delivery_mode'] = intval($deliveryMode);
+        }
         $fields = [
             'o.*'
         ];
@@ -548,6 +558,7 @@ class OrderModel extends RelationModel
         $total = $totalModel->count();
         $pagination = new Page($total, $pageSize);
         $data = $model->relation('_childs')->field($fields)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+        $orderItemModel = M('OrderItem');
         foreach ($data as &$item) {
             if ($getUser) {
                 $item['_user'] = [
@@ -577,10 +588,36 @@ class OrderModel extends RelationModel
             if ($getProducts) {
                 if (empty($item['_childs'])) {
                     $item['_products'] = self::getProductsByOrderId($item['id']);
+                    $item['_products'] = $orderItemModel->field([
+                        'oi.depot_id',
+                        'p.title',
+                        'p.id product_id',
+                        'md.price',
+                        'oi.total',
+                        'p.detail',
+                        'n.title norm',
+                        'product_picture.path picture_path'
+                    ])->alias('oi')->where(['oi.order_id' => $item['id']])->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
+                        ->join('LEFT JOIN sq_product p ON md.product_id=p.id')->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
+                        ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
+                        ->select();
                 } else {
                     $item['_products'] = [];
                     foreach ($item['_childs'] as &$child) {
                         $child['_products'] = self::getProductsByOrderId($child['id']);
+                        $child['_products'] = $orderItemModel->field([
+                            'oi.depot_id',
+                            'p.title',
+                            'p.id product_id',
+                            'md.price',
+                            'oi.total',
+                            'p.detail',
+                            'n.title norm',
+                            'product_picture.path picture_path'
+                        ])->alias('oi')->where(['oi.order_id' => $child['id']])->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
+                            ->join('LEFT JOIN sq_product p ON md.product_id=p.id')->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
+                            ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
+                            ->select();
                     }
                 }
             }
@@ -604,91 +641,9 @@ class OrderModel extends RelationModel
         return $order['_products'];
     }
 
-    public function initOrder($cart, $deliveryMode = self::DELIVERY_MODE_DELIVERY, $deliveryTime = null, $split = true)
+    public function initOrder($cart, $deliveryMode = self::DELIVERY_MODE_DELIVERY, $deliveryTime = null, $lng, $lat, $split = true)
     {
         $cart = is_array($cart) ? $cart : json_decode($cart, true);
-//        $cart = [
-//            [
-//                'product_id' => 1,
-//                'depot_id' => 1,
-//                'total' => 2,
-//                'shop_id' => [
-//                    5, 15, 45, 101, 102, 115
-//                ]
-//            ],
-//            [
-//                'product_id' => 2,
-//                'depot_id' => 16,
-//                'total' => 2,
-//                'shop_id' => [
-//                    1, 6, 9, 10, 11, 13, 15, 17, 18, 19, 20, 22, 23, 25, 29, 30
-//                ]
-//            ],
-//            [
-//                'product_id' => 3,
-//                'depot_id' => 131,
-//                'total' => 5,
-//                'shop_id' => [
-//                    2, 8, 12, 16, 19, 20, 23, 28, 31, 32
-//                ]
-//            ],
-//            [
-//                'product_id' => 4,
-//                'depot_id' => 185,
-//                'total' => 10,
-//                'shop_id' => [
-//                    1, 2, 3, 5, 8, 9, 10, 11, 13, 15, 18, 19, 20, 23, 24
-//                ]
-//            ],
-//            [
-//                'product_id' => 5,
-//                'depot_id' => 289,
-//                'total' => 10,
-//                'shop_id' => [
-//                    3, 7, 8, 10, 11, 14, 17, 21, 22, 24, 30, 32, 35, 39
-//                ]
-//            ],
-//            [
-//                'product_id' => 6,
-//                'depot_id' => 356,
-//                'total' => 10,
-//                'shop_id' => [
-//                    2, 17, 18, 23, 24, 33, 44
-//                ]
-//            ],
-//            [
-//                'product_id' => 7,
-//                'depot_id' => 372,
-//                'total' => 3,
-//                'shop_id' => [
-//                    2, 7, 11, 13, 14, 15, 16, 17, 20, 21, 23, 25, 26, 28, 30, 32, 33, 35
-//                ]
-//            ],
-//            [
-//                'product_id' => 8,
-//                'depot_id' => 452,
-//                'total' => 5,
-//                'shop_id' => [
-//                    5
-//                ]
-//            ],
-//            [
-//                'product_id' => 9,
-//                'depot_id' => 534,
-//                'total' => 3,
-//                'shop_id' => [
-//                    15
-//                ]
-//            ],
-//            [
-//                'product_id' => 12,
-//                'depot_id' => 722,
-//                'total' => 5,
-//                'shop_id' => [
-//                    15
-//                ]
-//            ]
-//        ];
         $depotModel = MerchantDepotModel::getInstance();
         $shopModel = MerchantShopModel::getInstance();
         if ($split) {//如果需要系统拆单
@@ -697,6 +652,8 @@ class OrderModel extends RelationModel
             $hasProductShopIds = [];//购物车中已经确定商品归属的商家
             $_cart = [];//需要拆单的商品
             $notAllocationProducts = [];//需要拆单的商品列表
+
+            $productTotal = array_sum(array_column($cart, 'total'));
 
             foreach ($cart as $key => $product) {
                 $shopIds = array_merge($shopIds, $product['shop_id']);//把商铺ID加入到商铺ID列表里
@@ -711,7 +668,7 @@ class OrderModel extends RelationModel
                     ];
                 } else {//否则放入需要系统分配商家的列表里
                     $_cart[] = $product;
-                    $notAllocationProducts[] = [
+                    $notAllocationProducts[$product['product_id']] = [
                         'total' => $product['total'],
                         'product_id' => $product['product_id'],
                     ];
@@ -726,10 +683,6 @@ class OrderModel extends RelationModel
             //如果未分配的商品不为空
             if (!empty($notAllocationProducts)) {
                 //如果配送时间不等于空
-                if (!empty($deliveryTime)) {
-                    $openShops = $shopModel->execute('SELECT id FROM ' . $shopModel->getTableName() . ' WHERE status=' . MerchantShopModel::STATUS_ACTIVE
-                        . ' and open_status=' . MerchantShopModel::OPEN_STATUS_OPEN . ' ');
-                }
                 //根据未分配商家的商品ID找出所有有这个商品的商家并按商品ID和价格排序
                 $_depots = $depotModel->field('id,shop_id,price,product_id')->where([
                     'product_id' => ['IN', array_column($notAllocationProducts, 'product_id')],
@@ -743,22 +696,163 @@ class OrderModel extends RelationModel
                     $depots[$depot['product_id']][] = &$_depots[$key];
                     $shopLists[] = $depot['shop_id'];
                 }
-                //统计每个商家出现的次数，出现的越多，本次订单能提供的商品就越多
-                $shopTotal = array_count_values($shopLists);
-                foreach ($hasProductShopTotal as $shopId => $total) {
-
-                }
-
-                //把能提供最多商品的商家排在前面
-                arsort($shopTotal);
+                //TODO 目前是直接往价格最低的商家分配商品，待优化
                 foreach ($depots as $depot) {
-
+                    $products[$depot[0]['id']] = [
+                        'total' => $notAllocationProducts[$depot[0]['product_id']]['total'],
+                        'depot_id' => $depot[0]['id'],
+                        'shop_id' => $depot[0]['shop_id'],
+                        'product_id' => $depot[0]['product_id']
+                    ];
                 }
+                $order = [];
+                foreach ($products as $product) {
+                    $order[$product['shop_id']][] = $product;
+                }
+
             }
-            die;
         } else {
-            $products = &$cart;
+            $order = &$cart;
         }
+        // 查询出所有商品的价格
+        $_allDepotInfo = $depotModel->alias('d')->field([
+            'd.id',
+            'd.price',
+            'p.title',
+            'p.detail',
+            'pp.path picture_path',
+            'd.product_id',
+            'b.title _brand_title',
+            'bp.path _brand_logo',
+            'b.id _brand_id',
+            'ms.id _shop_id',
+            'ms.title _shop_title',
+            'ms.type _shop_type',
+            'ms.address _shop_address',
+            'ms.phone_number _shop_phone',
+        ])->where([
+            'd.status' => MerchantDepotModel::STATUS_ACTIVE,
+            'd.id' => [
+                'IN',
+                array_column($products, 'depot_id')]
+        ])->join('LEFT JOIN sq_product p ON p.id=d.product_id')
+            ->join('LEFT JOIN sq_picture pp ON p.picture=pp.id')
+            ->join('LEFT JOIN sq_brand b ON p.brand_id=b.id')
+            ->join('LEFT JOIN sq_picture bp ON b.logo=bp.id')
+            ->join('LEFT JOIN sq_merchant_shop ms ON ms.id=d.shop_id')->select(['index' => 'id']);
+
+        //所有已确定商品的商铺ID
+        $allShopId = array_keys($order);
+        //找出所有商家的营业时间、配送收费等信息
+        $pdo = get_pdo();
+        $sql = 'SELECT id,free_delivery_amount,pay_delivery_amount,delivery_amount_cost,pay_delivery_distance,delivery_distance_cost,pay_delivery_time_begin,
+        pay_delivery_time_end,delivery_time_cost,ST_Distance_Sphere(point(' . floatval($lng) . ',' . floatval($lat) . '),lnglat) distance FROM sq_merchant_shop WHERE ' .
+            'id IN (' . implode(',', $allShopId) . ')';
+        $sth = $pdo->prepare($sql);
+        $sth->execute();
+        $_allShop = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        $allShop = [];
+        foreach ($_allShop as $key => $shop) {
+            $allShop[$shop['id']] = &$_allShop[$key];
+        }
+        $priceDetail = [];//所有价格详情
+        $result = [];
+        $deliveryPrice = 0;//配送费总和
+        $productPrice = 0;//所有商品的价格总和
+        //如果用户指定了配送时间，则计算指定的配送时间距离当天的0:00的秒数；如果配送时间为0（马上配送），则计算当前时间到当天的秒数
+        if ($deliveryTime) {
+            $deliveryTime = $deliveryTime - strtotime(date('Y-m-d', $deliveryTime));
+        } else {
+            $deliveryTime = time() - strtotime(date('Y-m-d'));
+        }
+        //计算只是在免配送费的范围、是否在免配送费的距离内、免配送费的时间内
+        /**
+         * product：为当前子订单所有商品的价格总和
+         * price：为免运费价格未到所收取的费用
+         * distance：为送货距离超过免费距离所收取的费用
+         * time：为超过正常配送时间而配送收取的费用
+         */
+        foreach ($order as $shopId => $o) {
+            if (empty($priceDetail[$shopId])) {
+                $priceDetail[$shopId] = [
+                    'product' => 0,
+                    'time' => 0,
+                    'distance' => 0,
+                    'price' => 0
+                ];
+            }
+            foreach ($o as $d) {
+                $priceDetail[$shopId]['product'] += $_allDepotInfo[$d['depot_id']]['price'] * $d['total'];
+            }
+            $productPrice += $priceDetail[$shopId]['product'];
+            //如果是自提，则不计算配送费
+            if ($deliveryMode == self::DELIVERY_MODE_PICKEDUP) continue;
+            if ($priceDetail[$shopId]['product'] >= $allShop[$shopId]['free_delivery_amount']) continue;
+            //如果当前商家的商品没有达到当前商家的包邮价格，则增加配送费
+            if ($priceDetail[$shopId]['product'] < $allShop[$shopId]['pay_delivery_amount']) {
+                $priceDetail[$shopId]['price'] = (int)$allShop[$shopId]['delivery_amount_cost'];
+            }
+            //如果送货距离大于商家免费送货的距离，则增加送货费
+            if ($allShop[$shopId]['distance'] > $allShop[$shopId]['pay_delivery_distance']) {
+                $priceDetail[$shopId]['distance'] = (int)$allShop[$shopId]['delivery_distance_cost'];
+            }
+            //如果现在的时间在收费配送时间内，则增加送货费
+            if ($allShop[$shopId]['pay_delivery_time_begin'] < $deliveryTime && $allShop[$shopId]['pay_delivery_time_end'] > $deliveryTime) {
+                $priceDetail[$shopId]['time'] = (int)$allShop[$shopId]['delivery_time_cost'];
+            }
+            $deliveryPrice += $priceDetail[$shopId]['price'];
+            $deliveryPrice += $priceDetail[$shopId]['time'];
+            $deliveryPrice += $priceDetail[$shopId]['distance'];
+        }
+        $priceTotal = $deliveryPrice + $productPrice;
+        foreach ($priceDetail as &$d) {
+            $d['total'] = array_sum($d);
+        }
+
+        $allDepotInfo = [];
+        foreach ($_allDepotInfo as $key => $depot) {
+            if (!isset($allDepotInfo[$depot['_shop_id']])) {
+                $allDepotInfo[$depot['_shop_id']] = [
+                    'shop_id' => $depot['_shop_id'],
+                    'shop' => $depot['_shop_title'],
+                    'type' => $depot['_shop_type'],
+                    'address' => $depot['_shop_address'],
+                    'phone' => $depot['_shop_phone'],
+                    '_prices' => $priceDetail[$depot['_shop_id']]
+                ];
+            }
+            $allDepotInfo[$depot['_shop_id']]['_products'][] = [
+                'id' => $depot['id'],
+                'product_id' => $depot['product_id'],
+                'price' => $depot['price'],
+                'product' => $depot['title'],
+                'detail' => $depot['detail'],
+                'picture_path' => $depot['picture_path'],
+                'brand_id' => $depot['_brand_id'],
+                'brand' => $depot['_brand_title'],
+                'brand_logo' => $depot['_brand_logo'],
+                'total' => $products[$depot['id']]['total']
+            ];
+        }
+        foreach ($allDepotInfo as $key => $depot) {
+            $result[] = &$allDepotInfo[$key];
+        }
+        $cacheData = [
+            'order' => &$result,
+            'price_detail' => &$priceDetail,
+            'price_total' => &$priceTotal,
+            'delivery_mode' => $deliveryMode,
+            'delivery_time' => $deliveryTime
+        ];
+        $cacheKey = md5(serialize($cacheData));
+        S($cacheKey, $cacheData, 3600);
+        return [
+            'price_total' => $priceTotal,//总价统计
+            'price_delivery' => $deliveryPrice,//配送费统计
+            'price_product' => $productPrice,//商品价格统计
+            'product_total' => $productTotal,//商品数量统计
+            'key' => $cacheKey,//缓存的key名
+        ];
     }
 
     /**
@@ -766,84 +860,61 @@ class OrderModel extends RelationModel
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param int $userId 用户ID
-     * @param string|array $cart 购物车，可传json格式或者数组格式
+     * @param string $orderKey 预处理过后的订单KEY
      * @param string $mobile 收货人联系电话
      * @param string $consignee 收货人
      * @param string $address 收货地址
      * @param string $remark 订单备注
      * @param int $payMode 支付方式
-     * @param int $deliveryMode 配送方式
-     * @param bool $split 是否需要系统辅助拆单
      * @return bool
      */
-    public static function submitOrder($userId, $cart, $mobile, $consignee, $address, $remark, $payMode = self::PAY_MODE_OFFLINE, $deliveryMode = self::DELIVERY_MODE_DELIVERY, $split = true)
+    public static function submitOrder($userId, $orderKey, $mobile, $consignee, $address, $remark, $payMode = self::PAY_MODE_OFFLINE)
     {
         $userId = intval($userId);
         $userInfo = MemberModel::getById($userId, null, ['id', 'nickname']);
         if (!$userInfo) E('用户：' . $userId . '不存在');
-        $cart = is_array($cart) ? $cart : json_decode($cart, true);
-        $products = [];
-        if ($split) {
-            foreach ($cart as $product) {
-                $products[$product['shop_id']][] = $product;
-            }
-        } else {
-            $products = $cart;
-        }
+        $pretreatment = S($orderKey);
+        if (!$pretreatment) E('请执行订单预处理');
+        $products = $pretreatment['order'];
+        $deliveryMode = intval($pretreatment['delivery_mode']);
 
         //声明一些模型
         $model = self::getInstance();
         $orderItemModel = M('order_item');
-        $depotModel = MerchantDepotModel::getInstance();
         $statusLogModel = OrderStatusModel::getInstance();
 
         $model->startTrans();//启动事务
         //判断购物车格式，如果二级数组的值还是数组，那么就是拆单的
-        if (is_array(current(current($products))) && count($products) > 1) {
+        if (count($products) > 1) {
             try {
-                $priceTotal = [];//每个子订单的总价统计数组
                 $parentId = intval(self::createEmptyParentOrder($userId, 0, 0, $payMode, $deliveryMode));
                 if (!$parentId) E('父级订单添加失败');
                 $logData = [];//记录订单状态日志的数据数组
-                foreach ($products as $shopId => $product) {
+                foreach ($products as $product) {
+                    $shopId = $product['shop_id'];
                     //获取所有的仓库商品ID
-                    $depotIds = array_column($product, 'depot_id');
-                    $totals = [];
-                    foreach ($product as $item) {
-                        $totals[$item['depot_id']] = $item['total'];
-                    }
-                    //查询相应的仓库商品
-                    $depots = $depotModel->field(['id', 'price', 'product_id'])->where(['id' => ['IN', $depotIds]])->select();
-                    $prices = [];//存储当前商家仓库商品总价的数组
-                    $_depots = [];
-                    foreach ($depots as $index => $depot) {
-                        //统计每个商品的总价
-                        $prices[$depot['id']] = $depot['price'] * $totals[$depot['id']];
-                        //用仓库商品的ID作为键名重组数组方便以后使用
-                        $_depots[$depot['id']] = $depot;
-                    }
-                    $priceTotal[$shopId] = array_sum($prices);//当前子订单的总价
                     $data = [//组合子订单数据
                         'user_id' => $userId,
                         'pid' => $parentId,
                         'shop_id' => (int)$shopId,
                         'pay_mode' => (int)$payMode,
                         'delivery_mode' => (int)$deliveryMode,
+                        '$delivery_time' => (int)$pretreatment['delivery_time'],
                         'mobile' => $mobile,
                         'consignee' => $consignee,
                         'address' => $address,
                         'remark' => $remark,
-                        'price' => $priceTotal[$shopId],
+                        'price' => $pretreatment['price_detail'][$shopId]['total'],
                     ];
                     if (!$model->create($data)) E(current($model->getError()));
                     $itemData = [];
                     if ($lastOrderId = intval($model->add())) {//如果子订单添加成功
-                        foreach ($product as $item) {//组合每条子订单的商品信息
+                        foreach ($product['_products'] as $item) {//组合每条子订单的商品信息
                             $itemData[] = [
                                 'order_id' => $lastOrderId,
-                                'product_id' => $_depots[$item['depot_id']]['product_id'],
-                                'depot_id' => $item['depot_id'],
-                                'price' => $_depots[$item['depot_id']]['price'],
+                                'product_id' => $item['product_id'],
+                                'depot_id' => $item['id'],
+                                'price' => $item['price'],
                                 'total' => $item['total']
                             ];
                         }
@@ -854,18 +925,18 @@ class OrderModel extends RelationModel
                             'merchant_id' => 0,
                             'status' => self::STATUS_MERCHANT_CONFIRM,
                             'order_id' => $lastOrderId,
-                            'content' => '系统：【' . $userInfo['nickname'] . '】于【' . date('Y-m-d H:i:s') . '】提交了订单【' . $lastOrderId . '】，等待商家审核',
+                            'content' => '系统：【' . $userInfo['nickname'] . '】于【' . date('Y - m - d H:i:s') . '】提交了订单【' . $lastOrderId . '】，等待商家审核',
                         ];
                     } else {
                         E('订单添加失败');
                     }
                 }
                 //所有子订单都插入完成之后，计算所有子订单价格的和，更新到父级订单
-                if (!$model->save(['price' => array_sum($priceTotal), 'id' => $parentId])) {
+                if (!$model->save(['price' => $pretreatment['price_total'], 'id' => $parentId])) {
                     E('父级订单价格更新失败');
                 }
                 $model->commit();//如果以上都通过了，则提交事务
-                F('user/cart/' . $userId, null);//如果订单提交成功，则清空用户的购物车
+                F('user / cart / ' . $userId, null);//如果订单提交成功，则清空用户的购物车
                 $statusLogModel->addAll($logData);
                 return $parentId;//返回父级订单的ID
             } catch (Exception $e) {
@@ -880,38 +951,24 @@ class OrderModel extends RelationModel
             $data['shop_id'] = current($products)['shop_id'];
             $data['pay_mode'] = intval($payMode);
             $data['delivery_mode'] = intval($deliveryMode);
+            $data['delivery_time'] = intval($pretreatment['delivery_time']);
             $data['mobile'] = $mobile;
             $data['consignee'] = $consignee;
             $data['address'] = $address;
             $data['remark'] = $remark;
-            $depotIds = [];//获取所有的仓库商品ID
-            $totals = [];
-            foreach ($products as $product) {
-                $depotIds[] = $product['depot_id'];
-                $totals[$product['depot_id']] = $product['total'];
-            }
-            //查询相应的仓库商品
-            $depots = $depotModel->field(['id', 'price', 'product_id'])->where(['id' => ['IN', $depotIds]])->select();
-            $priceTotal = 0;
-            $_depots = [];
-            foreach ($depots as $depot) {//计算订单总价
-                //用仓库商品的ID作为键名重组数组方便以后使用
-                $_depots[$depot['id']] = $depot;
-                $priceTotal += ($depot['price'] * $totals[$depot['id']]);
-            }
-            $data['price'] = $priceTotal;
+            $data['price'] = $pretreatment['price_total'];
             try {
                 if (!$model->create($data)) {
                     E(current($model->getError()));
                 }
                 if ($lastId = $model->add()) {
                     $itemData = [];
-                    foreach ($products as $product) {
+                    foreach ($products['_products'] as $product) {
                         $itemData[] = [
                             'order_id' => $lastId,
-                            'product_id' => $_depots[$product['depot_id']]['product_id'],
-                            'depot_id' => $product['depot_id'],
-                            'price' => $_depots[$product['depot_id']]['price'],
+                            'product_id' => $product['product_id'],
+                            'depot_id' => $product['id'],
+                            'price' => $product['price'],
                             'total' => $product['total']
                         ];
                     }
@@ -921,9 +978,9 @@ class OrderModel extends RelationModel
                     //如果以上都通过了，则提交事务
                     $model->commit();
                     //如果订单提交成功，则清空用户的购物车
-                    F('user/cart/' . $userId, null);
+                    F('user / cart / ' . $userId, null);
                     //记录日志
-                    $content = '系统：【' . $userInfo['nickname'] . '】于【' . date('Y-m-d H:i:s') . '】提交了订单【' . $lastId . '】，等待商家审核';
+                    $content = '系统：【' . $userInfo['nickname'] . '】于【' . date('Y - m - d H:i:s') . '】提交了订单【' . $lastId . '】，等待商家审核';
                     $statusLogModel->addLog($userId, $data['shop_id'], 0, $lastId, $content, self::STATUS_MERCHANT_CONFIRM);
                     return intval($lastId);
                 }
@@ -995,7 +1052,7 @@ class OrderModel extends RelationModel
      */
     public static function updateOrderStatus($id, $status)
     {
-        return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['status' => intval($status)]);
+        return self::getInstance()->where(['id' => intval($id), '_logic' => ' OR ', 'pid' => intval($id)])->save(['status' => intval($status)]);
     }
 
     /**
@@ -1007,7 +1064,7 @@ class OrderModel extends RelationModel
      */
     public static function updateOrderPayMode($id, $payMode)
     {
-        return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['pay_mode' => intval($payMode)]);
+        return self::getInstance()->where(['id' => intval($id), '_logic' => ' OR ', 'pid' => intval($id)])->save(['pay_mode' => intval($payMode)]);
     }
 
     /**
@@ -1019,7 +1076,7 @@ class OrderModel extends RelationModel
      */
     public static function updateOrderPayStatus($id, $payStatus)
     {
-        return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['pay_status' => intval($payStatus)]);
+        return self::getInstance()->where(['id' => intval($id), '_logic' => ' OR ', 'pid' => intval($id)])->save(['pay_status' => intval($payStatus)]);
     }
 
     /**
@@ -1045,7 +1102,7 @@ class OrderModel extends RelationModel
         }
         if (!$saveStatus) E('确认订单失败');
         $merchantInfo = UcenterMemberModel::get($merchantId, ['username', 'id']);//获取用户信息
-        $content = '商家：【' . isset($merchantInfo['username']) ? $merchantInfo['username'] : '' . '】于【' . date('Y-m-d H:i:s') . '】%s';
+        $content = '商家：【' . isset($merchantInfo['username']) ? $merchantInfo['username'] : '' . '】于【' . date('Y - m - d H:i:s') . '】%s';
         if ($confirm) {//根据是否确定来生成不同的记录信息
             $replaceStr = '确认了订单【' . $orderInfo['id'] . '】，商家开始发货';
         } else {
@@ -1080,7 +1137,7 @@ class OrderModel extends RelationModel
         $orderInfo = $model->find();//查找响应的订单信息
         $userInfo = [];
         if ($userId) $userInfo = UcenterMemberModel::get($userId, ['id', 'username']);
-        $content = '用户：【' . isset($userInfo['username']) ? $userInfo['username'] : '' . '】于【' . date('Y-m-d H:i:s') . '】%s';
+        $content = '用户：【' . isset($userInfo['username']) ? $userInfo['username'] : '' . '】于【' . date('Y - m - d H:i:s') . '】%s';
         if ($confirm) {
             $saveStatus = $model->save(['status' => self::STATUS_DELIVERY]);
             $replaceStr = '确认了商家对订单的修改，商家可以进行配送';
@@ -1121,7 +1178,7 @@ class OrderModel extends RelationModel
             'merchant_id' => 0,
             'status' => self::STATUS_COMPLETE,
             'order_id' => $orderInfo['id'],
-            'content' => '用户：【' . isset($orderInfo['_ucenter_member']) ? $orderInfo['_ucenter_member']['username'] : '' . '于【' . date('Y-m-d H:i:s') . '】完成了订单'
+            'content' => '用户：【' . isset($orderInfo['_ucenter_member']) ? $orderInfo['_ucenter_member']['username'] : '' . '于【' . date('Y - m - d H:i:s') . '】完成了订单'
         ];
         if ($saveStatus) {//如果订单状态更新成功才存入日志
             OrderStatusModel::getInstance()->add($logData);
@@ -1154,7 +1211,7 @@ class OrderModel extends RelationModel
             'merchant_id' => 0,
             'status' => self::STATUS_CANCEL,
             'order_id' => $orderInfo['id'],
-            'content' => '用户：【' . isset($orderInfo['_ucenter_member']) ? $orderInfo['_ucenter_member']['username'] : '' . '于【' . date('Y-m-d H:i:s') . '】取消了订单'
+            'content' => '用户：【' . isset($orderInfo['_ucenter_member']) ? $orderInfo['_ucenter_member']['username'] : '' . '于【' . date('Y - m - d H:i:s') . '】取消了订单'
         ];
         if ($saveStatus) {//如果订单状态更新成功才存入日志
             OrderStatusModel::getInstance()->add($logData);
