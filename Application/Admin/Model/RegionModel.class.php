@@ -81,7 +81,7 @@ class RegionModel extends Model
 
         } else {
             $region_id= $data['id'];
-            $res =  $this->execute("update __REGION__ set name='".$data['name']."',pid='".$data['pid']."',level='".$data['level']."', lnglat=point($lnglat),remark='".$data['name']."' where id=$region_id");
+            $res =  $this->execute("update __REGION__ set name='".$data['name']."',pid='".$data['pid']."',level='".$data['level']."', lnglat=point($lnglat),remark='".$data['remark']."' where id=$region_id");
 //            $res = $this->save();
 
         }
