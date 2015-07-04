@@ -212,7 +212,28 @@ class UserController extends ApiController {
                     break;
                 case 'mobile' :
                     //TODO
-
+                    $step = is_numeric(I('get.step')) && I('get.step') != '' ? I('get.step') : E('step不能空或不是数字');
+                    $model = D("UcenterMember");
+                    $user    = $model->where(array('id'=>$uid))->find();
+                    empty($user) ? E('非法用户操作') : '';
+                    switch ( $step ) {
+                        case 1 :
+                            $oMobile = $user['mobile'];
+                            $oCode   = I('post.code');
+                            if(!verify_sms_code($oMobile, $oCode))
+                                E('验证码错误');
+                            break;
+                        case 2 :
+                            $nMobile = I('post.mobile');
+                            $nCode   = I('post.code');
+                            if(!verify_sms_code($nMobile, $nCode))
+                                E('验证码错误');
+                            $data['mobile'] = $nMobile;
+                            $data['id'] = $uid;
+                            break;
+                        default :
+                            E('错误操作');
+                    }
                     break;
                 default :
                     E('必须传递type参数');

@@ -66,7 +66,8 @@ return [
         'UCENTER_MEMBER_PHOTO'           => 3,    //用户头像
         'CARWASH_MEMBER_PICTURE'         => 4,    //洗车用户头像
         'CARWASH_MERCHANT_PICTURE'       => 5,    //洗车工头像
-        'APK_PACKAGE'                    => 6,    //apk包
+        'APK_PACKAGE_MEMBER'             => 6,    //apk用户包
+        'APK_PACKAGE_MERCHANT'           => 7,    //apk商家包
     ),
 
     'ALIPAY' => [

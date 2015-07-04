@@ -4,7 +4,7 @@
  * Author:  Stevin.John@qq.com
  */
 
-namespace Apimember\Controller;
+namespace Apimerchant\Controller;
 
 
 class SystemController extends ApiController{
@@ -16,7 +16,7 @@ class SystemController extends ApiController{
             $fields  = 'path,release';
             $map     = array(
                 'release'     => array('gt', $release),
-                'type'        => C('PICTURE_TYPE.APK_PACKAGE_MEMBER'),
+                'type'        => C('PICTURE_TYPE.APK_PACKAGE_MERCHANT'),
             );
             $result  = $model->field($fields)->where($map)->find();
             empty($result) ? $this->apiSuccess(array('data'=>''),'没有最新版本') : '';

@@ -29,9 +29,9 @@ class UserController extends ApiController {
      */
     public function login(){
         try{
-            if(IS_GET){
-                $username = I('get.username') == '' ? E('手机号不能为空') : I('get.username');
-                $password = I('get.password') == '' ? E('密码不能为空') : I('get.password');
+            if(IS_POST){
+                $username = I('post.username') == '' ? E('手机号不能为空') : I('post.username');
+                $password = I('post.password') == '' ? E('密码不能为空') : I('post.password');
 
                 $Ucenter  = D('UcenterMember');
                 $token = $Ucenter->login($username, $password, 5);
@@ -210,12 +210,32 @@ class UserController extends ApiController {
                     break;
                 case 'mobile' :
                     //TODO
-
+                    $step = is_numeric(I('get.step')) && I('get.step') != '' ? I('get.step') : E('step不能空或不是数字');
+                    $model = D("UcenterMember");
+                    $user    = $model->where(array('id'=>$uid))->find();
+                    empty($user) ? E('非法用户操作') : '';
+                    switch ( $step ) {
+                        case 1 :
+                            $oMobile = $user['mobile'];
+                            $oCode   = I('post.code');
+                            if(!verify_sms_code($oMobile, $oCode))
+                                E('验证码错误');
+                            break;
+                        case 2 :
+                            $nMobile = I('post.mobile');
+                            $nCode   = I('post.code');
+                            if(!verify_sms_code($nMobile, $nCode))
+                                E('验证码错误');
+                            $data['mobile'] = $nMobile;
+                            $data['id'] = $uid;
+                            break;
+                        default :
+                            E('错误操作');
+                    }
                     break;
                 default :
                     E('必须传递type参数');
             }
-
 
             $result = $model->saveInfo($data);
             if($result===true){
