@@ -30,8 +30,8 @@ class UserController extends ApiController {
     public function login(){
         try{
             if(IS_POST){
-                $username = I('post.username');
-                $password = I('post.password');
+                $username = I('post.username') == '' ? E('手机号不能为空') : I('post.username');
+                $password = I('post.password') == '' ? E('密码不能为空') : I('post.password');
 
                 $Ucenter  = D('UcenterMember');
                 $token = $Ucenter->login($username, $password, 5);

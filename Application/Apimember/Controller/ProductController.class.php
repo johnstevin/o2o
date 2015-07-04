@@ -78,11 +78,13 @@ class ProductController extends ApiController
      * ```
      * @author  stevin WangJiang
      */
-    public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or', $tagId = 0, $type = null, $order = 1)
+    public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or'
+        , $tagId = 0, $type = null, $order = 1,$page = 1,$pageSize=10)
     {
         try {
+            $pageSize > 50 and $pageSize = 50;
             $this->apiSuccess(['data' => (new MerchantShopModel())
-                ->getNearby($lat, $lng, $range, $words, $wordsOp, $tagId, $type, $order)]);
+                ->getNearby($lat, $lng, $range, $words, $wordsOp, $tagId, $type, $order,$page,$pageSize)]);
         } catch (\Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
         }

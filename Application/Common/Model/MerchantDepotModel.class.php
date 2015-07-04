@@ -341,7 +341,146 @@ class MerchantDepotModel extends RelationModel
         , $priceMin, $priceMax
         , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = [])
     {
+        if(count($shopIds)==1){
+            $data=$this->_get_depot_by_shop_id($shopIds[0], $categoryId, $brandId, $normId, $title
+                , $priceMin, $priceMax
+                , $returnAlters, $page, $pageSize, $status, $groupIds);
+            foreach ($data as &$dpt) {
+                $dpt['price_range'] = [$dpt['price'], $dpt['price']];
+                $dpt['alters'] = [
+                    ['id'=>$dpt['id'],
+                    'price'=>$dpt['price'],
+                    'shop_id'=>$dpt['shop_id'],
+                    'shop'=>$dpt['shop'],]
+                ];
+            }
+        }else{
+            $data=$this->_get_depot_by_shop_ids($shopIds, $categoryId, $brandId, $normId, $title
+                , $priceMin, $priceMax
+                , $returnAlters, $page, $pageSize, $status, $groupIds);
+            foreach ($data as &$dpt) {
+                list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
+                $this->field(['sq_merchant_depot.id'
+                    , 'sq_merchant_depot.price'
+                    , 'sq_merchant_shop.id as shop_id'
+                    , 'sq_merchant_shop.title as shop']);
+                $this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
+                $this->where('shop_id in (' . implode(',', $shopBindNames) . ') and product_id =:productId');
+                $bindValues[':productId'] = $dpt['product_id'];
+                $this->bind($bindValues);
+                $alters = $this->select();
 
+                $minPrice = null;
+                $maxPrice = null;
+                $depot = null;
+                foreach ($alters as &$al) {
+                    if (is_null($minPrice))
+                        $minPrice = $al['price'];
+                    else
+                        $minPrice = min($minPrice, $al['price']);
+
+                    if (is_null($maxPrice))
+                        $maxPrice = $al['price'];
+                    else
+                        $maxPrice = max($maxPrice, $al['price']);
+                    if (is_null($depot))
+                        $depot = $al;
+                    if ($al['price'] <= $minPrice)
+                        $depot = $al;
+                }
+                $dpt['id'] = $depot['id'];
+                $dpt['price'] = $depot['price'];
+                $dpt['shop_id'] = $depot['shop_id'];
+                $dpt['shop'] = $depot['shop'];
+                $dpt['price_range'] = [$minPrice, $maxPrice];
+                $dpt['alters'] = $alters;
+            }
+        }
+
+        return $data;
+    }
+
+    private function _get_depot_by_shop_id($shopId, $categoryId, $brandId, $normId, $title
+        , $priceMin, $priceMax
+        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = []){
+
+        $where = 'sq_merchant_depot.shop_id=:shopId';
+        $bindValues[':shopId']=$shopId;
+
+        $cateChain=[$categoryId];
+        get_cate_chain_up([$categoryId],$cateChain);
+
+        if (!empty($categoryId)) {
+            $where .= ' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id
+                in (select product_id from sq_product_category where category_id in (:cateIds))';
+            $bindValues[':cateIds'] = $cateChain;
+        }
+        if (!is_null($priceMin)) {
+            $where .= ' and sq_merchant_depot.price>:priceMin';
+            $bindValues[':priceMin'] = $priceMin;
+        }
+        if (!is_null($priceMax)) {
+            $where .= ' and sq_merchant_depot.price<:priceMax';
+            $bindValues[':priceMax'] = $priceMax;
+        }
+
+        $product_sql = 'JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1';
+        if (!empty($categoryId)) {
+            $product_sql .= ' and sq_product.id in (select product_id from sq_product_category where category_id=:categoryId)';
+            $bindValues[':categoryId'] = $categoryId;
+        }
+        if (!empty($title)) {
+            $product_sql .= ' and sq_product.title like :title';
+            $bindValues[':title'] = '%' . $title . '%';
+        }
+        if (!empty($brandId)) {
+            $product_sql .= ' and sq_product.brand_id=:brandId';
+            $bindValues[':brandId'] = $brandId;
+        }
+        if (!empty($normId)) {
+            $product_sql .= ' and sq_product.norms_id=:normId';
+            $bindValues[':normId'] = $normId;
+        }
+        $this->join($product_sql);
+        //$this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
+        $this->join('JOIN sq_brand as brand on brand.id=sq_product.brand_id');
+        $this->join('JOIN sq_norms as norm on norm.id=sq_product.norms_id');
+        $this->join('left JOIN sq_picture on sq_picture.id = sq_product.picture');
+        $this->join('JOIN sq_merchant_shop on sq_merchant_shop.id = sq_merchant_depot.shop_id');
+
+        $this->where($where);
+        $this->bind($bindValues);
+
+        $this->field([
+            'sq_merchant_depot.id'
+            ,'sq_merchant_depot.price'
+            ,'sq_merchant_shop.id as shop_id'
+            ,'sq_merchant_shop.title as shop'
+            ,'sq_merchant_depot.product_id'
+            , 'sq_product.title as product'
+            , 'sq_merchant_depot.status'
+            , 'sq_product.description'
+            , 'brand.id as brand_id'
+            , 'brand.title as brand'
+            , 'norm.id as norm_id'
+            , 'norm.title as norm'
+            , 'ifnull(sq_picture.path,\'\') as picture_path'
+            , 'sq_product.picture as picture_id']);
+
+        $this->group('sq_merchant_depot.product_id')
+            ->order('sq_merchant_depot.price')
+            ->limit($page, $pageSize);
+        //echo '<pre>';
+        //var_dump($bindValues);die;
+        $data = $this->select();
+        //print_r($this->getLastSql());die;
+
+        return $data;
+    }
+
+    private function _get_depot_by_shop_ids($shopIds, $categoryId, $brandId, $normId, $title
+        , $priceMin, $priceMax
+        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = []){
         $shopIds = $this->_filter_shops($shopIds, $groupIds);
         list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
 
@@ -364,7 +503,6 @@ class MerchantDepotModel extends RelationModel
             $bindValues[':priceMax'] = $priceMax;
         }
 
-        //TODO 加上品牌规格查询
         $product_sql = 'JOIN sq_product on sq_product.id = sq_merchant_depot.product_id and sq_product.status=1';
         if (!empty($categoryId)) {
             $product_sql .= ' and sq_product.id in (select product_id from sq_product_category where category_id=:categoryId)';
@@ -392,54 +530,24 @@ class MerchantDepotModel extends RelationModel
         $this->bind($bindValues);
 
         $this->field(['sq_merchant_depot.product_id'
-            , 'sq_product.title as product', 'sq_merchant_depot.status', 'sq_product.description', 'brand.id as brand_id'
-            , 'brand.title as brand', 'norm.id as norm_id', 'norm.title as norm', 'ifnull(sq_picture.path,\'\') as picture_path', 'sq_product.picture as picture_id']);
+            , 'sq_product.title as product'
+            , 'sq_merchant_depot.status'
+            , 'sq_product.description'
+            , 'brand.id as brand_id'
+            , 'brand.title as brand'
+            , 'norm.id as norm_id'
+            , 'norm.title as norm'
+            , 'ifnull(sq_picture.path,\'\') as picture_path'
+            , 'sq_product.picture as picture_id']);
 
         $this->group('sq_merchant_depot.product_id')
-            //->order('sq_merchant_depot.product_id,sq_merchant_depot.price')
+            ->order('sq_merchant_depot.price')
             ->limit($page, $pageSize);
         //echo '<pre>';
         //var_dump($bindValues);die;
         $data = $this->select();
         //print_r($this->getLastSql());die;
 
-        foreach ($data as &$dpt) {
-            list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
-            $this->field(['sq_merchant_depot.id'
-                , 'sq_merchant_depot.price'
-                , 'sq_merchant_shop.id as shop_id'
-                , 'sq_merchant_shop.title as shop']);
-            $this->join('JOIN sq_merchant_shop on sq_merchant_shop.id=sq_merchant_depot.shop_id');
-            $this->where('shop_id in (' . implode(',', $shopBindNames) . ') and product_id =:productId');
-            $bindValues[':productId'] = $dpt['product_id'];
-            $this->bind($bindValues);
-            $alters = $this->select();
-
-            $minPrice = null;
-            $maxPrice = null;
-            $depot = null;
-            foreach ($alters as &$al) {
-                if (is_null($minPrice))
-                    $minPrice = $al['price'];
-                else
-                    $minPrice = min($minPrice, $al['price']);
-
-                if (is_null($maxPrice))
-                    $maxPrice = $al['price'];
-                else
-                    $maxPrice = max($maxPrice, $al['price']);
-                if (is_null($depot))
-                    $depot = $al;
-                if ($al['price'] <= $minPrice)
-                    $depot = $al;
-            }
-            $dpt['id'] = $depot['id'];
-            $dpt['price'] = $depot['price'];
-            $dpt['shop_id'] = $depot['shop_id'];
-            $dpt['shop'] = $depot['shop'];
-            $dpt['price_range'] = [$minPrice, $maxPrice];
-            $dpt['alters'] = $alters;
-        }
         return $data;
     }
 

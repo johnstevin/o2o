@@ -70,15 +70,15 @@ class MerchantController extends ApiController {
     public function getAppriseList($merchantId,$page = 1, $pageSize = 10){
         try {
             $pageSize > 50 and $pageSize = 50;
-            $page--;
-            $page *= $pageSize;
+            //$page--;
+            //$page *= $pageSize;
 
             $this->apiSuccess(['data' =>D('Appraise')
                 ->join('join sq_member on sq_member.uid=sq_appraise.user_id')
                 ->join('join sq_ucenter_member on sq_ucenter_member.id=sq_appraise.user_id')
                 ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
                 ->where(['merchant_id'=>$merchantId])
-                ->limit($page, $pageSize)
+                ->page($page, $pageSize)
                 ->order('update_time')
                 ->field([
                     'sq_appraise.id','ifnull(sq_appraise.content,\'\') as content',

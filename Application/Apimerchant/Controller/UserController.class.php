@@ -180,12 +180,58 @@ class UserController extends ApiController {
 
     /**
      * @ignore
-     * 商户个人资料修改
+     * 用户个人修改
      * @param
-     * @author  stevin
+     * @author  Stevin.John@qq.com
+     * @Url
      */
-    public function updateInfo(){
+    public function editInfo(){
+        try {
+            $uid = $this->getUserId();
+            $type = I('get.type');
+            switch ( $type ) {
+                case 'password' :
+                    $model = D("UcenterMember");
+                    $opassword = I('post.opassword');
+                    $npassword = I('post.npassword');
+                    if ($opassword === $npassword)
+                        E('新旧密码不能相同');
 
+                    $user = $model->where(array('id'=>$uid))->find();
+                    if(is_array($user) && $user['is_member']){
+                        if(generate_password($opassword, $user['saltkey']) !== $user['password'])
+                            E('旧密码错误'); //密码错误
+
+                    } else {
+                        E('用户不存在或不是用户'); //用户不存在或不是管理员
+                    }
+                    //46f94c8de14fb36680850768ff1b7f2a  123qwe
+                    //e10adc3949ba59abbe56e057f20f883e  123456
+                    $data['password'] = $npassword;
+                    $data['id'] = $uid;
+                    break;
+                case 'mobile' :
+                    //TODO
+
+                    break;
+                default :
+                    E('必须传递type参数');
+            }
+
+
+            $result = $model->saveInfo($data);
+            if($result===true){
+                $this->apiSuccess(array('data'=>''), '成功');
+            }else{
+
+                E($model->getError());
+
+            }
+
+
+        } catch (\Exception $ex) {
+            $this->apiError(50115, $ex->getMessage());
+        }
     }
 
     /**
