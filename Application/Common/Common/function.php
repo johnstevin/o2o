@@ -1057,7 +1057,7 @@ function send_sms_code($mobile){
     }
     $code=implode('',$code);
     set_sms_code($mobile,$code);
-    //\Addons\Sms\Common\send_code([$mobile],$code);
+    \Addons\Sms\Common\send_code([$mobile],$code);
     return $code;
 }
 
