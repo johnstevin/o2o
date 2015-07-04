@@ -269,8 +269,12 @@ class CategoryModel extends AdvModel
                 $level
             ];
         }
+        $model = self::getInstance()->where($where)->field($fields);
+        if ($pageSize) {
+            $model->page($nowPage, $pageSize);
+        }
         return [
-            'data' => self::getInstance()->where($where)->field($fields)->page($nowPage, $pageSize)->order(['sort'])->select()
+            'data' => $model->order(['sort'])->select()
         ];
     }
 

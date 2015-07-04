@@ -156,6 +156,7 @@ class OrderController extends ApiController
      * @param null|int $userId 用户ID
      * @param null|int $status 订单状态
      * @param null|int $payStatus 支付状态
+     * @param null|int $deliveryMode 支付模式
      * @param bool $getShop 是否获取商铺信息，默认为否
      * @param bool $getUser 是否获取订单的购买者信息，默认为否
      * @param bool $getProducts 是否获取订单下的商品
@@ -214,23 +215,17 @@ class OrderController extends ApiController
      * }
      * ```
      */
-    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $getProducts = true, $getShop = false, $getUser = false)
+    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $deliveryMode = null, $getProducts = true, $getShop = false, $getUser = false)
     {
-        $lists = OrderModel::getInstance()->getLists($shopId, $userId, $status, $payStatus, $getShop, $getUser, $getProducts);
+        $lists = OrderModel::getInstance()->getLists($shopId, $userId, $status, $payStatus, $deliveryMode, $getShop, $getUser, $getProducts);
         //我滴个神啊，那些做手机端开发的非要只取两条产品信息-_-!
         if ($getProducts) {
             foreach ($lists['data'] as &$data) {
                 if (!empty($data['_products'])) {
                     $data['_products_total'] = count($data['_products']);
-                    if ($data['_products_total'] > 2) {
-                        $data['_products'] = array_slice($data['_products'], 0, 2);
-                    }
                 } else {
                     foreach ($data['_childs'] as &$child) {
                         $child['_products_total'] = count($child['_products']);
-                        if ($child['_products_total'] > 2) {
-                            $child['_products'] = array_slice($child['_products'], 0, 2);
-                        }
                     }
                 }
             }
@@ -352,19 +347,16 @@ class OrderController extends ApiController
      * ###提交订单,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
-     * @param int $userId 用户ID
-     * @param string|array $cart 购物车
+     * @param string $orderKey 预生成的订单（请调用initOrder）key
      * @param string $address 联系地址
      * @param string|int $mobile 联系方式
      * @param int $payMode 支付方式
      * @param string $consignee 收货人
-     * @param int $deliveryMode 配送方式
      * @param string $remark 订单备注
-     * @param bool $split 是否需要系统拆单
      */
-    public function submitOrder($userId, $cart, $address, $mobile, $payMode, $consignee, $deliveryMode, $remark = '', $split = false)
+    public function submitOrder($orderKey, $address, $mobile, $payMode, $consignee, $remark = '')
     {
-        $this->apiSuccess(['data' => OrderModel::submitOrder($userId, $cart, $mobile, $consignee, $address, $remark, $payMode, $deliveryMode, $split)]);
+        $this->apiSuccess(['data' => OrderModel::submitOrder($this->getUserId(), $orderKey, $mobile, $consignee, $address, $remark, $payMode)]);
     }
 
     /**
@@ -426,8 +418,19 @@ class OrderController extends ApiController
         $this->apiSuccess(['data' => OrderModel::updateOrderStatus($id, OrderModel::STATUS_CANCEL)]);
     }
 
-    public function initOrder($cart, $deliveryMode, $split = true)
+    /**
+     * ## 预处理订单，用于分配订单的商品到xx商家和计算价格之类的事情
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string|array|json $cart 【购物车】，可传json或者数组，每个子集都需包含depot_id、product_id、total和shop_id
+     * @param int $deliveryMode 【配送方式】
+     * @param int $deliveryTime 【配送时间】，时间戳
+     * @param float $lng 【经度】
+     * @param float $lat 【纬度】
+     * @param bool $split 是否需要服务端拆单
+     */
+    public function initOrder($cart, $deliveryMode, $deliveryTime, $lng, $lat, $split = true)
     {
-        $this->apiSuccess(['data' => OrderModel::getInstance()->initOrder($cart, $deliveryMode, $split)]);
+        $this->apiSuccess(['data' => OrderModel::getInstance()->initOrder($cart, $deliveryMode, $deliveryTime, $lng, $lat, $split)]);
     }
 }
