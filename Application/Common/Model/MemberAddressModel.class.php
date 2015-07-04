@@ -263,7 +263,7 @@ class MemberAddressModel extends RelationModel
      * @param bool $isDefault 是否为默认地址
      * @return int|bool 添加成功返回地址ID，否则返回false
      */
-    public function addAddress($uid, $name, $address, $mobile, $regionId, $lng, $lat, $isDefault = false)
+    public function addAddress($uid, $name, $address, $mobile, $regionId, $lng = null, $lat = null, $isDefault = false)
     {
         $data = [
             'uid' => intval($uid),
@@ -271,10 +271,12 @@ class MemberAddressModel extends RelationModel
             'address' => trim($address),
             'mobile' => $mobile,
             'region_id' => intval($regionId),
-            'lnglat' => 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')',
             'patientia' => intval($isDefault),
             'status' => self::STATUS_ACTIVE
         ];
+        if (!empty($lng) && !empty($lat)) {
+            $data['lnglat'] = 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')';
+        }
         if ($isDefault) {//如果用户把新添加的地址设为默认，就把其它的地址取消默认
             self::getInstance()->where(['uid' => intval($uid)])->save(['patientia' => self::DEFAULT_FALSE]);
         }
