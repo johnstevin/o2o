@@ -1050,7 +1050,7 @@ function set_sms_code($mobile,$code){
 function send_sms_code($mobile){
     require_once(__ROOT__.'Addons/Sms/Common/function.php');
     if(get_sms_code($mobile)!==false)
-        E(self::CODE_EXPIRE.'秒内不能重复获取');
+        E(C('VERIFY_CODE_EXPIRE').'秒内不能重复获取');
     $code=[];
     while(count($code)<6){
         $code[]=rand(1,9);
@@ -1069,6 +1069,11 @@ function send_sms_code($mobile){
  * @return bool
  */
 function verify_sms_code($mobile,$code){
+//    var_dump($mobile);
+//    var_dump($code);
+//    var_dump(get_sms_code($mobile));
+//    var_dump(get_sms_code(get_sms_code($mobile)==$code));
+///    die;
     return get_sms_code($mobile)==$code;
 }
 

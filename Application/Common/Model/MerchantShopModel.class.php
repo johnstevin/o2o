@@ -53,7 +53,8 @@ class MerchantShopModel extends AdvModel
         'picture',
         'staff_register_url',
         'tags',
-        'pay_delivery_time',
+        'pay_delivery_time_begin',
+        'pay_delivery_time_end',
         'delivery_time_cost',
         'delivery_distance_limit',
         'pay_delivery_distance',
@@ -65,7 +66,7 @@ class MerchantShopModel extends AdvModel
         'spwsxkz_picture',
         'id_cart_front_picture',
         'id_cart_back_picture',
-        'pay_delivery_time',
+        'pay_delivery_time_begin',
         'delivery_time_cost',
         'delivery_distance_limit',
         'pay_delivery_distance',
@@ -96,7 +97,8 @@ class MerchantShopModel extends AdvModel
             'spwsxkz_picture'=>'int',
             'id_cart_front_picture'=>'int',
             'id_cart_back_picture'=>'int',
-            'pay_delivery_time'=>'int',
+            'pay_delivery_time_begin'=>'int',
+            'pay_delivery_time_end'=>'int',
             'delivery_time_cost'=>'int',
             'delivery_distance_limit'=>'int',
             'pay_delivery_distance'=>'int',
@@ -191,7 +193,7 @@ class MerchantShopModel extends AdvModel
      * @param int $order 排序，1-按距离，2-按评价
      * @return mixed
      */
-    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1)
+    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1,$page = 1,$pageSize=10)
     {
         if (!is_numeric($lat) or !is_numeric($lng))
             //$this->error('坐标必须是数值', '', true);
@@ -239,6 +241,7 @@ class MerchantShopModel extends AdvModel
         $map['sq_merchant_shop.status&sq_merchant_shop.open_status']=1;
         $this->where($map)
             ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
+            ->join('LEFT JOIN sq_picture on sq_picture.id = sq_merchant_shop.picture')
             ->bind($bind)
             ->field([
                 'sq_merchant_shop.id'
@@ -251,7 +254,8 @@ class MerchantShopModel extends AdvModel
                 ,'sq_merchant_shop.open_time_mode'
                 ,'sq_merchant_shop.begin_open_time'
                 ,'sq_merchant_shop.end_open_time'
-                ,'sq_merchant_shop.pay_delivery_time'
+                ,'sq_merchant_shop.pay_delivery_time_begin'
+                ,'sq_merchant_shop.pay_delivery_time_end'
                 ,'sq_merchant_shop.delivery_time_cost'
                 ,'sq_merchant_shop.delivery_distance_limit'
                 ,'sq_merchant_shop.pay_delivery_distance'
@@ -261,10 +265,12 @@ class MerchantShopModel extends AdvModel
                 ,'sq_merchant_shop.delivery_amount_cost'
                 ,'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat)) as distance'
                 ,'st_astext(sq_merchant_shop.lnglat) as lnglat'
-                ,'avg(sq_appraise.grade_1) as grade_1'
-                ,'avg(sq_appraise.grade_2) as grade_2'
-                ,'avg(sq_appraise.grade_3) as grade_3'
-                ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade']);
+                ,'avg(ifnull(sq_appraise.grade_1,0)) as grade_1'
+                ,'avg(ifnull(sq_appraise.grade_2,0)) as grade_2'
+                ,'avg(ifnull(sq_appraise.grade_3,0)) as grade_3'
+                ,'(avg(ifnull(sq_appraise.grade_1,0))+avg(ifnull(sq_appraise.grade_2,0))+avg(ifnull(sq_appraise.grade_3,0)))/3 as grade'
+                ,'ifnull(sq_picture.path,\'\') as picture_path'
+            ]);
 
         if(1==$order)
             $this->order('distance');
@@ -274,7 +280,10 @@ class MerchantShopModel extends AdvModel
 
         $this->group('sq_merchant_shop.id');
 
-        $ret = $this->select();
+        $ret = $this->page($page,$pageSize)->select();
+//        foreach($ret as $i){
+//            print_r($i['id']);print_r(',');
+//        }
         //print_r($this->getLastSql());die;
         return $ret;
     }
@@ -285,11 +294,41 @@ class MerchantShopModel extends AdvModel
      * @param int $id 商铺ID
      * @return array|null
      */
-    public function get($id, $field='*')
+    public function get($id)
     {
         $id = intval($id);
         if (!$id) return null;
-        return $this->field($field)->find($id);
+        return $this
+            ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
+            ->join('LEFT JOIN sq_picture on sq_picture.id = sq_merchant_shop.picture')
+            ->field([
+            'sq_merchant_shop.id'
+            ,'sq_merchant_shop.title'
+            ,'sq_merchant_shop.picture'
+            ,'sq_merchant_shop.description'
+            ,'sq_merchant_shop.type'
+            ,'sq_merchant_shop.phone_number'
+            ,'sq_merchant_shop.address'
+            ,'sq_merchant_shop.open_time_mode'
+            ,'sq_merchant_shop.begin_open_time'
+            ,'sq_merchant_shop.end_open_time'
+            ,'sq_merchant_shop.pay_delivery_time_begin'
+            ,'sq_merchant_shop.pay_delivery_time_end'
+            ,'sq_merchant_shop.delivery_time_cost'
+            ,'sq_merchant_shop.delivery_distance_limit'
+            ,'sq_merchant_shop.pay_delivery_distance'
+            ,'sq_merchant_shop.delivery_distance_cost'
+            ,'sq_merchant_shop.free_delivery_amount'
+            ,'sq_merchant_shop.pay_delivery_amount'
+            ,'sq_merchant_shop.delivery_amount_cost'
+            ,'st_astext(sq_merchant_shop.lnglat) as lnglat'
+                ,'avg(ifnull(sq_appraise.grade_1,0)) as grade_1'
+                ,'avg(ifnull(sq_appraise.grade_2,0)) as grade_2'
+                ,'avg(ifnull(sq_appraise.grade_3,0)) as grade_3'
+                ,'(avg(ifnull(sq_appraise.grade_1,0))+avg(ifnull(sq_appraise.grade_2,0))+avg(ifnull(sq_appraise.grade_3,0)))/3 as grade'
+            ,'ifnull(sq_picture.path,\'\') as picture_path'])
+            ->where(['sq_merchant_shop.id'=>$id])
+            ->find();
     }
 
     /**
@@ -508,6 +547,8 @@ class MerchantShopModel extends AdvModel
         $this->join($product_sql);
         $this->join('JOIN sq_brand on sq_brand.id=sq_product.brand_id');
         $this->join('JOIN sq_norms on sq_norms.id=sq_product.norms_id');
+        $this->join('LEFT JOIN sq_picture as product_picture on product_picture.id = sq_product.picture');
+        //$this->join('LEFT JOIN sq_picture as shop_picture on shop_picture.id = sq_merchant_shop.picture');
         $this->where($where);
         $this->bind($bindValues);
 
@@ -520,7 +561,10 @@ class MerchantShopModel extends AdvModel
             , 'sq_brand.id as brand_id'
             , 'sq_brand.title as brand'
             , 'sq_norms.id as norm_id'
-            , 'sq_norms.title as norm'])
+            , 'sq_norms.title as norm'
+            ,'ifnull(product_picture.path,\'\') as product_picture_path'
+            //,'ifnull(shop_picture.path,\'\') as shop_picture_path'
+        ])
             ->order('sq_merchant_depot.price');
         $data = $this->select();
 
@@ -547,9 +591,11 @@ class MerchantShopModel extends AdvModel
                 'brand'=>$i['brand'],
                 'shop_id'=>$i['shop_id'],
                 'shop'=>$i['shop_title'],
+                'picture_path'=>$i['product_picture_path'],
             ];
         }
         return array_values($shop);
     }
 
 }
+
