@@ -22,9 +22,8 @@ class MemberAddressController extends ApiController
      * @param float $lat 纬度
      * @param bool $isDefault 是否为默认地址
      */
-    public function add($name, $address, $mobile, $regionId, $lng, $lat, $isDefault = false)
+    public function add($name, $address, $mobile, $regionId, $lng = null, $lat = null, $isDefault = false)
     {
-        $this->getUserId();die;
         $this->apiSuccess(['data' => MemberAddressModel::getInstance()->addAddress($this->getUserId(), $name, $address, $mobile, $regionId, $lng, $lat, $isDefault)]);
     }
 
@@ -40,7 +39,7 @@ class MemberAddressController extends ApiController
      * @param float $lat 纬度
      * @param bool $isDefault 是否为默认地址
      */
-    public function update($id, $name, $address, $mobile, $regionId, $lng, $lat, $isDefault = null)
+    public function update($id, $name, $address, $mobile, $regionId, $lng = null, $lat = null, $isDefault = null)
     {
         $this->apiSuccess(['data' => MemberAddressModel::getInstance()->updateAddress($id, $name, $address, $mobile, $regionId, $lng, $lat, $isDefault)]);
     }
