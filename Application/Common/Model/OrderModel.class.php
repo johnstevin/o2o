@@ -1052,7 +1052,7 @@ class OrderModel extends RelationModel
      */
     public static function updateOrderStatus($id, $status)
     {
-        return self::getInstance()->where(['id' => intval($id), '_logic' => ' OR ', 'pid' => intval($id)])->save(['status' => intval($status)]);
+        return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['status' => intval($status)]);
     }
 
     /**
@@ -1064,7 +1064,7 @@ class OrderModel extends RelationModel
      */
     public static function updateOrderPayMode($id, $payMode)
     {
-        return self::getInstance()->where(['id' => intval($id), '_logic' => ' OR ', 'pid' => intval($id)])->save(['pay_mode' => intval($payMode)]);
+        return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['pay_mode' => intval($payMode)]);
     }
 
     /**
@@ -1076,7 +1076,7 @@ class OrderModel extends RelationModel
      */
     public static function updateOrderPayStatus($id, $payStatus)
     {
-        return self::getInstance()->where(['id' => intval($id), '_logic' => ' OR ', 'pid' => intval($id)])->save(['pay_status' => intval($payStatus)]);
+        return self::getInstance()->where(['id' => intval($id), '_logic' => 'OR', 'pid' => intval($id)])->save(['pay_status' => intval($payStatus)]);
     }
 
     /**
