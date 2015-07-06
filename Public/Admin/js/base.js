@@ -374,6 +374,15 @@ function contentload(target){
 
      //开关属性
      $(".switch").bootstrapSwitch();
+
+     $(".switch").on('switchChange.bootstrapSwitch', function(event, state) {
+         var target;
+         if ((target = $(this).attr('href')) || (target = $(this).attr('url'))) {
+             $.get(target).success(function (result) {
+                 //TODO
+             });
+         }
+     });
 }
 
 function Save(Url,selector){

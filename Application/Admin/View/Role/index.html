@@ -34,7 +34,7 @@
             <th>授权</th>
             <th>是否公共</th>
             <th>启用状态</th>
-            <th>操作</th>
+            <th>删除</th>
         </tr>
         </thead>
         <tbody>
@@ -52,20 +52,22 @@
                     </td>
                     <td><span>{$vo.public_text}</span></td>
                     <td>
-                        <!--{$vo.status_text}-->
-                        <input class="switch" type="checkbox" data-size="small" data-on-color="success" data-off-color="warning" <eq name="vo.status" value="1">checked</eq>>
+                        <input class="switch confirm"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
+                        <eq name="vo.status" value="1">href="{:U('Role/changeStatus?method=forbid&id='.$vo['id'])}" checked
+                            <else/>
+                            href="{:U('Role/changeStatus?method=resume&id='.$vo['id'])}"</eq>>
                     </td>
                     <td>
 
-                        <eq name="vo.status" value="1">
-                            <a href="{:U('Role/changeStatus?method=forbid&id='.$vo['id'])}"
-                               class="ajax-get">禁用</a>
-                            <else/>
-                            <a href="{:U('Role/changeStatus?method=resume&id='.$vo['id'])}"
-                               class="ajax-get">启用</a>
-                        </eq>
-                        <a href="{:U('Role/changeStatus?method=delete&id='.$vo['id'])}"
-                           class="confirm ajax-get">删除</a>
+                        <!--<eq name="vo.status" value="1">-->
+                            <!--<a href="{:U('Role/changeStatus?method=forbid&id='.$vo['id'])}"-->
+                               <!--class="ajax-get">禁用</a>-->
+                            <!--<else/>-->
+                            <!--<a href="{:U('Role/changeStatus?method=resume&id='.$vo['id'])}"-->
+                               <!--class="ajax-get">启用</a>-->
+                        <!--</eq>-->
+                        <a  href="{:U('Role/changeStatus?method=delete&id='.$vo['id'])}"
+                           class="confirm ajax-get btn btn-sm btn-info">删除</a>
                     </td>
                 </tr>
             </volist>
