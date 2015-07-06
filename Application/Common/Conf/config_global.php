@@ -74,10 +74,26 @@ return [
         'UCENTER_MEMBER_PHOTO' => 3,    //用户头像
         'CARWASH_MEMBER_PICTURE' => 4,    //洗车用户头像
         'CARWASH_MERCHANT_PICTURE' => 5,    //洗车工头像
-        'APK_PACKAGE_MEMBER' => 6,    //apk用户包
-        'APK_PACKAGE_MERCHANT' => 7,    //apk商家包
     ],
 
+    /* 软件包类型 */
+    'VERSION_PACKAGE_TYPE' => [
+        'MEMBER' => 1,    //apk用户包
+        'MERCHANT' => 2,    //apk商家包
+    ],
+
+    /* 版本类型 */
+    'VERSION_TYPE' => [
+        'BASE' => 1,
+        'ALPHA' => 2,
+        'BETA' => 3,
+        'RC' => 4,
+        'RELEASE' => 5,
+    ],
+
+    /* 版本号：1.1.1.20150702_alpha */
+
+    /* 支付宝配置 */
     'ALIPAY' => [
         'PARTNER' => '',//合作身份者id
         'SELLER_EMAIL' => '',//收款支付宝账号
@@ -112,21 +128,6 @@ return [
         'autoSub' => true, //自动子目录保存文件
         'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
         'rootPath' => './Uploads/MerchantShop/', //保存根路径
-        'savePath' => '', //保存路径
-        'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
-        'saveExt' => '', //文件保存后缀，空则使用原后缀
-        'replace' => false, //存在同名是否覆盖
-        'hash' => true, //是否生成hash编码
-        'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
-    ], //图片上传相关配置（文件上传类配置）
-    'UCENTER_MEMBER_PICTURE_UPLOAD' => [
-        'picType' => 'UCENTER_MEMBER_PHOTO',//ADD by wangjiang
-        'mimes' => '', //允许上传的文件MiMe类型
-        'maxSize' => 2 * 1024 * 1024, //上传的文件大小限制 (0-不做限制)
-        'exts' => 'jpg,gif,png,jpeg', //允许上传的文件后缀
-        'autoSub' => true, //自动子目录保存文件
-        'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
-        'rootPath' => './Uploads/UcentMember/', //保存根路径
         'savePath' => '', //保存路径
         'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
         'saveExt' => '', //文件保存后缀，空则使用原后缀
