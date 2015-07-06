@@ -112,13 +112,13 @@ class ProductModel extends RelationModel
         ],
         [
             'add_ip',
-            'get_client_ip',
+            'get_client_ip_to_int',
             self::MODEL_INSERT,
             'function'
         ],
         [
             'edit_ip',
-            'get_client_ip',
+            'get_client_ip_to_int',
             self::MODEL_UPDATE,
             'function'
         ],
