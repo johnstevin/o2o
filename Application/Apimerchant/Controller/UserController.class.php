@@ -256,6 +256,29 @@ class UserController extends ApiController {
     }
 
     /**
+     * 忘记密码
+     * @errorCode    50116
+     * @author       Stevin.John@qq.com
+     */
+    public function forgetPassword(){
+        try {
+            $rules = array(
+                array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', '手机格式不正确', self::EXISTS_VALIDATE), //手机格式不正确
+                array('mobile', 'checkDenyMobile', '您的手机号禁止注册', self::EXISTS_VALIDATE, 'callback'), //过滤手机黑名单
+            );
+            $mobile = I('post.mobile');
+            $model  = D("UcenterMember");
+            if ( !$data = $model->validate($rules)->create() )
+                E($model->getError());
+            
+
+
+        } catch (\Exception $ex) {
+            $this->apiError(50116, $ex->getMessage());
+        }
+    }
+
+    /**
      * @ignore
      * 商户销售额统计
      * @param

@@ -70,10 +70,26 @@ return [
         'UCENTER_MEMBER_PHOTO'           => 3,    //用户头像
         'CARWASH_MEMBER_PICTURE'         => 4,    //洗车用户头像
         'CARWASH_MERCHANT_PICTURE'       => 5,    //洗车工头像
-        'APK_PACKAGE_MEMBER'             => 6,    //apk用户包
-        'APK_PACKAGE_MERCHANT'           => 7,    //apk商家包
     ),
 
+    /* 软件包类型 */
+    'VERSION_PACKAGE_TYPE'     => array(
+        'MEMBER'               => 1,    //apk用户包
+        'MERCHANT'             => 2,    //apk商家包
+    ),
+
+    /* 版本类型 */
+    'VERSION_TYPE'             => array(
+        'BASE'                 => 1,
+        'ALPHA'                => 2,
+        'BETA'                 => 3,
+        'RC'                   => 4,
+        'RELEASE'              => 5,
+    ),
+
+    /* 版本号：1.1.1.20150702_alpha */
+
+    /* 支付宝配置 */
     'ALIPAY' => [
         'PARTNER' => '',//合作身份者id
         'SELLER_EMAIL' => '',//收款支付宝账号
