@@ -134,13 +134,23 @@ function showFun(rootI, subI) {
 	else {//本功能
 		return;
 	}
-	//设置位置导航
-	if (menuJson[rootI].children[subI].EnglishTitle != null && menuJson[rootI].children[subI].EnglishTitle != "") {
-		$('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(0,false)">主页</a></li><li><a href="javascript:void(0)" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '<span>' + menuJson[rootI].children[subI].EnglishTitle + '</span></li>');
-	}
-	else {
-		$('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(0,false)">主页</a></li><li><a href="javascript:void(0)" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '</li>');
-	}
+    //设置位置导航
+    if (menuJson[rootI].children[subI].EnglishTitle != null && menuJson[rootI].children[subI].EnglishTitle != "") {
+        if(rootI == 0){//首页
+            $('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '<span>' + menuJson[rootI].children[subI].EnglishTitle + '</span></li>');
+        }
+        else{
+            $('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(0,false)">首页</a></li><li><a href="javascript:void(0)" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '<span>' + menuJson[rootI].children[subI].EnglishTitle + '</span></li>');
+        }
+    }
+    else {
+        if(rootI == 0){//首页
+            $('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '</li>');
+        }
+        else{
+            $('#rg-position').html('<li><a href="javascript:void(0)" onclick="showSubMenu(0,false)">首页</a></li><li><a href="javascript:void(0)" onclick="showSubMenu(' + rootI + ',false)">' + menuJson[rootI].text + '</a></li><li class="active">' + menuJson[rootI].children[subI].text + '</li>');
+        }
+    }
 	//更新面板高度
 	changeMainPanelHeight();
 	if (menuJson[rootI].children[subI].url != "" && menuJson[rootI].children[subI].url != null) {//有路由地址

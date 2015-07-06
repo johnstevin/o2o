@@ -85,17 +85,19 @@
 
 </script>
 
-<div>
+<div class="row">
+    <div class="col-md-1">
     <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-region" class="btn btn-success"
        href="{:U('add?pid='.I('id'))}">新 增</a>
-
-
-
-</div>
-<div class="table-responsive">
-    <ol class="breadcrumb">
+    </div>
+    <div class="col-md-11">
+        <ol class="breadcrumb">
         {$_breadcrumb}
     </ol>
+    </div>
+</div>
+<div class="table-responsive">
+
     <table class="table table-striped table-hover">
         <thead>
         <tr id="table-header">
