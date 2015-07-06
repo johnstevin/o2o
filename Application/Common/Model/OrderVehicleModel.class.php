@@ -109,12 +109,20 @@ class OrderVehicleModel extends AdvModel{
         [
             'address',
             'require',
-            '地址不能为空'
+            '地址不能为空',
+            self::MUST_VALIDATE
+        ],
+        [
+            'lnglat',
+            'require',
+            '坐标不能为空',
+            self::MUST_VALIDATE
         ],
         [
             'preset_time',
             'require',
-            '预定时间不能为空'
+            '预定时间不能为空',
+            self::MUST_VALIDATE
         ],
         [
             'status',

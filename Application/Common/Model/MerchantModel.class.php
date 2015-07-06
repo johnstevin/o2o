@@ -239,7 +239,7 @@ class MerchantModel extends AdvModel
         $bind[':presetTime']=$presetTime-$timeRange;
         $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
             ' and sq_merchant.id not in (select worker_id from sq_order_vehicle
-            where preset_time>:presetTime and worker_id=sq_merchant.id and sq_order_vehicle.status in (1,2,3)) ';
+                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3)) ';
 
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
         $data=$this

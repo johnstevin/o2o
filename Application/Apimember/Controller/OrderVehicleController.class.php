@@ -178,33 +178,21 @@ class OrderVehicleController extends ApiController
             if (IS_POST) {
                 $model = new OrderVehicleModel();
 
-                $province=I('province','');
-                $city=I('city','');
-                $district=I('district','');
-
                 if (!($data=$model->create()))
-                    E('参数传递失败');
-
-                unset($data['province']);
-                unset($data['city']);
-                unset($data['district']);
+                    E('参数传递失败,'.$model->getError());
 
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
                     list($lng,$lat)=explode(' ',$data['lnglat']);
                     $worker=(new MerchantModel())->getAvailableWorker($lng,$lat,$data['preset_time']);
-                    if(empty($worker)){
-                        $data['status']=OrderVehicleModel::STATUS_NO_WORKER;
-                        $shopId=$this->_get_car_wash_shop($province,$city,$district);
-                        //实在找不到可以处理的公司，只能甩给最高分组去负责了
-                        if(empty($shopId))
-                            $shopId=C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_VEHICLE');
-                        $data['shop_id']=$shopId;
-                    }else{
-                        $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
-                        $data['worker_id']=$worker['id'];
-                        $data['shop_id']=$worker['shop_id'];
-                    }
+
+                    if(empty($worker))
+                        E('没有找到合适的服务人员');
+
+                    $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
+                    $data['worker_id']=$worker['id'];
+                    $data['shop_id']=$worker['shop_id'];
+
                 }else
                     $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
 
@@ -214,6 +202,7 @@ class OrderVehicleController extends ApiController
                 $sendMsg=$data['status']==OrderVehicleModel::STATUS_HAS_WORKER;
 
                 $model->data($data);
+                //var_dump($data);
                 $this->apiSuccess(['id' => intval($model->insert(function() use ($sendMsg,$wid){
                     if($sendMsg){
                         //TODO 实现消息推送$wid
