@@ -198,11 +198,11 @@ class MerchantDepotModel extends RelationModel
             self::MODEL_UPDATE,
             'function'
         ],
-        [
-            'status',
-            self::STATUS_VERIFY,
-            self::MODEL_INSERT
-        ]
+//        [
+//            'status',
+//            self::STATUS_VERIFY,
+//            self::MODEL_INSERT
+//        ]
     ];
 
     /**
