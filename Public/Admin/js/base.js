@@ -371,6 +371,9 @@ function contentload(target){
 
 		return false;
 	});
+
+     //开关属性
+     $(".switch").bootstrapSwitch();
 }
 
 function Save(Url,selector){
