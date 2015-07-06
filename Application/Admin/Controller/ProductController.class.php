@@ -61,10 +61,10 @@ class ProductController extends AdminController
                 /* 添加或更新数据 */
                 if ($Product->saveCategory($result)) {
 
+                    M()->commit();
                     //记录行为
                     action_log('admin_add_product','product',$result,UID,1);
 
-                    M()->commit();
                     $this->success('新增成功！', U('index'));
                 } else {
                     M()->rollback();
