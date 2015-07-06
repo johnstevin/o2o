@@ -25,6 +25,10 @@ return [
     /* 系统数据加密设置 */
     'DATA_AUTH_KEY' => '$5sdhnr4%#^d9smjf&345sfsdb2f4%*)&*)@#@!$sanhgh645#@#sdf', //默认数据加密KEY
 
+    ## 极光推送设置
+    'PUSH_TYPE' => 'JPush',
+    'JPUSH_APP_KEY' => '8548f5acaccf5ece222be8c0',
+    'JPUSH_MASTER_SECRET' => 'cc6141c26da194563766896c',
 
     /* 权限组配置-数据库id值 */
     'AUTH_GROUP_ID' => [
@@ -64,15 +68,15 @@ return [
     ],
 
     /* 上传图片类型picture */
-    'PICTURE_TYPE'     => array(
-        'PRODUCT_PICTURE'                => 1,    //产品图片
-        'MERCHANT_SHOP_PICTURE'          => 2,    //商家店铺图片
-        'UCENTER_MEMBER_PHOTO'           => 3,    //用户头像
-        'CARWASH_MEMBER_PICTURE'         => 4,    //洗车用户头像
-        'CARWASH_MERCHANT_PICTURE'       => 5,    //洗车工头像
-        'APK_PACKAGE_MEMBER'             => 6,    //apk用户包
-        'APK_PACKAGE_MERCHANT'           => 7,    //apk商家包
-    ),
+    'PICTURE_TYPE' => [
+        'PRODUCT_PICTURE' => 1,    //产品图片
+        'MERCHANT_SHOP_PICTURE' => 2,    //商家店铺图片
+        'UCENTER_MEMBER_PHOTO' => 3,    //用户头像
+        'CARWASH_MEMBER_PICTURE' => 4,    //洗车用户头像
+        'CARWASH_MERCHANT_PICTURE' => 5,    //洗车工头像
+        'APK_PACKAGE_MEMBER' => 6,    //apk用户包
+        'APK_PACKAGE_MERCHANT' => 7,    //apk商家包
+    ],
 
     'ALIPAY' => [
         'PARTNER' => '',//合作身份者id
@@ -82,112 +86,112 @@ return [
         'TRANSPORT' => 'https',//访问模式,根据自己的服务器是否支持ssl访问，若支持请选择https；若不支持请选择http
     ],
 
-    'VAR_SESSION_ID' => 'session_id',	//修复uploadify插件无法传递session_id的bug
+    'VAR_SESSION_ID' => 'session_id',    //修复uploadify插件无法传递session_id的bug
 
     /* 图片上传相关配置 */
-    'PRODUCT_PICTURE_UPLOAD' => array(
-        'picType'=>'PRODUCT_PICTURE',//ADD by wangjiang
-        'mimes'    => '', //允许上传的文件MiMe类型
-        'maxSize'  => 2*1024*1024, //上传的文件大小限制 (0-不做限制)
-        'exts'     => 'jpg,gif,png,jpeg', //允许上传的文件后缀
-        'autoSub'  => true, //自动子目录保存文件
-        'subName'  => array('date', 'Y/m/d'), //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
+    'PRODUCT_PICTURE_UPLOAD' => [
+        'picType' => 'PRODUCT_PICTURE',//ADD by wangjiang
+        'mimes' => '', //允许上传的文件MiMe类型
+        'maxSize' => 2 * 1024 * 1024, //上传的文件大小限制 (0-不做限制)
+        'exts' => 'jpg,gif,png,jpeg', //允许上传的文件后缀
+        'autoSub' => true, //自动子目录保存文件
+        'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
         'rootPath' => './Uploads/Product/', //保存根路径
         'savePath' => '', //保存路径
-        'saveName' => array('uniqid', ''), //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
-        'saveExt'  => '', //文件保存后缀，空则使用原后缀
-        'replace'  => false, //存在同名是否覆盖
-        'hash'     => true, //是否生成hash编码
+        'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
+        'saveExt' => '', //文件保存后缀，空则使用原后缀
+        'replace' => false, //存在同名是否覆盖
+        'hash' => true, //是否生成hash编码
         'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
-    ), //图片上传相关配置（文件上传类配置）
-    'MERCHANT_SHOP_PICTURE_UPLOAD' => array(
-        'picType'=>'MERCHANT_SHOP_PICTURE',//ADD by wangjiang
-        'mimes'    => '', //允许上传的文件MiMe类型
-        'maxSize'  => 2*1024*1024, //上传的文件大小限制 (0-不做限制)
-        'exts'     => 'jpg,gif,png,jpeg', //允许上传的文件后缀
-        'autoSub'  => true, //自动子目录保存文件
-        'subName'  => array('date', 'Y/m/d'), //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
+    ], //图片上传相关配置（文件上传类配置）
+    'MERCHANT_SHOP_PICTURE_UPLOAD' => [
+        'picType' => 'MERCHANT_SHOP_PICTURE',//ADD by wangjiang
+        'mimes' => '', //允许上传的文件MiMe类型
+        'maxSize' => 2 * 1024 * 1024, //上传的文件大小限制 (0-不做限制)
+        'exts' => 'jpg,gif,png,jpeg', //允许上传的文件后缀
+        'autoSub' => true, //自动子目录保存文件
+        'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
         'rootPath' => './Uploads/MerchantShop/', //保存根路径
         'savePath' => '', //保存路径
-        'saveName' => array('uniqid', ''), //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
-        'saveExt'  => '', //文件保存后缀，空则使用原后缀
-        'replace'  => false, //存在同名是否覆盖
-        'hash'     => true, //是否生成hash编码
+        'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
+        'saveExt' => '', //文件保存后缀，空则使用原后缀
+        'replace' => false, //存在同名是否覆盖
+        'hash' => true, //是否生成hash编码
         'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
-    ), //图片上传相关配置（文件上传类配置）
-    'UCENTER_MEMBER_PICTURE_UPLOAD' => array(
-        'picType'=>'UCENTER_MEMBER_PHOTO',//ADD by wangjiang
-        'mimes'    => '', //允许上传的文件MiMe类型
-        'maxSize'  => 2*1024*1024, //上传的文件大小限制 (0-不做限制)
-        'exts'     => 'jpg,gif,png,jpeg', //允许上传的文件后缀
-        'autoSub'  => true, //自动子目录保存文件
-        'subName'  => array('date', 'Y/m/d'), //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
+    ], //图片上传相关配置（文件上传类配置）
+    'UCENTER_MEMBER_PICTURE_UPLOAD' => [
+        'picType' => 'UCENTER_MEMBER_PHOTO',//ADD by wangjiang
+        'mimes' => '', //允许上传的文件MiMe类型
+        'maxSize' => 2 * 1024 * 1024, //上传的文件大小限制 (0-不做限制)
+        'exts' => 'jpg,gif,png,jpeg', //允许上传的文件后缀
+        'autoSub' => true, //自动子目录保存文件
+        'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
         'rootPath' => './Uploads/UcentMember/', //保存根路径
         'savePath' => '', //保存路径
-        'saveName' => array('uniqid', ''), //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
-        'saveExt'  => '', //文件保存后缀，空则使用原后缀
-        'replace'  => false, //存在同名是否覆盖
-        'hash'     => true, //是否生成hash编码
+        'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
+        'saveExt' => '', //文件保存后缀，空则使用原后缀
+        'replace' => false, //存在同名是否覆盖
+        'hash' => true, //是否生成hash编码
         'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
-    ), //图片上传相关配置（文件上传类配置）
-    'UCENTER_MEMBER_PICTURE_UPLOAD' => array(
-        'picType'=>'UCENTER_MEMBER_PHOTO',//ADD by wangjiang
-        'mimes'    => '', //允许上传的文件MiMe类型
-        'maxSize'  => 2*1024*1024, //上传的文件大小限制 (0-不做限制)
-        'exts'     => 'jpg,gif,png,jpeg', //允许上传的文件后缀
-        'autoSub'  => true, //自动子目录保存文件
-        'subName'  => array('date', 'Y/m/d'), //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
+    ], //图片上传相关配置（文件上传类配置）
+    'UCENTER_MEMBER_PICTURE_UPLOAD' => [
+        'picType' => 'UCENTER_MEMBER_PHOTO',//ADD by wangjiang
+        'mimes' => '', //允许上传的文件MiMe类型
+        'maxSize' => 2 * 1024 * 1024, //上传的文件大小限制 (0-不做限制)
+        'exts' => 'jpg,gif,png,jpeg', //允许上传的文件后缀
+        'autoSub' => true, //自动子目录保存文件
+        'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
         'rootPath' => './Uploads/UcentMember/', //保存根路径
         'savePath' => '', //保存路径
-        'saveName' => array('uniqid', ''), //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
-        'saveExt'  => '', //文件保存后缀，空则使用原后缀
-        'replace'  => false, //存在同名是否覆盖
-        'hash'     => true, //是否生成hash编码
+        'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
+        'saveExt' => '', //文件保存后缀，空则使用原后缀
+        'replace' => false, //存在同名是否覆盖
+        'hash' => true, //是否生成hash编码
         'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
-    ), //图片上传相关配置（文件上传类配置）
-    'CARWASH_MEMBER_PICTURE_UPLOAD' => array(
-        'picType'=>'CARWASH_MEMBER_PICTURE',//ADD by wangjiang
-        'mimes'    => '', //允许上传的文件MiMe类型
-        'maxSize'  => 2*1024*1024, //上传的文件大小限制 (0-不做限制)
-        'exts'     => 'jpg,gif,png,jpeg', //允许上传的文件后缀
-        'autoSub'  => true, //自动子目录保存文件
-        'subName'  => array('date', 'Y/m/d'), //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
+    ], //图片上传相关配置（文件上传类配置）
+    'CARWASH_MEMBER_PICTURE_UPLOAD' => [
+        'picType' => 'CARWASH_MEMBER_PICTURE',//ADD by wangjiang
+        'mimes' => '', //允许上传的文件MiMe类型
+        'maxSize' => 2 * 1024 * 1024, //上传的文件大小限制 (0-不做限制)
+        'exts' => 'jpg,gif,png,jpeg', //允许上传的文件后缀
+        'autoSub' => true, //自动子目录保存文件
+        'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
         'rootPath' => './Uploads/CarwashMember/', //保存根路径
         'savePath' => '', //保存路径
-        'saveName' => array('uniqid', ''), //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
-        'saveExt'  => '', //文件保存后缀，空则使用原后缀
-        'replace'  => false, //存在同名是否覆盖
-        'hash'     => true, //是否生成hash编码
+        'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
+        'saveExt' => '', //文件保存后缀，空则使用原后缀
+        'replace' => false, //存在同名是否覆盖
+        'hash' => true, //是否生成hash编码
         'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
-    ), //图片上传相关配置（文件上传类配置）
-    'CARWASH_MERCHANT_PICTURE_UPLOAD' => array(
-        'picType'=>'CARWASH_MERCHANT_PICTURE',//ADD by wangjiang
-        'mimes'    => '', //允许上传的文件MiMe类型
-        'maxSize'  => 2*1024*1024, //上传的文件大小限制 (0-不做限制)
-        'exts'     => 'jpg,gif,png,jpeg', //允许上传的文件后缀
-        'autoSub'  => true, //自动子目录保存文件
-        'subName'  => array('date', 'Y/m/d'), //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
+    ], //图片上传相关配置（文件上传类配置）
+    'CARWASH_MERCHANT_PICTURE_UPLOAD' => [
+        'picType' => 'CARWASH_MERCHANT_PICTURE',//ADD by wangjiang
+        'mimes' => '', //允许上传的文件MiMe类型
+        'maxSize' => 2 * 1024 * 1024, //上传的文件大小限制 (0-不做限制)
+        'exts' => 'jpg,gif,png,jpeg', //允许上传的文件后缀
+        'autoSub' => true, //自动子目录保存文件
+        'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
         'rootPath' => './Uploads/CarwashMerchant/', //保存根路径
         'savePath' => '', //保存路径
-        'saveName' => array('uniqid', ''), //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
-        'saveExt'  => '', //文件保存后缀，空则使用原后缀
-        'replace'  => false, //存在同名是否覆盖
-        'hash'     => true, //是否生成hash编码
+        'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
+        'saveExt' => '', //文件保存后缀，空则使用原后缀
+        'replace' => false, //存在同名是否覆盖
+        'hash' => true, //是否生成hash编码
         'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
-    ), //图片上传相关配置（文件上传类配置）
-    'PRODUCT_PICTURE_UPLOAD_DRIVER'=>'local',
+    ], //图片上传相关配置（文件上传类配置）
+    'PRODUCT_PICTURE_UPLOAD_DRIVER' => 'local',
     //本地上传文件驱动配置
-    'UPLOAD_LOCAL_CONFIG'=>array(),
+    'UPLOAD_LOCAL_CONFIG' => [],
 
     //验证码过期时间，单位秒
-    'VERIFY_CODE_EXPIRE'=>60,
+    'VERIFY_CODE_EXPIRE' => 60,
 
     //系统自动查找洗车工参数
-    'AUTO_MERCHANT_SCAN'=>[
+    'AUTO_MERCHANT_SCAN' => [
         //查找最大范围，单位米
-        'RANGE'=>1000,
+        'RANGE' => 1000,
         //时间匹配参数，单位秒，洗车工最后的订单时间与用户指定的时间之差必须大于该值才能匹配
-        'PRESET_TIME'=>1000
+        'PRESET_TIME' => 1000
     ],
 
 ];
