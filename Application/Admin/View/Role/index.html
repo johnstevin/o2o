@@ -22,7 +22,7 @@
 
 
         </div>
-
+</div>
 <div class="table-responsive">
     <table class="table table-striped table-hover">
         <thead>
@@ -53,6 +53,9 @@
                     <td><span>{$vo.public_text}</span></td>
                     <td>{$vo.status_text}</td>
                     <td>
+                        <!--<div class="bootstrap-switch" data-on="success" data-off="warning">-->
+                            <!--<input type="checkbox" checked />-->
+                        <!--</div>-->
                         <eq name="vo.status" value="1">
                             <a href="{:U('Role/changeStatus?method=forbid&id='.$vo['id'])}"
                                class="ajax-get">禁用</a>

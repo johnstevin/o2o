@@ -167,8 +167,11 @@ class UserController extends ApiController {
             $type = I('get.type');
             switch ( $type ) {
                 case 'photo' :
-                    // TODO
-
+                    $ptype= 'UCENTER_MEMBER';
+                    $info=upload_picture($uid,$ptype);
+                    $model = D("UcenterMember");
+                    $data['id'] = $uid;
+                    $data['photo']=$info['id'];
                     break;
                 case 'real_name' :
                     $model = D("UcenterMember");
