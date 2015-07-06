@@ -17,21 +17,21 @@ function get_client_ip_to_int()
 }
 
 
-
 /**
  * 系统加密方法
  * @param string $data 要加密的字符串
- * @param string $key  加密密钥
- * @param int $expire  过期时间 单位 秒
+ * @param string $key 加密密钥
+ * @param int $expire 过期时间 单位 秒
  * @return string
  * @author 麦当苗儿 <zuojiazi@vip.qq.com>
  */
-function think_encrypt($data, $key = '', $expire = 0) {
-    $key  = md5(empty($key) ? C('DATA_AUTH_KEY') : $key);
+function think_encrypt($data, $key = '', $expire = 0)
+{
+    $key = md5(empty($key) ? C('DATA_AUTH_KEY') : $key);
     $data = base64_encode($data);
-    $x    = 0;
-    $len  = strlen($data);
-    $l    = strlen($key);
+    $x = 0;
+    $len = strlen($data);
+    $l = strlen($key);
     $char = '';
 
     for ($i = 0; $i < $len; $i++) {
@@ -40,39 +40,40 @@ function think_encrypt($data, $key = '', $expire = 0) {
         $x++;
     }
 
-    $str = sprintf('%010d', $expire ? $expire + time():0);
+    $str = sprintf('%010d', $expire ? $expire + time() : 0);
 
     for ($i = 0; $i < $len; $i++) {
-        $str .= chr(ord(substr($data, $i, 1)) + (ord(substr($char, $i, 1)))%256);
+        $str .= chr(ord(substr($data, $i, 1)) + (ord(substr($char, $i, 1))) % 256);
     }
-    return str_replace(array('+','/','='),array('-','_',''),base64_encode($str));
+    return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($str));
 }
 
 /**
  * 系统解密方法
  * @param  string $data 要解密的字符串 （必须是think_encrypt方法加密的字符串）
- * @param  string $key  加密密钥
+ * @param  string $key 加密密钥
  * @return string
  * @author 麦当苗儿 <zuojiazi@vip.qq.com>
  */
-function think_decrypt($data, $key = ''){
-    $key    = md5(empty($key) ? C('DATA_AUTH_KEY') : $key);
-    $data   = str_replace(array('-','_'),array('+','/'),$data);
-    $mod4   = strlen($data) % 4;
+function think_decrypt($data, $key = '')
+{
+    $key = md5(empty($key) ? C('DATA_AUTH_KEY') : $key);
+    $data = str_replace(['-', '_'], ['+', '/'], $data);
+    $mod4 = strlen($data) % 4;
     if ($mod4) {
         $data .= substr('====', $mod4);
     }
-    $data   = base64_decode($data);
-    $expire = substr($data,0,10);
-    $data   = substr($data,10);
+    $data = base64_decode($data);
+    $expire = substr($data, 0, 10);
+    $data = substr($data, 10);
 
-    if($expire > 0 && $expire < time()) {
+    if ($expire > 0 && $expire < time()) {
         return '';
     }
-    $x      = 0;
-    $len    = strlen($data);
-    $l      = strlen($key);
-    $char   = $str = '';
+    $x = 0;
+    $len = strlen($data);
+    $l = strlen($key);
+    $char = $str = '';
 
     for ($i = 0; $i < $len; $i++) {
         if ($x == $l) $x = 0;
@@ -81,19 +82,14 @@ function think_decrypt($data, $key = ''){
     }
 
     for ($i = 0; $i < $len; $i++) {
-        if (ord(substr($data, $i, 1))<ord(substr($char, $i, 1))) {
+        if (ord(substr($data, $i, 1)) < ord(substr($char, $i, 1))) {
             $str .= chr((ord(substr($data, $i, 1)) + 256) - ord(substr($char, $i, 1)));
-        }else{
+        } else {
             $str .= chr(ord(substr($data, $i, 1)) - ord(substr($char, $i, 1)));
         }
     }
     return base64_decode($str);
 }
-
-
-
-
-
 
 
 /**
@@ -779,12 +775,12 @@ function decode_token($token)
  */
 function can_modify_shop($uid, $sid)
 {
-    if(is_array($sid)){
-        foreach($sid as $i){
+    if (is_array($sid)) {
+        foreach ($sid as $i) {
             $shop = D('MerchantShop')->find($i);
             except_merchant_manager($uid, $shop['group_id']);
         }
-    }else{
+    } else {
         $shop = D('MerchantShop')->find($sid);
         except_merchant_manager($uid, $shop['group_id']);
     }
@@ -848,30 +844,31 @@ class DBException extends RuntimeException
  * @author WangJiang
  * @param $data
  */
-function do_transaction($data,$success=null){
+function do_transaction($data, $success = null)
+{
     /*
      * $data = [['sql'=>'<sql>','bind'=>[<bounds>],'newId'=><true|false>]...]
      */
     $dbh = new \PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';port=' . C('DB_PORT'),
-        C('DB_USER'), C('DB_PWD'),[PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8';"]);
+        C('DB_USER'), C('DB_PWD'), [PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8';"]);
     $dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
     $newid = null;
     try {
-        if(false==$dbh->beginTransaction())
+        if (false == $dbh->beginTransaction())
             throw new DBException($dbh->errorCode(), $dbh->errorInfo());
-        foreach($data as $i){
+        foreach ($data as $i) {
             $stmt = $dbh->prepare($i['sql']);
             $r = $stmt->execute($i['bind']);
             if ($r == false)
                 throw new DBException($dbh->errorCode(), $dbh->errorInfo());
-            if($i['newId'])
-                $newid=$dbh->lastInsertId();
+            if ($i['newId'])
+                $newid = $dbh->lastInsertId();
         }
-        if(false==$dbh->commit())
+        if (false == $dbh->commit())
             throw new DBException($dbh->errorCode(), $dbh->errorInfo());
 
-        if(is_callable($success)){
+        if (is_callable($success)) {
             try {
                 call_user_func($success);
             } catch (\Exception $e) {
@@ -1106,9 +1103,10 @@ function upload_picture($uid, $type)
  * @param $mobile
  * @return mixed
  */
-function get_sms_code($mobile){
-    $ck="verify_code_$mobile";
-    return S($ck,'',['expire'=>C('VERIFY_CODE_EXPIRE')]);
+function get_sms_code($mobile)
+{
+    $ck = "verify_code_$mobile";
+    return S($ck, '', ['expire' => C('VERIFY_CODE_EXPIRE')]);
 }
 
 /**
@@ -1117,9 +1115,10 @@ function get_sms_code($mobile){
  * @param $mobile
  * @param $code
  */
-function set_sms_code($mobile,$code){
-    $ck="verify_code_$mobile";
-    S($ck,$code,['expire'=>C('VERIFY_CODE_EXPIRE')]);
+function set_sms_code($mobile, $code)
+{
+    $ck = "verify_code_$mobile";
+    S($ck, $code, ['expire' => C('VERIFY_CODE_EXPIRE')]);
 }
 
 /**
@@ -1128,17 +1127,18 @@ function set_sms_code($mobile,$code){
  * @param $mobile
  * @return string
  */
-function send_sms_code($mobile){
-    require_once(__ROOT__.'Addons/Sms/Common/function.php');
-    if(get_sms_code($mobile)!==false)
-        E(C('VERIFY_CODE_EXPIRE').'秒内不能重复获取');
-    $code=[];
-    while(count($code)<6){
-        $code[]=rand(1,9);
+function send_sms_code($mobile)
+{
+    require_once(__ROOT__ . 'Addons/Sms/Common/function.php');
+    if (get_sms_code($mobile) !== false)
+        E(C('VERIFY_CODE_EXPIRE') . '秒内不能重复获取');
+    $code = [];
+    while (count($code) < 6) {
+        $code[] = rand(1, 9);
     }
-    $code=implode('',$code);
-    set_sms_code($mobile,$code);
-    \Addons\Sms\Common\send_code([$mobile],$code);
+    $code = implode('', $code);
+    set_sms_code($mobile, $code);
+    \Addons\Sms\Common\send_code([$mobile], $code);
     return $code;
 }
 
@@ -1149,13 +1149,14 @@ function send_sms_code($mobile){
  * @param $code
  * @return bool
  */
-function verify_sms_code($mobile,$code){
+function verify_sms_code($mobile, $code)
+{
 //    var_dump($mobile);
 //    var_dump($code);
 //    var_dump(get_sms_code($mobile));
 //    var_dump(get_sms_code(get_sms_code($mobile)==$code));
 ///    die;
-    return get_sms_code($mobile)==$code;
+    return get_sms_code($mobile) == $code;
 }
 
 /**
@@ -1187,10 +1188,45 @@ function get_cate_chain_down($ids, &$ret, $catem = null)
         get_cate_chain_down($pids, $ret, $catem);
 }
 
-function get_cate_chain_up($ids, &$ret, $catem = null){
+function get_cate_chain_up($ids, &$ret, $catem = null)
+{
     if (is_null($catem))
         $catem = D('Category');
-    foreach ($ids as $id){
+    foreach ($ids as $id) {
 
     }
+}
+
+/**
+ * 根据用户ID推送消息
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param int $uid 用户ID
+ * @param string $message_content 消息内容
+ * @param string|null $message_title 消息标题
+ * @param string|null $message_type 消息类型
+ * @param string|null $notification_content 通知内容
+ * @param string|null $notification_title 通知标题
+ * @param string|null $category 通知分类（IOS8+可用）
+ * @param array $extras 附加参数
+ * @return bool
+ */
+function push_by_uid($uid, $message_content, $message_title = null, $message_type = null, $notification_content = null, $notification_title = null, $extras = [], $category = null)
+{
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'))->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
+}
+
+/**
+ * 更新设备的标签或别名
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param string $registrationId 登记ID
+ * @param null|string $alias 别名
+ * @param null|array $addTags 要添加的标签
+ * @param null|array $removeTags 要删除的标签
+ * @return \JPush\Model\DeviceResponse
+ */
+function update_device_tag_alias($registrationId, $alias = null, $addTags = null, $removeTags = null)
+{
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'))->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
 }
