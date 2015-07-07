@@ -305,7 +305,7 @@ class MerchantShopModel extends AdvModel
         $id = intval($id);
         if (!$id) return null;
         return $this
-            ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
+            //->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
             ->join('LEFT JOIN sq_picture on sq_picture.id = sq_merchant_shop.picture')
             ->field([
             'sq_merchant_shop.id'
