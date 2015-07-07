@@ -286,6 +286,13 @@ class OrderVehicleController extends ApiController{
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
+    /**
+     * 管理员重新分配订单,POST数据，需要accesstoken
+     * <pre>
+     * id 订单ID
+     * </pre>
+     * @author WangJiang
+     */
     public function reassign(){
         if(!IS_POST)
             E('非法调用，请用POST命令');
