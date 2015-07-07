@@ -241,7 +241,11 @@ class MerchantModel extends AdvModel
             ->select();
 
         foreach($data as &$i){
-            $i['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id'],'status'=>['in',[1,2,3]]])->count();
+            $i['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id']
+                ,'status'=>['in',[
+                    OrderVehicleModel::STATUS_HAS_WORKER,
+                    OrderVehicleModel::STATUS_TREATING,
+                    OrderVehicleModel::STATUS_CONFIRM]]])->count();
         }
 
         return $data;
