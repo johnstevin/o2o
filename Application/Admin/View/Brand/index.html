@@ -22,7 +22,8 @@
                 <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
                 <th>名称</th>
                 <th>描述</th>
-                <th>状态</th>
+                <th>编辑</th>
+                <th>启用状态</th>
                 <th>操作</th>
             </tr>
             </thead>
@@ -35,12 +36,21 @@
                         <!--<td>{$vo.sort}</td>-->
                         <td> <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('Brand/edit',['id'=>$vo['id']])}" >{$vo.title}</a></td>
                         <td>{$vo.description}</td>
-                        <td>{$vo.status_text}</td>
+
+
+                        <td> <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                                href="{:U('Brand/edit',['id'=>$vo['id']])}">编辑</a></td>
+
                         <td>
-                            <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('Brand/edit',['id'=>$vo['id']])}" >编辑</a>&nbsp;&nbsp;
-                            <a href="{:U('Brand/changeStatus?method=forbidBrand&id='.$vo['id'])}" class="ajax-get ">禁用</a>&nbsp;&nbsp;
-                            <a href="{:U('Brand/changeStatus?method=resumeBrand&id='.$vo['id'])}"class="ajax-get ">启用</a>&nbsp;&nbsp;
-                            <a href="{:U('Brand/changeStatus?method=deleteBrand&id='.$vo['id'])}" class="confirm ajax-get">删除</a>
+                            <input class="switch"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
+                            <eq name="vo.status" value="1"> href="{:U('Brand/changeStatus?method=forbidBrand&id='.$vo['id'])}" checked
+                                <else/>
+                                href="{:U('Brand/changeStatus?method=resumeBrand&id='.$vo['id'])}"</eq>>
+                        </td>
+                        <td>
+
+                            <a href="{:U('Brand/changeStatus?method=deleteBrand&id='.$vo['id'])}"
+                               class="confirm ajax-get btn btn-sm btn-info">删除</a>
                         </td>
                     </tr>
                 </volist>

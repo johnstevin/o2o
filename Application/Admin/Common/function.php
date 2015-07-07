@@ -127,6 +127,32 @@ function get_action_type($type, $all = false){
     return $list[$type];
 }
 
+/**
+ * @param $type
+ * @return mixed
+ */
+function int_to_package_type($type){
+    $list = array(
+        1=>'用户',
+        2=>'商家',
+    );
+    return $list[$type];
+}
+
+/**
+ * @param $type
+ * @return mixed
+ */
+function int_to_version_type($type){
+    $list = array(
+          1=>'基础版',
+          2=>'内测版',
+          3=>'公测版',
+          4=>'候选版',
+          5=>'发行版',
+    );
+    return $list[$type];
+}
 
 /**
  * 检测验证码
