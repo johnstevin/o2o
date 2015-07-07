@@ -331,4 +331,47 @@ class OrderVehicleModel extends AdvModel{
         $this->save(['id'=>$data['id'],'status'=>$status]);
     }
 
+    public function getUserList($uid,$status,$orderCode,$page, $pageSize){
+        $pageSize > 50 and $pageSize = 50;
+        $where['user_id']=$uid;
+
+        if(!is_null($status))
+            $where['status']=$status;
+        if(!is_null($orderCode))
+            $where['order_code']=$orderCode;
+        $data = $this
+            ->field(['st_astext(lnglat) as lnglat',
+                'id',
+                'order_code',
+                'user_id',
+                'shop_id',
+                'status',
+                'worker_id',
+                'address',
+                'car_number',
+                'price',
+                'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
+                'add_time',
+                'update_time',
+                'pay_status',
+            ])
+            ->where($where)
+            ->page($page, $pageSize)
+            ->order('update_time')
+            ->select();
+
+        foreach($data as &$i){
+            $i['worder_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['worder_picture_ids']]])
+                        ->select() as $p){
+                $i['worder_pictures'][]=$p['path'];
+            }
+            unset($i['worder_picture_ids']);
+        }
+
+        return $data;
+    }
+
 }

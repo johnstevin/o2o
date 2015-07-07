@@ -9,6 +9,8 @@ namespace Apimember\Controller;
 use Common\Model\CategoryModel;
 use Common\Model\MerchantDepotModel;
 use Common\Model\MerchantShopModel;
+use Common\Model\OrderModel;
+use Common\Model\OrderVehicleModel;
 use Think\Exception;
 use Common\Model\ProductModel;
 
@@ -699,5 +701,41 @@ class ProductController extends ApiController
     public function find($id, $fields = true)
     {
         $this->apiSuccess(['data' => ProductModel::get($id, $fields)]);
+    }
+
+    public function getOrderList($status=null,$page=1,$pageSize=10){
+        $uid=$this->getUserId();
+        $_GET['p']=$page;
+        $orders=(new OrderModel())->getLists(null, $uid, $status, null, null, false, false, true, $pageSize);
+        $orders_veh=(new OrderVehicleModel())->getUserList($uid,$status,null,$page,$pageSize);
+
+        $iter_order=(new \ArrayObject($orders['data']))->getIterator();
+        $iter_order_veh=(new \ArrayObject($orders_veh))->getIterator();
+
+        $data=[];
+        while(true){
+            $iter_order->next();
+            $iter_order_veh->next();
+
+            $order=$iter_order->current();
+            $order_veh=$iter_order_veh->current();
+
+            if(empty($order) and empty($order_veh))
+                break;
+
+            if($order and $order_veh){
+                if($order['update_time']<$order_veh['update_time']){
+                    $data[]=$order;
+                    $data[]=$order_veh;
+                }else{
+                    $data[]=$order_veh;
+                    $data[]=$order;
+                }
+            }else if($order)
+                $data[]=$order;
+            else if($order_veh)
+                $data[]=$order_veh;
+        }
+        $this->apiSuccess(['data'=>$data],'');
     }
 }

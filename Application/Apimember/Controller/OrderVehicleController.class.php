@@ -103,50 +103,9 @@ class OrderVehicleController extends ApiController
     public function getList($status = null, $orderCode = null, $page = 1, $pageSize = 10)
     {
         try {
-            $pageSize > 50 and $pageSize = 50;
-            $page--;
-            $page *= $pageSize;
             $uid = $this->getUserId();
-
-            $where['user_id']=$uid;
-
-            if(!is_null($status))
-                $where['status']=$status;
-            if(!is_null($orderCode))
-                $where['order_code']=$orderCode;
-            $m = D('OrderVehicle');
-            $data = $m
-                ->field(['st_astext(lnglat) as lnglat',
-                    'id',
-                    'order_code',
-                    'user_id',
-                    'shop_id',
-                    'status',
-                    'worker_id',
-                    'address',
-                    'car_number',
-                    'price',
-                    'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
-                    'add_time',
-                    'update_time',
-                ])
-                ->where($where)
-                ->limit($page, $pageSize)->select();
-
-            foreach($data as &$i){
-                $i['worder_pictures']=[];
-                foreach(D('Picture')
-                    ->field(['path'])
-                    ->where(['id'=>['in',$i['worder_picture_ids']]])
-                    ->select() as $p){
-                    $i['worder_pictures'][]=$p['path'];
-                }
-                unset($i['worder_picture_ids']);
-            }
-
             //print_r($m->getLastSql());die;
-
-            $this->apiSuccess(['data' => $data], '');
+            $this->apiSuccess(['data' => (new OrderVehicleModel())->getUserList($uid,$status,$orderCode,$page,$pageSize)], '');
         } catch (\Exception $ex) {
             $this->apiError(51002, $ex->getMessage());
         }
