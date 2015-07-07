@@ -66,7 +66,20 @@ class AuthAccessModel extends AdvModel {
 
     }
 
-
+    /**
+     * TODO 这里可以做一些高级筛选
+     * @param $map
+     * @param string $field
+     * @return bool|mixed
+     */
+    public function lists( $map, $field='*' ) {
+        $result = $this->field($field)->where($map)->select();
+        if( empty($result) ){
+            return false;
+        } else {
+            return $result;
+        }
+    }
 
 
 }

@@ -160,15 +160,25 @@ class UcenterMemberModel extends AdvModel {
             /* 获取组织关系 */
             $acMap    = array('uid'=>$user['id'],'status'=>1);
             $acFields = 'uid,group_id,role_id';
-            $acRes    = D("AuthAccess")->get($acMap, $acFields);
-            if ( empty($acRes) )
+            $acRes    = D("AuthAccess")->lists($acMap, $acFields);
+            if ( $acRes === false )
                 return -7;  //获取权限失败
-            $group_tree = array();
+            $acCount  = count($acRes);
+            if ( $acCount > 1) {
+                $group_tree = array();
+            } else {
+                $group_tree = array(
+                    'group_id'    => 0,
+                    'role_id'     => _merchant_roleName($acRes[0]['role_id']),
+                    'shop_id'     => 0,
+                    'shop_status' => 0,
+                );
+            }
 
         } else {
             $group_tree = array(
                 'group_id'    => $shopRes['group_id'],
-                'role_id'     => '',
+                'role_id'     => _merchant_roleName(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO')),
                 'shop_id'     => $shopRes['id'],
                 'shop_status' => $shopRes['status'],
             );

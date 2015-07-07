@@ -28,11 +28,11 @@ class UserController extends ApiController {
      */
     public function login(){
         try{
-            if(IS_POST){
+            if(IS_GET){
                 //46f94c8de14fb36680850768ff1b7f2a  123qwe
                 //e10adc3949ba59abbe56e057f20f883e  123456
-                $username = I('post.username');
-                $password = I('post.password');
+                $username = I('get.username');
+                $password = I('get.password');
 
                 $Ucenter  = D('UcenterMember');
                 $token = $Ucenter->login($username, $password, 5);
@@ -129,6 +129,7 @@ class UserController extends ApiController {
     private function showRegError($code = 0){
         switch ($code) {
             case -4:  $error = '密码长度不够！'; break;
+            case -7:  $error = '获取权限失败！'; break;
             case -9:  $error = '手机格式不正确！'; break;
             case -10: $error = '手机被禁止注册！'; break;
             case -11: $error = '手机号被占用！'; break;
@@ -262,16 +263,54 @@ class UserController extends ApiController {
      */
     public function forgetPassword(){
         try {
-            $rules = array(
-                array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', '手机格式不正确', self::EXISTS_VALIDATE), //手机格式不正确
-                array('mobile', 'checkDenyMobile', '您的手机号禁止注册', self::EXISTS_VALIDATE, 'callback'), //过滤手机黑名单
-            );
-            $mobile = I('post.mobile');
-            $model  = D("UcenterMember");
-            if ( !$data = $model->validate($rules)->create() )
-                E($model->getError());
-            
+            $step   = I('get.step');
+            switch ( $step ) {
+                case 1 :
+                    $mobile = I('post.mobile');
+                    $code   = I('post.code');
+                    verify_sms_code($mobile,$code) ? '' : E('验证码错误或已过期，请重新获取');
 
+                    $rules = array(
+                        array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', '手机格式不正确'), //手机格式不正确
+                        array('mobile', 'checkDenyMobile', '您的手机号禁止注册', 0, 'callback'), //过滤手机黑名单
+                    );
+                    $model  = M("UcenterMember");
+                    //TODO 这里做手机认证
+                    $map = array(
+                        'is_merchant' => 1,
+                        'mobile'      => $mobile,
+                    );
+                    $model->field('id')->where($map)->find() ? '' : E('该手机号未注册或不是商家用户');
+                    $randVal = generate_saltKey();
+                    S('_Merchant_User_ForgetPwd_randVal_'.$mobile, $randVal, 120);
+                    $this->apiSuccess(array('data'=>array('randVal'=>$randVal)), '请点下一步');
+
+                    break;
+                case 2 :
+                    //TODO 这里要做验证
+                    $mobile    = I('post.mobile') != '' ? I('get.mobile') :   E('请设置手机号');
+                    $password  = I('post.password') != '' ? I('get.password') : E('请设置密码');
+                    $randVal   = I('post.randval') != '' ? I('get.randval') :  E('不安全的密码设置');
+                    $randCache = S('_Merchant_User_ForgetPwd_randVal_'.$mobile);
+                    $randCache !== false ? '' : E('已超时，请重新设置');
+                    $randCache == $randVal ? '' : E('安全码不正确');
+
+                    $model  = D("UcenterMember");
+                    //TODO 这里做手机认证
+                    $map = array(
+                        'is_merchant' => 1,
+                        'mobile'      => $mobile,
+                    );
+                    $uid = $model->field('id')->where($map)->find() ? : E('该手机号未注册或不是商家用户');
+                    $data = array(
+                        'id'           => $uid['id'],
+                        'password'     => $password,
+                    );
+                    $model->saveInfo($data) === true ? $this->apiSuccess(array('data'=>''), '密码找回成功') : E($model->getError());
+                    break;
+                default :
+                    E('请设置正确的step');
+            }
 
         } catch (\Exception $ex) {
             $this->apiError(50116, $ex->getMessage());
