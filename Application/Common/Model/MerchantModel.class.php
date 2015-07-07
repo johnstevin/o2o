@@ -27,6 +27,10 @@ class MerchantModel extends AdvModel
         'status',
         'number',
         'lnglat',
+        'grade_1',
+        'grade_2',
+        'grade_3',
+        'total_orders',
         '_type' => [
             'id' => 'int',
             'description' => 'varchar',
@@ -37,6 +41,10 @@ class MerchantModel extends AdvModel
             'status' => 'tinyint',
             'number' => 'string',
             'lnglat'=>'point',
+            'grade_1' => 'tinyint',
+            'grade_2' => 'tinyint',
+            'grade_3' => 'tinyint',
+            'total_orders'=>'int',
         ]
     ];
     /**
@@ -188,9 +196,11 @@ class MerchantModel extends AdvModel
      * @param $pageSize
      */
     public function getCarWashersNearby($lat, $lng, $range,$name,$number,$page,$pageSize){
+        $pageSize > 50 and $pageSize = 50;
+
         $this->join('JOIN sq_ucenter_member on sq_ucenter_member.id=sq_merchant.id');
-        $this->join('LEFT JOIN sq_appraise on sq_appraise.merchant_id = sq_merchant.id');
         $this->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo');
+        //$this->join('left join sq_order_vehicle on sq_order_vehicle.worker_id=sq_merchant.id and sq_order_vehicle.status in (1,2,3)');
 
         $bind=[':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')];
         $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
@@ -216,18 +226,23 @@ class MerchantModel extends AdvModel
                 ,'sq_ucenter_member.photo'
                 ,'ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat)) as distance'
                 ,'st_astext(sq_merchant.lnglat) as lnglat'
-                ,'avg(sq_appraise.grade_1) as grade_1'
-                ,'avg(sq_appraise.grade_2) as grade_2'
-                ,'avg(sq_appraise.grade_3) as grade_3'
-                ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade'
+                ,'sq_merchant.grade_1'
+                ,'sq_merchant.grade_2'
+                ,'sq_merchant.grade_3'
+                ,'(sq_merchant.grade_1+sq_merchant.grade_2+sq_merchant.grade_3)/3 as grade'
                 ,'ifnull(sq_picture.path,\'\') as photo_path'
-            ])->bind($bind)
-            ->limit($page,$pageSize)
+                //,'count(sq_order_vehicle.id) as orders'
+                ,'sq_merchant.total_orders'
+            ])
+            ->bind($bind)
+            ->page($page,$pageSize)
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
             ->group('sq_merchant.id')
             ->select();
 
-        //print_r($this->getLastSql());die;
+        foreach($data as &$i){
+            $i['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id'],'status'=>['in',[1,2,3]]])->count();
+        }
 
         return $data;
     }

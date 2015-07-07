@@ -150,14 +150,15 @@ class OrderVehicleController extends ApiController{
      */
     public function getList($status = null,$page = 1, $pageSize = 10){
         $pageSize > 50 and $pageSize = 50;
-        $page--;
-        $page *= $pageSize;
+//        $page--;
+//        $page *= $pageSize;
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $gids=$this->getUserGroupIds($mgrRoleId,true);//获得管理分组
         $data=D('OrderVehicle')
             ->join('inner join sq_merchant_shop on sq_merchant_shop.group_id in (:groupIds)')
             ->where('shop_id in (select id from sq_merchant_shop where group_id in (:groupIds))')
             ->bind([':groupIds'=>implode(',',$gids)])
+            ->page($page,$pageSize)
             //->fetchSql()
             ->select();
         //var_dump($data);die;
