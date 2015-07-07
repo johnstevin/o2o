@@ -128,12 +128,12 @@ class OrderVehicleController extends ApiController{
             ->limit($page, $pageSize)->select();
 
         foreach($data as &$i){
-            $i['user_picture_paths']=[];
+            $i['user_pictures']=[];
             foreach(D('Picture')
                         ->field(['path'])
                         ->where(['id'=>['in',$i['user_picture_ids']]])
                         ->select() as $p){
-                $i['user_picture_paths'][]=$p['path'];
+                $i['user_pictures'][]=$p['path'];
             }
             unset($i['user_picture_ids']);
         }
@@ -283,6 +283,7 @@ class OrderVehicleController extends ApiController{
         //var_dump($data);
         $model->data($data);
         $model->update($id);
+        action_log('api_update_order_veh', $model, $id, UID,2);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
@@ -317,6 +318,7 @@ class OrderVehicleController extends ApiController{
 
         $model->save(['id'=>$id,'worker_id'=>$worker['id']]);
 
+        action_log('api_reassign_order_veh', $model, $id, UID,2);
         //TODO 实现消息推送$wid
 
         $this->apiSuccess(['data'=>[]], '操作成功');

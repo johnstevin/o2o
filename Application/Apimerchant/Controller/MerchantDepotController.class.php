@@ -385,6 +385,7 @@ class MerchantDepotController extends ApiController
                 if (!$model->create())
                     E('参数传递失败');
                 $model->save();
+                action_log('api_update_depot', $model, I('id'), UID,2);
                 $this->apiSuccess(['data' => []], '');
             } else
                 E('非法调用，请用POST调用该方法');

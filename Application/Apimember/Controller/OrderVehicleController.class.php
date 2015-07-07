@@ -203,11 +203,15 @@ class OrderVehicleController extends ApiController
 
                 $model->data($data);
                 //var_dump($data);
-                $this->apiSuccess(['id' => intval($model->insert(function() use ($sendMsg,$wid){
+                $newId=intval($model->insert(function() use ($sendMsg,$wid){
                     if($sendMsg){
                         //TODO 实现消息推送$wid
                     }
-                }))],'');
+                }));
+
+                action_log('api_create_order_veh', $model, $newId, UID,3);
+
+                $this->apiSuccess(['id' => $newId],'');
             } else
                 E('非法调用，请用POST调用');
         } catch (\Exception $ex) {
@@ -245,6 +249,7 @@ class OrderVehicleController extends ApiController
             $oid=I('post.orderId');
             $m=new OrderVehicleModel();
             $m->userCancel($oid,$this->getUserId());
+            action_log('api_cancel_order_veh', $m, $oid, UID,3);
             $this->apiSuccess(null,'成功');
         }catch (\Exception $ex) {
             $this->apiError(51022, $ex->getMessage());
