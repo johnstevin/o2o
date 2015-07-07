@@ -211,6 +211,10 @@ class OrderVehicleModel extends AdvModel{
         $orderVals=[];
         $orderFlds=[];
         foreach($data as $key=>$val){
+            if(!in_array($key,$this->fields,true)){
+                unset($data[$key]);
+                continue;
+            }
             $bindName=":$key";
             if($this->fields['_type'][$key]=='point'){
                 $orderVals[]="st_geomfromtext($bindName)";
@@ -244,6 +248,10 @@ class OrderVehicleModel extends AdvModel{
         foreach($data as $key=>$val){
             if($key==$this->pk)
                 continue;
+            if(!in_array($key,$this->fields,true)){
+                unset($data[$key]);
+                continue;
+            }
             $bindName=":$key";
             if($this->fields['_type'][$key]=='point'){
                 $bind[$bindName]="POINT($val)";

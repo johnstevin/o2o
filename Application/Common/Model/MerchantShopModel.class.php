@@ -352,6 +352,10 @@ class MerchantShopModel extends AdvModel
         $shopVals=[];
         $shopFlds=[];
         foreach($data as $key=>$val){
+            if(!in_array($key,$this->fields,true)){
+                unset($data[$key]);
+                continue;
+            }
             $bindName=":$key";
             if($this->fields['_type'][$key]=='point'){
                 $shopVals[]="st_geomfromtext($bindName)";
@@ -437,6 +441,10 @@ class MerchantShopModel extends AdvModel
         $set=[];
         $where=null;
         foreach($data as $key=>$val){
+            if(!in_array($key,$this->fields,true)){
+                unset($data[$key]);
+                continue;
+            }
             $bindName=":$key";
             if($key!=$this->pk) {
                 if($this->fields['_type'][$key]=='point'){

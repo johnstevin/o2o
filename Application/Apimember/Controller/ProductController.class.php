@@ -84,7 +84,7 @@ class ProductController extends ApiController
         try {
             $pageSize > 50 and $pageSize = 50;
             $this->apiSuccess(['data' => (new MerchantShopModel())
-                ->getNearby($lat, $lng, $range, $words, $wordsOp, $tagId, $type, $order,$page,$pageSize)]);
+                ->getNearby($lat, $lng, $range, $words, $wordsOp, $tagId, $type, $order,$page,$pageSize)],'');
         } catch (\Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
         }
@@ -140,7 +140,7 @@ class ProductController extends ApiController
                     '(sq_appraise.grade_1+sq_appraise.grade_2+sq_appraise.grade_3)/3 as grade',
                     'sq_appraise.update_time','ifnull(sq_picture.path,\'\') as picture_path','sq_member.nickname'
                 ])
-                ->select()]);
+                ->select()],'');
         } catch (\Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
         }
@@ -153,7 +153,7 @@ class ProductController extends ApiController
     public function getMerchantDetail($id)
     {
         try {
-            $this->apiSuccess(['data' => (new MerchantShopModel())->get($id)]);
+            $this->apiSuccess(['data' => (new MerchantShopModel())->get($id)],'');
         } catch (Exception $ex) {
             $this->apiError(50003, $ex->getMessage());
         }
@@ -329,7 +329,7 @@ class ProductController extends ApiController
             }
             $ret['categories']=list_to_tree($data,'id', 'pid', '_child', $root = $pid);
 
-            $this->apiSuccess(['data' => $ret]);
+            $this->apiSuccess(['data' => $ret],'');
 
         } catch (Exception $ex) {
             $this->apiError(50004, $ex->getMessage());
@@ -394,7 +394,7 @@ class ProductController extends ApiController
                 $ret[]=$i;
             }
 
-            $this->apiSuccess(['data' => $ret]);
+            $this->apiSuccess(['data' => $ret],'');
 
             //print_r($sql->getLastSql());
 
@@ -560,13 +560,22 @@ class ProductController extends ApiController
 
             $this->apiSuccess(['data'=>(new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
                 , $priceMin, $priceMax
-                , $returnAlters,$page, $pageSize),'page'=>$page+1]);
+                , $returnAlters,$page, $pageSize),'page'=>$page+1],'');
 
         } catch (Exception $ex) {
             $this->apiError(50005, $ex->getMessage());
         }
     }
 
+    /**
+     * 查询指定商品商品，按照商铺带商品的方式返回
+     * @author  WangJiang
+     * @param null $shopIds
+     * @param null $categoryId
+     * @param null $title
+     * @param null $priceMin
+     * @param null $priceMax
+     */
     public function getShopProductList($shopIds = null, $categoryId = null, $title = null
         , $priceMin = null, $priceMax = null){
         try {
@@ -574,7 +583,7 @@ class ProductController extends ApiController
             $shopIds = explode(',', $shopIds);
 
             $this->apiSuccess(['data'=>(new MerchantShopModel())->getProductList($shopIds, $categoryId,  $title
-                , $priceMin, $priceMax)]);
+                , $priceMin, $priceMax)],'');
 
         } catch (Exception $ex) {
             $this->apiError(50005, $ex->getMessage());
@@ -591,7 +600,7 @@ class ProductController extends ApiController
     public function getProductDetail($id)
     {
         try {
-            $this->apiSuccess(['data' => ProductModel::get($id)]);
+            $this->apiSuccess(['data' => ProductModel::get($id)],'');
         } catch (Exception $ex) {
             $this->apiError(50006, $ex->getMessage());
         }

@@ -178,8 +178,12 @@ class OrderVehicleController extends ApiController
             if (IS_POST) {
                 $model = new OrderVehicleModel();
 
+                //print_r($model);die;
+
                 if (!($data=$model->create()))
                     E('参数传递失败,'.$model->getError());
+
+                //var_dump($data);die;
 
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
@@ -202,7 +206,7 @@ class OrderVehicleController extends ApiController
                 $sendMsg=$data['status']==OrderVehicleModel::STATUS_HAS_WORKER;
 
                 $model->data($data);
-                //var_dump($data);
+
                 $newId=intval($model->insert(function() use ($sendMsg,$wid){
                     if($sendMsg){
                         //TODO 实现消息推送$wid
