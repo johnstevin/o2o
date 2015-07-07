@@ -88,7 +88,7 @@ class OrderVehicleModel extends AdvModel{
         ],
         [
             'update_ip',
-            'get_client_ip',
+            'get_client_ip_to_int',
             self::MODEL_UPDATE,
             'function'
         ],
@@ -162,12 +162,12 @@ class OrderVehicleModel extends AdvModel{
         'order_code',
     ];
 
-//    protected function _after_find(&$result,$options='') {
-//        parent::_after_select($result,$options);
-//        $this->_after_query_row($result);
-//        //echo '<pre>';
-//        //print_r($result);
-//    }
+    protected function _after_find(&$result,$options='') {
+        parent::_after_select($result,$options);
+        $this->_after_query_row($result);
+        //echo '<pre>';
+        //print_r($result);
+    }
 
     /**
      * 处理point类型字段值
@@ -228,6 +228,44 @@ class OrderVehicleModel extends AdvModel{
             'bind'=>$bind,
             'newId'=>true]
         ]);
+    }
+
+    public function update($id){
+
+        $data=$this->data();
+
+        //检查状态变化是否合法
+        $order=$this->find($id);
+        if(isset($data['status']))
+            $this->_assert_new_status($order['status'],$data['status']);
+
+        $bind=[];
+        $sets=[];
+        foreach($data as $key=>$val){
+            if($key==$this->pk)
+                continue;
+            $bindName=":$key";
+            if($this->fields['_type'][$key]=='point'){
+                $bind[$bindName]="POINT($val)";
+                $sets[]=$key.'='."st_geomfromtext($bindName)";
+            }else{
+                $bind[$bindName]=$val;
+                $sets[]=$key.'='.$bindName;
+            }
+        }
+
+        //var_dump($bind);die;
+
+        if(empty($sets))
+            E('没有可以修改的数据');
+
+        $bind[':id']=$id;
+        return do_transaction([
+            ['sql'=>'UPDATE sq_order_vehicle set '.implode(',',$sets).' where id=:id;',
+                'bind'=>$bind,
+                'newId'=>false]
+        ]);
+
     }
 
     /**
