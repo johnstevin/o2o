@@ -26,9 +26,10 @@ class JPush
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @return self
      */
-    public static function getInstance()
+    public static function getInstance($appid)
     {
-        return self::$instance instanceof self ? self::$instance : self::$instance = new self(C('JPUSH_APP_KEY'), C('JPUSH_MASTER_SECRET'));
+        return self::$instance instanceof self ? self::$instance : self::$instance =
+            new self(C("JPUSH_{$appid}_APP_KEY"), C("JPUSH_{$appid}_MASTER_SECRET"));
     }
 
     /**

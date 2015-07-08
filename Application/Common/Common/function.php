@@ -1152,6 +1152,10 @@ function send_sms_code($mobile)
  */
 function verify_sms_code($mobile, $code)
 {
+    //add by WangJiang
+    //开发模式下，不检查验证码，不推送消息
+    if(!empty(C('DEVELOPMENT_MODE')))
+        return true;
 //    var_dump($mobile);
 //    var_dump($code);
 //    var_dump(get_sms_code($mobile));
@@ -1234,9 +1238,13 @@ function get_shopkeeper_by_shopid($shopId)
  * @param array $extras 附加参数
  * @return bool
  */
-function push_by_uid($uid, $message_content, $extras = [], $message_title = null, $notification_content = null, $notification_title = null, $category = null, $message_type = null)
+function push_by_uid($appid,$uid, $message_content, $extras = [], $message_title = null, $notification_content = null, $notification_title = null, $category = null, $message_type = null)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'))->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
+    //add by WangJiang
+    //开发模式下，不检查验证码，不推送消息
+    if(!empty(C('DEVELOPMENT_MODE')))
+        return;
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'),$appid)->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
 }
 
 /**
@@ -1249,7 +1257,11 @@ function push_by_uid($uid, $message_content, $extras = [], $message_title = null
  * @param null|array $removeTags 要删除的标签
  * @return \JPush\Model\DeviceResponse
  */
-function update_device_tag_alias($registrationId, $alias = null, $addTags = null, $removeTags = null)
+function update_device_tag_alias($appid,$registrationId, $alias = null, $addTags = null, $removeTags = null)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'))->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
+    //add by WangJiang
+    //开发模式下，不检查验证码，不推送消息
+    if(!empty(C('DEVELOPMENT_MODE')))
+        return;
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'),$appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
 }

@@ -18,14 +18,14 @@ class Push
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param string $clientType 推送驱动的类型
      */
-    private function __construct($clientType)
+    private function __construct($clientType,$appid)
     {
         switch ($clientType) {
             case self::JPUSH:
-                self::$client = JPush::getInstance();
+                self::$client = JPush::getInstance($appid);
                 break;
             default:
-                self::$client = JPush::getInstance();
+                self::$client = JPush::getInstance($appid);
         }
     }
 
@@ -35,10 +35,10 @@ class Push
      * @param string $clientType 推送驱动的类型
      * @return \Addons\Push\Driver\JPush
      */
-    public static function getInstance($clientType = self::JPUSH)
+    public static function getInstance($clientType = self::JPUSH,$appid)
     {
         if (!self::$instance instanceof self) {
-            self::$instance = new self($clientType);
+            self::$instance = new self($clientType,$appid);
         }
         return self::$client;
     }

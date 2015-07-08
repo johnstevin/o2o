@@ -87,7 +87,7 @@ class UcenterMemberModel extends AdvModel {
      * @return integer           登录成功-用户ID，登录失败-错误编号
      * @author stevin.john
      */
-    public function login($username, $password, $type = 1){
+    public function login($username, $password,$registrationId, $type = 1){
         $map = array();
         switch ($type) {
             case 1:
@@ -117,6 +117,8 @@ class UcenterMemberModel extends AdvModel {
         if(is_array($user) && $user['is_merchant']){
             /* 验证用户密码 */
             if(generate_password($password, $user['saltkey']) === $user['password']){
+                /* 极光推送服务 */
+                update_device_tag_alias('STORE',$registrationId, $user['id']);
                 //是管理员，插入或更新数据admin
                 return $this->updateLogin($user); //登录成功，返回用户ID
             } else {

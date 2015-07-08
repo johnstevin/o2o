@@ -17,20 +17,22 @@ class MerchantController extends ApiController {
      * @param float $lat 经度，必须
      * @param float $lng 纬度，必须
      * @param int $range 范围，单位米，必须
+     * @param int $range 范围，单位米，必须
+     * @param $presetTime 预定时间，绝对时间戳，必须
      * @param string $number 员工号，可选
      * @param string $name 员姓名，可选
      * @param int $page 页号，可选
      * @param int $pageSize 单页大小，可选
      * @return json
      */
-    public function getCarWashers($lat, $lng, $range = 100,$name=null,$number=null,$page=1,$pageSize=10){
+    public function getCarWashers($lat, $lng, $range = 100,$presetTime=null,$name=null,$number=null,$page=1,$pageSize=10){
         try {
 
 //            $page--;
 //            $page *= $pageSize;
 
             $this->apiSuccess(['data' => (new MerchantModel())
-                ->getCarWashersNearby($lat, $lng, $range,$name, $number,$page,$pageSize)],'');
+                ->getCarWashersNearby($lat, $lng, $range,$presetTime,$name, $number,$page,$pageSize)],'');
         } catch (\Exception $ex) {
             $this->apiError(51002, $ex->getMessage());
         }

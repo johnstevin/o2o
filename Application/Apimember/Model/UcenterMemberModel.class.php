@@ -119,7 +119,7 @@ class UcenterMemberModel extends AdvModel {
             /* 验证用户密码 */
             if(generate_password($password, $user['saltkey']) === $user['password']){
                 /* 极光推送服务 */
-                update_device_tag_alias($registrationId, $user['id']);
+                update_device_tag_alias('CLIENT',$registrationId, $user['id']);
                 return $this->updateLogin($user); //登录成功，返回用户ID
             } else {
                 return -2; //密码错误

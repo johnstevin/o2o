@@ -27,8 +27,10 @@ return [
 
     ## 极光推送设置
     'PUSH_TYPE' => 'JPush',
-    'JPUSH_APP_KEY' => '8548f5acaccf5ece222be8c0',
-    'JPUSH_MASTER_SECRET' => 'cc6141c26da194563766896c',
+    'JPUSH_STORE_APP_KEY' => '8548f5acaccf5ece222be8c0',
+    'JPUSH_STORE_MASTER_SECRET' => 'cc6141c26da194563766896c',
+    'JPUSH_CLIENT_APP_KEY' => '8548f5acaccf5ece222be8c0',
+    'JPUSH_CLIENT_MASTER_SECRET' => 'cc6141c26da194563766896c',
 
     /* 权限组配置-数据库id值 */
     'AUTH_GROUP_ID' => [

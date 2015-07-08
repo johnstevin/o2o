@@ -191,19 +191,25 @@ class MerchantModel extends AdvModel
      * @param $lat
      * @param $lng
      * @param int $range
+     * @param $presetTime 预定时间，绝对时间戳，必须
+     * @param $name
      * @param $number
      * @param $page
      * @param $pageSize
      */
-    public function getCarWashersNearby($lat, $lng, $range,$name,$number,$page,$pageSize){
+    public function getCarWashersNearby($lat, $lng, $range,$presetTime,$name,$number,$page,$pageSize){
         $pageSize > 50 and $pageSize = 50;
+        $timeRange=C('AUTO_MERCHANT_SCAN.PRESET_TIME');
 
         $this->join('JOIN sq_ucenter_member on sq_ucenter_member.id=sq_merchant.id');
         $this->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo');
 
+        $bind[':presetTime']=$presetTime-$timeRange;
         $bind=[':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')];
         $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
-            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)';
+            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)
+              and sq_merchant.id not in (select worker_id from sq_order_vehicle
+                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3))';
 
         if(!is_null($number))
             $where['sq_merchant.number']=$number;
@@ -254,16 +260,16 @@ class MerchantModel extends AdvModel
         $timeRange=C('AUTO_MERCHANT_SCAN.PRESET_TIME');
 
         $bind[':presetTime']=$presetTime-$timeRange;
-        $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
-            ' and sq_merchant.id not in (select worker_id from sq_order_vehicle
-                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3)) ';
-
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
+        $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
+            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)
+              and sq_merchant.id not in (select worker_id from sq_order_vehicle
+                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3))';
+
         $data=$this
             ->join('left join sq_merchant_shop on sq_merchant_shop.group_id in
-                (select sq_auth_access.group_id from sq_auth_access where
-                        sq_auth_access.uid=sq_merchant.id and
-                        sq_auth_access.role_id=:roleId)')
+                        (select sq_auth_access.group_id from sq_auth_access where
+                            sq_auth_access.uid=sq_merchant.id)')
             ->where($where)->bind($bind)
             ->field(['sq_merchant.id','ifnull(sq_merchant_shop.id,0) as shop_id'])
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')

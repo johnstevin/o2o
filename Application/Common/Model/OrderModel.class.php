@@ -1124,7 +1124,7 @@ class OrderModel extends RelationModel
                         'action' => 'orderDetail',
                         'order_id' => $orderInfo['id']
                     ];
-                    push_by_uid($orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
+                    push_by_uid('CLIENT',$orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
                 } else {
                     E('订单商品更新失败');
                 }
@@ -1266,7 +1266,7 @@ class OrderModel extends RelationModel
                 'action' => 'orderDetail',
                 'order_id' => $orderInfo['id']
             ];
-            push_by_uid($orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
+            push_by_uid('CLIENT',$orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
         } else {
             $replaceStr = '拒绝了订单【' . $orderInfo['order_code'] . '】，原因【' . $content . '】，等待用户确认';
         }
@@ -1327,7 +1327,7 @@ class OrderModel extends RelationModel
                 'order_id' => $orderInfo['id']
             ];
         }
-        push_by_uid(get_shopkeeper_by_shopid($orderInfo['shop_id']), $pushContent, $pushExtras, $pushTitle);
+        push_by_uid('STORE',get_shopkeeper_by_shopid($orderInfo['shop_id']), $pushContent, $pushExtras, $pushTitle);
         $logData = [//订单状态日志记录数据
             'user_id' => $orderInfo['user_id'],
             'shop_id' => $orderInfo['shop_id'],
@@ -1416,7 +1416,7 @@ class OrderModel extends RelationModel
                 'action' => 'orderDetail',
                 'order_id' => $id
             ];
-            push_by_uid($shopkeeper, $pushContent, $pushExtras, $pushTitle, $pushContent, $pushTitle);
+            push_by_uid('STORE',$shopkeeper, $pushContent, $pushExtras, $pushTitle, $pushContent, $pushTitle);
         }
         return $saveStatus;
     }

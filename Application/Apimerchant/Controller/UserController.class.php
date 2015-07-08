@@ -33,9 +33,10 @@ class UserController extends ApiController {
                 //e10adc3949ba59abbe56e057f20f883e  123456
                 $username = I('post.username');
                 $password = I('post.password');
+                $registrationId = I('post.registrationId') == '' ? E('注册码不能为空') : I('post.registrationId');
 
                 $Ucenter  = D('UcenterMember');
-                $token = $Ucenter->login($username, $password, 5);
+                $token = $Ucenter->login($username, $password, $registrationId,5);
                 if(0 < $token){
                     $this->apiSuccess(array('data'=>array('token'=>$token,'auth'=>F('User/Login/merchant_auth' . $token))));
                 } else {
