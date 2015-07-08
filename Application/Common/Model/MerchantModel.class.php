@@ -205,9 +205,11 @@ class MerchantModel extends AdvModel
         $this->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo');
 
         $bind[':presetTime']=$presetTime-$timeRange;
-        $bind=[':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')];
+        $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
         $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
-            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)';
+            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)
+              and sq_merchant.id not in (select worker_id from sq_order_vehicle
+                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3))';
 
         if(!is_null($number))
             $where['sq_merchant.number']=$number;
