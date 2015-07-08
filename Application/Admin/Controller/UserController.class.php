@@ -61,7 +61,10 @@ class UserController extends AdminController
         $this->display();
     }
 
-
+    /**
+     * 编辑管理员
+     * @param null $uid
+     */
     public function editadmin($uid=null)
     {
 
@@ -76,6 +79,58 @@ class UserController extends AdminController
         } else {
 
             $info = $uid ? $ucentermember->info($uid,$type='admin') : '';
+
+            $this->assign('info', $info);
+            $this->meta_title = '编辑信息';
+            $this->display();
+        }
+
+    }
+
+    /**
+     * 编辑商家
+     * @param null $uid
+     */
+    public function editmerchant($uid=null)
+    {
+
+        $ucentermember = D('UcenterMember');
+        if (IS_POST) {
+            if (false !== $ucentermember->update()) {
+                $this->success('新增成功！');
+            } else {
+                $error = $ucentermember->getError();
+                $this->error(empty($error) ? '未知错误！' : $error);
+            }
+        } else {
+
+            $info = $uid ? $ucentermember->info($uid,$type='merchant') : '';
+
+            $this->assign('info', $info);
+            $this->meta_title = '编辑信息';
+            $this->display();
+        }
+
+    }
+
+    /**
+     * 编辑用户
+     * @param null $uid
+     */
+    public function editmember($uid=null)
+    {
+
+        $ucentermember = D('UcenterMember');
+        if (IS_POST) {
+            if (false !== $ucentermember->update()) {
+                $this->success('新增成功！');
+            } else {
+                $error = $ucentermember->getError();
+                $this->error(empty($error) ? '未知错误！' : $error);
+            }
+        } else {
+
+            $info = $uid ? $ucentermember->info($uid,$type='member') : '';
 
             $this->assign('info', $info);
             $this->meta_title = '编辑信息';

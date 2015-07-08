@@ -1,0 +1,82 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title">{$meta_title}</h4>
+</div>
+<div class="modal-body">
+    <!-- 表单 -->
+    <form id="fm"  method="post">
+        <div class="form-horizontal">
+            <div class="form-group">
+                <label class="control-label col-md-2">手机号</label>
+
+                <div class="col-md-10">
+                    <input type="text" class="form-control" name="mobile" value="{$data.mobile}" placeholder="手机号码">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-2">用户名</label>
+
+                <div class="col-md-10">
+                    <input type="text" class="form-control" name="username" value="{$data.username}" placeholder="用户名">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-2">邮箱</label>
+
+                <div class="col-md-10">
+
+                        <input type="text" class="form-control" name="email" value="{$data.email}" placeholder="邮箱">
+
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-2">真实姓名</label>
+
+                <div class="col-md-10">
+
+                    <input type="text" class="form-control" name="real_name" value="{$data.real_name}" placeholder="真实姓名">
+
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-2">头像</label>
+
+                <div class="col-md-10">
+                    <!--<textarea  class="form-control" rows="4" type="text" name="remark" placeholder="输入行为描述">{$data.remark}</textarea>-->
+
+                    <div class="row">
+                        <div class="col-xs-6 col-md-12">
+                            <a href="{$info['_picture']['path']|default=''}" target="_blank" class="upload-pre-item" class="thumbnail"><img style="max-width: 180px;height: 170px;"   class="img-thumbnail" src="{$info['_picture']['path']|default=''}"/></a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-2">行为规则</label>
+
+                <div class="col-md-10">
+                    <textarea class="form-control" rows="4" type="text" name="rule" placeholder="输入行为规则，不写则只记录日志">{$data.rule}</textarea>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-2">日志规则</label>
+
+                <div class="col-md-10">
+                    <textarea class="form-control" rows="4" type="text" name="log" placeholder="记录日志备注时按此规则来生成，支持[变量|函数]。目前变量有：user,time,model,record,data">{$data.log}</textarea>
+                </div>
+            </div>
+
+            <div class="form-item">
+                <input type="hidden" name="id" value="{$data.id}"/>
+                <!--<button type="submit" class="btn submit-btn ajax-post" target-form="form-horizontal">确 定</button>-->
+                <!--<button class="btn btn-return" onclick="javascript:history.back(-1);return false;">返 回</button>-->
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+    <button type="button" class="btn btn-primary"  onclick="Save('{:U(\'saveAction\')}','fm')">保存</button>
+</div>

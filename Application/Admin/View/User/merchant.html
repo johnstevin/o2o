@@ -36,7 +36,7 @@
                     <td><span>{:long2ip($vo['last_login_ip'])}</span></td>
                     <td>{$vo.status_text|default='----'}</td>
                     <td>
-                        <a  href="{:U('AuthManager/edit?uid='.$vo['id'])}">编辑</a>
+                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('User/editmerchant?uid='.$vo['id'])}">编辑</a>
                         <eq name="vo.status" value="1">
                         <a href="{:U('User/changeStatus?method=forbidUser&id='.$vo['id'].'&_type=2')}" class=" ajax-get">禁用</a>
                         <else/>
