@@ -331,33 +331,37 @@ class OrderVehicleModel extends AdvModel{
         $this->save(['id'=>$data['id'],'status'=>$status]);
     }
 
-    public function getUserList($uid,$status,$orderCode,$page, $pageSize){
+    public function getUserList($uid,$status,$payStatus,$orderCode,$page, $pageSize){
         $pageSize > 50 and $pageSize = 50;
-        $where['user_id']=$uid;
+        $where['sq_order_vehicle.user_id']=$uid;
 
         if(!is_null($status))
-            $where['status']=$status;
+            $where['sq_order_vehicle.status']=$status;
+        if(!is_null($payStatus))
+            $where['sq_order_vehicle.pay_status']=$payStatus;
         if(!is_null($orderCode))
-            $where['order_code']=$orderCode;
+            $where['sq_order_vehicle.order_code']=$orderCode;
         $data = $this
-            ->field(['st_astext(lnglat) as lnglat',
-                'id',
-                'order_code',
-                'user_id',
-                'shop_id',
-                'status',
-                'worker_id',
-                'address',
-                'car_number',
-                'price',
+            ->join('left join sq_merchant_shop on sq_merchant_shop.id=sq_order_vehicle.shop_id')
+            ->field(['st_astext(sq_order_vehicle.lnglat) as lnglat',
+                'sq_order_vehicle.id',
+                'ifnull(sq_merchant_shop.title,\'\') as shop',
+                'sq_order_vehicle.order_code',
+                'sq_order_vehicle.user_id',
+                'sq_order_vehicle.shop_id',
+                'sq_order_vehicle.status',
+                'sq_order_vehicle.worker_id',
+                'sq_order_vehicle.address',
+                'sq_order_vehicle.car_number',
+                'sq_order_vehicle.price',
                 'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
-                'add_time',
-                'update_time',
-                'pay_status',
+                'sq_order_vehicle.add_time',
+                'sq_order_vehicle.update_time',
+                'sq_order_vehicle.pay_status',
             ])
             ->where($where)
             ->page($page, $pageSize)
-            ->order('update_time')
+            ->order('sq_order_vehicle.update_time')
             ->select();
 
         foreach($data as &$i){

@@ -100,12 +100,12 @@ class OrderVehicleController extends ApiController
      * }
      * ```
      */
-    public function getList($status = null, $orderCode = null, $page = 1, $pageSize = 10)
+    public function getList($status = null,$payStatus=null, $orderCode = null, $page = 1, $pageSize = 10)
     {
         try {
             $uid = $this->getUserId();
             //print_r($m->getLastSql());die;
-            $this->apiSuccess(['data' => (new OrderVehicleModel())->getUserList($uid,$status,$orderCode,$page,$pageSize)], '');
+            $this->apiSuccess(['data' => (new OrderVehicleModel())->getUserList($uid,$status,$payStatus,$orderCode,$page,$pageSize)], '');
         } catch (\Exception $ex) {
             $this->apiError(51002, $ex->getMessage());
         }

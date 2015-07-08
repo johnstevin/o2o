@@ -704,11 +704,37 @@ class ProductController extends ApiController
         $this->apiSuccess(['data' => ProductModel::get($id, $fields)]);
     }
 
+    /**
+     * 返回所有用户订单，需要accesstoken
+     * @author WangJiang
+     * @param null $status 状态查询，0-待付款，1-待确认，2-已完成，不写-全部
+     * @param int $page
+     * @param int $pageSize
+     */
     public function getOrderList($status=null,$page=1,$pageSize=10){
+
+        //0-未分配，1-已分配，2-已接单，3-处理中，4-处理完，5-订单结束，6订单取消
+        //0-取消的订单,1-等待商家确定,2-用户确定（商家的修改），3-正在配送,4-已经完成，5-申请退款,6-退款完成
+
+        $orderStatuees=[['status'=>null,'payStatus'=>1]
+            ,['status'=>OrderModel::STATUS_USER_CONFIRM,'payStatus'=>null]
+            ,['status'=>OrderModel::STATUS_COMPLETE,'payStatus'=>1]];
+
+        $orderVehStatuses=[['status'=>OrderVehicleModel::STATUS_DONE,'payStatus'=>0]
+            ,['status'=>-2,'payStatus'=>null]
+            ,['status'=>OrderVehicleModel::STATUS_CLOSED,'payStatus'=>1]];
+
         $uid=$this->getUserId();
         $_GET['p']=$page;
-        $orders=(new OrderModel())->getLists(null, $uid, $status, null, null, false, false, true, $pageSize);
-        $orders_veh=(new OrderVehicleModel())->getUserList($uid,$status,null,$page,$pageSize);
+
+        $statusOrder=is_null($status) ? null :$orderStatuees[$status];
+        $statusOrderVeh=is_null($status) ? null :$orderVehStatuses[$status];
+
+        //var_dump($statusOrder);
+        //var_dump($statusOrderVeh);
+
+        $orders=(new OrderModel())->getLists(null, $uid, $statusOrder['status'], $statusOrder['payStatus'], null, false, false, true, $pageSize);
+        $orders_veh=(new OrderVehicleModel())->getUserList($uid,$statusOrderVeh['status'], $statusOrderVeh['payStatus'],null,$page,$pageSize);
 
         $iter_order=(new \ArrayObject($orders['data']))->getIterator();
         $iter_order_veh=(new \ArrayObject($orders_veh))->getIterator();
