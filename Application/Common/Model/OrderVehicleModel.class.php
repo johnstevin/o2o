@@ -329,6 +329,7 @@ class OrderVehicleModel extends AdvModel{
             E('非本人操作');
         $this->_assert_new_status($data['status'],$status);
         $this->save(['id'=>$data['id'],'status'=>$status]);
+        //TODO 消息推送
     }
 
     public function getUserList($uid,$status,$payStatus,$orderCode,$page, $pageSize){

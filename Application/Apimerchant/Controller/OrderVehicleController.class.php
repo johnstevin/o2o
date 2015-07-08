@@ -198,7 +198,6 @@ class OrderVehicleController extends ApiController{
         $oid=I('post.orderId');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_CONFIRM);
         $this->apiSuccess(['data'=>[]], '操作成功');
-        //TODO 消息推送
     }
 
     /**
@@ -215,7 +214,6 @@ class OrderVehicleController extends ApiController{
         $oid=I('post.orderId');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_TREATING);
         $this->apiSuccess(['data'=>[]], '操作成功');
-        //TODO 消息推送
     }
 
     /**
@@ -232,7 +230,6 @@ class OrderVehicleController extends ApiController{
         $oid=I('post.orderId');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_DONE);
         $this->apiSuccess(['data'=>[]], '操作成功');
-        //TODO 消息推送
     }
 
     /**
