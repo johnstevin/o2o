@@ -367,7 +367,7 @@ class UserController extends ApiController {
 //            $this->apiSuccess(array('data'=>$result['staff_register_url'].'/shop_name/'.$result['title']),'获取Url成功');
 //        }else{
             //生成url
-            $this->apiSuccess(array('data'=>'apimchant.php?s=User/staffAdd/key/' . think_encrypt($shop_id).'/title/'.$result['title']),'生成Url成功');
+            $this->apiSuccess(array('data'=>'apimchant.php?s=User/staffAdd/key/' . think_encrypt($shop_id)),'生成Url成功');
 
 //        }
 
@@ -470,6 +470,7 @@ class UserController extends ApiController {
      * @author : Stevin.John@qq.com
      */
     public function staffManage(){
+        $this->getUserId();
         $shop_id  = is_numeric(I('get.shop_id')) ? I('get.shop_id') : 0;
         if($shop_id==0)
             $this->apiError('40030', '非法操作');
@@ -495,7 +496,7 @@ class UserController extends ApiController {
             $this->apiError('40033', '获取员工失败');
         $uids = implode(',',$uids);
         $mapUcenter  = array('in',$uids);
-        $fieldUcenter      = 'a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time';
+        $fieldUcenter      = 'a.id,a.mobile,a.real_name,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time';
         $resultUserInfos = $this->userInfos($mapUcenter,$fieldUcenter);
         $this->apiSuccess(array('data'=>$resultUserInfos),'获取员工成功');
 
