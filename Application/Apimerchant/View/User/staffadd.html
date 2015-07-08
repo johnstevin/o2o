@@ -15,7 +15,7 @@
     <div class="row">
         <div class="col-xs-12 col-sm-offset-2 col-sm-10 col-md-offset-3 col-md-6">
             <nav class="navbar">
-                <div class="text-center"><h3>{:I('shop_name')}员工注册</h3></div>
+                <div class="text-center"><h3>{:I('title')}员工注册</h3></div>
             </nav>
             <form action="?" method="post" name="form">
                 <div class="form-group">
@@ -39,6 +39,11 @@
                     <label for="password">密码</label>
                     <input type="password" class="form-control" id="password" name="password"
                            placeholder="6-16为数字、英文字母大小写">
+                </div>
+                <div class="form-group">
+                    <label for="password">确认密码</label>
+                    <input type="password" class="form-control" id="repassword" name="repassword"
+                           placeholder="请输入确认密码">
                 </div>
                 <div class="form-group">
                     <label for="real_name">姓名</label>
@@ -86,9 +91,10 @@
     function register() {
         var mobile = $("#mobile").val();
         var password = $("#password").val();
+        var repassword = $("#repassword").val();
         var real_name = $("#real_name").val();
         var verify_code = $('#verify_code').val();
-        var shop_id = "{:I('shop_id')}";
+        var shop_id = "{:I('key')}";
         if (shop_id == '' || shop_id == null) {
             $('#msg').html("注册失败！非法注册,请重新扫描！");
             //};
@@ -114,6 +120,13 @@
             $("#real_name").focus();
             return false;
         }
+        if(password!=repassword){
+            $('#msg').html("两次密码输入不一致！");
+            $("#repassword").focus();
+            return false;
+        }
+
+        repassword = $.md5(repassword);
 
         password = $.md5(password);
 
@@ -126,6 +139,7 @@
                 "password": password,
                 "shop_id": shop_id,
                 "real_name": real_name,
+                "repassword":repassword,
                 "verify_code": verify_code
             },
             beforeSend: function () {

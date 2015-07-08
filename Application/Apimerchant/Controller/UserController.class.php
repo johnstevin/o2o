@@ -318,16 +318,16 @@ class UserController extends ApiController {
         if($shop_id==0)
             $this->apiError('40020', '非法操作');
         $model = D('MerchantShop');
-        $result = $model->get($shop_id, 'id,group_id,staff_register_url,title');
+        $result = $model->get($shop_id, 'id,group_id,title');
         if(empty($result))
             $this->apiError('40021', '找不到此店铺');
-        if( $result['staff_register_url'] != null ){
-            $this->apiSuccess(array('data'=>$result['staff_register_url'].'/shop_name/'.$result['title']),'获取Url成功');
-        }else{
+//        if( $result['staff_register_url'] != null ){
+//            $this->apiSuccess(array('data'=>$result['staff_register_url'].'/shop_name/'.$result['title']),'获取Url成功');
+//        }else{
             //生成url
-            $this->apiSuccess(array('data'=>'apimchant.php?s=User/staffAdd/shop_id/' . $shop_id.'/shop_name/'.$result['title']),'生成Url成功');
+            $this->apiSuccess(array('data'=>'apimchant.php?s=User/staffAdd/key/' . think_encrypt($shop_id).'/title/'.$result['title']),'生成Url成功');
 
-        }
+//        }
 
 
     }
@@ -346,7 +346,18 @@ class UserController extends ApiController {
             if(!$verify_code||!verify_sms_code($mobile,$verify_code)){
                 $this->apiError('40029','验证码输入错误！');
             }
-            $shop_id  = is_numeric(I('post.shop_id')) ? I('post.shop_id') : 0;
+
+
+            $password   = I('post.password');
+            $repassword   = I('post.repassword');
+            if($password!== $repassword){
+                $this->apiError('40029','您输入的密码与确认密码不一致');
+            }
+
+
+
+            $shop =think_decrypt(I('post.shop_id'));
+            $shop_id  = is_numeric($shop) ? $shop : 0;
             if($shop_id==0)
                 $this->apiError('40030', '非法操作');
             $model = D('MerchantShop');
@@ -364,7 +375,6 @@ class UserController extends ApiController {
             //TODO 这里注册可以写个公共调用
             // Start
 
-            $password   = I('post.password');
             $real_name   = I('post.real_name');
 
             $Ucenter = D('UcenterMember');

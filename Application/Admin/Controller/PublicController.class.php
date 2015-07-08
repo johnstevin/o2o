@@ -68,7 +68,7 @@ class PublicController extends Controller {
             $repassword  = I('post.repassword');
             $username    = I('post.username');
             $email       = I('post.email');
-            $group_id    = I('post.group_id');
+            $group_id    = think_decrypt(I('post.group_id'));
             $is_admin    = I('post.is_admin',1);
 
             ///* 检测短信验证码 */
