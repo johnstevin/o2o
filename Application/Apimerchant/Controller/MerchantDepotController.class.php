@@ -150,16 +150,24 @@ class MerchantDepotController extends ApiController
      */
     public function create()
     {
+        //var_dump(get_client_ip());
         try {
             if (IS_POST) {
                 //TODO 验证用户权限
                 $uid = $this->getUserId();
-                $shopId = I('shop_id');
+                $shopId = I('shop_id',null);
+                if (is_null($shopId))
+                    E('店铺必须提供');
+
+                $price = I('price', null);
+                if (is_null($price))
+                    E('商品价格必须提供');
+
                 can_modify_shop($uid, $shopId);
 
                 $productId = I('product_id', null);
                 if (is_null($productId)) {
-                    $price = I('price', null);
+
                     $remark = I('remark', '');
                     $description = I('description', '');
                     $title = I('title', null);
@@ -169,8 +177,6 @@ class MerchantDepotController extends ApiController
                     $picture = I('picture', '0');
                     $number = I('number', null);
 
-                    if (is_null($price))
-                        E('商品价格必须提供');
                     if (is_null($title))
                         E('商品名称必须提供');
                     if (is_null($category_id))
@@ -189,16 +195,22 @@ class MerchantDepotController extends ApiController
                     if (!D('Category')->find($category_id))
                         E('分类不存在');
 
-                    $productSameNumber = D('Product')->where(['number' => $number])->find();
+                    //var_dump(D('Norms')->find($norm_id));
 
+                    $productSameNumber = D('Product')->where(['number' => $number])->find();
+                    //var_dump($productSameNumber);die;
                     //var_dump($productSameNumber);
 
                     //根据刘辉的建议，判断是否已经有一个带审核的同number商品
-                    if ($productSameNumber)
+                    if ($productSameNumber){
+                        //var_dump($productSameNumber);
+
+                        $status=$productSameNumber['status'] == ProductModel::STATUS_ACTIVE ?
+                            MerchantDepotModel::STATUS_ACTIVE : MerchantDepotModel::STATUS_VERIFY;
+                        //var_dump($status);die;
                         $this->_add_depot($productSameNumber['id'],
-                            $shopId, $productSameNumber['status'] == ProductModel::STATUS_ACTIVE ?
-                                MerchantDepotModel::STATUS_ACTIVE : MerchantDepotModel::STATUS_VERIFY);
-                    else {
+                            $shopId, $status);
+                    }else {
                         $cateChain = [$category_id];
                         get_cate_chain_down([$category_id], $cateChain);
                         //var_dump($cateChain);die;
@@ -206,7 +218,8 @@ class MerchantDepotController extends ApiController
                         $model = MerchantDepotModel::getInstance();
                         $model->startTrans();
                         try {
-                            $productId = D('Product')->add(['title' => $title
+                            $pro=D('Product');
+                            if(!$pro->create(['title' => $title
                                 , 'brand_id' => $brand_id
                                 , 'norms_id' => $norm_id
                                 , 'price' => $price
@@ -215,7 +228,10 @@ class MerchantDepotController extends ApiController
                                 , 'number' => $number
                                 , 'status' => ProductModel::STATUS_VERIFY
                                 , 'create_uid' => $uid
-                                , 'source' => 2]);
+                                , 'source' => 2]))
+                                E('商品参数传递错误');
+
+                            $productId = $pro->add();
 
                             D('ProductCategory')->add(['product_id' => $productId, 'category_id' => $category_id]);
 
@@ -280,25 +296,31 @@ class MerchantDepotController extends ApiController
 
         $cateChain = $this->_filter_cates($productId, $shopId);
 
-        //var_dump($status);
+        //var_dump($cateChain);
         //var_dump($productId);die;
         $m = D('MerchantDepot');
         $data = $m->create(['shop_id' => $shopId, 'product_id' => $productId,
             'status' => $status, 'price' => $price, 'remark' => $remark]);
 
+        if(!$data)
+            E('参数传递失败,'.$m->getError());
+
         $d = D();
         $d->startTrans();
         try {
-            {
-                foreach ($cateChain as $i) {
-                    $insertMerchantDepotProCategory = D('MerchantDepotProCategory')
-                            ->where(['category_id' => $i, 'shop_id' => $shopId])->count() == 0;
-                    if ($insertMerchantDepotProCategory)
-                        D('MerchantDepotProCategory')->add(['shop_id' => $shopId, 'category_id' => $i]);
-                }
+            $mdpc=D('MerchantDepotProCategory');
+            foreach ($cateChain as $i) {
+                $insertMerchantDepotProCategory =
+                    $mdpc->where(['category_id' => $i, 'shop_id' => $shopId])->count() == 0;
+
+                if ($insertMerchantDepotProCategory)
+                    if(!$mdpc->add(['shop_id' => $shopId, 'category_id' => $i]))
+                        E('增加商品分类缓存表失败,'.$mdpc->getError());
             }
             //var_dump($data);die;
             $newId = $m->add($data);
+            if(!$newId)
+                E('增加商品失败,'.$m->getError());
             //var_dump($newId);die;
             $d->commit();
             $this->apiSuccess(['data' => ['product_id' => $productId, 'id' => $newId]], '');
@@ -363,6 +385,7 @@ class MerchantDepotController extends ApiController
                 if (!$model->create())
                     E('参数传递失败');
                 $model->save();
+                action_log('api_update_depot', $model, I('id'), UID,2);
                 $this->apiSuccess(['data' => []], '');
             } else
                 E('非法调用，请用POST调用该方法');

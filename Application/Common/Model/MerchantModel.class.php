@@ -27,6 +27,10 @@ class MerchantModel extends AdvModel
         'status',
         'number',
         'lnglat',
+        'grade_1',
+        'grade_2',
+        'grade_3',
+        'total_orders',
         '_type' => [
             'id' => 'int',
             'description' => 'varchar',
@@ -37,6 +41,10 @@ class MerchantModel extends AdvModel
             'status' => 'tinyint',
             'number' => 'string',
             'lnglat'=>'point',
+            'grade_1' => 'tinyint',
+            'grade_2' => 'tinyint',
+            'grade_3' => 'tinyint',
+            'total_orders'=>'int',
         ]
     ];
     /**
@@ -188,8 +196,9 @@ class MerchantModel extends AdvModel
      * @param $pageSize
      */
     public function getCarWashersNearby($lat, $lng, $range,$name,$number,$page,$pageSize){
+        $pageSize > 50 and $pageSize = 50;
+
         $this->join('JOIN sq_ucenter_member on sq_ucenter_member.id=sq_merchant.id');
-        $this->join('LEFT JOIN sq_appraise on sq_appraise.merchant_id = sq_merchant.id');
         $this->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo');
 
         $bind=[':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')];
@@ -209,25 +218,33 @@ class MerchantModel extends AdvModel
                         sq_auth_access.role_id=:roleId)')
             ->where($where)
             ->field(['sq_merchant.id'
-                ,'sq_merchant_shop.id as shop_id'
+                ,'ifnull(sq_merchant_shop.id,0) as shop_id'
                 ,'sq_merchant.number'
                 ,'sq_ucenter_member.mobile'
                 ,'sq_ucenter_member.real_name'
                 ,'sq_ucenter_member.photo'
                 ,'ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat)) as distance'
                 ,'st_astext(sq_merchant.lnglat) as lnglat'
-                ,'avg(sq_appraise.grade_1) as grade_1'
-                ,'avg(sq_appraise.grade_2) as grade_2'
-                ,'avg(sq_appraise.grade_3) as grade_3'
-                ,'(avg(sq_appraise.grade_1)+avg(sq_appraise.grade_2)+avg(sq_appraise.grade_3))/3 as grade'
+                ,'sq_merchant.grade_1'
+                ,'sq_merchant.grade_2'
+                ,'sq_merchant.grade_3'
+                ,'(sq_merchant.grade_1+sq_merchant.grade_2+sq_merchant.grade_3)/3 as grade'
                 ,'ifnull(sq_picture.path,\'\') as photo_path'
-            ])->bind($bind)
-            ->limit($page,$pageSize)
+                ,'sq_merchant.total_orders'
+            ])
+            ->bind($bind)
+            ->page($page,$pageSize)
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
             ->group('sq_merchant.id')
             ->select();
 
-        //print_r($this->getLastSql());die;
+        foreach($data as &$i){
+            $i['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id']
+                ,'status'=>['in',[
+                    OrderVehicleModel::STATUS_HAS_WORKER,
+                    OrderVehicleModel::STATUS_TREATING,
+                    OrderVehicleModel::STATUS_CONFIRM]]])->count();
+        }
 
         return $data;
     }
@@ -239,16 +256,16 @@ class MerchantModel extends AdvModel
         $bind[':presetTime']=$presetTime-$timeRange;
         $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
             ' and sq_merchant.id not in (select worker_id from sq_order_vehicle
-            where preset_time>:presetTime and worker_id=sq_merchant.id and sq_order_vehicle.status in (1,2,3)) ';
+                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3)) ';
 
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
         $data=$this
-            ->join('join sq_merchant_shop on sq_merchant_shop.group_id in
+            ->join('left join sq_merchant_shop on sq_merchant_shop.group_id in
                 (select sq_auth_access.group_id from sq_auth_access where
                         sq_auth_access.uid=sq_merchant.id and
                         sq_auth_access.role_id=:roleId)')
             ->where($where)->bind($bind)
-            ->field(['sq_merchant.id','sq_merchant_shop.id as shop_id'])
+            ->field(['sq_merchant.id','ifnull(sq_merchant_shop.id,0) as shop_id'])
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
             //->fetchSql()
             ->find();

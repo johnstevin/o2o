@@ -25,9 +25,9 @@ class MerchantController extends ApiController {
      */
     public function getCarWashers($lat, $lng, $range = 100,$name=null,$number=null,$page=1,$pageSize=10){
         try {
-            $pageSize > 50 and $pageSize = 50;
-            $page--;
-            $page *= $pageSize;
+
+//            $page--;
+//            $page *= $pageSize;
 
             $this->apiSuccess(['data' => (new MerchantModel())
                 ->getCarWashersNearby($lat, $lng, $range,$name, $number,$page,$pageSize)],'');

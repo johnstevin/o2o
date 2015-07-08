@@ -9,6 +9,7 @@
 namespace Apimerchant\Controller;
 
 
+use Common\Model\MerchantModel;
 use Common\Model\OrderVehicleModel;
 
 class OrderVehicleController extends ApiController{
@@ -150,14 +151,15 @@ class OrderVehicleController extends ApiController{
      */
     public function getList($status = null,$page = 1, $pageSize = 10){
         $pageSize > 50 and $pageSize = 50;
-        $page--;
-        $page *= $pageSize;
+//        $page--;
+//        $page *= $pageSize;
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $gids=$this->getUserGroupIds($mgrRoleId,true);//获得管理分组
         $data=D('OrderVehicle')
             ->join('inner join sq_merchant_shop on sq_merchant_shop.group_id in (:groupIds)')
             ->where('shop_id in (select id from sq_merchant_shop where group_id in (:groupIds))')
             ->bind([':groupIds'=>implode(',',$gids)])
+            ->page($page,$pageSize)
             //->fetchSql()
             ->select();
         //var_dump($data);die;
@@ -252,14 +254,11 @@ class OrderVehicleController extends ApiController{
     /**
      * 管理员修改订单数据,POST数据，需要accesstoken
      * <pre>
-     * shop_id int 公司ID
-     * status int
-     * worker_id int
-     * address string
-     * lnglat  "lng,lat"
-     * preset_time int
-     * car_number string 车牌
-     * price float 价格，目前没有卵用
+     * id 订单ID
+     * address string 新地址，可选
+     * lnglat  "lng lat" 新经纬度，可选
+     * preset_time int 新服务时间，可选
+     * car_number string 新车牌 可选
      * </pre>
      * @author WangJiang
      */
@@ -270,17 +269,58 @@ class OrderVehicleController extends ApiController{
         if (!($data=$model->create()))
             E('参数传递失败');
 
-        $id=$data['id'];
+        $id=I('post.id');//为了避免传递参数时混淆，强制指定post
 
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $groupIds=$this->getUserGroupIds($mgrRoleId,true);
         $order=$model->find($id);
+        if(empty($order))
+            E('订单不存在');
         $shop=D('MerchantShop')->find($order['shop_id']);
         if(!in_array($shop['group_id'],$groupIds))
             E('用户无权修改此订单');
 
+        //var_dump($data);
         $model->data($data);
-        $model->save();
+        $model->update($id);
+        action_log('api_update_order_veh', $model, $id, UID,2);
+        $this->apiSuccess(['data'=>[]], '操作成功');
+    }
+
+    /**
+     * 管理员重新分配订单,POST数据，需要accesstoken
+     * <pre>
+     * id 订单ID
+     * </pre>
+     * @author WangJiang
+     */
+    public function reassign(){
+        if(!IS_POST)
+            E('非法调用，请用POST命令');
+
+        $id=I('post.id');//为了避免传递参数时混淆，强制指定post
+
+        $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
+        $groupIds=$this->getUserGroupIds($mgrRoleId,true);
+
+        $model=D('OrderVehicle');
+        $order=$model->field(['st_astext(lnglat) as lnglat','preset_time'])->find($id);
+        //var_dump($order);die;
+        if(empty($order))
+            E('订单不存在');
+        $shop=D('MerchantShop')->find($order['shop_id']);
+        if(!in_array($shop['group_id'],$groupIds))
+            E('用户无权修改此订单');
+
+        $worker=(new MerchantModel())->getAvailableWorker($order['lnglat'][0],$order['lnglat'][1],$order['preset_time']);
+        if(empty($worker))
+            E('没有找到合适的服务人员');
+
+        $model->save(['id'=>$id,'worker_id'=>$worker['id']]);
+
+        action_log('api_reassign_order_veh', $model, $id, UID,2);
+        //TODO 实现消息推送$wid
+
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 }

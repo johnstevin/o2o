@@ -9,6 +9,8 @@ namespace Apimember\Controller;
 use Common\Model\CategoryModel;
 use Common\Model\MerchantDepotModel;
 use Common\Model\MerchantShopModel;
+use Common\Model\OrderModel;
+use Common\Model\OrderVehicleModel;
 use Think\Exception;
 use Common\Model\ProductModel;
 
@@ -79,12 +81,13 @@ class ProductController extends ApiController
      * @author  stevin WangJiang
      */
     public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or'
-        , $tagId = 0, $type = null, $order = 1,$page = 1,$pageSize=10)
+        , $tagId = 0, $type = null, $order = 1
+        //,page,pageSize该函数不能采用分页，原因时客户端需要一下获得所有商铺
+    )
     {
         try {
-            $pageSize > 50 and $pageSize = 50;
             $this->apiSuccess(['data' => (new MerchantShopModel())
-                ->getNearby($lat, $lng, $range, $words, $wordsOp, $tagId, $type, $order,$page,$pageSize)]);
+                ->getNearby($lat, $lng, $range, $words, $wordsOp, $tagId, $type, $order)],'');
         } catch (\Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
         }
@@ -140,7 +143,7 @@ class ProductController extends ApiController
                     '(sq_appraise.grade_1+sq_appraise.grade_2+sq_appraise.grade_3)/3 as grade',
                     'sq_appraise.update_time','ifnull(sq_picture.path,\'\') as picture_path','sq_member.nickname'
                 ])
-                ->select()]);
+                ->select()],'');
         } catch (\Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
         }
@@ -153,7 +156,7 @@ class ProductController extends ApiController
     public function getMerchantDetail($id)
     {
         try {
-            $this->apiSuccess(['data' => (new MerchantShopModel())->get($id)]);
+            $this->apiSuccess(['data' => (new MerchantShopModel())->get($id)],'');
         } catch (Exception $ex) {
             $this->apiError(50003, $ex->getMessage());
         }
@@ -329,7 +332,7 @@ class ProductController extends ApiController
             }
             $ret['categories']=list_to_tree($data,'id', 'pid', '_child', $root = $pid);
 
-            $this->apiSuccess(['data' => $ret]);
+            $this->apiSuccess(['data' => $ret],'');
 
         } catch (Exception $ex) {
             $this->apiError(50004, $ex->getMessage());
@@ -394,7 +397,7 @@ class ProductController extends ApiController
                 $ret[]=$i;
             }
 
-            $this->apiSuccess(['data' => $ret]);
+            $this->apiSuccess(['data' => $ret],'');
 
             //print_r($sql->getLastSql());
 
@@ -560,13 +563,22 @@ class ProductController extends ApiController
 
             $this->apiSuccess(['data'=>(new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
                 , $priceMin, $priceMax
-                , $returnAlters,$page, $pageSize),'page'=>$page+1]);
+                , $returnAlters,$page, $pageSize),'page'=>$page+1],'');
 
         } catch (Exception $ex) {
             $this->apiError(50005, $ex->getMessage());
         }
     }
 
+    /**
+     * 查询指定商品商品，按照商铺带商品的方式返回
+     * @author  WangJiang
+     * @param null $shopIds
+     * @param null $categoryId
+     * @param null $title
+     * @param null $priceMin
+     * @param null $priceMax
+     */
     public function getShopProductList($shopIds = null, $categoryId = null, $title = null
         , $priceMin = null, $priceMax = null){
         try {
@@ -574,7 +586,7 @@ class ProductController extends ApiController
             $shopIds = explode(',', $shopIds);
 
             $this->apiSuccess(['data'=>(new MerchantShopModel())->getProductList($shopIds, $categoryId,  $title
-                , $priceMin, $priceMax)]);
+                , $priceMin, $priceMax)],'');
 
         } catch (Exception $ex) {
             $this->apiError(50005, $ex->getMessage());
@@ -591,7 +603,7 @@ class ProductController extends ApiController
     public function getProductDetail($id)
     {
         try {
-            $this->apiSuccess(['data' => ProductModel::get($id)]);
+            $this->apiSuccess(['data' => ProductModel::get($id)],'');
         } catch (Exception $ex) {
             $this->apiError(50006, $ex->getMessage());
         }
@@ -690,5 +702,67 @@ class ProductController extends ApiController
     public function find($id, $fields = true)
     {
         $this->apiSuccess(['data' => ProductModel::get($id, $fields)]);
+    }
+
+    /**
+     * 返回所有用户订单，需要accesstoken
+     * @author WangJiang
+     * @param null $status 状态查询，0-待付款，1-待确认，2-已完成，不写-全部
+     * @param int $page
+     * @param int $pageSize
+     */
+    public function getOrderList($status=null,$page=1,$pageSize=10){
+
+        //0-未分配，1-已分配，2-已接单，3-处理中，4-处理完，5-订单结束，6订单取消
+        //0-取消的订单,1-等待商家确定,2-用户确定（商家的修改），3-正在配送,4-已经完成，5-申请退款,6-退款完成
+
+        $orderStatuees=[['status'=>null,'payStatus'=>1]
+            ,['status'=>OrderModel::STATUS_USER_CONFIRM,'payStatus'=>null]
+            ,['status'=>OrderModel::STATUS_COMPLETE,'payStatus'=>1]];
+
+        $orderVehStatuses=[['status'=>OrderVehicleModel::STATUS_DONE,'payStatus'=>0]
+            ,['status'=>-2,'payStatus'=>null]
+            ,['status'=>OrderVehicleModel::STATUS_CLOSED,'payStatus'=>1]];
+
+        $uid=$this->getUserId();
+        $_GET['p']=$page;
+
+        $statusOrder=is_null($status) ? null :$orderStatuees[$status];
+        $statusOrderVeh=is_null($status) ? null :$orderVehStatuses[$status];
+
+        //var_dump($statusOrder);
+        //var_dump($statusOrderVeh);
+
+        $orders=(new OrderModel())->getLists(null, $uid, $statusOrder['status'], $statusOrder['payStatus'], null, false, false, true, $pageSize);
+        $orders_veh=(new OrderVehicleModel())->getUserList($uid,$statusOrderVeh['status'], $statusOrderVeh['payStatus'],null,$page,$pageSize);
+
+        $iter_order=(new \ArrayObject($orders['data']))->getIterator();
+        $iter_order_veh=(new \ArrayObject($orders_veh))->getIterator();
+
+        $data=[];
+        while(true){
+            $iter_order->next();
+            $iter_order_veh->next();
+
+            $order=$iter_order->current();
+            $order_veh=$iter_order_veh->current();
+
+            if(empty($order) and empty($order_veh))
+                break;
+
+            if($order and $order_veh){
+                if($order['update_time']<$order_veh['update_time']){
+                    $data[]=$order;
+                    $data[]=$order_veh;
+                }else{
+                    $data[]=$order_veh;
+                    $data[]=$order;
+                }
+            }else if($order)
+                $data[]=$order;
+            else if($order_veh)
+                $data[]=$order_veh;
+        }
+        $this->apiSuccess(['data'=>$data],'');
     }
 }

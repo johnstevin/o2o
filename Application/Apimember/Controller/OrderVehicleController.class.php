@@ -100,53 +100,12 @@ class OrderVehicleController extends ApiController
      * }
      * ```
      */
-    public function getList($status = null, $orderCode = null, $page = 1, $pageSize = 10)
+    public function getList($status = null,$payStatus=null, $orderCode = null, $page = 1, $pageSize = 10)
     {
         try {
-            $pageSize > 50 and $pageSize = 50;
-            $page--;
-            $page *= $pageSize;
             $uid = $this->getUserId();
-
-            $where['user_id']=$uid;
-
-            if(!is_null($status))
-                $where['status']=$status;
-            if(!is_null($orderCode))
-                $where['order_code']=$orderCode;
-            $m = D('OrderVehicle');
-            $data = $m
-                ->field(['st_astext(lnglat) as lnglat',
-                    'id',
-                    'order_code',
-                    'user_id',
-                    'shop_id',
-                    'status',
-                    'worker_id',
-                    'address',
-                    'car_number',
-                    'price',
-                    'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
-                    'add_time',
-                    'update_time',
-                ])
-                ->where($where)
-                ->limit($page, $pageSize)->select();
-
-            foreach($data as &$i){
-                $i['worder_pictures']=[];
-                foreach(D('Picture')
-                    ->field(['path'])
-                    ->where(['id'=>['in',$i['worder_picture_ids']]])
-                    ->select() as $p){
-                    $i['worder_pictures'][]=$p['path'];
-                }
-                unset($i['worder_picture_ids']);
-            }
-
             //print_r($m->getLastSql());die;
-
-            $this->apiSuccess(['data' => $data], '');
+            $this->apiSuccess(['data' => (new OrderVehicleModel())->getUserList($uid,$status,$payStatus,$orderCode,$page,$pageSize)], '');
         } catch (\Exception $ex) {
             $this->apiError(51002, $ex->getMessage());
         }
@@ -178,33 +137,25 @@ class OrderVehicleController extends ApiController
             if (IS_POST) {
                 $model = new OrderVehicleModel();
 
-                $province=I('province','');
-                $city=I('city','');
-                $district=I('district','');
+                //print_r($model);die;
 
                 if (!($data=$model->create()))
-                    E('参数传递失败');
+                    E('参数传递失败,'.$model->getError());
 
-                unset($data['province']);
-                unset($data['city']);
-                unset($data['district']);
+                //print_r(json_encode($data));die;
 
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
                     list($lng,$lat)=explode(' ',$data['lnglat']);
                     $worker=(new MerchantModel())->getAvailableWorker($lng,$lat,$data['preset_time']);
-                    if(empty($worker)){
-                        $data['status']=OrderVehicleModel::STATUS_NO_WORKER;
-                        $shopId=$this->_get_car_wash_shop($province,$city,$district);
-                        //实在找不到可以处理的公司，只能甩给最高分组去负责了
-                        if(empty($shopId))
-                            $shopId=C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_VEHICLE');
-                        $data['shop_id']=$shopId;
-                    }else{
-                        $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
-                        $data['worker_id']=$worker['id'];
-                        $data['shop_id']=$worker['shop_id'];
-                    }
+
+                    if(empty($worker))
+                        E('没有找到合适的服务人员');
+
+                    $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
+                    $data['worker_id']=$worker['id'];
+                    $data['shop_id']=$worker['shop_id'];
+
                 }else
                     $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
 
@@ -214,11 +165,16 @@ class OrderVehicleController extends ApiController
                 $sendMsg=$data['status']==OrderVehicleModel::STATUS_HAS_WORKER;
 
                 $model->data($data);
-                $this->apiSuccess(['id' => intval($model->insert(function() use ($sendMsg,$wid){
+
+                $newId=intval($model->insert(function() use ($sendMsg,$wid){
                     if($sendMsg){
                         //TODO 实现消息推送$wid
                     }
-                }))],'');
+                }));
+
+                action_log('api_create_order_veh', $model, $newId, UID,3);
+
+                $this->apiSuccess(['data'=>['id' => $newId]],'');
             } else
                 E('非法调用，请用POST调用');
         } catch (\Exception $ex) {
@@ -256,6 +212,7 @@ class OrderVehicleController extends ApiController
             $oid=I('post.orderId');
             $m=new OrderVehicleModel();
             $m->userCancel($oid,$this->getUserId());
+            action_log('api_cancel_order_veh', $m, $oid, UID,3);
             $this->apiSuccess(null,'成功');
         }catch (\Exception $ex) {
             $this->apiError(51022, $ex->getMessage());

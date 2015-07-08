@@ -88,7 +88,7 @@ class OrderVehicleModel extends AdvModel{
         ],
         [
             'update_ip',
-            'get_client_ip',
+            'get_client_ip_to_int',
             self::MODEL_UPDATE,
             'function'
         ],
@@ -109,12 +109,20 @@ class OrderVehicleModel extends AdvModel{
         [
             'address',
             'require',
-            '地址不能为空'
+            '地址不能为空',
+            self::MUST_VALIDATE
+        ],
+        [
+            'lnglat',
+            'require',
+            '坐标不能为空',
+            self::MUST_VALIDATE
         ],
         [
             'preset_time',
             'require',
-            '预定时间不能为空'
+            '预定时间不能为空',
+            self::MUST_VALIDATE
         ],
         [
             'status',
@@ -154,12 +162,12 @@ class OrderVehicleModel extends AdvModel{
         'order_code',
     ];
 
-//    protected function _after_find(&$result,$options='') {
-//        parent::_after_select($result,$options);
-//        $this->_after_query_row($result);
-//        //echo '<pre>';
-//        //print_r($result);
-//    }
+    protected function _after_find(&$result,$options='') {
+        parent::_after_select($result,$options);
+        $this->_after_query_row($result);
+        //echo '<pre>';
+        //print_r($result);
+    }
 
     /**
      * 处理point类型字段值
@@ -203,6 +211,10 @@ class OrderVehicleModel extends AdvModel{
         $orderVals=[];
         $orderFlds=[];
         foreach($data as $key=>$val){
+            if(!in_array($key,$this->fields,true)){
+                unset($data[$key]);
+                continue;
+            }
             $bindName=":$key";
             if($this->fields['_type'][$key]=='point'){
                 $orderVals[]="st_geomfromtext($bindName)";
@@ -220,6 +232,48 @@ class OrderVehicleModel extends AdvModel{
             'bind'=>$bind,
             'newId'=>true]
         ]);
+    }
+
+    public function update($id){
+
+        $data=$this->data();
+
+        //检查状态变化是否合法
+        $order=$this->find($id);
+        if(isset($data['status']))
+            $this->_assert_new_status($order['status'],$data['status']);
+
+        $bind=[];
+        $sets=[];
+        foreach($data as $key=>$val){
+            if($key==$this->pk)
+                continue;
+            if(!in_array($key,$this->fields,true)){
+                unset($data[$key]);
+                continue;
+            }
+            $bindName=":$key";
+            if($this->fields['_type'][$key]=='point'){
+                $bind[$bindName]="POINT($val)";
+                $sets[]=$key.'='."st_geomfromtext($bindName)";
+            }else{
+                $bind[$bindName]=$val;
+                $sets[]=$key.'='.$bindName;
+            }
+        }
+
+        //var_dump($bind);die;
+
+        if(empty($sets))
+            E('没有可以修改的数据');
+
+        $bind[':id']=$id;
+        return do_transaction([
+            ['sql'=>'UPDATE sq_order_vehicle set '.implode(',',$sets).' where id=:id;',
+                'bind'=>$bind,
+                'newId'=>false]
+        ]);
+
     }
 
     /**
@@ -275,6 +329,53 @@ class OrderVehicleModel extends AdvModel{
             E('非本人操作');
         $this->_assert_new_status($data['status'],$status);
         $this->save(['id'=>$data['id'],'status'=>$status]);
+    }
+
+    public function getUserList($uid,$status,$payStatus,$orderCode,$page, $pageSize){
+        $pageSize > 50 and $pageSize = 50;
+        $where['sq_order_vehicle.user_id']=$uid;
+
+        if(!is_null($status))
+            $where['sq_order_vehicle.status']=$status;
+        if(!is_null($payStatus))
+            $where['sq_order_vehicle.pay_status']=$payStatus;
+        if(!is_null($orderCode))
+            $where['sq_order_vehicle.order_code']=$orderCode;
+        $data = $this
+            ->join('left join sq_merchant_shop on sq_merchant_shop.id=sq_order_vehicle.shop_id')
+            ->field(['st_astext(sq_order_vehicle.lnglat) as lnglat',
+                'sq_order_vehicle.id',
+                'ifnull(sq_merchant_shop.title,\'\') as shop',
+                'sq_order_vehicle.order_code',
+                'sq_order_vehicle.user_id',
+                'sq_order_vehicle.shop_id',
+                'sq_order_vehicle.status',
+                'sq_order_vehicle.worker_id',
+                'sq_order_vehicle.address',
+                'sq_order_vehicle.car_number',
+                'sq_order_vehicle.price',
+                'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
+                'sq_order_vehicle.add_time',
+                'sq_order_vehicle.update_time',
+                'sq_order_vehicle.pay_status',
+            ])
+            ->where($where)
+            ->page($page, $pageSize)
+            ->order('sq_order_vehicle.update_time')
+            ->select();
+
+        foreach($data as &$i){
+            $i['worder_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['worder_picture_ids']]])
+                        ->select() as $p){
+                $i['worder_pictures'][]=$p['path'];
+            }
+            unset($i['worder_picture_ids']);
+        }
+
+        return $data;
     }
 
 }

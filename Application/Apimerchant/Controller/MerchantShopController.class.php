@@ -83,6 +83,7 @@ class MerchantShopController extends ApiController
                 $model->data($data);
                 //var_dump($data);die;
                 $model->save();
+                action_log('api_update_shop', $model, $id, UID,2);
                 $this->apiSuccess(['data' => []], '');
             } else
                 E('非法调用');
@@ -138,7 +139,9 @@ class MerchantShopController extends ApiController
                 $data['add_uid'] = $this->getUserId();
                 $data['group_id'] = $this->_get_group_id($data['type']);
                 $model->data($data);
-                $this->apiSuccess(['id' => intval($model->add())], '');
+                $newId=intval($model->add());
+                action_log('api_create_shop', $model, $newId, UID,2);
+                $this->apiSuccess(['id' => $newId], '');
             } else
                 E('非法调用');
         } catch (\Exception $ex) {

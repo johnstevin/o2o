@@ -74,6 +74,9 @@ class MerchantShopModel extends AdvModel
         'free_delivery_amount',
         'pay_delivery_amount',
         'delivery_amount_cost',
+        'grade_1',
+        'grade_2',
+        'grade_3',
         '_type'=>[
             'id'=>'int',
             'title'=>'string',
@@ -106,6 +109,9 @@ class MerchantShopModel extends AdvModel
             'free_delivery_amount'=>'int',
             'pay_delivery_amount'=>'int',
             'delivery_amount_cost'=>'int',
+            'grade_1' => 'tinyint',
+            'grade_2' => 'tinyint',
+            'grade_3' => 'tinyint',
         ]
     ];
 
@@ -193,7 +199,9 @@ class MerchantShopModel extends AdvModel
      * @param int $order 排序，1-按距离，2-按评价
      * @return mixed
      */
-    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1,$page = 1,$pageSize=10)
+    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1
+                             //,page,pageSize该函数不能采用分页，原因时客户端需要一下获得所有商铺
+    )
     {
         if (!is_numeric($lat) or !is_numeric($lng))
             //$this->error('坐标必须是数值', '', true);
@@ -240,7 +248,7 @@ class MerchantShopModel extends AdvModel
         $map['_string'] =$where;
         $map['sq_merchant_shop.status&sq_merchant_shop.open_status']=1;
         $this->where($map)
-            ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
+            //->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
             ->join('LEFT JOIN sq_picture on sq_picture.id = sq_merchant_shop.picture')
             ->bind($bind)
             ->field([
@@ -265,10 +273,10 @@ class MerchantShopModel extends AdvModel
                 ,'sq_merchant_shop.delivery_amount_cost'
                 ,'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat)) as distance'
                 ,'st_astext(sq_merchant_shop.lnglat) as lnglat'
-                ,'avg(ifnull(sq_appraise.grade_1,0)) as grade_1'
-                ,'avg(ifnull(sq_appraise.grade_2,0)) as grade_2'
-                ,'avg(ifnull(sq_appraise.grade_3,0)) as grade_3'
-                ,'(avg(ifnull(sq_appraise.grade_1,0))+avg(ifnull(sq_appraise.grade_2,0))+avg(ifnull(sq_appraise.grade_3,0)))/3 as grade'
+                ,'sq_merchant_shop.grade_1'
+                ,'sq_merchant_shop.grade_2'
+                ,'sq_merchant_shop.grade_3'
+                ,'(sq_merchant_shop.grade_1+sq_merchant_shop.grade_2+sq_merchant_shop.grade_3)/3 as grade'
                 ,'ifnull(sq_picture.path,\'\') as picture_path'
             ]);
 
@@ -280,7 +288,7 @@ class MerchantShopModel extends AdvModel
 
         $this->group('sq_merchant_shop.id');
 
-        $ret = $this->page($page,$pageSize)->select();
+        $ret = $this->select();
 //        foreach($ret as $i){
 //            print_r($i['id']);print_r(',');
 //        }
@@ -299,7 +307,7 @@ class MerchantShopModel extends AdvModel
         $id = intval($id);
         if (!$id) return null;
         return $this
-            ->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
+            //->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
             ->join('LEFT JOIN sq_picture on sq_picture.id = sq_merchant_shop.picture')
             ->field([
             'sq_merchant_shop.id'
@@ -322,10 +330,10 @@ class MerchantShopModel extends AdvModel
             ,'sq_merchant_shop.pay_delivery_amount'
             ,'sq_merchant_shop.delivery_amount_cost'
             ,'st_astext(sq_merchant_shop.lnglat) as lnglat'
-                ,'avg(ifnull(sq_appraise.grade_1,0)) as grade_1'
-                ,'avg(ifnull(sq_appraise.grade_2,0)) as grade_2'
-                ,'avg(ifnull(sq_appraise.grade_3,0)) as grade_3'
-                ,'(avg(ifnull(sq_appraise.grade_1,0))+avg(ifnull(sq_appraise.grade_2,0))+avg(ifnull(sq_appraise.grade_3,0)))/3 as grade'
+            ,'sq_merchant_shop.grade_1'
+            ,'sq_merchant_shop.grade_2'
+            ,'sq_merchant_shop.grade_3'
+            ,'(sq_merchant_shop.grade_1+sq_merchant_shop.grade_2+sq_merchant_shop.grade_3)/3 as grade'
             ,'ifnull(sq_picture.path,\'\') as picture_path'])
             ->where(['sq_merchant_shop.id'=>$id])
             ->find();
@@ -346,6 +354,10 @@ class MerchantShopModel extends AdvModel
         $shopVals=[];
         $shopFlds=[];
         foreach($data as $key=>$val){
+            if(!in_array($key,$this->fields,true)){
+                unset($data[$key]);
+                continue;
+            }
             $bindName=":$key";
             if($this->fields['_type'][$key]=='point'){
                 $shopVals[]="st_geomfromtext($bindName)";
@@ -431,6 +443,10 @@ class MerchantShopModel extends AdvModel
         $set=[];
         $where=null;
         foreach($data as $key=>$val){
+            if(!in_array($key,$this->fields,true)){
+                unset($data[$key]);
+                continue;
+            }
             $bindName=":$key";
             if($key!=$this->pk) {
                 if($this->fields['_type'][$key]=='point'){
