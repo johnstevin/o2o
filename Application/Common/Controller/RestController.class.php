@@ -33,15 +33,10 @@ abstract class RestController  extends Controller{
      * 获得调用token
      * @return mixed
      */
-    protected function getToken(){
+    protected function getToken()
+    {
         //客户端将token放入自定义header，access_token中
-        $token=$_SERVER['HTTP_ACCESSTOKEN'];//I('server.ACCESSTOKEN',null);
-        if($token===null)
-            //或者放入GET，POST参数中
-            $token=I('accesstoken');
-        //var_dump($token);
-        //var_dump($_SERVER);die;
-        return $token;
+        return $_SERVER['HTTP_ACCESSTOKEN'] ?: I('accesstoken');//I('server.ACCESSTOKEN',null);
     }
 
     /**
@@ -174,7 +169,8 @@ abstract class RestController  extends Controller{
      * @return mixed
      * @throws ReturnException
      */
-    protected function apiSuccess($extra=null, $message, $redirect=null) {
+    protected function apiSuccess($extra = null, $message = '', $redirect = null)
+    {
         return $this->apiReturn(true, 0, $message, $redirect, $extra);
     }
 
