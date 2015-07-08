@@ -314,6 +314,7 @@ class UserController extends ApiController {
      * @author   : Stevin.John@qq.com
      */
     public function getRegisterUrl(){
+        $this->getUserId();
         $shop_id  = is_numeric(I('get.shop_id')) ? I('get.shop_id') : 0;
         if($shop_id==0)
             $this->apiError('40020', '非法操作');
