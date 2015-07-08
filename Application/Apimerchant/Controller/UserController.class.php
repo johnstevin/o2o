@@ -266,8 +266,10 @@ class UserController extends ApiController {
             $step   = I('get.step');
             switch ( $step ) {
                 case 1 :
-                    $mobile = I('get.mobile');
-                    $code   = I('get.code');
+
+                    //dump(S('_Merchant_User_ForgetPwd_randVal_18628336949','sdfsdf'));exit;
+                    $mobile = I('post.mobile');
+                    $code   = I('post.code');
                     verify_sms_code($mobile,$code) ? '' : E('验证码错误或已过期，请重新获取');
 
                     $rules = array(
@@ -282,17 +284,16 @@ class UserController extends ApiController {
                     );
                     $model->field('id')->where($map)->find() ? '' : E('该手机号未注册或不是商家用户');
                     $randVal = generate_saltKey();
-                    S('_Merchant_User_ForgetPwd_randVal_'.$mobile, $randVal);
+                    S('_Merchant_User_ForgetPwd_randVal_'.$mobile, $randVal, 300);
                     $this->apiSuccess(array('data'=>array('randVal'=>$randVal)), '请点下一步');
 
                     break;
                 case 2 :
                     //TODO 这里要做验证
-                    $mobile    = I('get.mobile') != '' ? I('get.mobile') :   E('请设置手机号');
-                    $password  = I('get.password') != '' ? I('get.password') : E('请设置密码');
-                    $randVal   = I('get.randval') != '' ? I('get.randval') :  E('不安全的密码设置');
+                    $mobile    = I('post.mobile') != '' ? I('get.mobile') :   E('请设置手机号');
+                    $password  = I('post.password') != '' ? I('get.password') : E('请设置密码');
+                    $randVal   = I('post.randval') != '' ? I('get.randval') :  E('不安全的密码设置');
                     $randCache = S('_Merchant_User_ForgetPwd_randVal_'.$mobile);
-                    //dump($randCache);exit;
                     $randCache !== false ? '' : E('已超时，请重新设置');
                     $randCache == $randVal ? '' : E('安全码不正确');
 
