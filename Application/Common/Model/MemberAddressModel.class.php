@@ -329,7 +329,13 @@ class MemberAddressModel extends RelationModel
         if (!empty($mobile)) $data['mobile'] = $mobile;
         if (!empty($regionId)) $data['region_id'] = intval($regionId);
         if (!empty($lng) && !empty($lat)) $data['lnglat'] = 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')';
-        if ($isDefault !== null) $data['patientia'] = intval($isDefault);
+        if ($isDefault !== null) {
+            if ($isDefault) {
+                $data['patientia'] = 1;
+            } else {
+                $data['patientia'] = 0;
+            }
+        }
         if (!$model->create($data)) {//利用模型的规则检测数据是否合法
             E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         }
