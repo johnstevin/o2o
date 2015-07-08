@@ -1083,7 +1083,9 @@ class OrderModel extends RelationModel
 
         $cart = is_array($cart) ? $cart : json_decode($cart, true);
 
-        $updateData = [];//要更新的订单数据
+        $updateData = [
+            'id' => $id
+        ];//要更新的订单数据
 
         $orderModel->startTrans();//启动事务控制
         try {
@@ -1124,7 +1126,8 @@ class OrderModel extends RelationModel
                         'action' => 'orderDetail',
                         'order_id' => $orderInfo['id']
                     ];
-                    push_by_uid($orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
+                    //push_by_uid($orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
+                    $updateData['status'] = self::STATUS_USER_CONFIRM;
                 } else {
                     E('订单商品更新失败');
                 }
@@ -1163,10 +1166,9 @@ class OrderModel extends RelationModel
             }
 
             //更新所属订单的信息
-            if ($orderModel->create($updateData)) {
+            if (!$orderModel->create($updateData)) {
                 E(is_array($orderModel->getError()) ? current($orderModel->getError()) : $orderModel->getError());
             }
-
             $saveStatus = $orderModel->save();
             if ($saveStatus) {//如果保存成功
                 if ($parentOrder) {//如果存在父级订单
@@ -1184,6 +1186,7 @@ class OrderModel extends RelationModel
                     }
                 }
                 $orderModel->commit();
+                return true;
             } else {
                 E('订单更新失败');
             }
