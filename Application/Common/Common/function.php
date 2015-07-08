@@ -796,8 +796,9 @@ function can_modify_depot($uid, $depotId)
 {
     if ($depot = \Common\Model\MerchantDepotModel::getInstance()->getById($depotId, ['shop_id'])) {
         except_merchant_manager($uid, $depot['shop_id']);
+    } else {
+        E('您无权限操作该商品');
     }
-    E('您无权限操作该商品');
 }
 
 /**
@@ -1198,6 +1199,28 @@ function get_cate_chain_up($ids, &$ret, $catem = null)
 }
 
 /**
+ * 根据商铺ID获取店长
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param int $shopId 商铺ID
+ * @return null
+ */
+function get_shopkeeper_by_shopid($shopId)
+{
+    $pdo = get_pdo();
+    $sth = $pdo->prepare('SELECT group_id FROM sq_merchant_shop WHERE id=:id');
+    $sth->execute([':id' => $shopId]);
+    if (!$shop = $sth->fetch(PDO::FETCH_ASSOC)) E('商铺不存在');
+    $groupId = $shop['group_id'];
+    $sth = $pdo->prepare('SELECT uid FROM sq_auth_access WHERE group_id=:group_id AND role_id=:role_id');
+    $sth->execute([':group_id' => $groupId, ':role_id' => C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')]);
+    if ($access = $sth->fetch(PDO::FETCH_ASSOC)) {
+        return $access['uid'];
+    }
+    return null;
+}
+
+/**
  * 根据用户ID推送消息
  * @author Fufeng Nie <niefufeng@gmail.com>
  *
@@ -1211,7 +1234,7 @@ function get_cate_chain_up($ids, &$ret, $catem = null)
  * @param array $extras 附加参数
  * @return bool
  */
-function push_by_uid($uid, $message_content, $message_title = null, $message_type = null, $notification_content = null, $notification_title = null, $extras = [], $category = null)
+function push_by_uid($uid, $message_content, $extras = [], $message_title = null, $notification_content = null, $notification_title = null, $category = null, $message_type = null)
 {
     return \Addons\Push\Push::getInstance(C('PUSH_TYPE'))->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
 }
