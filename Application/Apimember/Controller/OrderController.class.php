@@ -94,61 +94,6 @@ class OrderController extends ApiController
     }
 
     /**
-     * @ignore
-     * 加入购物车
-     * @param
-     * @author  stevin
-     */
-    public function cartAdd()
-    {
-
-    }
-
-    /**
-     * @ignore
-     * 我的购物车列表
-     * @param
-     * @author  stevin
-     */
-    public function cartList()
-    {
-
-    }
-
-    /**
-     * @ignore
-     * 购物车删除
-     * @param
-     * @author  stevin
-     */
-    public function cartDel()
-    {
-
-    }
-
-    /**
-     * @ignore
-     * 支付接口
-     * @param
-     * @author  stevin
-     */
-    public function pay()
-    {
-
-    }
-
-    /**
-     * @ignore
-     * 订单处理
-     * @param
-     * @author  stevin
-     */
-    public function orderDo()
-    {
-
-    }
-
-    /**
      * ###获得订单列表,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
@@ -217,10 +162,10 @@ class OrderController extends ApiController
      */
     public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $deliveryMode = null, $getProducts = true, $getShop = false, $getUser = false)
     {
-        $lists = OrderModel::getInstance()->getLists($shopId, $userId, $status, $payStatus, $deliveryMode, $getShop, $getUser, $getProducts);
+        $lists = OrderModel::getInstance()->getLists($shopId, $userId, $status, $payStatus, $deliveryMode, $getShop, $getUser, $getProducts)['data'];
         //我滴个神啊，那些做手机端开发的非要只取两条产品信息-_-!
         if ($getProducts) {
-            foreach ($lists['data'] as &$data) {
+            foreach ($lists as &$data) {
                 if (!empty($data['_products'])) {
                     $data['_products_total'] = count($data['_products']);
                 } else {
@@ -230,7 +175,7 @@ class OrderController extends ApiController
                 }
             }
         }
-        $this->apiSuccess($lists);
+        $this->apiSuccess(['data'=>$lists]);
     }
 
     /**
@@ -356,45 +301,25 @@ class OrderController extends ApiController
      */
     public function submitOrder($orderKey, $address, $mobile, $payMode, $consignee, $remark = '')
     {
-        $this->apiSuccess(['data' => OrderModel::submitOrder($this->getUserId(), $orderKey, $mobile, $consignee, $address, $remark, $payMode)]);
+        $this->apiSuccess(['data' => OrderModel::getInstance()->submitOrder($this->getUserId(), $orderKey, $mobile, $consignee, $address, $remark, $payMode)]);
     }
 
     /**
      * ###更新订单信息,需要accesstoken
-     * @param int $id
-     * @param null|int $payMode
-     * @param null|int $deliveryMode
-     * @param null|int $deliveryTime
-     * @param null|int|string $mobile
-     * @param null|string $address
-     * @param null|string $consignee
-     */
-    public function updateOrder($id, $payMode = null, $deliveryMode = null, $deliveryTime = null, $mobile = null, $address = null, $consignee = null)
-    {
-        $this->apiSuccess(['data' => OrderModel::updateOrder($id, $payMode, $deliveryMode, $deliveryTime, $mobile, $address, $consignee)]);
-    }
-
-    /**
-     * ###更新订单状态,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param int $id 订单ID
-     * @param int $status 要更新为哪个状态
+     * @param json|array $cart 购物车
+     * @param null|int $payMode 支付方式
+     * @param null|int $deliveryMode 配送模式
+     * @param null|int $deliveryTime 配送时间
+     * @param null|int|string $mobile 收货人联系电话
+     * @param null|string $address 收货地址
+     * @param null|string $consignee 收货人
      */
-    public function updateStatus($id, $status)
+    public function updateOrder($id, $cart = null, $payMode = null, $deliveryMode = null, $deliveryTime = null, $mobile = null, $address = null, $consignee = null)
     {
-        $this->apiSuccess(['data' => OrderModel::updateOrderStatus($id, $status)]);
-    }
-
-    /**
-     * ###更新订单支付方式,需要accesstoken
-     * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param int $id 订单ID
-     * @param int $payMode 要更新为哪个支付方式
-     */
-    public function updatePayMode($id, $payMode)
-    {
-        $this->apiSuccess(['data' => OrderModel::updateOrderPayMode($id, $payMode)]);
+        $this->apiSuccess(['data' => OrderModel::getInstance()->updateOrder($id, $cart, $payMode, $deliveryMode, $deliveryTime, $mobile, $address, $consignee)]);
     }
 
     /**
@@ -405,17 +330,18 @@ class OrderController extends ApiController
      */
     public function updatePayStatus($id, $payStatus)
     {
-        $this->apiSuccess(['data' => OrderModel::updateOrderPayStatus($id, $payStatus)]);
+        $this->apiSuccess(['data' => OrderModel::getInstance()->updateOrderPayStatus($id, $payStatus)]);
     }
 
     /**
      * ###取消订单,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      * @param int $id 订单ID
+     * @param string $content 取消订单的理由
      */
-    public function cancelOrder($id)
+    public function cancelOrder($id, $content)
     {
-        $this->apiSuccess(['data' => OrderModel::updateOrderStatus($id, OrderModel::STATUS_CANCEL)]);
+        $this->apiSuccess(['data' => OrderModel::getInstance()->CancelOrder($id, $content, $this->getUserId())]);
     }
 
     /**
@@ -432,5 +358,51 @@ class OrderController extends ApiController
     public function initOrder($cart, $deliveryMode, $deliveryTime, $lng, $lat, $split = true)
     {
         $this->apiSuccess(['data' => OrderModel::getInstance()->initOrder($cart, $deliveryMode, $deliveryTime, $lng, $lat, $split)]);
+    }
+
+    /**
+     * ## 商家确认订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $id 订单ID，必传参数
+     * @param bool $confirm 是否确认订单，可选参数，默认为确认
+     */
+    public function merchantConfirmOrder($id, $confirm = true)
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->MerchantConfirmOrder($id, $confirm, $this->getUserId())]);
+    }
+
+    /**
+     * ## 用户确认订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $id 订单ID，必传参数
+     * @param bool $confirm 是否确认，可选参数，默认为确认
+     * @param string $content 如果拒绝订单，请传拒绝的理由，否则请无视。。。
+     */
+    public function userConfirmOrder($id, $confirm = true, $content = '')
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->UserConfirmOrder($id, $confirm, $this->getUserId(), $content)]);
+    }
+
+    /**
+     * ## 完成订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $id 订单ID
+     */
+    public function completeOrder($id)
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->CompleteOrder($id, $this->getUserId())]);
+    }
+
+    /**
+     * ## 删除订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $id 订单ID
+     */
+    public function deleteOrder($id)
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->DeleteOrder($id, $this->getUserId())]);
     }
 }

@@ -46,16 +46,24 @@ class JPush
      */
     public function pushByUid($uid, $message_content, $message_title = null, $message_type = null, $notification_content = null, $notification_title = null, $extras = [], $category = null)
     {
+        if (is_int($uid)) $uid = (string)$uid;
+        if (!is_array($uid)) $uid = (array)$uid;
+        if (is_array($uid)) {
+            foreach ($uid as &$id) {
+                $id = (string)$id;
+            }
+        }
         $client = self::$client->push()
             ->setPlatform(M\all)
-            ->setAudience(M\alias((array)(string)$uid));
+            ->setAudience(M\alias($uid));
         if (!empty($notification_content)) {
-            $client->setNotification(M\notification($notification_content),
+            $client->setNotification(M\notification($notification_content,
                 M\android($notification_content, $notification_title, null, $extras),
-                M\ios($notification_content, null, '+1', null, $extras, $category));
+                M\ios($notification_content, null, '+1', null, $extras, $category)));
         }
         return $client->setMessage(M\message($message_content, $message_title, $message_type, $extras))
-            ->printJSON()->send();
+//            ->printJSON()//测试的时候开启可以打印出要发送的数据
+            ->send();
     }
 
     /**
