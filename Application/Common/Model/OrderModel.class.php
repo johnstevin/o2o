@@ -121,6 +121,7 @@ class OrderModel extends RelationModel
         'deliveryman',
         'delivery_mode',
         'delivery_time',
+        'delivery_price',
         '_type' => [
             'id' => 'int',
             'pid' => 'int',
@@ -141,7 +142,8 @@ class OrderModel extends RelationModel
             'update_time' => 'int',
             'deliveryman' => 'char',
             'delivery_mode' => 'tinyint',
-            'delivery_time' => 'int'
+            'delivery_time' => 'int',
+            'delivery_price' => 'float'
         ]
     ];
 
@@ -701,7 +703,7 @@ class OrderModel extends RelationModel
                     'product_id' => ['IN', array_column($notAllocationProducts, 'product_id')],
                     'shop_id' => ['IN', $shopIds],
                     'status' => MerchantDepotModel::STATUS_ACTIVE
-                ])->order('product_id,price')->fetchSql(1)->select();
+                ])->order('product_id,price')->select();
                 $depots = [];
                 $shopLists = [];//商家统计
                 //根据商品ID对仓库的商品进行分组
@@ -726,6 +728,12 @@ class OrderModel extends RelationModel
         } else {
             $order = &$cart;
         }
+        $depotIds = [];
+        foreach ($order as $item) {
+            foreach ($item as $product) {
+                $depotIds[] = $product['depot_id'];
+            }
+        }
         // 查询出所有商品的价格
         $_allDepotInfo = $depotModel->alias('d')->field([
             'd.id',
@@ -746,7 +754,8 @@ class OrderModel extends RelationModel
             'd.status' => MerchantDepotModel::STATUS_ACTIVE,
             'd.id' => [
                 'IN',
-                array_column($order, 'depot_id')]
+                $depotIds
+            ]
         ])->join('LEFT JOIN sq_product p ON p.id=d.product_id')
             ->join('LEFT JOIN sq_picture pp ON p.picture=pp.id')
             ->join('LEFT JOIN sq_brand b ON p.brand_id=b.id')
@@ -902,6 +911,7 @@ class OrderModel extends RelationModel
             try {
                 $parentId = intval(self::getInstance()->createEmptyParentOrder($userId, 0, 0, $payMode, $deliveryMode));
                 if (!$parentId) E('父级订单添加失败');
+                $parentDeliveryPrice = 0;
                 $logData = [];//记录订单状态日志的数据数组
                 foreach ($products as $product) {
                     $shopId = $product['shop_id'];
@@ -920,6 +930,7 @@ class OrderModel extends RelationModel
                         'price' => $pretreatment['price_detail'][$shopId]['total'],
                         'delivery_price' => $pretreatment['price_detail'][$shopId]['deliveryTotal']
                     ];
+                    $parentDeliveryPrice += $data['delivery_price'];
                     if (!$model->create($data)) E(current($model->getError()));
                     $itemData = [];
                     if ($lastOrderId = intval($model->add())) {//如果子订单添加成功
@@ -951,6 +962,7 @@ class OrderModel extends RelationModel
                 }
                 $model->commit();//如果以上都通过了，则提交事务
                 F('user / cart / ' . $userId, null);//如果订单提交成功，则清空用户的购物车
+                S($orderKey, null);
                 $statusLogModel->addAll($logData);
                 return $parentId;//返回父级订单的ID
             } catch (Exception $e) {
@@ -994,6 +1006,7 @@ class OrderModel extends RelationModel
                     $model->commit();
                     //如果订单提交成功，则清空用户的购物车
                     F('user / cart / ' . $userId, null);
+                    S($orderKey, null);
                     //记录日志
                     $content = '系统：【' . $userInfo['nickname'] . '】于【' . date('Y - m - d H:i:s') . '】提交了订单【' . $lastId . '】，等待商家审核';
                     $statusLogModel->addLog($userId, $data['shop_id'], 0, $lastId, $content, self::STATUS_MERCHANT_CONFIRM);
@@ -1037,6 +1050,7 @@ class OrderModel extends RelationModel
     /**
      * 更新订单信息
      * @author Fufeng Nie <niefufeng@gmail.com>
+     *
      * @param int $id 订单ID
      * @param json|array $cart 购物车
      * @param null|int $payMode 支付方式
@@ -1046,6 +1060,7 @@ class OrderModel extends RelationModel
      * @param null|string $address 收货地址
      * @param null|string $consignee 收货人
      * @return bool
+     * @throws \Exception
      */
     public function updateOrder($id, $cart = null, $payMode = null, $deliveryMode = null, $deliveryTime = null, $mobile = null, $address = null, $consignee = null)
     {
@@ -1063,6 +1078,8 @@ class OrderModel extends RelationModel
         $sth->execute([':id' => $id]);
         if (!$orderInfo = $sth->fetch(\PDO::FETCH_ASSOC)) E('订单不存在或不允许被修改');
         if (!$shopInfo = $shopModel->where(['id' => $orderInfo['shop_id'], 'status' => MerchantShopModel::STATUS_ACTIVE])->find()) E('店铺不存在或已关闭');
+        //父级订单
+        $parentOrder = $orderModel->where(['id' => $orderInfo['pid']])->find();
 
         $cart = is_array($cart) ? $cart : json_decode($cart, true);
 
@@ -1072,6 +1089,7 @@ class OrderModel extends RelationModel
         try {
             //如果购物车不为空
             if (!empty($cart)) {
+                $updateData['price'] = 0;
                 $depotIds = array_column($cart, 'depot_id');
                 //获取订单里的所有商品价格
                 $depotsInfo = $depotModel->field(['price', 'id', 'product_id'])
@@ -1088,6 +1106,7 @@ class OrderModel extends RelationModel
                     if ($item['total'] == 0) {
                         $offShelfDepotIds[] = $item['depot_id'];
                     }
+                    //所有被修改过的商品信息
                     $modifyDepots[] = [
                         'order_id' => $id,
                         'product_id' => $depotsInfo[$item['depot_id']]['product_id'],
@@ -1095,10 +1114,10 @@ class OrderModel extends RelationModel
                         'price' => $depotsInfo[$item['depot_id']]['price'],
                         'total' => $item['total']
                     ];
-                    $updateData['price'] += $item['total'] * $depotsInfo[$item['depot_id']]['price'];
+                    $updateData['price'] += ($item['total'] * $depotsInfo[$item['depot_id']]['price']);
                 }
-                $orderItemModel->where(['order_id' => $id])->delete();
-                if ($orderItemModel->addAll($modifyDepots)) {
+                if ($orderItemModel->where(['order_id' => $id])->delete() && $orderItemModel->addAll($modifyDepots)) {
+                    //订单被商家修改之后，给用户发送通知告知用户
                     $pushContent = '您的订单【' . $orderInfo['order_code'] . '】已经被商家【' . $orderInfo['shop_title'] . '】修改，请您确认商家的修改或取消订单';
                     $pushTitle = '您的订单已被修改，需要您确认';
                     $pushExtras = [
@@ -1106,6 +1125,8 @@ class OrderModel extends RelationModel
                         'order_id' => $orderInfo['id']
                     ];
                     push_by_uid($orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
+                } else {
+                    E('订单商品更新失败');
                 }
             }
 
@@ -1137,35 +1158,41 @@ class OrderModel extends RelationModel
             }
 
             //如果配送时间不为null（可以为0）
-            if ($deliveryTime !== null) {
+            if ($deliveryTime !== null && $deliveryTime != $orderInfo['delivery_time']) {
                 $updateData['delivery_time'] = intval($deliveryTime);
             }
 
-            if (true) {
-            }
             //更新所属订单的信息
             if ($orderModel->create($updateData)) {
                 E(is_array($orderModel->getError()) ? current($orderModel->getError()) : $orderModel->getError());
             }
-            $saveStatus = $orderModel->save();
-            if ($saveStatus) {
 
+            $saveStatus = $orderModel->save();
+            if ($saveStatus) {//如果保存成功
+                if ($parentOrder) {//如果存在父级订单
+                    $data = [];
+                    if ($updateData['price'] != $orderInfo['price']) {
+                        //父级订单的价格等于之前的价格减去当前订单之前的价格加上当前订单新的价格，没错吧？？？
+                        $data['price'] = $parentOrder['price'] - $orderInfo['price'] + $updateData['price'];
+                    }
+                    if ($updateData['delivery_price'] != $orderInfo['delivery_price']) {
+                        //父级订单的配送费等于之前的配送费-当前订单之前的配送费+新的配送费
+                        $data['delivery_price'] = $parentOrder['delivery_price'] - $orderInfo['delivery_price'] + $updateData['delivery_price'];
+                    }
+                    if (!empty($data) && !$orderModel->where(['id' => $parentOrder['id']])->save($data)) {
+                        E('订单更新失败');
+                    }
+                }
+                $orderModel->commit();
+            } else {
+                E('订单更新失败');
             }
         } catch (\Exception $e) {
             $orderModel->rollback();
-            throw new $e;
+            throw $e;
         } finally {
 
         }
-
-
-        $data = [];
-        if ($payMode !== null) $data['pay_mode'] = $payMode;
-        if ($deliveryMode !== null) $data['delivery_mode'] = $deliveryMode;
-        if (!empty($deliveryTime)) $data['delivery_time'] = $deliveryTime;
-        if (!empty($mobile)) $data['mobile'] = $mobile;
-        if (!empty($address)) $data['address'] = trim($address);
-        if (!empty($consignee)) $data['consignee'] = trim($consignee);
     }
 
     /**
