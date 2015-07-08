@@ -199,7 +199,9 @@ class MerchantShopModel extends AdvModel
      * @param int $order 排序，1-按距离，2-按评价
      * @return mixed
      */
-    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1,$page = 1,$pageSize=10)
+    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1
+                             //,page,pageSize该函数不能采用分页，原因时客户端需要一下获得所有商铺
+    )
     {
         if (!is_numeric($lat) or !is_numeric($lng))
             //$this->error('坐标必须是数值', '', true);
@@ -286,7 +288,7 @@ class MerchantShopModel extends AdvModel
 
         $this->group('sq_merchant_shop.id');
 
-        $ret = $this->page($page,$pageSize)->select();
+        $ret = $this->select();
 //        foreach($ret as $i){
 //            print_r($i['id']);print_r(',');
 //        }
