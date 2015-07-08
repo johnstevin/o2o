@@ -54,8 +54,8 @@
 						<td>{$config.group|get_config_group}</td>
 						<td>{$config.type|get_config_type}</td>
 						<td>
-							<a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" title="编辑" href="{:U('edit?id='.$config['id'])}">编辑</a>
-							<a class="confirm ajax-get" title="删除" href="{:U('del?id='.$config['id'])}">删除</a>
+							<!--<a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" title="编辑" href="{:U('edit?id='.$config['id'])}">编辑</a>-->
+							<a class="confirm ajax-get btn btn-sm btn-info" title="删除" href="{:U('del?id='.$config['id'])}">删除</a>
 						</td>
 					</tr>
 				</volist>

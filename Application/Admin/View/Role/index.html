@@ -52,7 +52,7 @@
                     </td>
                     <td><span>{$vo.public_text}</span></td>
                     <td>
-                        <input class="switch confirm"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
+                        <input class="switch"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
                         <eq name="vo.status" value="1">href="{:U('Role/changeStatus?method=forbid&id='.$vo['id'])}" checked
                             <else/>
                             href="{:U('Role/changeStatus?method=resume&id='.$vo['id'])}"</eq>>

@@ -33,9 +33,11 @@
                         <th>价格</th>
                         <th>商品编码</th>
                         <th>最后编辑时间</th>
-                        <th>状态</th>
-                        <th>操作</th>
                         <th>商品审核</th>
+                        <th>编辑</th>
+                        <th>是否启用</th>
+                        <th>操作</th>
+
                     </tr>
                     </thead>
                     <tbody>
@@ -52,27 +54,27 @@
                                 <td>{$vo.price}</td>
                                 <td><span>{$vo.number}</span></td>
                                 <td>{$vo.edit_time|time_format}</td>
-                                <td>{$vo.status_text}</td>
-                                <td>
-                                    <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                                       href="{:U('edit?id='.$vo['id'])}">编辑</a>
-                                    <eq name="vo.status" value="1">
-                                        <a href="{:U('Product/changeStatus?method=forbid&id='.$vo['id'])}"
-                                           class="ajax-get">禁用</a>
-                                        <else/>
-                                        <a href="{:U('Product/changeStatus?method=resume&id='.$vo['id'])}"
-                                           class="ajax-get">启用</a>
-                                    </eq>
-                                    <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
-                                       class="confirm ajax-get">删除</a>
-
-                                </td>
                                 <td>
                                     <egt name="vo.status" value="2">
                                         <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
                                            href="{:U('audit?id='.$vo['id'])}">审核商品</a>
                                     </egt>
                                 </td>
+                                <td> <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                                        href="{:U('edit?id='.$vo['id'])}">编辑</a></td>
+
+                                <td>
+                                    <input class="switch"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
+                                    <eq name="vo.status" value="1"> href="{:U('Product/changeStatus?method=forbid&id='.$vo['id'])}" checked
+                                        <else/>
+                                        href="{:U('Product/changeStatus?method=resume&id='.$vo['id'])}"</eq>>
+                                </td>
+                                <td>
+
+                                    <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
+                                       class="confirm ajax-get btn btn-sm btn-info">删除</a>
+                                </td>
+
                             </tr>
                         </volist>
                         <else/>

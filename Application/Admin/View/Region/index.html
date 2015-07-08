@@ -105,12 +105,13 @@
             <!--<th>ID</th>-->
             <th>名称</th>
             <th>增加下级区域</th>
-
-            <th>状态</th>
-            <th>操作</th>
-
             <th>百度坐标</th>
             <th>刷新坐标</th>
+            <th>编辑</th>
+            <th>启用状态</th>
+            <th>操作</th>
+
+
         </tr>
         </thead>
         <tbody>
@@ -137,23 +138,25 @@
                             </td>
 
                         </if>
-
-                    <td>{$vo.status_text}</td>
-                    <td>
-                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                           href="{:U('edit?id='.$vo['id'].'&pid='.$vo['pid'])}">编辑</a>
-                        <eq name="vo.status" value="1">
-                            <a href="{:U('Region/changeStatus?method=forbidregion&id='.$vo['id'])}"
-                               class="ajax-get">禁用</a>
-                            <else/>
-                            <a href="{:U('Region/changeStatus?method=resumeregion&id='.$vo['id'])}"
-                               class="ajax-get">启用</a>
-                        </eq>
-                        <a href="{:U('Region/changeStatus?method=deleteregion&id='.$vo['id'])}"
-                           class="confirm ajax-get">删除</a>
-                    </td>
                     <td>{$vo.lnglat}</td>
                     <td><a href="javascript:void(0);" onclick="lnglat('{$vo.id}')">刷新坐标</a></td>
+
+                    <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                           href="{:U('edit?id='.$vo['id'].'&pid='.$vo['pid'])}">编辑</a></td>
+
+
+                    <td>
+                        <input class="switch"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
+                        <eq name="vo.status" value="1"> href="{:U('Region/changeStatus?method=forbidregion&id='.$vo['id'])}" checked
+                            <else/>
+                            href="{:U('Region/changeStatus?method=resumeregion&id='.$vo['id'])}"</eq>>
+                    </td>
+                    <td>
+
+                        <a href="{:U('Region/changeStatus?method=deleteregion&id='.$vo['id'])}"
+                           class="confirm ajax-get btn btn-sm btn-info">删除</a>
+                    </td>
+
             </volist>
             <else/>
             <td colspan="6" class="text-center"> aOh! 暂时还没有内容!</td>

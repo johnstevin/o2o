@@ -62,20 +62,20 @@ class UserController extends AdminController
     }
 
 
-    public function editadmin($id)
+    public function editadmin($uid=null)
     {
 
         $ucentermember = D('UcenterMember');
         if (IS_POST) {
             if (false !== $ucentermember->update()) {
-                $this->success('新增成功！', U('index'));
+                $this->success('新增成功！');
             } else {
                 $error = $ucentermember->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
 
-            $info = $id ? $ucentermember->info($id) : '';
+            $info = $uid ? $ucentermember->info($uid,$type='admin') : '';
 
             $this->assign('info', $info);
             $this->meta_title = '编辑信息';

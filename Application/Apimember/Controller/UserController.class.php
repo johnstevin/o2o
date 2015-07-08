@@ -162,17 +162,16 @@ class UserController extends ApiController {
      * @author  Stevin.John@qq.com
      * @Url
      */
-    public function editInfo(){
+    public function editInfo($type=null){
         try {
             $uid = $this->getUserId();
-            $type = I('get.type');
-            switch ( $type ) {
+            switch(strtolower($type)) {
                 case 'photo' :
                     $ptype= 'UCENTER_MEMBER';
                     $info=upload_picture($uid,$ptype);
                     $model = D("UcenterMember");
                     $data['id'] = $uid;
-                    $data['photo']=$info['id'];
+                    $data['photo']=$info['filedata']['id'];
                     break;
                 case 'real_name' :
                     $model = D("UcenterMember");

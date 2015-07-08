@@ -175,21 +175,58 @@ class UcenterMemberModel extends Model{
 	 * @param  boolean $is_username 是否使用用户名查询
 	 * @return array                用户信息
 	 */
-	public function info($uid, $is_username = false){
+	public function info($uid,$method,$is_username = false){
 		$map = array();
 		if($is_username){ //通过用户名获取
-			$map['username'] = $uid;
+			$map['a.username'] = $uid;
 		} else {
-			$map['id'] = $uid;
+			$map['a.id'] = $uid;
 		}
+        $UserInfo=array();
+        switch (strtolower($method)) {
+            case 'admin':
 
-		$user = $this->where($map)->field('id,username,email,mobile,status')->find();
-		if(is_array($user) && $user['status'] == 1){
-			return array($user['id'], $user['username'], $user['email'], $user['mobile']);
-		} else {
-			return -1; //用户不存在或被禁用
-		}
-	}
+                /*查询*/
+                $UserInfo=$this
+                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                    ->table('__UCENTER_MEMBER__ a')
+                    ->join('__ADMIN__ b ON  a.id = b.login','LEFT')
+                    ->where($map)
+                    ->find();
+                break;
+
+
+            case'member':
+
+                /*查询*/
+                $UserInfo=$this
+                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                    ->table('__UCENTER_MEMBER__ a')
+                    ->join('__MEMBER__ b ON  a.id = b.login','LEFT')
+                    //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('neq', '1'),'a.is_member'=>array('eq', '1')))
+                    ->where($map)
+                    ->find();
+                break;
+
+
+            case'merchant':
+
+                /*查询*/
+                $UserInfo=$this
+                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                    ->table('__UCENTER_MEMBER__ a')
+                    ->join('__MERCHANT__ b ON  a.id = b.login','LEFT')
+                    //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('eq', '1')))
+                    ->where($map)
+                    ->find();
+                break;
+            default:
+                $this->error='参数错误';
+                break;
+
+        }
+        return $UserInfo;
+    }
 
 	/**
 	 * 检测用户信息
@@ -408,7 +445,7 @@ class UcenterMemberModel extends Model{
 
 
             default:
-                $this->error('参数错误');
+                $this->error='参数错误';
                 break;
 
         }
