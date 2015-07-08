@@ -74,4 +74,22 @@ class OrderController extends ApiController {
         $this->apiSuccess(['data' => OrderModel::getInstance()->MerchantConfirmOrder($id, $confirm, $this->getUserId())]);
     }
 
+    /**
+     * ###更新订单信息,需要accesstoken
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $id 订单ID
+     * @param json|array $cart 购物车
+     * @param null|int $payMode 支付方式
+     * @param null|int $deliveryMode 配送模式
+     * @param null|int $deliveryTime 配送时间
+     * @param null|int|string $mobile 收货人联系电话
+     * @param null|string $address 收货地址
+     * @param null|string $consignee 收货人
+     */
+    public function updateOrder($id, $cart = null, $payMode = null, $deliveryMode = null, $deliveryTime = null, $mobile = null, $address = null, $consignee = null)
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->updateOrder($id, $cart, $payMode, $deliveryMode, $deliveryTime, $mobile, $address, $consignee)]);
+    }
+
 }
