@@ -1238,7 +1238,7 @@ function get_shopkeeper_by_shopid($shopId)
  * @param array $extras 附加参数
  * @return bool
  */
-function push_by_uid($appid,$uid, $message_content, $extras = [], $message_title = null, $notification_content = null, $notification_title = null, $category = null, $message_type = null)
+function push_by_uid($appid,$uid, $notification_content, $extras = [], $notification_title = null, $message_content = null, $message_title = null, $category = null, $message_type = null)
 {
     //add by WangJiang
     //开发模式下，不检查验证码，不推送消息
