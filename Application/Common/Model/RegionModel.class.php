@@ -339,7 +339,7 @@ class RegionModel extends Model
      * @param string|array $fields 要查询的字段
      * @return array
      */
-    public function getTree($pid = 0, $level = null, $status = null, $pageSize = null, $lng = null, $lat = null, $fields = 'id,name,pid,level')
+    public function getTree($pid = 0, $level = null, $status = null, $pageSize = null, $lng = null, $lat = null, $fields = 'id,name,pid,level,lnglat')
     {
         $level = $level === null ? [0, 1, 2, 3, 4, 5] : $level;
         $level = array_unique(is_array($level) ?: explode(',', $level));
