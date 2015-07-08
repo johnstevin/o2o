@@ -200,7 +200,6 @@ class MerchantModel extends AdvModel
 
         $this->join('JOIN sq_ucenter_member on sq_ucenter_member.id=sq_merchant.id');
         $this->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo');
-        //$this->join('left join sq_order_vehicle on sq_order_vehicle.worker_id=sq_merchant.id and sq_order_vehicle.status in (1,2,3)');
 
         $bind=[':roleId'=>C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER')];
         $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
@@ -219,7 +218,7 @@ class MerchantModel extends AdvModel
                         sq_auth_access.role_id=:roleId)')
             ->where($where)
             ->field(['sq_merchant.id'
-                ,'sq_merchant_shop.id as shop_id'
+                ,'ifnull(sq_merchant_shop.id,0) as shop_id'
                 ,'sq_merchant.number'
                 ,'sq_ucenter_member.mobile'
                 ,'sq_ucenter_member.real_name'
@@ -231,7 +230,6 @@ class MerchantModel extends AdvModel
                 ,'sq_merchant.grade_3'
                 ,'(sq_merchant.grade_1+sq_merchant.grade_2+sq_merchant.grade_3)/3 as grade'
                 ,'ifnull(sq_picture.path,\'\') as photo_path'
-                //,'count(sq_order_vehicle.id) as orders'
                 ,'sq_merchant.total_orders'
             ])
             ->bind($bind)
@@ -262,12 +260,12 @@ class MerchantModel extends AdvModel
 
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
         $data=$this
-            ->join('join sq_merchant_shop on sq_merchant_shop.group_id in
+            ->join('left join sq_merchant_shop on sq_merchant_shop.group_id in
                 (select sq_auth_access.group_id from sq_auth_access where
                         sq_auth_access.uid=sq_merchant.id and
                         sq_auth_access.role_id=:roleId)')
             ->where($where)->bind($bind)
-            ->field(['sq_merchant.id','sq_merchant_shop.id as shop_id'])
+            ->field(['sq_merchant.id','ifnull(sq_merchant_shop.id,0) as shop_id'])
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
             //->fetchSql()
             ->find();

@@ -142,7 +142,7 @@ class OrderVehicleController extends ApiController
                 if (!($data=$model->create()))
                     E('参数传递失败,'.$model->getError());
 
-                //var_dump($data);die;
+                //print_r(json_encode($data));die;
 
                 $data['user_id']=$this->getUserId();
                 if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
@@ -174,7 +174,7 @@ class OrderVehicleController extends ApiController
 
                 action_log('api_create_order_veh', $model, $newId, UID,3);
 
-                $this->apiSuccess(['id' => $newId],'');
+                $this->apiSuccess(['data'=>['id' => $newId]],'');
             } else
                 E('非法调用，请用POST调用');
         } catch (\Exception $ex) {
