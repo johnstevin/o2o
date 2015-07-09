@@ -7,39 +7,14 @@
 namespace Apimerchant\Controller;
 
 use Common\Model\OrderModel;
+
 /**
  * 商家订单管理
  * Class OrderController
  * @package Api\Controller
  */
-class OrderController extends ApiController {
-
-    /**
-     * 订单列表
-     * @param
-     * @author  stevin
-     */
-    public function getOrderList(){
-
-    }
-
-    /**
-     * 订单详细
-     * @param
-     * @author  stevin
-     */
-    public function getOrderDetail(){
-
-    }
-
-    /**
-     * 订单处理
-     * @param
-     * @author  stevin
-     */
-    public function getOrderDo(){
-
-    }
+class OrderController extends ApiController
+{
 
     /**
      * ## 完成订单
@@ -92,4 +67,22 @@ class OrderController extends ApiController {
         $this->apiSuccess(['data' => OrderModel::getInstance()->updateOrder($id, $cart, $payMode, $deliveryMode, $deliveryTime, $mobile, $address, $consignee)]);
     }
 
+
+    public function lists($shopId, $status = null, $payStatus = null, $deliveryMode = null, $getProducts = true, $getShop = false, $getUser = false)
+    {
+        $lists = OrderModel::getInstance()->getLists($shopId, null, $status, $payStatus, $deliveryMode, $getShop, $getUser, $getProducts)['data'];
+        //我滴个神啊，那些做手机端开发的非要只取两条产品信息-_-!
+        if ($getProducts) {
+            foreach ($lists as &$data) {
+                if (!empty($data['_products'])) {
+                    $data['_products_total'] = count($data['_products']);
+                } else {
+                    foreach ($data['_childs'] as &$child) {
+                        $child['_products_total'] = count($child['_products']);
+                    }
+                }
+            }
+        }
+        $this->apiSuccess(['data' => $lists]);
+    }
 }
