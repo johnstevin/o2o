@@ -33,6 +33,9 @@ use Think\Page;
  */
 class OrderModel extends RelationModel
 {
+    /**
+     * @var self
+     */
     protected static $model;
     protected $autoinc = true;
     protected $pk = 'id';
@@ -309,7 +312,7 @@ class OrderModel extends RelationModel
     public static function checkOrderExist($id)
     {
         $id = intval($id);
-        return ($id !== '' && self::get($id, 'id')) ? true : false;
+        return ($id !== 0 && self::get($id, null, 'id', '*', false)) ? true : false;
     }
 
     /**
@@ -390,57 +393,34 @@ class OrderModel extends RelationModel
      * @param int|null $status 订单状态，默认为不等于删除的
      * @param bool $getChilds 是否获得子订单
      * @param bool $getProducts 是否获得订单的商品
-     * @param bool $getParent 是否获取父级订单
      * @param string|array $fields 要查询的字段
      * @return array|null
      */
-    public static function get($id, $status = null, $fields = '*', $getChilds = true, $getProducts = false, $getParent = false)
+    public static function get($id, $status = null, $fields = '*', $getChilds = true, $getProducts = false)
     {
-        $id = trim($id);
-        if (empty($id)) return null;
+        $id = intval($id);
+        if ($id === 0) return [];
         $where['id'] = $id;
-        if (!empty($status) && in_array($status, array_keys(self::getStatusOptions()))) {
+        if ($status !== null && array_key_exists($status, self::getStatusOptions())) {
             $where['status'] = $status;
         } else {
             $where['status'] = ['NEQ', self::STATUS_DELETE];
         }
         $relation = [];
         if ((bool)$getChilds) $relation[] = '_childs';
-        if ($getProducts) $relation[] = '_products';
-        if ($getParent) $relation[] = '_parent';
         $data = self::getInstance()->relation($relation)->field($fields)->where($where)->find();
         if (!$getProducts) return $data;
-        if (!empty($data['_products'])) {
-            $productIds = array_map(function ($order) {
-                return $order['product_id'];
-            }, $data['_products']);
-            $products = ProductModel::getListsByProductIds($productIds, ['id', 'title', 'detail']);
-            $reProducts = [];
-            foreach ($products as $p) {
-                $reProducts[$p['id']] = $p;
-            }
-            foreach ($data['_products'] as &$product) {
-                $current = $reProducts[$product['product_id']];
-                $product['title'] = $current['title'];
-                $product['detail'] = $current['detail'];
-            }
-        } elseif ($getChilds) {
-            $orderItemModel = M('order_item');
+        $data['_products'] = [];
+        $pdo = get_pdo();
+        if (empty($data['_childs'])) {
+            $sth = $pdo->prepare('SELECT md.id depot_id,p.id product_id,product_picture.path picture_path,p.title,p.number,p.norms_id,md.price,md.remark,p.detail,p.brand_id FROM sq_merchant_depot md LEFT JOIN sq_product p ON md.product_id=p.id LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id WHERE md.id IN (select product_id from sq_order_item WHERE order_id=:order_id) AND p.status=:product_status');
+            $sth->execute([':order_id' => $id, ':product_status' => ProductModel::STATUS_ACTIVE]);
+            $data['_products'] = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        } else {
             foreach ($data['_childs'] as &$child) {
-                $child['_products'] = $orderItemModel->field('product_id')->where(['order_id' => $child['id']])->select();
-                $productIds = array_map(function ($item) {
-                    return $item['product_id'];
-                }, $child['_products']);
-                $products = ProductModel::getListsByProductIds($productIds);
-                $reProducts = [];
-                foreach ($products as $p) {
-                    $reProducts[$p['id']] = $p;
-                }
-                foreach ($child['_products'] as &$product) {
-                    $current = $reProducts[$product['product_id']];
-                    $product['title'] = $current['title'];
-                    $product['detail'] = $current['detail'];
-                }
+                $sth = $pdo->prepare('SELECT md.id depot_id,p.id product_id,product_picture.path picture_path,p.title,p.number,p.norms_id,md.price,md.remark,p.detail,p.brand_id FROM sq_merchant_depot md LEFT JOIN sq_product p ON md.product_id=p.id LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id WHERE md.id IN (select product_id from sq_order_item WHERE order_id=:order_id) AND p.status=:product_status');
+                $sth->execute([':order_id' => $id, ':product_status' => ProductModel::STATUS_ACTIVE]);
+                $child['_products'] = $sth->fetchAll(\PDO::FETCH_ASSOC);
             }
         }
         return $data;
@@ -499,12 +479,9 @@ class OrderModel extends RelationModel
      */
     public function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $deliveryMode = null, $getShop = false, $getUser = false, $getProducts = false, $pageSize = 10)
     {
+        if (empty($shopId) && empty($userId)) E('非法请求');
         if (!empty($shopId)) {
             $where['o.shop_id'] = intval($shopId);
-            $where['o.pid'] = [//如果是根据商铺来查，那么父级订单就不用查出来了
-                'NEQ',
-                0
-            ];
         }
         if (!empty($userId)) {
             $where['o.user_id'] = intval($userId);
@@ -542,25 +519,11 @@ class OrderModel extends RelationModel
             $model->join('LEFT JOIN sq_member m ON m.uid=um.id');
             $model->join('LEFT JOIN sq_picture user_picture ON um.photo=user_picture.id');
         }
-        if ($getShop) {
-            $fields = array_merge($fields, [
-                'ms.title _shop_title',
-                'ms.description _shop_description',
-                'ms.status _shop_status',
-                'ms.type _shop_type',
-                'ms.phone_number _shop_phone',
-                'ms.address _shop_address',
-                'ms.open_status _shop_open_status',
-                'ms.region_id _shop_region_id',
-                'ms_picture.path _shop_picture'
-            ]);
-            $model->join('LEFT JOIN sq_merchant_shop ms ON ms.id=o.shop_id');
-            $model->join('LEFT JOIN sq_picture ms_picture ON ms.picture=ms_picture.id');
-        }
         $total = $totalModel->count();
         $pagination = new Page($total, $pageSize);
         $data = $model->relation('_childs')->field($fields)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
         $orderItemModel = M('OrderItem');
+        $pdo = get_pdo();
         foreach ($data as &$item) {
             if ($getUser) {
                 $item['_user'] = [
@@ -572,42 +535,10 @@ class OrderModel extends RelationModel
                 ];
                 unset($item['user_id'], $item['_user_nickname'], $item['_user_sex'], $item['_user_email'], $item['_user_photo']);
             }
-            if ($getShop) {
-                $item['_shop'] = [
-                    'id' => $item['shop_id'],
-                    'title' => $item['_shop_title'],
-                    'description' => $item['_shop_description'],
-                    'status' => $item['_shop_status'],
-                    'type' => $item['_shop_type'],
-                    'phone' => $item['_shop_phone'],
-                    'address' => $item['_shop_address'],
-                    'open_status' => $item['_shop_open_status'],
-                    'region_id' => $item['_shop_region_id'],
-                    'picture' => $item['_shop_picture']
-                ];
-                unset($item['_shop_title'], $item['_shop_description'], $item['_shop_status'], $item['_shop_type'], $item['_shop_phone'], $item['_shop_address'], $item['_shop_open_status'], $item['_shop_region_id'], $item['_shop_picture']);
-            }
-            if ($getProducts) {
+            if ($getProducts || $getShop) {
                 if (empty($item['_childs'])) {
-                    $item['_products'] = self::getProductsByOrderId($item['id']);
-                    $item['_products'] = $orderItemModel->field([
-                        'oi.depot_id',
-                        'p.title',
-                        'p.id product_id',
-                        'md.price',
-                        'oi.total',
-                        'p.detail',
-                        'n.title norm',
-                        'product_picture.path picture_path'
-                    ])->alias('oi')->where(['oi.order_id' => $item['id']])->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
-                        ->join('LEFT JOIN sq_product p ON md.product_id=p.id')->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
-                        ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
-                        ->select();
-                } else {
-                    $item['_products'] = [];
-                    foreach ($item['_childs'] as &$child) {
-                        $child['_products'] = self::getProductsByOrderId($child['id']);
-                        $child['_products'] = $orderItemModel->field([
+                    if ($getProducts) {//获取产品
+                        $item['_products'] = $orderItemModel->field([
                             'oi.depot_id',
                             'p.title',
                             'p.id product_id',
@@ -616,10 +547,39 @@ class OrderModel extends RelationModel
                             'p.detail',
                             'n.title norm',
                             'product_picture.path picture_path'
-                        ])->alias('oi')->where(['oi.order_id' => $child['id']])->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
+                        ])->alias('oi')->where(['oi.order_id' => $item['id']])->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
                             ->join('LEFT JOIN sq_product p ON md.product_id=p.id')->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
                             ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
                             ->select();
+                    }
+                    if ($getShop) {//获取商铺信息
+                        $sth = $pdo->prepare('SELECT ms.id,ms.title,ms.description,ms.status,ms.type,ms.phone_number phone,ms.address,ms.open_status,ms.region_id,p.path picture FROM sq_merchant_shop ms LEFT JOIN sq_picture p ON ms.picture=p.id WHERE ms.id=:shop_id');
+                        $sth->execute([':shop_id' => $item['shop_id']]);
+                        $item['_shop'] = $sth->fetch(\PDO::FETCH_ASSOC);
+                    }
+                } else {
+                    $item['_products'] = [];
+                    foreach ($item['_childs'] as &$child) {
+                        if ($getProducts) {//获取产品信息
+                            $child['_products'] = $orderItemModel->field([
+                                'oi.depot_id',
+                                'p.title',
+                                'p.id product_id',
+                                'md.price',
+                                'oi.total',
+                                'p.detail',
+                                'n.title norm',
+                                'product_picture.path picture_path'
+                            ])->alias('oi')->where(['oi.order_id' => $child['id']])->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
+                                ->join('LEFT JOIN sq_product p ON md.product_id=p.id')->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
+                                ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
+                                ->select();
+                        }
+                        if ($getShop) {//获取商铺信息
+                            $sth = $pdo->prepare('SELECT ms.id,ms.title,ms.description,ms.status,ms.type,ms.phone_number phone,ms.address,ms.open_status,ms.region_id,p.path picture FROM sq_merchant_shop ms LEFT JOIN sq_picture p ON ms.picture=p.id WHERE ms.id=:shop_id');
+                            $sth->execute([':shop_id' => $child['shop_id']]);
+                            $child['_shop'] = $sth->fetch(\PDO::FETCH_ASSOC);
+                        }
                     }
                 }
             }
@@ -666,6 +626,7 @@ class OrderModel extends RelationModel
             $hasProductShopIds = [];//购物车中已经确定商品归属的商家
             $_cart = [];//需要拆单的商品
             $notAllocationProducts = [];//需要拆单的商品列表
+            $notAllocationProductsShopIds = [];//有未分配商品的商家
 
             $productTotal = array_sum(array_column($cart, 'total'));
 
@@ -686,6 +647,7 @@ class OrderModel extends RelationModel
                         'total' => $product['total'],
                         'product_id' => $product['product_id'],
                     ];
+                    $notAllocationProductsShopIds = array_merge($notAllocationProductsShopIds, $product['shop_id']);
                 }
             }
 
@@ -694,16 +656,17 @@ class OrderModel extends RelationModel
             arsort($hasProductShopTotal);//排序，方便找出要送货最多的商家
             $shopIds = array_unique($shopIds);
             if (empty($shopIds)) E('没有找到商铺');
-
+            $notAllocationProductsShopIds = array_unique($notAllocationProductsShopIds);
             //如果未分配的商品不为空
             if (!empty($notAllocationProducts)) {
                 //如果配送时间不等于空
                 //根据未分配商家的商品ID找出所有有这个商品的商家并按商品ID和价格排序
                 $_depots = $depotModel->field('id,shop_id,price,product_id')->where([
                     'product_id' => ['IN', array_column($notAllocationProducts, 'product_id')],
-                    'shop_id' => ['IN', $shopIds],
+                    'shop_id' => ['IN', $notAllocationProductsShopIds],
                     'status' => MerchantDepotModel::STATUS_ACTIVE
                 ])->order('product_id,price')->select();
+                if (empty($_depots)) E('没有找到商品');
                 $depots = [];
                 $shopLists = [];//商家统计
                 //根据商品ID对仓库的商品进行分组
@@ -720,10 +683,10 @@ class OrderModel extends RelationModel
                         'product_id' => $depot[0]['product_id']
                     ];
                 }
-                $order = [];
-                foreach ($products as $product) {
-                    $order[$product['shop_id']][] = $product;
-                }
+            }
+            $order = [];
+            foreach ($products as $key => $product) {
+                $order[$product['shop_id']][] = &$products[$key];
             }
         } else {
             $order = &$cart;
@@ -896,7 +859,7 @@ class OrderModel extends RelationModel
         $userInfo = MemberModel::getById($userId, null, ['uid', 'nickname']);
         if (!$userInfo) E('用户：' . $userId . '不存在');
         $pretreatment = S($orderKey);
-        if (!$pretreatment) E('请执行订单预处理');
+        if (!$pretreatment) E('操作超时');
         $products = $pretreatment['order'];
         $deliveryMode = intval($pretreatment['delivery_mode']);
 
@@ -913,6 +876,7 @@ class OrderModel extends RelationModel
                 if (!$parentId) E('父级订单添加失败');
                 $parentDeliveryPrice = 0;
                 $logData = [];//记录订单状态日志的数据数组
+                $pushOrderId = [];
                 foreach ($products as $product) {
                     $shopId = $product['shop_id'];
                     //获取所有的仓库商品ID
@@ -932,8 +896,13 @@ class OrderModel extends RelationModel
                     ];
                     $parentDeliveryPrice += $data['delivery_price'];
                     if (!$model->create($data)) E(current($model->getError()));
+                    $orderCode = $model->data()['order_code'];
                     $itemData = [];
                     if ($lastOrderId = intval($model->add())) {//如果子订单添加成功
+                        $pushOrderId[] = [
+                            'shop_id' => $shopId,
+                            'order_id' => $lastOrderId
+                        ];
                         foreach ($product['_products'] as $item) {//组合每条子订单的商品信息
                             $itemData[] = [
                                 'order_id' => $lastOrderId,
@@ -950,20 +919,28 @@ class OrderModel extends RelationModel
                             'merchant_id' => 0,
                             'status' => self::STATUS_MERCHANT_CONFIRM,
                             'order_id' => $lastOrderId,
-                            'content' => '系统：【' . $userInfo['nickname'] . '】于【' . date('Y - m - d H:i:s') . '】提交了订单【' . $lastOrderId . '】，等待商家审核',
+                            'content' => '系统：【' . $userInfo['nickname'] . '】于【' . date('Y - m - d H:i:s') . '】提交了订单【' . $orderCode . '】，等待商家审核',
                         ];
                     } else {
                         E('订单添加失败');
                     }
                 }
                 //所有子订单都插入完成之后，计算所有子订单价格的和，更新到父级订单
-                if (!$model->save(['price' => $pretreatment['price_total'], 'id' => $parentId])) {
+                if (!$model->save(['price' => $pretreatment['price_total'], 'id' => $parentId, 'delivery_price' => $parentDeliveryPrice])) {
                     E('父级订单价格更新失败');
                 }
                 $model->commit();//如果以上都通过了，则提交事务
                 F('user / cart / ' . $userId, null);//如果订单提交成功，则清空用户的购物车
                 S($orderKey, null);
                 $statusLogModel->addAll($logData);
+                $pushContent = '用户【' . $userInfo['nickname'] . '】提交了新订单，请您及时处理';
+                $pushTitle = '您有新的订单';
+                foreach ($pushOrderId as $item) {
+                    push_by_uid('STORE', get_shopkeeper_by_shopid($item['shop_id']), $pushContent, [
+                        'action' => 'orderDetail',
+                        'order_id' => $item['order_id']
+                    ], $pushTitle);
+                }
                 return $parentId;//返回父级订单的ID
             } catch (Exception $e) {
                 //如果中途某个提交失败了，则回滚事务
@@ -974,7 +951,7 @@ class OrderModel extends RelationModel
             $products = current($products);
             $data['user_id'] = $userId;
             $data['pid'] = 0;
-            $data['shop_id'] = current($products)['shop_id'];
+            $data['shop_id'] = $products['shop_id'];
             $data['pay_mode'] = intval($payMode);
             $data['delivery_mode'] = intval($deliveryMode);
             $data['delivery_time'] = intval($pretreatment['delivery_time']);
@@ -986,8 +963,9 @@ class OrderModel extends RelationModel
             $data['delivery_price'] = $pretreatment['price_detail'][$data['shop_id']]['deliveryTotal'];
             try {
                 if (!$model->create($data)) {
-                    E(current($model->getError()));
+                    E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
                 }
+                $orderCode = $model->data()['order_code'];
                 if ($lastId = $model->add()) {
                     $itemData = [];
                     foreach ($products['_products'] as $product) {
@@ -1008,9 +986,17 @@ class OrderModel extends RelationModel
                     F('user / cart / ' . $userId, null);
                     S($orderKey, null);
                     //记录日志
-                    $content = '系统：【' . $userInfo['nickname'] . '】于【' . date('Y - m - d H:i:s') . '】提交了订单【' . $lastId . '】，等待商家审核';
-                    $statusLogModel->addLog($userId, $data['shop_id'], 0, $lastId, $content, self::STATUS_MERCHANT_CONFIRM);
-                    return intval($lastId);
+                    $content = '系统：【' . $userInfo['nickname'] . '】于【' . date('Y - m - d H:i:s') . '】提交了订单【' . $orderCode . '】，等待商家审核';
+                    //$statusLogModel->addLog($userId, $data['shop_id'], get_shopkeeper_by_shopid($data['shop_id']), $lastId, $content, self::STATUS_MERCHANT_CONFIRM);
+
+                    $pushContent = '用户【' . $userInfo['nickname'] . '】提交了新订单，请您及时处理';
+                    $pushTitle = '您有新的订单';
+                    $pushExtras = [
+                        'action' => 'orderDetail',
+                        'order_id' => $lastId
+                    ];
+                    push_by_uid('STORE', get_shopkeeper_by_shopid($data['shop_id']), $pushContent, $pushExtras, $pushTitle, $pushContent);
+                    return $lastId;
                 }
             } catch (Exception $e) {
                 //如果中途某个提交失败了，则回滚事务
@@ -1127,7 +1113,7 @@ class OrderModel extends RelationModel
                         'order_id' => $orderInfo['id']
                     ];
 
-                    push_by_uid('CLIENT',$orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
+                    push_by_uid('CLIENT', $orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
                     $updateData['status'] = self::STATUS_USER_CONFIRM;
                 } else {
                     E('订单商品更新失败');
@@ -1259,7 +1245,7 @@ class OrderModel extends RelationModel
         } else {
             $saveStatus = $model->save(['status' => self::STATUS_USER_CONFIRM]);
         }
-        if (!$saveStatus) E('确认订单失败');
+        if (!$saveStatus) E('确认订单失败或您已经确定过订单了');
         $merchantInfo = UcenterMemberModel::get($merchantId, ['username', 'id']);//获取用户信息
         $replaceContent = '商家：【' . isset($merchantInfo['username']) ? $merchantInfo['username'] : '' . '】于【' . date('Y - m - d H:i:s') . '】%s';
         if ($confirm) {//根据是否确定来生成不同的记录信息
@@ -1270,7 +1256,7 @@ class OrderModel extends RelationModel
                 'action' => 'orderDetail',
                 'order_id' => $orderInfo['id']
             ];
-            push_by_uid('CLIENT',$orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
+            push_by_uid('CLIENT', $orderInfo['user_id'], $pushContent, $pushExtras, $pushTitle);
         } else {
             $replaceStr = '拒绝了订单【' . $orderInfo['order_code'] . '】，原因【' . $content . '】，等待用户确认';
         }
@@ -1283,7 +1269,7 @@ class OrderModel extends RelationModel
             'content' => sprintf($replaceContent, $replaceStr)
         ];
         if ($saveStatus) {//如果订单状态更新成功才存入日志
-            OrderStatusModel::getInstance()->add($logData);
+//            OrderStatusModel::getInstance()->add($logData);
         }
         return $saveStatus;
     }
@@ -1331,7 +1317,7 @@ class OrderModel extends RelationModel
                 'order_id' => $orderInfo['id']
             ];
         }
-        push_by_uid('STORE',get_shopkeeper_by_shopid($orderInfo['shop_id']), $pushContent, $pushExtras, $pushTitle);
+        push_by_uid('STORE', get_shopkeeper_by_shopid($orderInfo['shop_id']), $pushContent, $pushExtras, $pushTitle);
         $logData = [//订单状态日志记录数据
             'user_id' => $orderInfo['user_id'],
             'shop_id' => $orderInfo['shop_id'],
@@ -1420,7 +1406,7 @@ class OrderModel extends RelationModel
                 'action' => 'orderDetail',
                 'order_id' => $id
             ];
-            push_by_uid('STORE',$shopkeeper, $pushContent, $pushExtras, $pushTitle, $pushContent, $pushTitle);
+            push_by_uid('STORE', $shopkeeper, $pushContent, $pushExtras, $pushTitle, $pushContent, $pushTitle);
         }
         return $saveStatus;
     }

@@ -49,14 +49,19 @@ class JPush
     {
         if (is_int($uid)) $uid = (string)$uid;
         if (!is_array($uid)) $uid = (array)$uid;
+        $ids = [];
         if (is_array($uid)) {
-            foreach ($uid as &$id) {
-                $id = (string)$id;
+            foreach ($uid as $id) {
+                $id = (string)intval($id);
+                if ($id !== '0') {
+                    $ids[] = $id;
+                }
             }
         }
+        $ids = array_unique($ids);
         $client = self::$client->push()
             ->setPlatform(M\all)
-            ->setAudience(M\alias($uid));
+            ->setAudience(M\alias($ids));
         if (!empty($notification_content)) {
             $client->setNotification(M\notification($notification_content,
                 M\android($notification_content, $notification_title, null, $extras),

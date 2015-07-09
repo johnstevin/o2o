@@ -1154,7 +1154,7 @@ function verify_sms_code($mobile, $code)
 {
     //add by WangJiang
     //开发模式下，不检查验证码，不推送消息
-    if(!empty(C('DEVELOPMENT_MODE')))
+    if (!empty(C('DEVELOPMENT_MODE')))
         return true;
 //    var_dump($mobile);
 //    var_dump($code);
@@ -1228,6 +1228,7 @@ function get_shopkeeper_by_shopid($shopId)
  * 根据用户ID推送消息
  * @author Fufeng Nie <niefufeng@gmail.com>
  *
+ * @param integer $appid 应用ID，可传【STORE】和【CLIENT】
  * @param int $uid 用户ID
  * @param string $message_content 消息内容
  * @param string|null $message_title 消息标题
@@ -1238,13 +1239,13 @@ function get_shopkeeper_by_shopid($shopId)
  * @param array $extras 附加参数
  * @return bool
  */
-function push_by_uid($appid,$uid, $notification_content, $extras = [], $notification_title = null, $message_content = null, $message_title = null, $category = null, $message_type = null)
+function push_by_uid($appid, $uid, $message_content, $extras = [], $message_title = null, $notification_content = null, $notification_title = null, $category = null, $message_type = null)
 {
     //add by WangJiang
     //开发模式下，不检查验证码，不推送消息
-    if(!empty(C('DEVELOPMENT_MODE')))
+    if (!empty(C('DEVELOPMENT_MODE')))
         return;
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'),$appid)->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
 }
 
 /**
@@ -1257,11 +1258,11 @@ function push_by_uid($appid,$uid, $notification_content, $extras = [], $notifica
  * @param null|array $removeTags 要删除的标签
  * @return \JPush\Model\DeviceResponse
  */
-function update_device_tag_alias($appid,$registrationId, $alias = null, $addTags = null, $removeTags = null)
+function update_device_tag_alias($appid, $registrationId, $alias = null, $addTags = null, $removeTags = null)
 {
     //add by WangJiang
     //开发模式下，不检查验证码，不推送消息
-    if(!empty(C('DEVELOPMENT_MODE')))
+    if (!empty(C('DEVELOPMENT_MODE')))
         return;
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'),$appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
 }
