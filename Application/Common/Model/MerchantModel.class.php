@@ -339,11 +339,6 @@ class MerchantModel extends AdvModel
         return $id ? self::getInstance()->field($fields)->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->find() : null;
     }
 
-    // TODO 这个因为要算距离，我做不到
-    public static function getLists()
-    {
-    }
-
     /**
      * 获取商户信息
      * @param $mapUid

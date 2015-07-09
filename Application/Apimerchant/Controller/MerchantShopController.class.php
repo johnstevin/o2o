@@ -135,7 +135,6 @@ class MerchantShopController extends ApiController
                 $model = D('MerchantShop');
                 if (!($data = $model->create()))
                     E('参数传递失败');
-                //TODO 验证用户权限
                 $data['add_uid'] = $this->getUserId();
                 $data['group_id'] = $this->_get_group_id($data['type']);
                 $model->data($data);
@@ -221,10 +220,7 @@ class MerchantShopController extends ApiController
     {
         try {
             if (IS_GET) {
-                //TODO 验证用户权限
                 $pageSize > 50 and $pageSize = 50;
-                $page--;
-                $page *= $pageSize;
 
                 //获得担任店长的商铺组
                 $groupIds=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'),true);
@@ -269,7 +265,7 @@ class MerchantShopController extends ApiController
                     'st_astext(sq_merchant_shop.lnglat) as lnglat'])
                     ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
                     ->join('left join sq_picture as yyzz_pic on yyzz_pic.id=sq_merchant_shop.yyzz_picture')
-                    ->where($where)->limit($page,$pageSize)->select();
+                    ->where($where)->page($page,$pageSize)->select();
 
                 foreach ($data as &$i) {
                     $sid = $i['id'];

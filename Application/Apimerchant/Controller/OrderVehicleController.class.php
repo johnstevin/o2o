@@ -198,7 +198,6 @@ class OrderVehicleController extends ApiController{
         $oid=I('post.orderId');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_CONFIRM);
         $this->apiSuccess(['data'=>[]], '操作成功');
-        //TODO 消息推送
     }
 
     /**
@@ -215,7 +214,6 @@ class OrderVehicleController extends ApiController{
         $oid=I('post.orderId');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_TREATING);
         $this->apiSuccess(['data'=>[]], '操作成功');
-        //TODO 消息推送
     }
 
     /**
@@ -232,7 +230,6 @@ class OrderVehicleController extends ApiController{
         $oid=I('post.orderId');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_DONE);
         $this->apiSuccess(['data'=>[]], '操作成功');
-        //TODO 消息推送
     }
 
     /**
@@ -267,7 +264,7 @@ class OrderVehicleController extends ApiController{
             E('非法调用，请用POST命令');
         $model=D('OrderVehicle');
         if (!($data=$model->create()))
-            E('参数传递失败');
+            E('参数传递失败'.$model->getError());
 
         $id=I('post.id');//为了避免传递参数时混淆，强制指定post
 

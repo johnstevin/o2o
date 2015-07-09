@@ -404,8 +404,9 @@ class MerchantDepotModel extends RelationModel
         , $priceMin, $priceMax
         , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = []){
 
-        $where = 'sq_merchant_depot.shop_id=:shopId';
+        $where = 'sq_merchant_depot.shop_id=:shopId and sq_merchant_depot.status=:status';
         $bindValues[':shopId']=$shopId;
+        $bindValues[':status']=$status;
 
         $cateChain=[$categoryId];
         get_cate_chain_up([$categoryId],$cateChain);

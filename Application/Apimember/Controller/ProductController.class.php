@@ -13,6 +13,7 @@ use Common\Model\OrderModel;
 use Common\Model\OrderVehicleModel;
 use Think\Exception;
 use Common\Model\ProductModel;
+use Think\Model;
 
 /**
  * 商品
@@ -705,6 +706,67 @@ class ProductController extends ApiController
     }
 
     /**
+     * 应急用，暂时替代小聂的版本
+     * @author WangJiang
+     * @param $page
+     * @param $pageSize
+     * @return array
+     */
+    private function _get_order_list($uid,$status,$payStatus,$page,$pageSize){
+
+        $model=new OrderModel();
+        $where['sq_order.user_id']=$uid;
+
+        if(!is_null($status)){
+            if(is_array($status))
+                $where['sq_order.status']=['in',$status];
+            else
+                $where['sq_order.status']=$status;
+        }
+        if(!is_null($payStatus))
+            $where['sq_order.pay_status']=$payStatus;
+
+        $data=$model
+            ->field([
+                'sq_order.id',
+                'sq_order.order_code',
+                'sq_order.pid',
+                'sq_order.user_id',
+                'sq_order.shop_id',
+                'sq_order.price',
+                'sq_order.status',
+                'sq_order.pay_status',
+                'sq_order.mobile',
+                'sq_order.address',
+                'sq_order.consignee',
+                'sq_order.delivery_price',
+                'sq_order.update_time',
+                'ifnull(sq_merchant_shop.title,\'\') as shop_title',
+                'ifnull(sq_picture.path,\'\') as shop_picture'])
+            ->join('left join sq_merchant_shop on sq_merchant_shop.id=shop_id')
+            ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
+            ->where($where)
+            ->order('update_time')
+            ->page($page,$pageSize)
+            ->select();
+
+        foreach($data as $k=>&$order){
+            $items=D('OrderItem')
+                ->alias('oi')
+                ->field(['oi.*','sq_product.title','ifnull(sq_picture.path,\'\') as picture'])
+                ->where(['order_id'=>$order['id']])
+                ->join('join sq_product on sq_product.id=product_id')
+                ->join('left join sq_picture on sq_picture.id=picture')
+                ->select();
+            $order['_products']=$items;
+            if(empty($items))
+                unset($data[$k]);
+        }
+
+        return ['data'=>$data];
+    }
+
+    /**
      * 返回所有用户订单，需要accesstoken
      * @author WangJiang
      * @param null $status 状态查询，0-待付款，1-待确认，2-已完成，不写-全部
@@ -716,7 +778,7 @@ class ProductController extends ApiController
         //0-未分配，1-已分配，2-已接单，3-处理中，4-处理完，5-订单结束，6订单取消
         //0-取消的订单,1-等待商家确定,2-用户确定（商家的修改），3-正在配送,4-已经完成，5-申请退款,6-退款完成
 
-        $orderStatuees=[['status'=>null,'payStatus'=>1]
+        $orderStatuees=[['status'=>[OrderModel::STATUS_DELIVERY,OrderModel::STATUS_COMPLETE],'payStatus'=>0]
             ,['status'=>OrderModel::STATUS_USER_CONFIRM,'payStatus'=>null]
             ,['status'=>OrderModel::STATUS_COMPLETE,'payStatus'=>1]];
 
@@ -733,7 +795,7 @@ class ProductController extends ApiController
         //var_dump($statusOrder);
         //var_dump($statusOrderVeh);
 
-        $orders=(new OrderModel())->getLists(null, $uid, $statusOrder['status'], $statusOrder['payStatus'], null, false, false, true, $pageSize);
+        $orders=$this->_get_order_list($uid, $statusOrder['status'], $statusOrder['payStatus'], $page,$pageSize);//(new OrderModel())->getLists(null, $uid, $statusOrder['status'], $statusOrder['payStatus'], null, true, false, true, $pageSize);
         $orders_veh=(new OrderVehicleModel())->getUserList($uid,$statusOrderVeh['status'], $statusOrderVeh['payStatus'],null,$page,$pageSize);
 
         $iter_order=(new \ArrayObject($orders['data']))->getIterator();
@@ -749,6 +811,11 @@ class ProductController extends ApiController
 
             if(empty($order) and empty($order_veh))
                 break;
+
+            if($order)
+                $order['order_type']='shop';
+            if($order_veh)
+                $order_veh['order_type']='vehicle';
 
             if($order and $order_veh){
                 if($order['update_time']<$order_veh['update_time']){

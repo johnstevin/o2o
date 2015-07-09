@@ -2,6 +2,7 @@
 namespace Apimerchant\Controller;
 
 use Common\Model\MerchantDepotModel;
+use Common\Model\MerchantShopModel;
 use Common\Model\ProductModel;
 
 /**
@@ -153,7 +154,6 @@ class MerchantDepotController extends ApiController
         //var_dump(get_client_ip());
         try {
             if (IS_POST) {
-                //TODO 验证用户权限
                 $uid = $this->getUserId();
                 $shopId = I('shop_id',null);
                 if (is_null($shopId))
@@ -376,7 +376,6 @@ class MerchantDepotController extends ApiController
     {
         try {
             if (IS_POST) {
-                //TODO 验证用户权限
                 $uid = $this->getUserId();
                 $model = D('MerchantDepot');
                 $depot = $model->find(I('id'));
@@ -447,14 +446,15 @@ class MerchantDepotController extends ApiController
             if (!IS_GET)
                 E('非法调用，请用GET调用该方法');
             $pageSize > 50 and $pageSize = 50;
-            $page--;
-            $page *= $pageSize;
-
-            //TODO 验证用户权限
-            //$this->getUserId();
 
             $shopIds = explode(',', $shopIds);
+
+            $gids=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'),true);
+            if(count($shopIds)!=(new MerchantShopModel())->where(['id'=>['in',$shopIds],'group_id'=>['in',$gids]])->count())
+                E('用户无权访问这些店铺');
+
             //print_r($shopIds);die;
+            $_GET['p']=$page;
             $this->apiSuccess(['data' => MerchantDepotModel::getListsByShopId($shopIds, $pageSize, $status)], '');
             //$this->apiSuccess(['data' => (new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
             //  , $priceMin, $priceMax, false, $page, $pageSize, $status, $groupIds)]);
