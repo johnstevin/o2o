@@ -118,7 +118,7 @@ class OrderStatusModel extends RelationModel
             'status' => $status
         ];
         $model = self::getInstance();
-        if (!$model->create($data)) E(current($model->getError()));
+        if (!$model->create($data)) E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         return $model->add();
     }
 }
