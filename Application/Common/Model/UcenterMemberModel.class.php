@@ -47,7 +47,7 @@ class UcenterMemberModel extends AdvModel
     public static function get($id, $fileds = '*')
     {
         $id = intval($id);
-        return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fileds)->find() : null;
+        return $id ? self::getInstance()->where(['id' => $id])->field($fileds)->find() : null;
     }
 
 
