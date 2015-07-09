@@ -254,6 +254,68 @@ class UserController extends ApiController {
     }
 
     /**
+     * 忘记密码
+     * @errorCode    50116
+     * @author       Stevin.John@qq.com
+     */
+    public function forgetPassword(){
+        try {
+            $step   = I('get.step');
+            switch ( $step ) {
+                case 1 :
+                    $mobile = I('post.mobile');
+                    $code   = I('post.code');
+                    verify_sms_code($mobile,$code) ? '' : E('验证码错误或已过期，请重新获取');
+
+                    $rules = array(
+                        array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', '手机格式不正确'), //手机格式不正确
+                        array('mobile', 'checkDenyMobile', '您的手机号禁止注册', 0, 'callback'), //过滤手机黑名单
+                    );
+                    $model  = M("UcenterMember");
+                    //TODO 这里做手机认证
+                    $map = array(
+                        'is_merchant' => 1,
+                        'mobile'      => $mobile,
+                    );
+                    $model->field('id')->where($map)->find() ? '' : E('该手机号未注册或不是商家用户');
+                    $randVal = generate_saltKey();
+                    S('_Member_User_ForgetPwd_randVal_'.$mobile, $randVal, 300);
+                    $this->apiSuccess(array('data'=>array('randVal'=>$randVal)), '请点下一步');
+
+                    break;
+                case 2 :
+                    //TODO 这里要做验证
+                    $mobile    = I('post.mobile') != '' ? I('post.mobile') :   E('请设置手机号');
+                    $password  = I('post.password') != '' ? I('post.password') : E('请设置密码');
+                    $randVal   = I('post.randval') != '' ? I('post.randval') :  E('不安全的密码设置');
+                    // TODO : 这里涉及到如果设置缓存前缀无法读取的问题，后期解决
+                    $randCache = S('_Member_User_ForgetPwd_randVal_'.$mobile);
+                    $randCache !== false ? '' : E('已超时，请重新设置');
+                    $randCache == $randVal ? '' : E('安全码不正确');
+
+                    $model  = D("UcenterMember");
+                    //TODO 这里做手机认证
+                    $map = array(
+                        'is_merchant' => 1,
+                        'mobile'      => $mobile,
+                    );
+                    $uid = $model->field('id')->where($map)->find() ? : E('该手机号未注册或不是商家用户');
+                    $data = array(
+                        'id'           => $uid['id'],
+                        'password'     => $password,
+                    );
+                    $model->saveInfo($data) === true ? $this->apiSuccess(array('data'=>''), '密码找回成功') : E($model->getError());
+                    break;
+                default :
+                    E('请设置正确的step');
+            }
+
+        } catch (\Exception $ex) {
+            $this->apiError(50116, $ex->getMessage());
+        }
+    }
+
+    /**
      * @ignore
      * 用户订单列表
      * @param
