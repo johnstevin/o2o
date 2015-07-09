@@ -160,9 +160,9 @@ class OrderController extends ApiController
      * }
      * ```
      */
-    public function lists($shopId = null, $userId = null, $status = null, $payStatus = null, $deliveryMode = null, $getProducts = true, $getShop = false, $getUser = false)
+    public function lists($status = null, $payStatus = null, $deliveryMode = null, $getProducts = true, $getShop = false, $getUser = false)
     {
-        $lists = OrderModel::getInstance()->getLists($shopId, $userId, $status, $payStatus, $deliveryMode, $getShop, $getUser, $getProducts)['data'];
+        $lists = OrderModel::getInstance()->getLists(null, $this->getUserId(), $status, $payStatus, $deliveryMode, $getShop, $getUser, $getProducts)['data'];
         //我滴个神啊，那些做手机端开发的非要只取两条产品信息-_-!
         if ($getProducts) {
             foreach ($lists as &$data) {
@@ -175,7 +175,7 @@ class OrderController extends ApiController
                 }
             }
         }
-        $this->apiSuccess(['data'=>$lists]);
+        $this->apiSuccess(['data' => $lists]);
     }
 
     /**
