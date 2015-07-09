@@ -267,8 +267,6 @@ class UserController extends ApiController {
             $step   = I('get.step');
             switch ( $step ) {
                 case 1 :
-
-                    //dump(S('_Merchant_User_ForgetPwd_randVal_18628336949','sdfsdf'));exit;
                     $mobile = I('post.mobile');
                     $code   = I('post.code');
                     verify_sms_code($mobile,$code) ? '' : E('验证码错误或已过期，请重新获取');
@@ -291,9 +289,10 @@ class UserController extends ApiController {
                     break;
                 case 2 :
                     //TODO 这里要做验证
-                    $mobile    = I('post.mobile') != '' ? I('get.mobile') :   E('请设置手机号');
-                    $password  = I('post.password') != '' ? I('get.password') : E('请设置密码');
-                    $randVal   = I('post.randval') != '' ? I('get.randval') :  E('不安全的密码设置');
+                    $mobile    = I('post.mobile') != '' ? I('post.mobile') :   E('请设置手机号');
+                    $password  = I('post.password') != '' ? I('post.password') : E('请设置密码');
+                    $randVal   = I('post.randval') != '' ? I('post.randval') :  E('不安全的密码设置');
+                    // TODO : 这里涉及到如果设置缓存前缀无法读取的问题，后期解决
                     $randCache = S('_Merchant_User_ForgetPwd_randVal_'.$mobile);
                     $randCache !== false ? '' : E('已超时，请重新设置');
                     $randCache == $randVal ? '' : E('安全码不正确');
