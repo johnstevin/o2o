@@ -10,12 +10,13 @@
         <tr>
             <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
             <th>编号</th>
-            <th>版本号</th>
+
             <th>版本名称</th>
             <th>包类型</th>
             <th>版本类型</th>
             <th>md5</th>
             <th>sha1</th>
+            <th>版本号</th>
             <th>编辑</th>
             <th>发布状态</th>
             <th>操作</th>
@@ -27,23 +28,27 @@
                 <tr>
                     <td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}" /></td>
                     <td>{$vo.id} </td>
-                    <td>{$vo.version} </td>
+
                     <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('Version/edit',['id'=>$vo['id']])}" >{$vo.name}</a></td>
                     <td>{$vo.package_type_text} </td>
                     <td>{$vo.version_type_text} </td>
                     <td>{$vo.md5}</td>
                     <td>{$vo.sha1}</td>
+                    <td>{$vo.version} </td>
                     <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('Version/edit',['id'=>$vo['id']])}" >编辑</a></td>
                     <td>
                         <input class="switch"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
-                        <eq name="vo.status" value="1"> href="{:U('Version/publish?method=forbid&ids='.$vo['id'])}" checked
-                            <else/>
-                            href="{:U('Version/publish?method=resume&ids='.$vo['id'])}"</eq>>
+                         data-off-href="{:U('Version/publish?method=forbid&ids='.$vo['id'])}"
+                         data-on-href="{:U('Version/publish?method=resume&ids='.$vo['id'])}"
+                        <eq name="vo.status" value="1">
+                            checked
+                        </eq>
+                        />
                     </td>
                     <td>
 
                         <a href="{:U('Version/del?ids='.$vo['id'])}"
-                           class="confirm ajax-get btn btn-sm btn-info">删除</a>
+                           class="confirm ajax-get">删除</a>
                     </td>
                 </tr>
             </volist>

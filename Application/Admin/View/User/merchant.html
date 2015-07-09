@@ -1,25 +1,21 @@
 
-    <!-- 标题栏 -->
-    <div>
-        <h2>{$meta_title}</h2>
-    </div>
-    <div>
-        <a  id="add-group" class="btn btn-success" href="{:U('add')}">新 增</a>
-    </div>
     <div class="table-responsive">
     <table class="table table-striped table-hover">
         <thead>
         <tr>
             <th><input class="check-all" type="checkbox"/></th>
             <th>UID</th>
+            <th>姓名</th>
             <th>昵称</th>
             <th>手机</th>
-            <th>积分</th>
+            <th>员工编码</th>
+            <th>描述</th>
             <th>登录次数</th>
             <th>最后登录时间</th>
             <th>最后登录IP</th>
-            <th>状态</th>
-            <th>操作</th>
+            <th>编辑</th>
+            <th>授权</th>
+            <th>是否启用</th>
         </tr>
         </thead>
         <tbody>
@@ -28,22 +24,32 @@
                 <tr>
                     <td><input type="checkbox" name="id[]" value="{$vo.uid}" /></td>
                     <td>{$vo.id} </td>
+                    <td>{$vo.real_name}</td>
                     <td>{$vo.username}</td>
                     <td>{$vo.mobile}</td>
-                    <td>{$vo.score}</td>
+                    <td>{$vo.number}</td>
+                    <td>{$vo.description}</td>
                     <td>{$vo.login}</td>
                     <td><span>{$vo.last_login_time|time_format}</span></td>
                     <td><span>{:long2ip($vo['last_login_ip'])}</span></td>
-                    <td>{$vo.status_text|default='----'}</td>
+                    <td> <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('User/editmerchant?uid='.$vo['id'])}">编辑</a></td>
+                    <td> <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"  href="{:U('Access/authorize?uid='.$vo['id'].'&_type=2')}">授权</a></td>
                     <td>
-                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('User/editmerchant?uid='.$vo['id'])}">编辑</a>
-                        <eq name="vo.status" value="1">
-                        <a href="{:U('User/changeStatus?method=forbidUser&id='.$vo['id'].'&_type=2')}" class=" ajax-get">禁用</a>
-                        <else/>
-                        <a href="{:U('User/changeStatus?method=resumeUser&id='.$vo['id'].'&_type=2')}" class=" ajax-get">启用</a>
-                    </eq>
-                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"  href="{:U('Access/authorize?uid='.$vo['uid'].'&_type=2')}">授权</a>
-                        <a href="{:U('User/changeStatus?method=deleteUser&id='.$vo['id'].'&_type=2')}" class="confirm ajax-get">删除</a>
+
+
+                        <input class="switch" data-off-href="{:U('User/changeStatus?method=forbid&id='.$vo['id'].'&_type=2')}"
+                               data-on-href="{:U('User/changeStatus?method=resume&id='.$vo['id'].'&_type=2')}"
+                               type="checkbox" data-size="small"
+
+                        <if condition="$vo.status heq '1'">
+                            data-on-color="success" data-off-color="warning"  checked
+                            <elseif condition="$vo.status heq '0'"/>
+                            data-on-color="success" data-off-color="warning"
+                            <else />
+                            data-on-color="info" data-off-color="warning" checked disabled
+
+                        </if>
+                        />
                     </td>
                 </tr>
             </volist>

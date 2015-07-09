@@ -20,16 +20,16 @@
             <form action="?" method="post" name="form">
                 <div class="form-group">
                     <label for="mobile">账号</label>
-                    <input type="text" class="form-control" id="mobile" name="mobile" placeholder="手机号">
+                    <input type="text" class="form-control  input-lg" id="mobile" name="mobile" placeholder="手机号">
                 </div>
                 <div class="form-group">
                     <div class="row">
                         <div class="col-xs-7 col-sm-8 col-md-8">
-                            <input type="text" class="form-control" id="verify_code" name="verify_code"
+                            <input type="text" class="form-control  input-lg" id="verify_code" name="verify_code"
                                    placeholder="验证码">
                         </div>
                         <div class="col-xs-5 col-sm-4 col-md-4">
-                            <button type="button" class="btn btn-primary btn-block" onclick="getVerifyCode()">获取验证码
+                            <button type="button" class="btn btn-primary btn-lg btn-block" onclick="getVerifyCode()">获取验证码
                             </button>
                         </div>
                     </div>
@@ -37,17 +37,17 @@
                 </div>
                 <div class="form-group">
                     <label for="password">密码</label>
-                    <input type="password" class="form-control" id="password" name="password"
+                    <input type="password" class="form-control  input-lg" id="password" name="password"
                            placeholder="6-16为数字、英文字母大小写">
                 </div>
                 <div class="form-group">
                     <label for="password">确认密码</label>
-                    <input type="password" class="form-control" id="repassword" name="repassword"
+                    <input type="password" class="form-control  input-lg" id="repassword" name="repassword"
                            placeholder="请输入确认密码">
                 </div>
                 <div class="form-group">
                     <label for="real_name">姓名</label>
-                    <input type="text" class="form-control" id="real_name" name="real_name" placeholder="你的真实姓名">
+                    <input type="text" class="form-control input-lg" id="real_name" name="real_name" placeholder="你的真实姓名">
                 </div>
                 <button type="button" class="btn btn-primary btn-lg btn-block" onclick="register()">下一步</button>
             </form>
@@ -148,7 +148,8 @@
             success: function (json) {
                 if (json.success == 1) {
                     $('#msg').html("注册成功，正在跳转...");
-                    alert('注册成功！请下载APP应用登陆...');
+                    window.location.href="http://apitest.cmxue.com/apimchant.php?s=/System/apkDownload";
+//                    alert('注册成功！请下载APP应用登陆...');
                 } else {
                     $('#msg').html("注册失败！错误原因:" + json.message);
                     return false;

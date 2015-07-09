@@ -6,22 +6,24 @@
 // +----------------------------------------------------------------------
 
 namespace Admin\Model;
+
 use Think\Model;
+
 /**
  * 会员模型
  */
-DEFINE('SALTKEY',generate_saltKey());
+DEFINE('SALTKEY', generate_saltKey());
 
-class UcenterMemberModel extends Model{
+class UcenterMemberModel extends Model
+{
 
-    const USER_ADMIN         = 'admin';
-    const USER_MERCHANT      = 'merchant';
-    const USER_MEMBER        = 'member';
+    const USER_ADMIN = 'admin';
+    const USER_MERCHANT = 'merchant';
+    const USER_MEMBER = 'member';
 
 
-
-	/* 用户模型自动验证 */
-	protected $_validate = array(
+    /* 用户模型自动验证 */
+    protected $_validate = array(
 
         /* 验证密码 */
         array('password', '6,32', -4, self::EXISTS_VALIDATE, 'length'), //密码长度不合法
@@ -30,117 +32,121 @@ class UcenterMemberModel extends Model{
 //        array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', -9, self::EXISTS_VALIDATE), //手机格式不正确 TODO:
         array('mobile', 'checkDenyMobile', -10, self::EXISTS_VALIDATE, 'callback'), //过滤手机黑名单
         array('mobile', '', -11, self::EXISTS_VALIDATE, 'unique'), //手机号被占用
-	);
+    );
 
-	/* 用户模型自动完成 */
-	protected $_auto = array(
-		array('password', 'getPwd', self::MODEL_INSERT, 'callback'),
+    /* 用户模型自动完成 */
+    protected $_auto = array(
+        array('password', 'getPwd', self::MODEL_INSERT, 'callback'),
         array('saltkey', SALTKEY),
-		array('reg_time', NOW_TIME, self::MODEL_INSERT),
-		array('reg_ip', 'get_client_ip', self::MODEL_INSERT, 'function', 1),
-		array('update_time', NOW_TIME),
+        array('reg_time', NOW_TIME, self::MODEL_INSERT),
+        array('reg_ip', 'get_client_ip', self::MODEL_INSERT, 'function', 1),
+        array('update_time', NOW_TIME),
         array('is_member', 1),
         array('is_admin', 1),
-	);
+    );
 
-    final public function getPwd( $pwd ){
-        return generate_password( $pwd, SALTKEY);
+    final public function getPwd($pwd)
+    {
+        return generate_password($pwd, SALTKEY);
     }
 
-	/**
-	 * 注册一个新用户
-	 * @param  string $username 用户名
-	 * @param  string $password 用户密码
-	 * @param  string $email    用户邮箱
-	 * @param  string $mobile   用户手机号码
-	 * @return integer          注册成功-用户信息，注册失败-错误编号
-	 */
-	public function register($mobile, $password, $username, $email){
-		$data = array(
-			'username' => $username,
-			'password' => $password,
-			'email'    => $email,
-			'mobile'   => $mobile,
-		);
+    /**
+     * 注册一个新用户
+     * @param  string $username 用户名
+     * @param  string $password 用户密码
+     * @param  string $email 用户邮箱
+     * @param  string $mobile 用户手机号码
+     * @return integer          注册成功-用户信息，注册失败-错误编号
+     */
+    public function register($mobile, $password, $username, $email)
+    {
+        $data = array(
+            'username' => $username,
+            'password' => $password,
+            'email' => $email,
+            'mobile' => $mobile,
+        );
 
-		if(empty($data['username'])) unset($data['username']);
-        if(empty($data['email']))    unset($data['email']);
+        if (empty($data['username'])) unset($data['username']);
+        if (empty($data['email'])) unset($data['email']);
 
-		/* 添加用户 */
-		if($this->create($data)){
-			$uid = $this->add();
-			return $uid ? $uid : 0; //0-未知错误，大于0-注册成功
-		} else {
-			return $this->getError();
-		}
-	}
+        /* 添加用户 */
+        if ($this->create($data)) {
+            $uid = $this->add();
+            return $uid ? $uid : 0; //0-未知错误，大于0-注册成功
+        } else {
+            return $this->getError();
+        }
+    }
 
-	/**
-	 * 用户登录认证
-	 * @param  string  $username 用户名
-	 * @param  string  $password 用户密码
-	 * @param  integer $type     用户名类型 （1-用户名，2-邮箱，3-手机，4-UID,5-全部）
-	 * @return integer           登录成功-用户ID，登录失败-错误编号
+    /**
+     * 用户登录认证
+     * @param  string $username 用户名
+     * @param  string $password 用户密码
+     * @param  integer $type 用户名类型 （1-用户名，2-邮箱，3-手机，4-UID,5-全部）
+     * @return integer           登录成功-用户ID，登录失败-错误编号
      * @author stevin.john
-	 */
-	public function login($username, $password, $type = 1){
-		$map = array();
-		switch ($type) {
-			case 1:
-				$map['username'] = $username;
-				break;
-			case 2:
-				$map['email'] = $username;
-				break;
-			case 3:
-				$map['mobile'] = $username;
-				break;
-			case 4:
-				$map['id'] = $username;
-				break;
+     */
+    public function login($username, $password, $type = 1)
+    {
+        $map = array();
+        switch ($type) {
+            case 1:
+                $map['username'] = $username;
+                break;
+            case 2:
+                $map['email'] = $username;
+                break;
+            case 3:
+                $map['mobile'] = $username;
+                break;
+            case 4:
+                $map['id'] = $username;
+                break;
             case 5:
                 $map['username'] = $username;
-                $map['email']    = $username;
-                $map['mobile']   = $username;
-                $map['_logic']   = 'OR';
+                $map['email'] = $username;
+                $map['mobile'] = $username;
+                $map['_logic'] = 'OR';
                 break;
-			default:
-				return 0; //参数错误
-		}
+            default:
+                return 0; //参数错误
+        }
 
-		/* 获取用户数据 */
-		$user = $this->where($map)->find();
-		if(is_array($user) && $user['is_admin']){
-			/* 验证用户密码 */
-			if(generate_password($password, $user['saltkey']) === $user['password']){
+        /* 获取用户数据 */
+        $user = $this->where($map)->find();
+        if (is_array($user) && $user['is_admin']) {
+            /* 验证用户密码 */
+            if (generate_password($password, $user['saltkey']) === $user['password']) {
                 //是管理员，插入或更新数据admin
-				return $this->updateLogin($user); //登录成功，返回用户ID
-			} else {
-				return -2; //密码错误
-			}
-		} else {
-			return -1; //用户不存在或不是管理员
-		}
-	}
+                return $this->updateLogin($user); //登录成功，返回用户ID
+            } else {
+                return -2; //密码错误
+            }
+        } else {
+            return -1; //用户不存在或不是管理员
+        }
+    }
 
     /**
      * 更新或插入管理员登录信息
      * @param  integer $uid 用户ID
      * @author  stevin.john
      */
-    protected function updateLogin($user){
+    protected function updateLogin($user)
+    {
         $data = array(
-            'id'              => $user['id'],
-            'login'           => array('exp', '`login`+1'),
+            'id' => $user['id'],
+            'login' => array('exp', '`login`+1'),
             'last_login_time' => NOW_TIME,
-            'last_login_ip'   => get_client_ip(1),
-            'status'          => 1,
+            'last_login_ip' => get_client_ip(1),
+            'status' => 1,
         );
         $admin = M(self::USER_ADMIN);
-        $result = $admin->field('id')->where('id='.$user['id'])->find();
-        if( $result ){
+        $result = $admin->field('id')->where('id=' . $user['id'])->find();
+        if ($result) {
             $admin->save($data);
-        }else{
+        } else {
             $admin->add($data);
         }
 
@@ -149,8 +155,8 @@ class UcenterMemberModel extends Model{
 
         /* 记录登录SESSION和COOKIES */
         $auth = array(
-            'uid'             => $user['id'],
-            'mobile'          => $user['mobile'],
+            'uid' => $user['id'],
+            'mobile' => $user['mobile'],
             'last_login_time' => $data['last_login_time'],
         );
 
@@ -164,33 +170,35 @@ class UcenterMemberModel extends Model{
      * 注销当前用户
      * @return void
      */
-    public function logout(){
+    public function logout()
+    {
         session('admin_auth', null);
         session('admin_auth_sign', null);
     }
 
-	/**
-	 * 获取用户信息
-	 * @param  string  $uid         用户ID或用户名
-	 * @param  boolean $is_username 是否使用用户名查询
-	 * @return array                用户信息
-	 */
-	public function info($uid,$method,$is_username = false){
-		$map = array();
-		if($is_username){ //通过用户名获取
-			$map['a.username'] = $uid;
-		} else {
-			$map['a.id'] = $uid;
-		}
-        $UserInfo=array();
+    /**
+     * 获取用户信息
+     * @param  string $uid 用户ID或用户名
+     * @param  boolean $is_username 是否使用用户名查询
+     * @return array                用户信息
+     */
+    public function info($uid, $method, $is_username = false)
+    {
+        $map = array();
+        if ($is_username) { //通过用户名获取
+            $map['a.username'] = $uid;
+        } else {
+            $map['a.id'] = $uid;
+        }
+        $UserInfo = array();
         switch (strtolower($method)) {
             case 'admin':
 
                 /*查询*/
-                $UserInfo=$this
+                $UserInfo = $this
                     ->field('a.id,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
                     ->table('__UCENTER_MEMBER__ a')
-                    ->join('__ADMIN__ b ON  a.id = b.login','LEFT')
+                    ->join('__ADMIN__ b ON  a.id = b.id', 'LEFT')
                     ->where($map)
                     ->find();
                 break;
@@ -199,10 +207,10 @@ class UcenterMemberModel extends Model{
             case'member':
 
                 /*查询*/
-                $UserInfo=$this
-                    ->field('a.id,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                $UserInfo = $this
+                    ->field('a.id,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time,b.qq,b.score')
                     ->table('__UCENTER_MEMBER__ a')
-                    ->join('__MEMBER__ b ON  a.id = b.login','LEFT')
+                    ->join('__MEMBER__ b ON  a.id = b.uid', 'LEFT')
                     //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('neq', '1'),'a.is_member'=>array('eq', '1')))
                     ->where($map)
                     ->find();
@@ -212,123 +220,127 @@ class UcenterMemberModel extends Model{
             case'merchant':
 
                 /*查询*/
-                $UserInfo=$this
-                    ->field('a.id,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                $UserInfo = $this
+                    ->field('a.id,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time,b.number,b.description')
                     ->table('__UCENTER_MEMBER__ a')
-                    ->join('__MERCHANT__ b ON  a.id = b.login','LEFT')
+                    ->join('__MERCHANT__ b ON  a.id = b.id', 'LEFT')
                     //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('eq', '1')))
                     ->where($map)
                     ->find();
                 break;
             default:
-                $this->error='参数错误';
+                $this->error = '参数错误';
                 break;
 
         }
         return $UserInfo;
     }
 
-	/**
-	 * 检测用户信息
-	 * @param  string  $field  用户名
-	 * @param  integer $type   用户名类型 1-用户名，2-用户邮箱，3-用户电话
-	 * @return integer         错误编号
-	 */
-	public function checkField($field, $type = 1){
-		$data = array();
-		switch ($type) {
-			case 1:
-				$data['username'] = $field;
-				break;
-			case 2:
-				$data['email'] = $field;
-				break;
-			case 3:
-				$data['mobile'] = $field;
-				break;
-			default:
-				return 0; //参数错误
-		}
+    /**
+     * 检测用户信息
+     * @param  string $field 用户名
+     * @param  integer $type 用户名类型 1-用户名，2-用户邮箱，3-用户电话
+     * @return integer         错误编号
+     */
+    public function checkField($field, $type = 1)
+    {
+        $data = array();
+        switch ($type) {
+            case 1:
+                $data['username'] = $field;
+                break;
+            case 2:
+                $data['email'] = $field;
+                break;
+            case 3:
+                $data['mobile'] = $field;
+                break;
+            default:
+                return 0; //参数错误
+        }
 
-		return $this->create($data) ? 1 : $this->getError();
-	}
+        return $this->create($data) ? 1 : $this->getError();
+    }
 
 
+    /**
+     * 更新用户信息
+     * @param int $uid 用户id
+     * @param string $password 密码，用来验证
+     * @param array $data 修改的字段数组
+     * @return true 修改成功，false 修改失败
+     * @author huajie <banhuajie@163.com>
+     */
+    public function updateUserFields($uid, $password, $data)
+    {
+        if (empty($uid) || empty($password) || empty($data)) {
+            $this->error = '参数错误！';
+            return false;
+        }
 
-	/**
-	 * 更新用户信息
-	 * @param int $uid 用户id
-	 * @param string $password 密码，用来验证
-	 * @param array $data 修改的字段数组
-	 * @return true 修改成功，false 修改失败
-	 * @author huajie <banhuajie@163.com>
-	 */
-	public function updateUserFields($uid, $password, $data){
-		if(empty($uid) || empty($password) || empty($data)){
-			$this->error = '参数错误！';
-			return false;
-		}
+        //更新前检查用户密码
+        if (!$this->verifyUser($uid, $password)) {
+            $this->error = '验证出错：密码不正确！';
+            return false;
+        }
 
-		//更新前检查用户密码
-		if(!$this->verifyUser($uid, $password)){
-			$this->error = '验证出错：密码不正确！';
-			return false;
-		}
+        //更新用户信息
+        $data = $this->create($data);
+        if ($data) {
 
-		//更新用户信息
-		$data = $this->create($data);
-		if($data){
-
-            if($data['password']){
+            if ($data['password']) {
                 $this->saltkey = SALTKEY;
                 $this->password = $this->getPwd($data['password']);
             }
-			return $this->where(array('id'=>$uid))->save($data);
-		}
+            return $this->where(array('id' => $uid))->save($data);
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	/**
-	 * 验证用户密码
-	 * @param int $uid 用户id
-	 * @param string $password_in 密码
-	 * @return true 验证成功，false 验证失败
-	 * @author huajie <banhuajie@163.com>
-	 */
-	protected function verifyUser($uid, $password_in){
+    /**
+     * 验证用户密码
+     * @param int $uid 用户id
+     * @param string $password_in 密码
+     * @return true 验证成功，false 验证失败
+     * @author huajie <banhuajie@163.com>
+     */
+    protected function verifyUser($uid, $password_in)
+    {
 
 
         $user = $this->getByid($uid);
 
-        if(generate_password($password_in, $user['saltkey']) === $user['password']){
+        if (generate_password($password_in, $user['saltkey']) === $user['password']) {
             return true;
         }
 
-		return false;
-	}
+        return false;
+    }
 
     /**
      * 检测手机是不是被禁止注册
      * @param  string $mobile 手机
      * @return boolean        ture - 未禁用，false - 禁止注册
      */
-    protected function checkDenyMobile($mobile){
+    protected function checkDenyMobile($mobile)
+    {
         return true;
     }
 
     /**
      * 获取用户列表
-     * @param 条件：admin 管理员，member 普通用户，merchant 商户
+     * @param 条件 ：admin 管理员，member 普通用户，merchant 商户
      * @param $method
      * @return array|string
      */
-     public function userList($method){
-        $UserInfo=array();
+    public function userList($method)
+    {
+        $UserInfo = array();
         switch (strtolower($method)) {
             case 'admin':
 
-                $map=array('is_admin'=>array('eq', '1'));
+                $map = array('is_admin' => array('eq', '1'));
 
 
                 /*分页*/
@@ -349,11 +361,11 @@ class UcenterMemberModel extends Model{
                 $this->setProperty('options', $options);
 
 
-               /*查询*/
-                $UserInfo=$this
-                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                /*查询*/
+                $UserInfo = $this
+                    ->field('a.id,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
                     ->table('__UCENTER_MEMBER__ a')
-                    ->join('__ADMIN__ b ON  a.id = b.login','LEFT')
+                    ->join('__ADMIN__ b ON  a.id = b.id', 'LEFT')
                     ->where($map)
                     ->select();
 
@@ -368,7 +380,7 @@ class UcenterMemberModel extends Model{
 
             case'member':
 
-                $map=array('is_member'=>array('eq', '1'));
+                $map = array('is_member' => array('eq', '1'));
 
 
                 /*分页*/
@@ -389,10 +401,10 @@ class UcenterMemberModel extends Model{
                 $this->setProperty('options', $options);
 
 
-                $UserInfo=$this
-                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                $UserInfo = $this
+                    ->field('a.id,a.mobile,a.username,a.email,a.real_name,a.reg_time,b.status,b.last_login_ip,b.last_login_time,b.score,b.login')
                     ->table('__UCENTER_MEMBER__ a')
-                    ->join('__MEMBER__ b ON  a.id = b.login','LEFT')
+                    ->join('__MEMBER__ b ON  a.id = b.uid', 'LEFT')
                     //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('neq', '1'),'a.is_member'=>array('eq', '1')))
                     ->where($map)
                     ->select();
@@ -408,7 +420,7 @@ class UcenterMemberModel extends Model{
 
             case'merchant':
 
-                $map=array('is_merchant'=>array('eq', '1'));
+                $map = array('is_merchant' => array('eq', '1'));
 
                 /*分页*/
                 $total = $this->where($map)->count();
@@ -427,10 +439,10 @@ class UcenterMemberModel extends Model{
 
                 $this->setProperty('options', $options);
 
-                $UserInfo=$this
-                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                $UserInfo = $this
+                    ->field('a.id,a.mobile,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time,b.number,b.description,b.login,a.real_name')
                     ->table('__UCENTER_MEMBER__ a')
-                    ->join('__MERCHANT__ b ON  a.id = b.login','LEFT')
+                    ->join('__MERCHANT__ b ON  a.id = b.id', 'LEFT')
                     //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('eq', '1')))
                     ->where($map)
                     ->select();
@@ -445,7 +457,7 @@ class UcenterMemberModel extends Model{
 
 
             default:
-                $this->error='参数错误';
+                $this->error = '参数错误';
                 break;
 
         }
@@ -453,4 +465,213 @@ class UcenterMemberModel extends Model{
 
     }
 
+    /**
+     * 改编状态
+     * @param $model
+     * @param $method
+     * @return bool
+     */
+    function changeStatus($model,$key, $method)
+    {
+        $id = I('id');
+        if (empty($id)) {
+            $this->error = '参数错误！';
+            return false;
+        }
+        //判断用户id是否合法
+        if ($this->getFieldByUid($id, 'id') == false) {
+            $this->error = "编号为{$id}的角色不存在！";
+            return false;
+        }
+
+        switch (strtolower($method)) {
+            case 'forbid':
+
+                $map = array('status' => 0);
+                break;
+
+            case 'resume':
+
+                $map = array('status' => 1);
+                break;
+
+            case 'delete':
+
+                $map = array('status' => -1);
+
+                break;
+
+            default:
+                $this->error = '参数非法';
+                return false;
+        }
+
+        return D($model)->where(array($key => $id))->save($map);
+    }
+
+
+    /**
+     * 修改用户详细信息
+     * @param $method
+     * @return bool
+     */
+    function editInfo($method)
+    {
+
+        $id = I('id');
+        if (empty($id)) {
+            $this->error = '参数非法';
+            return false;
+        }
+
+        $data = $this->create();
+        switch (strtolower($method)) {
+            case 'admin':
+
+                $Admin = M('Admin');
+                $result = $Admin->where('id=' . $id)->field('id')->find();
+
+                $detail = $Admin->create();
+                $detail['id'] = $id;
+
+
+                M()->startTrans();
+                if ($result) {
+                    $msg = $Admin->save($detail);
+                } else {
+                    $msg = $Admin->add($detail);
+                }
+
+                if (false !== $msg) {
+                    if (false!== $this->save($data)) {
+                        M()->commit();
+                        return true;
+                    } else {
+                        M()->rollback();
+                        $this->error = '编辑失败';
+                        return false;
+                    }
+                } else {
+                    M()->rollback();
+                    $this->error = '编辑失败';
+                    return false;
+                }
+
+                break;
+
+            case 'merchant':
+
+
+                $Merchant = M('Merchant');
+                $result = $Merchant->where('id=' . $id)->field('id')->find();
+
+                $detail = $Merchant->create();
+
+                $detail['id'] = $id;
+
+
+                M()->startTrans();
+                if ($result) {
+                    $msg = $Merchant->save($detail);
+
+                } else {
+                    $msg = $Merchant->add($detail);
+                }
+
+                if (false !== $msg) {
+                    if (false!== $this->save($data)) {
+                        M()->commit();
+                        return true;
+                    } else {
+                        M()->rollback();
+                        $this->error = '编辑基础信息失败';
+                        return false;
+                    }
+                } else {
+                    M()->rollback();
+                    $this->error = '编辑详细信息失败';
+                    return false;
+                }
+
+
+
+                break;
+
+            case 'member':
+
+                $member = D('Member');
+                $result = $member->where('uid=' . $id)->field('uid')->find();
+
+//                $detail['uid'] = $id;
+//                $detail['qq'] = I('post.qq');
+//                $detail['score'] = I('post.score');
+
+                $detail = $member->create();
+                $detail['uid'] = $id;
+
+
+                M()->startTrans();
+                if ($result) {
+                    $msg = $member->save($detail);
+                } else {
+                    $msg = $member->add($detail);
+                }
+
+                if (false !== $msg) {
+                    if (false!== $this->save($data)) {
+                        M()->commit();
+                        return true;
+                    } else {
+                        M()->rollback();
+                        $this->error = '编辑失败';
+                        return false;
+                    }
+                } else {
+                    M()->rollback();
+                    $this->error = '编辑失败';
+                    return false;
+                }
+                break;
+
+
+            default:
+                $this->error = '参数非法';
+                return false;
+        }
+    }
+
+   function editProfile(){
+       $Admin = M('Admin');
+       $data = $this->create();
+       $result = $Admin->where('id=' . UID)->field('id')->find();
+
+       $detail = $Admin->create();
+       $detail['id'] = UID;
+
+
+       M()->startTrans();
+       if ($result) {
+           $msg = $Admin->save($detail);
+       } else {
+           $msg = $Admin->add($detail);
+       }
+
+       if (false !== $msg) {
+           if (false!== $this->save($data)) {
+               M()->commit();
+               return true;
+           } else {
+               M()->rollback();
+               $this->error = '编辑失败';
+               return false;
+           }
+       } else {
+           M()->rollback();
+           $this->error = '编辑失败';
+           return false;
+       }
+   }
+
 }
+
+

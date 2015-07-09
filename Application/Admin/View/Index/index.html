@@ -43,13 +43,13 @@
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">你好，<em
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" role="button" aria-expanded="false">你好，<em
                                 title="{:session('admin_auth.mobile')}">{:session('admin_auth.mobile')}</em><span
                                 class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu">
                             <!--<li class="manager">你好，<em title="{:session('user_auth.username')}">{:session('user_auth.username')}</em></li>-->
+                            <li><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('User/editProfile')}">个人资料</a></li>
                             <li><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('User/updatePassword')}">修改密码</a></li>
-                            <!--<li><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('User/updateNickname')}">修改昵称</a></li>-->
                             <li><a href="{:U('Public/logout')}">退出</a></li>
                         </ul>
                     </li>

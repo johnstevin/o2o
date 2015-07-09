@@ -64,15 +64,28 @@
                                         href="{:U('edit?id='.$vo['id'])}">编辑</a></td>
 
                                 <td>
-                                    <input class="switch"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
-                                    <eq name="vo.status" value="1"> href="{:U('Product/changeStatus?method=forbid&id='.$vo['id'])}" checked
-                                        <else/>
-                                        href="{:U('Product/changeStatus?method=resume&id='.$vo['id'])}"</eq>>
+                                    <input class="switch"  type="checkbox" data-size="small"
+                                     data-off-href="{:U('Product/changeStatus?method=forbid&id='.$vo['id'])}"
+                                     data-on-href="{:U('Product/changeStatus?method=resume&id='.$vo['id'])}"
+
+                                    <if condition="$vo.status heq '1'">
+                                        data-on-color="success" data-off-color="warning"  checked
+                                        <elseif condition="($vo.status heq '2') OR ($name heq 3)"/>
+                                        data-on-color="info" data-off-color="warning" checked disabled
+
+                                        <else />
+                                        data-on-color="success" data-off-color="warning"
+
+                                    </if>
+                                    />
+
+
+
                                 </td>
                                 <td>
 
                                     <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
-                                       class="confirm ajax-get btn btn-sm btn-info">删除</a>
+                                       class="confirm ajax-get">删除</a>
                                 </td>
 
                             </tr>

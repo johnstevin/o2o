@@ -29,14 +29,17 @@
                         <!--<td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('Norms/edit',['id'=>$vo['id']])}" >编辑</a></td>-->
                         <td>
                             <input class="switch"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
-                            <eq name="vo.status" value="1"> href="{:U('Norms/changeStatus?method=forbidnorms&id='.$vo['id'])}" checked
-                                <else/>
-                                href="{:U('Norms/changeStatus?method=resumenorms&id='.$vo['id'])}"</eq>>
+                                   data-off-href="{:U('Norms/changeStatus?method=forbidnorms&id='.$vo['id'])}"
+                                   data-on-href="{:U('Norms/changeStatus?method=resumenorms&id='.$vo['id'])}"
+                            <eq name="vo.status" value="1">
+                                checked
+                            </eq>
+                            />
                         </td>
                         <td>
 
                             <a href="{:U('Norms/changeStatus?method=deletenorms&id='.$vo['id'])}"
-                               class="confirm ajax-get btn btn-sm btn-info">删除</a>
+                               class="confirm ajax-get">删除</a>
                         </td>
                     </tr>
                 </volist>

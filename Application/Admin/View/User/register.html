@@ -16,37 +16,18 @@
     <hr>
     <div class="row">
         <div class="col-md-6">
+            <div  id="msg"  ></div>
             <form action="?" method="post" name="form">
-                <div class="form-group">
-                    <label for="username">用户名</label>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="用户名">
-                </div>
-                <div class="form-group">
-                    <label for="password">密码</label>
-                    <input type="password" class="form-control" id="password" name="password"
-                           placeholder="6-16为数字、英文字母大小写">
-                </div>
-                <div class="form-group">
-                    <label for="password">确认密码</label>
-                    <input type="password" class="form-control" id="repassword" name="repassword"
-                           placeholder="请输入确认密码">
-                </div>
-                <div class="form-group">
-                    <label for="email">邮箱</label>
-                    <input type="text" class="form-control" id="email" name="email" placeholder="邮箱">
-                </div>
-
-
                 <div class="form-group">
                     <div>
                         <label>手机</label>
                     </div>
                     <div class="row">
                         <div class="col-xs-7 col-sm-8 col-md-8">
-                            <input type="text" class="form-control" id="mobile" name="mobile" placeholder="手机号码">
+                            <input type="text" class="form-control  input-lg" id="mobile" name="mobile" placeholder="手机号码">
                         </div>
                         <div class="col-xs-5 col-sm-4 col-md-4">
-                            <button type="button" class="btn btn-default btn-block" onclick="getVerifyCode()">获取验证码
+                            <button type="button" class="btn btn-default btn-lg btn-block" onclick="getVerifyCode()">获取验证码
                             </button>
                         </div>
                     </div>
@@ -55,18 +36,37 @@
 
                 <div class="form-group">
                     <label for="verify_code">短信验证码</label>
-                    <input type="text" class="form-control" id="verify_code" name="verify_code"
+                    <input type="text" class="form-control  input-lg" id="verify_code" name="verify_code"
                            placeholder="短信验证码">
                 </div>
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" class="form-control input-lg" id="username" name="username" placeholder="用户名">
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" class="form-control  input-lg" id="password" name="password"
+                           placeholder="6-16为数字、英文字母大小写">
+                </div>
+                <div class="form-group">
+                    <label for="password">确认密码</label>
+                    <input type="password" class="form-control  input-lg" id="repassword" name="repassword"
+                           placeholder="请输入确认密码">
+                </div>
+                <div class="form-group">
+                    <label for="email">邮箱</label>
+                    <input type="text" class="form-control  input-lg" id="email" name="email" placeholder="邮箱">
+                </div>
 
-                <button type="button" class="btn btn-info btn-block" onclick="register()">注册</button>
+
+                <button type="button" class="btn btn-info btn-lg btn-block" onclick="register()">注册</button>
             </form>
 
-            <div  id="msg"  ></div>
+
         </div>
         <div class="colcol-md-offset-2 col-md-4">
             已经有账号？<br>
-            <a type="button" href="{:U('Public/login')}" class="btn btn-default" >立即登陆</a>
+            <a type="button" href="{:U('Public/login')}" class="btn btn-lg btn-default" >立即登陆</a>
         </div>
     </div>
 
@@ -83,16 +83,16 @@
         var target = "{:U('getVerifyCode')}";
         var mobile = $("#mobile").val();
         if (mobile == "") {
-            $('#msg').html("手机号不能为空！");
+            $('#msg').addClass('alert alert-warning').html("手机号不能为空！");
             $("#mobile").focus();
             return false;
         }
         $.get(target, {"mobile": mobile}, function (data) {
             //TODO
             if(data.status){
-                $('#msg').html("发送成功！");
+                $('#msg').addClass('alert alert-success').html("发送成功！");
             }else{
-                $('#msg').html("发送失败！错误原因:" + data.info);
+                $('#msg').addClass('alert alert-warning').html("发送失败！错误原因:" + data.info);
             }
         });
     }
@@ -106,24 +106,24 @@
         var verify_code = $('#verify_code').val();
         var group_id = "{:I('key')}";
         if (group_id == '' || group_id == null) {
-            $('#msg').html("注册失败！非法注册！");
+            $('#msg').addClass('alert alert-warning').html("注册失败！非法注册！");
             //};
             return false;
         }
 
         if (mobile == "") {
-            $('#msg').html("手机号不能为空！");
+            $('#msg').addClass('alert alert-warning').html("手机号不能为空！");
             $("#mobile").focus();
             return false;
         }
         if (password == "") {
-            $('#msg').html("密码不能为空！");
+            $('#msg').addClass('alert alert-warning').html("密码不能为空！");
             $("#password").focus();
             return false;
         }
 
         if(password!=repassword){
-            $('#msg').html("两次密码输入不一致！");
+            $('#msg').addClass('alert alert-warning').html("两次密码输入不一致！");
             $("#repassword").focus();
             return false;
         }
@@ -146,15 +146,15 @@
                 "verify_code":verify_code
             },
             beforeSend: function () {
-                $('#msg').html("正在注册...");
+                $('#msg').addClass('alert alert-success').html("正在注册...");
             },
             success: function(json){
                 if(json.status==1){
-                    $('#msg').html("注册成功，正在跳转...");
+                    $('#msg').addClass('alert alert-success').html("注册成功，正在跳转...");
                     alert('注册成功！');
                     location.href="{:U('Public/login')}";
                 }else{
-                    $('#msg').html("注册失败！Error:"+json.info);
+                    $('#msg').addClass('alert alert-warning').html("注册失败！"+json.info);
                     return false;
                 }
             }
