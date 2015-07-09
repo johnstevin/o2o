@@ -53,9 +53,12 @@
                     <td><span>{$vo.public_text}</span></td>
                     <td>
                         <input class="switch"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
-                        <eq name="vo.status" value="1">href="{:U('Role/changeStatus?method=forbid&id='.$vo['id'])}" checked
-                            <else/>
-                            href="{:U('Role/changeStatus?method=resume&id='.$vo['id'])}"</eq>>
+                        data-off-href="{:U('Role/changeStatus?method=forbid&id='.$vo['id'])}"
+                        data-on-href="{:U('Role/changeStatus?method=resume&id='.$vo['id'])}"
+                        <eq name="vo.status" value="1">
+                            checked
+                        </eq>
+                        />
                     </td>
                     <td>
 
@@ -67,7 +70,7 @@
                                <!--class="ajax-get">启用</a>-->
                         <!--</eq>-->
                         <a  href="{:U('Role/changeStatus?method=delete&id='.$vo['id'])}"
-                           class="confirm ajax-get btn btn-sm btn-info">删除</a>
+                           class="confirm ajax-get">删除</a>
                     </td>
                 </tr>
             </volist>

@@ -17,12 +17,12 @@ class UserController extends AdminController
     {
         $ucentermember = D('UcenterMember');
         $list = $ucentermember->userList('Member');
-        int_to_string($list);
+        //int_to_string($list);
         $this->assign('_list', $list['data']);
         $this->assign('_page', $list['_page']);
         $this->meta_title = '用户信息';
         // 记录当前列表页的cookie
-        Cookie('__forward__',$_SERVER['REQUEST_URI']);
+        Cookie('__forward__', $_SERVER['REQUEST_URI']);
         $this->display();
     }
 
@@ -34,12 +34,12 @@ class UserController extends AdminController
     {
         $ucentermember = D('UcenterMember');
         $list = $ucentermember->userList('merchant');
-        int_to_string($list);
+        //int_to_string($list);
         $this->assign('_list', $list['data']);
         $this->assign('_page', $list['_page']);
         $this->meta_title = '商户信息';
         // 记录当前列表页的cookie
-        Cookie('__forward__',$_SERVER['REQUEST_URI']);
+        Cookie('__forward__', $_SERVER['REQUEST_URI']);
         $this->display();
     }
 
@@ -50,14 +50,14 @@ class UserController extends AdminController
     {
         $ucentermember = D('UcenterMember');
         $list = $ucentermember->userList('admin');
-        int_to_string($list);
+        // int_to_string($list);
 
         $this->assign('_list', $list['data']);
         $this->assign('_page', $list['_page']);
 
         $this->meta_title = '管理员信息';
         // 记录当前列表页的cookie
-        Cookie('__forward__',$_SERVER['REQUEST_URI']);
+        Cookie('__forward__', $_SERVER['REQUEST_URI']);
         $this->display();
     }
 
@@ -65,20 +65,20 @@ class UserController extends AdminController
      * 编辑管理员
      * @param null $uid
      */
-    public function editadmin($uid=null)
+    public function editadmin($uid = null)
     {
 
         $ucentermember = D('UcenterMember');
         if (IS_POST) {
-            if (false !== $ucentermember->update()) {
-                $this->success('新增成功！');
+            if (false !== $ucentermember->editInfo('admin')) {
+                $this->success('编辑成功！');
             } else {
                 $error = $ucentermember->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
 
-            $info = $uid ? $ucentermember->info($uid,$type='admin') : '';
+            $info = $uid ? $ucentermember->info($uid, $type = 'admin') : '';
 
             $this->assign('info', $info);
             $this->meta_title = '编辑信息';
@@ -91,20 +91,20 @@ class UserController extends AdminController
      * 编辑商家
      * @param null $uid
      */
-    public function editmerchant($uid=null)
+    public function editmerchant($uid = null)
     {
 
         $ucentermember = D('UcenterMember');
         if (IS_POST) {
-            if (false !== $ucentermember->update()) {
-                $this->success('新增成功！');
+            if (false !== $ucentermember->editInfo('merchant')) {
+                $this->success('编辑成功！');
             } else {
                 $error = $ucentermember->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
 
-            $info = $uid ? $ucentermember->info($uid,$type='merchant') : '';
+            $info = $uid ? $ucentermember->info($uid, $type = 'merchant') : '';
 
             $this->assign('info', $info);
             $this->meta_title = '编辑信息';
@@ -117,20 +117,20 @@ class UserController extends AdminController
      * 编辑用户
      * @param null $uid
      */
-    public function editmember($uid=null)
+    public function editmember($uid = null)
     {
 
         $ucentermember = D('UcenterMember');
         if (IS_POST) {
-            if (false !== $ucentermember->update()) {
-                $this->success('新增成功！');
+            if (false !== $ucentermember->editInfo('member')) {
+                $this->success('编辑成功！');
             } else {
                 $error = $ucentermember->getError();
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
 
-            $info = $uid ? $ucentermember->info($uid,$type='member') : '';
+            $info = $uid ? $ucentermember->info($uid, $type = 'member') : '';
 
             $this->assign('info', $info);
             $this->meta_title = '编辑信息';
@@ -139,6 +139,26 @@ class UserController extends AdminController
 
     }
 
+
+    function editProfile(){
+        $ucentermember = D('UcenterMember');
+        if (IS_POST) {
+            if (false !== $ucentermember->editProfile()) {
+                $this->success('编辑成功！');
+            } else {
+                $error = $ucentermember->getError();
+                $this->error(empty($error) ? '未知错误！' : $error);
+            }
+        } else {
+
+            $info = $ucentermember->info(UID, $type = 'admin');
+
+            $this->assign('info', $info);
+            $this->meta_title = '编辑信息';
+            $this->display('editadmin');
+        }
+
+    }
     /**
      * 用户行为列表
      * @author Liu Hui
@@ -149,8 +169,8 @@ class UserController extends AdminController
         $Action = M('Action')->where(array('status' => array('gt', -1)));
         $list = $this->lists($Action);
         int_to_string($list);
-         //记录当前列表页的cookie
-         Cookie('__forward__',$_SERVER['REQUEST_URI']);
+        //记录当前列表页的cookie
+        Cookie('__forward__', $_SERVER['REQUEST_URI']);
 
         $this->assign('_list', $list);
         $this->meta_title = '用户行为';
@@ -264,7 +284,7 @@ class UserController extends AdminController
             if (false !== $res) {
                 $this->success('修改密码成功！');
             } else {
-                $error =$this->showRegError($ucentermember->getError());
+                $error = $this->showRegError($ucentermember->getError());
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
@@ -278,23 +298,90 @@ class UserController extends AdminController
      * @param  integer $code 错误编码
      * @return string        错误信息
      */
-    private function showRegError($code = 0){
+    private function showRegError($code = 0)
+    {
         switch ($code) {
-            case -1:  $error = '用户名长度必须在16个字符以内！'; break;
-            case -2:  $error = '用户名被禁止注册！'; break;
-            case -3:  $error = '用户名被占用！'; break;
-            case -4:  $error = '密码长度必须在6-30个字符之间！'; break;
-            case -5:  $error = '邮箱格式不正确！'; break;
-            case -6:  $error = '邮箱长度必须在1-32个字符之间！'; break;
-            case -7:  $error = '邮箱被禁止注册！'; break;
-            case -8:  $error = '邮箱被占用！'; break;
-            case -9:  $error = '手机格式不正确！'; break;
-            case -10: $error = '手机被禁止注册！'; break;
-            case -11: $error = '手机号被占用！'; break;
-            case -12: $error = '用户注册失败！code:-12'; break;
-            case -13: $error = '分配授权失败！code:-13'; break;
-            default:  $error = $code;
+            case -1:
+                $error = '用户名长度必须在16个字符以内！';
+                break;
+            case -2:
+                $error = '用户名被禁止注册！';
+                break;
+            case -3:
+                $error = '用户名被占用！';
+                break;
+            case -4:
+                $error = '密码长度必须在6-30个字符之间！';
+                break;
+            case -5:
+                $error = '邮箱格式不正确！';
+                break;
+            case -6:
+                $error = '邮箱长度必须在1-32个字符之间！';
+                break;
+            case -7:
+                $error = '邮箱被禁止注册！';
+                break;
+            case -8:
+                $error = '邮箱被占用！';
+                break;
+            case -9:
+                $error = '手机格式不正确！';
+                break;
+            case -10:
+                $error = '手机被禁止注册！';
+                break;
+            case -11:
+                $error = '手机号被占用！';
+                break;
+            case -12:
+                $error = '用户注册失败！code:-12';
+                break;
+            case -13:
+                $error = '分配授权失败！code:-13';
+                break;
+            default:
+                $error = $code;
         }
         return $error;
+    }
+
+
+    /**
+     * 状态修改
+     */
+    public function changeStatus($method = null)
+    {
+        if (empty($_REQUEST['id'])) {
+            $this->error('请选择要操作的数据!');
+        }
+        /*根据用户type判断是组织类型*/
+        $_type = I('_type');
+        switch (strtolower($_type)) {
+            case '1':
+                $model = 'Admin';
+                $key='id';
+                break;
+            case'3':
+                $model = 'Member';
+                $key='uid';
+                break;
+            case'2':
+                $model = 'Merchanter';
+                $key='id';
+                break;
+            default:
+                $this->error('参数错误');
+                break;
+        }
+
+        $ucentermember = D('UcenterMember');
+        if (false !== $ucentermember->changeStatus($model,$key, $method)) {
+            $this->success('状态修改成功');
+        } else {
+            $error = $ucentermember->getError();
+            $this->error(empty($error) ? '未知错误' : $error);
+        }
+
     }
 }

@@ -147,14 +147,17 @@
 
                     <td>
                         <input class="switch"  type="checkbox" data-size="small" data-on-color="success" data-off-color="warning"
-                        <eq name="vo.status" value="1"> href="{:U('Region/changeStatus?method=forbidregion&id='.$vo['id'])}" checked
-                            <else/>
-                            href="{:U('Region/changeStatus?method=resumeregion&id='.$vo['id'])}"</eq>>
+                               data-off-href="{:U('Region/changeStatus?method=forbidregion&id='.$vo['id'])}"
+                               data-on-href="{:U('Region/changeStatus?method=resumeregion&id='.$vo['id'])}"
+                        <eq name="vo.status" value="1">
+                        checked
+                        </eq>
+                        />
                     </td>
                     <td>
 
                         <a href="{:U('Region/changeStatus?method=deleteregion&id='.$vo['id'])}"
-                           class="confirm ajax-get btn btn-sm btn-info">删除</a>
+                           class="confirm ajax-get">删除</a>
                     </td>
 
             </volist>
