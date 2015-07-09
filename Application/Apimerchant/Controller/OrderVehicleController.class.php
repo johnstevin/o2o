@@ -264,7 +264,7 @@ class OrderVehicleController extends ApiController{
             E('非法调用，请用POST命令');
         $model=D('OrderVehicle');
         if (!($data=$model->create()))
-            E('参数传递失败');
+            E('参数传递失败'.$model->getError());
 
         $id=I('post.id');//为了避免传递参数时混淆，强制指定post
 

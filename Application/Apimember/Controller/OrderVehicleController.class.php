@@ -117,9 +117,11 @@ class OrderVehicleController extends ApiController
      * 参数：
      * worker_id 洗车工ID
      * address 车辆地址，必须
+     * car_number 车牌号，必须
+     * consignee 车主姓名，必须
+     * mobile 车主电话，必须
      * lnglat  车辆位置，格式为'lng lat'，必须
      * preset_time 预定时间，绝对时间戳，必须
-     * car_number 车牌号，必须
      * user_picture_ids  用户照片ID，用','隔开，必须
      * </pre>
      * @author WangJiang

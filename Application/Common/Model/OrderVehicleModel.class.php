@@ -41,6 +41,8 @@ class OrderVehicleModel extends AdvModel{
         'add_ip',
         'update_time',
         'update_ip',
+        'consignee',
+        'mobile',
         '_type' => [
             'id'=>'int',
             'order_code'=>'string',
@@ -59,6 +61,8 @@ class OrderVehicleModel extends AdvModel{
             'add_ip'=>'int',
             'update_time'=>'int',
             'update_ip'=>'int',
+            'consignee'=>'string',
+            'mobile'=>'string',
         ]
     ];
 
@@ -104,25 +108,44 @@ class OrderVehicleModel extends AdvModel{
         [
             'price',
             'currency',
-            '价格格式错误'
+            '价格格式错误',
+            [self::EXISTS_VALIDATE,
+            self::MODEL_BOTH]
         ],
         [
             'address',
             'require',
             '地址不能为空',
-            self::MUST_VALIDATE
+            [self::MUST_VALIDATE,
+            self::MODEL_INSERT]
+        ],
+        [
+            'consignee',
+            'require',
+            '车主姓名不能为空',
+            [self::MUST_VALIDATE,
+            self::MODEL_INSERT]
+        ],
+        [
+            'mobile',
+            'require',
+            '车主手机不能为空',
+            [self::MUST_VALIDATE,
+            self::MODEL_INSERT]
         ],
         [
             'lnglat',
             'require',
             '坐标不能为空',
-            self::MUST_VALIDATE
+            [self::MUST_VALIDATE,
+            self::MODEL_INSERT]
         ],
         [
             'preset_time',
             'require',
             '预定时间不能为空',
-            self::MUST_VALIDATE
+            [self::MUST_VALIDATE,
+            self::MODEL_INSERT]
         ],
         [
             'status',
@@ -336,21 +359,30 @@ class OrderVehicleModel extends AdvModel{
         $pageSize > 50 and $pageSize = 50;
         $where['sq_order_vehicle.user_id']=$uid;
 
-        if(!is_null($status))
-            $where['sq_order_vehicle.status']=$status;
+        if(!is_null($status)){
+            if(is_array($status))
+                $where['sq_order_vehicle.status']=['in',$status];
+            else
+                $where['sq_order_vehicle.status']=$status;
+        }
         if(!is_null($payStatus))
             $where['sq_order_vehicle.pay_status']=$payStatus;
         if(!is_null($orderCode))
             $where['sq_order_vehicle.order_code']=$orderCode;
         $data = $this
             ->join('left join sq_merchant_shop on sq_merchant_shop.id=sq_order_vehicle.shop_id')
+            ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
+            //->join('left join sq_ucenter_member on sq_ucenter_member.id=sq_order_vehicle.user_id')
             ->field(['st_astext(sq_order_vehicle.lnglat) as lnglat',
                 'sq_order_vehicle.id',
-                'ifnull(sq_merchant_shop.title,\'\') as shop',
+                'ifnull(sq_merchant_shop.title,\'\') as shop_title',
+                'ifnull(sq_picture.path,\'\') as shop_picture',
                 'sq_order_vehicle.order_code',
                 'sq_order_vehicle.user_id',
+                //'ifnull(sq_ucenter_member.real_name,\'\') as user_name',
                 'sq_order_vehicle.shop_id',
                 'sq_order_vehicle.status',
+                'sq_order_vehicle.pay_status',
                 'sq_order_vehicle.worker_id',
                 'sq_order_vehicle.address',
                 'sq_order_vehicle.car_number',
@@ -358,7 +390,9 @@ class OrderVehicleModel extends AdvModel{
                 'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
                 'sq_order_vehicle.add_time',
                 'sq_order_vehicle.update_time',
-                'sq_order_vehicle.pay_status',
+                'consignee',
+                'mobile',
+
             ])
             ->where($where)
             ->page($page, $pageSize)
@@ -366,12 +400,12 @@ class OrderVehicleModel extends AdvModel{
             ->select();
 
         foreach($data as &$i){
-            $i['worder_pictures']=[];
+            $i['worker_pictures']=[];
             foreach(D('Picture')
                         ->field(['path'])
                         ->where(['id'=>['in',$i['worder_picture_ids']]])
                         ->select() as $p){
-                $i['worder_pictures'][]=$p['path'];
+                $i['worker_pictures'][]=$p['path'];
             }
             unset($i['worder_picture_ids']);
         }
