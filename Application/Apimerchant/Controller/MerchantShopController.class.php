@@ -224,6 +224,7 @@ class MerchantShopController extends ApiController
 
                 //获得担任店长的商铺组
                 $groupIds=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'),true);
+                //dump($groupIds);die;
                 $model = D('MerchantShop');
 
                 $where['group_id'] = ['in', $groupIds];
@@ -232,7 +233,8 @@ class MerchantShopController extends ApiController
                 $type !== '0' and $where['sq_merchant_shop.type'] = $type;
                 !is_null($title) and $where['title'] = ['like', "%$title%"];
                 !is_null($status) and $where['sq_merchant_shop.status'] = $status;
-                $data = $model->field(['sq_merchant_shop.id',
+                $data = $model
+                    ->field(['sq_merchant_shop.id',
                     'title',
                     'description',
                     'group_id',
@@ -262,15 +264,22 @@ class MerchantShopController extends ApiController
                     //end
                     'ifnull(sq_picture.path,\'\') as picture_path',
                     'ifnull(yyzz_pic.path,\'\') as yyzz_picture_path',
+                    'ifnull(spwsxkz_pic.path,\'\') as spwsxkz_picture_path',
+                    'ifnull(id_cart_front_pic.path,\'\') as id_cart_front_picture_path',
+                    'ifnull(id_cart_back_pic.path,\'\') as id_cart_back_picture_path',
                     'st_astext(sq_merchant_shop.lnglat) as lnglat'])
                     ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
                     ->join('left join sq_picture as yyzz_pic on yyzz_pic.id=sq_merchant_shop.yyzz_picture')
-                    ->where($where)->page($page,$pageSize)->select();
+                    ->join('left join sq_picture as spwsxkz_pic on spwsxkz_pic.id=sq_merchant_shop.spwsxkz_picture')
+                    ->join('left join sq_picture as id_cart_front_pic on id_cart_front_pic.id=sq_merchant_shop.id_cart_front_picture')
+                    ->join('left join sq_picture as id_cart_back_pic on id_cart_back_pic.id=sq_merchant_shop.id_cart_back_picture')
+                    ->where($where)
+                    ->page($page,$pageSize)
+                    ->select();
 
                 foreach ($data as &$i) {
                     $sid = $i['id'];
                     $tags = D()->query("select tag_id from sq_shop_tag where shop_id=$sid;");
-                    //print_r($i);print_r($tags);die;
                     $i['tags'] = [];
                     foreach ($tags as $t) {
                         $i['tags'][] = $t['tag_id'];
@@ -285,6 +294,71 @@ class MerchantShopController extends ApiController
         } catch (\Exception $ex) {
             $this->apiError(50022, $ex->getMessage());
         }
+    }
+
+    /**
+     * 获得店铺信息,需要accesstoken
+     * @author WangJiang
+     * @param $id  店铺ＩＤ
+     */
+    public function getShop($id){
+        $groupIds=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'));
+        $groupIds=array_merge($groupIds,$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO')));
+
+        $m=new MerchantShopModel();
+        $m->find($id);
+
+        if(in_array($m->group_id,$groupIds))
+            E('用户无权查看该店铺');
+
+        $data=$m->field(['sq_merchant_shop.id',
+            'title',
+            'description',
+            'group_id',
+            'sq_merchant_shop.status',
+            'sq_merchant_shop.type',
+            'open_status',
+            'open_time_mode',
+            'begin_open_time',
+            'end_open_time',
+            'phone_number',
+            'address',
+            'add_uid',
+            'region_id',
+            'pay_delivery_time_begin',
+            'pay_delivery_time_end',
+            'delivery_time_cost',
+            'delivery_distance_limit',
+            'pay_delivery_distance',
+            'delivery_distance_cost',
+            'free_delivery_amount',
+            'pay_delivery_amount',
+            'delivery_amount_cost',
+            'ifnull(message,\'\') as message',
+            'picture',
+            //TODO 暂时这么做，后期删除
+            'sq_merchant_shop.status',
+            //end
+            'ifnull(sq_picture.path,\'\') as picture_path',
+            'ifnull(yyzz_pic.path,\'\') as yyzz_picture_path',
+            'ifnull(spwsxkz_pic.path,\'\') as spwsxkz_picture_path',
+            'ifnull(id_cart_front_pic.path,\'\') as id_cart_front_picture_path',
+            'ifnull(id_cart_back_pic.path,\'\') as id_cart_back_picture_path',
+            'st_astext(sq_merchant_shop.lnglat) as lnglat'])
+            ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
+            ->join('left join sq_picture as yyzz_pic on yyzz_pic.id=sq_merchant_shop.yyzz_picture')
+            ->join('left join sq_picture as spwsxkz_pic on spwsxkz_pic.id=sq_merchant_shop.spwsxkz_picture')
+            ->join('left join sq_picture as id_cart_front_pic on id_cart_front_pic.id=sq_merchant_shop.id_cart_front_picture')
+            ->join('left join sq_picture as id_cart_back_pic on id_cart_back_pic.id=sq_merchant_shop.id_cart_back_picture')
+            ->find();
+
+        $tags = D()->query("select tag_id from sq_shop_tag where shop_id=$id;");
+        $data['tags'] = [];
+        foreach ($tags as $t) {
+            $data['tags'][] = $t['tag_id'];
+        }
+
+        $this->apiSuccess(['data'=>$data],'');
     }
 
     /**

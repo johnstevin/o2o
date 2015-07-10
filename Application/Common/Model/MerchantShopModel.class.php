@@ -253,6 +253,8 @@ class MerchantShopModel extends AdvModel
             ->bind($bind)
             ->field([
                 'sq_merchant_shop.id'
+                ,'sq_merchant_shop.open_status'
+                ,'sq_merchant_shop.status'
                 ,'sq_merchant_shop.title'
                 ,'sq_merchant_shop.picture'
                 ,'sq_merchant_shop.description'
