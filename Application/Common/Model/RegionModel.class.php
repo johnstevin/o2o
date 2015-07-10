@@ -307,7 +307,7 @@ class RegionModel extends Model
     public function getRegionPath($id)
     {
         $path = [];
-        self::_getRegionPath($id, $path);
+        self::pushDownById($id, $path);
         return $path;
     }
 
@@ -317,12 +317,12 @@ class RegionModel extends Model
      * @param int $id 当前区域的ID
      * @param array $region 用于存区域的数组
      */
-    private static function _getRegionPath($id, &$region)
+    private static function pushDownById($id, &$region)
     {
         $_region = self::getInstance()->getById($id, self::STATUS_ACTIVE, ['id', 'name', 'pid']);
         $region[] = $_region;
         if ($_region && $_region['pid'] != 0) {
-            self::_getRegionPath($_region['pid'], $region);
+            self::pushDownById($_region['pid'], $region);
         }
     }
 
