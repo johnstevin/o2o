@@ -6,6 +6,7 @@
 // +----------------------------------------------------------------------
 namespace Apimember\Controller;
 
+use Common\Model\AppraiseModel;
 use Common\Model\CategoryModel;
 use Common\Model\MerchantDepotModel;
 use Common\Model\MerchantShopModel;
@@ -847,5 +848,40 @@ class ProductController extends ApiController
             $iter_order_veh->next();
         }
         $this->apiSuccess(['data'=>$data],'');
+    }
+
+
+    /**
+     * 评价，POST参数
+     * <pre>
+     * 参数
+     * orderId 订单ID，必须
+     * grade1 评分1
+     * grade2 评分2
+     * grade3 评分3
+     * content 评价
+     * </pre>
+     * @author WangJiang
+     * @return json
+     */
+    public function appraise(){
+        try{
+            if(!IS_POST)
+                E('非法调用，请用POST调用');
+            $oid=I('post.orderId');
+            $grade1=I('post.grade1',0);
+            $grade2=I('post.grade2',0);
+            $grade3=I('post.grade3',0);
+            $content=I('post.content','');
+
+            $m=new OrderVehicleModel();
+            $data=$m->find($oid);
+
+            AppraiseModel::addAppraise($oid,$data['shop_id'],$this->getUserId(),null,$content,$grade1,$grade2,$grade3);
+
+            $this->apiSuccess(['data'=>[]],'成功');
+        }catch (\Exception $ex) {
+            $this->apiError(51023, $ex->getMessage());
+        }
     }
 }
