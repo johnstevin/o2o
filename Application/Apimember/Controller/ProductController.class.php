@@ -740,23 +740,34 @@ class ProductController extends ApiController
                 'sq_order.address',
                 'sq_order.consignee',
                 'sq_order.delivery_price',
+                'sq_order.delivery_mode',
+                'sq_order.delivery_time',
                 'sq_order.update_time',
+                'sq_order.add_time',
+                'sq_order.pay_mode',
                 'ifnull(sq_merchant_shop.title,\'\') as shop_title',
                 'ifnull(sq_picture.path,\'\') as shop_picture'])
             ->join('left join sq_merchant_shop on sq_merchant_shop.id=shop_id')
             ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
             ->where($where)
-            ->order('update_time')
+            ->order('update_time desc,add_time desc')
             ->page($page,$pageSize)
+            //->fetchSql()
             ->select();
+
+        //dump($data);die;
 
         foreach($data as $k=>&$order){
             $items=D('OrderItem')
                 ->alias('oi')
-                ->field(['oi.*','sq_product.title','ifnull(sq_picture.path,\'\') as picture'])
+                ->field(['oi.*',
+                    'sq_product.title',
+                    'ifnull(sq_picture.path,\'\') as picture',
+                'ifnull(sq_norms.title,\'\') norms'])
                 ->where(['order_id'=>$order['id']])
                 ->join('join sq_product on sq_product.id=product_id')
                 ->join('left join sq_picture on sq_picture.id=picture')
+                ->join('left join sq_norms on sq_norms.id=sq_product.norms_id')
                 ->select();
             $order['_products']=$items;
             if(empty($items))
@@ -789,8 +800,8 @@ class ProductController extends ApiController
         $uid=$this->getUserId();
         $_GET['p']=$page;
 
-        $statusOrder=is_null($status) ? null :$orderStatuees[$status];
-        $statusOrderVeh=is_null($status) ? null :$orderVehStatuses[$status];
+        $statusOrder=(is_null($status) or $status=='' )? null :$orderStatuees[$status];
+        $statusOrderVeh=(is_null($status) or $status=='')? null :$orderVehStatuses[$status];
 
         //var_dump($statusOrder);
         //var_dump($statusOrderVeh);
@@ -802,33 +813,38 @@ class ProductController extends ApiController
         $iter_order_veh=(new \ArrayObject($orders_veh))->getIterator();
 
         $data=[];
-        while(true){
-            $iter_order->next();
-            $iter_order_veh->next();
-
+        while($iter_order->valid() and $iter_order_veh->valid()){
             $order=$iter_order->current();
             $order_veh=$iter_order_veh->current();
 
-            if(empty($order) and empty($order_veh))
+            if(empty($order) or empty($order_veh))
                 break;
-
-            if($order)
-                $order['order_type']='shop';
-            if($order_veh)
-                $order_veh['order_type']='vehicle';
-
-            if($order and $order_veh){
-                if($order['update_time']<$order_veh['update_time']){
-                    $data[]=$order;
-                    $data[]=$order_veh;
-                }else{
-                    $data[]=$order_veh;
-                    $data[]=$order;
-                }
-            }else if($order)
+            $order['order_type']='shop';
+            $order_veh['order_type']='vehicle';
+            if($order['update_time']<$order_veh['update_time']){
                 $data[]=$order;
-            else if($order_veh)
                 $data[]=$order_veh;
+            }else{
+                $data[]=$order_veh;
+                $data[]=$order;
+            }
+            $iter_order->next();
+            $iter_order_veh->next();
+        }
+
+        while($iter_order->valid()){
+
+            $order=$iter_order->current();
+            $order['order_type']='shop';
+            $data[]=$order;
+            $iter_order->next();
+        }
+
+        while($iter_order_veh->valid()){
+            $order_veh=$iter_order_veh->current();
+            $order_veh['order_type']='vehicle';
+            $data[]=$order_veh;
+            $iter_order_veh->next();
         }
         $this->apiSuccess(['data'=>$data],'');
     }
