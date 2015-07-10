@@ -28,6 +28,7 @@ use Think\Page;
  * @property string $deliveryman 送货员
  * @property int $delivery_mode 送货模式
  * @property int $delivery_time 送货时间
+ * @property int $delivery_price 配送费
  *
  * @package Common\Model
  */
@@ -421,6 +422,68 @@ class OrderModel extends RelationModel
                 $sth = $pdo->prepare('SELECT md.id depot_id,p.id product_id,product_picture.path picture_path,p.title,p.number,p.norms_id,md.price,md.remark,p.detail,p.brand_id FROM sq_merchant_depot md LEFT JOIN sq_product p ON md.product_id=p.id LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id WHERE md.id IN (select product_id from sq_order_item WHERE order_id=:order_id) AND p.status=:product_status');
                 $sth->execute([':order_id' => $id, ':product_status' => ProductModel::STATUS_ACTIVE]);
                 $child['_products'] = $sth->fetchAll(\PDO::FETCH_ASSOC);
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * 根据订单号获取订单信息（不是订单ID哈）
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string $code 订单号
+     * @param null|int $status 订单状态
+     * @param bool|false $getChilds 是否获得子订单
+     * @param bool|false $getProducts 是否获得订单商品
+     * @param bool|false $getShop 是否获取订单所属商家
+     * @param string $fields
+     * @return array|null
+     */
+    public function getByCode($code, $status = null, $getChilds = false, $getProducts = false, $getShop = false, $fields = '*')
+    {
+        $code = trim($code);
+        if ($code === '') E('code非法');
+        $where = [
+            'order_code' => $code
+        ];
+        $relation = [];
+        $status = intval($status);
+        if ($status !== null && array_key_exists($status, self::getStatusOptions())) {
+            $where['status'] = $status;
+        } else {
+            $where['status'] = [
+                'NEQ',
+                self::STATUS_DELETE
+            ];
+        }
+        if ($getChilds) $relation[] = '_childs';
+        $data = self::getInstance()->relation($relation)->where($where)->field($fields)->select();
+        if ($getProducts || $getShop) {
+            $pdo = get_pdo();
+            if (empty($data['_childs'])) {
+                if ($getProducts) {
+                    $sth = $pdo->prepare('SELECT oi.depot_id,oi.price,oi.total,p.id product_id,product_picture.path picture,p.title,p.detail,p.brand_id,p.norms_id,p.number FROM sq_order_item oi LEFT JOIN sq_merchant_depot md ON oi.depot_id=md.id LEFT JOIN sq_product p ON md.product_id=p.id LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id  WHERE oi.order_id=:order_id AND p.status=' . ProductModel::STATUS_ACTIVE);
+                    $sth->execute([':order_id' => $data['id']]);
+                    $data['_products'] = $sth->fetchAll(\PDO::FETCH_ASSOC);
+                }
+                if ($getShop) {
+                    $sth = $pdo->prepare('SELECT ms.id,p.path picture,ms.address,ms.phone_number,ms.type,ms.title FROM sq_merchant_shop ms LEFT JOIN sq_picture p ON ms.picture=p.id WHERE ms.id=:shop_id');
+                    $sth->execute([':shop_id' => $data['shop_id']]);
+                    $data['_shop'] = $sth->fetch(\PDO::FETCH_ASSOC);
+                }
+            } else {
+                foreach ($data['_childs'] as &$item) {
+                    if ($getProducts) {
+                        $sth = $pdo->prepare('SELECT oi.depot_id,oi.price,oi.total,p.id product_id,product_picture.path picture,p.title,p.detail,p.brand_id,p.norms_id,p.number FROM sq_order_item oi LEFT JOIN sq_merchant_depot md ON oi.depot_id=md.id LEFT JOIN sq_product p ON md.product_id=p.id LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id  WHERE oi.order_id=:order_id AND p.status=' . ProductModel::STATUS_ACTIVE);
+                        $sth->execute([':order_id' => $item['id']]);
+                        $item['_products'] = $sth->fetchAll(\PDO::FETCH_ASSOC);
+                    }
+                    if ($getShop) {
+                        $sth = $pdo->prepare('SELECT ms.id,p.path picture,ms.address,ms.phone_number,ms.type,ms.title FROM sq_merchant_shop ms LEFT JOIN sq_picture p ON ms.picture=p.id WHERE ms.id=:shop_id');
+                        $sth->execute([':shop_id' => $item['shop_id']]);
+                        $item['_shop'] = $sth->fetch(\PDO::FETCH_ASSOC);
+                    }
+                }
             }
         }
         return $data;
@@ -1060,7 +1123,7 @@ class OrderModel extends RelationModel
 
         $pdo = get_pdo();
         //只查询状态为等待商家确认的订单，因为只有这个状态的订单才能修改
-        $sth = $pdo->prepare('SELECT * FROM sq_order WHERE id=:id AND status=' . self::STATUS_MERCHANT_CONFIRM);
+        $sth = $pdo->prepare('SELECT o.*,ms.title shop_title FROM sq_order o LEFT JOIN sq_merchant_shop ms ON ms.id=o.shop_id WHERE o.id=:id AND o.status=' . self::STATUS_MERCHANT_CONFIRM);
         $sth->execute([':id' => $id]);
         if (!$orderInfo = $sth->fetch(\PDO::FETCH_ASSOC)) E('订单不存在或不允许被修改');
         if (!$shopInfo = $shopModel->where(['id' => $orderInfo['shop_id'], 'status' => MerchantShopModel::STATUS_ACTIVE])->find()) E('店铺不存在或已关闭');
@@ -1291,7 +1354,7 @@ class OrderModel extends RelationModel
         if (!$confirm && $content === '') E('请说明拒绝理由');
         $model = self::getInstance()->where(['id' => $id, 'status' => self::STATUS_USER_CONFIRM]);
         $pdo = get_pdo();
-        $sth = $pdo->prepare('SELECT o.id,o.order_code,o.shop_id,o.user_id,um.username,m.nickname,ms.title shop_title FROM sq_order o LEFT JOIN sq_ucenter_member um ON o.user_id=um.id LEFT JOIN sq_member m ON o.user_id=m.uid LEFT JOIN sq_merchant_shop ms ON ms.id=o.shop_id WHERE o.id=:id AND status = :status');
+        $sth = $pdo->prepare('SELECT o.id,o.order_code,o.shop_id,o.user_id,um.username,m.nickname,ms.title shop_title FROM sq_order o LEFT JOIN sq_ucenter_member um ON o.user_id=um.id LEFT JOIN sq_member m ON o.user_id=m.uid LEFT JOIN sq_merchant_shop ms ON ms.id=o.shop_id WHERE o.id=:id AND o.status = :status');
         $sth->execute([':id' => $id, ':status' => self::STATUS_USER_CONFIRM]);
         $orderInfo = $sth->fetch(\PDO::FETCH_ASSOC);
         if (!$orderInfo) E('订单不存在或状态不正确，请刷新页面重试');
@@ -1327,7 +1390,7 @@ class OrderModel extends RelationModel
             'content' => sprintf($replaceContent, $replaceStr)
         ];
         if ($saveStatus) {//如果订单状态更新成功才存入日志
-            OrderStatusModel::getInstance()->add($logData);
+            //OrderStatusModel::getInstance()->add($logData);
         }
         return $saveStatus;
     }
@@ -1356,7 +1419,7 @@ class OrderModel extends RelationModel
             'content' => '系统：【' . isset($orderInfo['_ucenter_member']) ? $orderInfo['_ucenter_member']['username'] : '' . '于【' . date('Y - m - d H:i:s') . '】完成了订单'
         ];
         if ($saveStatus) {//如果订单状态更新成功才存入日志
-            OrderStatusModel::getInstance()->add($logData);
+            //OrderStatusModel::getInstance()->add($logData);
         }
         return $saveStatus;
     }
@@ -1377,7 +1440,8 @@ class OrderModel extends RelationModel
         $model = self::getInstance()->where([
             'id' => $id,
             'status' => [
-                'IN' => [
+                'IN',
+                [
                     self::STATUS_MERCHANT_CONFIRM,
                     self::STATUS_USER_CONFIRM
                 ]
@@ -1398,7 +1462,7 @@ class OrderModel extends RelationModel
             'content' => '用户：【' . $orderInfo['username'] . '于【' . date('Y - m - d H:i:s') . '】取消了订单【' . $orderInfo['order_code'] . '】'
         ];
         if ($saveStatus) {//如果订单状态更新成功才存入日志
-            OrderStatusModel::getInstance()->add($logData);
+            //OrderStatusModel::getInstance()->add($logData);
             $shopkeeper = get_shopkeeper_by_shopid($orderInfo['shop_id']);
             $pushContent = '订单【' . $orderInfo['order_code'] . '】已经被用户【' . $orderInfo['nickname'] . '】取消，原因：' . $content ?: '未知';
             $pushTitle = '您有订单被用户取消';
