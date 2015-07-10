@@ -744,10 +744,13 @@ class ProductController extends ApiController
                 'sq_order.update_time',
                 'sq_order.add_time',
                 'sq_order.pay_mode',
+                'sq_appraise.id IS NOT NULL as appraised',
+                'ifnull(sq_merchant_shop.phone_number,\'\') as shop_phone_number',
                 'ifnull(sq_merchant_shop.title,\'\') as shop_title',
                 'ifnull(sq_picture.path,\'\') as shop_picture'])
             ->join('left join sq_merchant_shop on sq_merchant_shop.id=shop_id')
             ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
+            ->join('left join sq_appraise on sq_appraise.order_id=sq_order.id')
             ->where($where)
             ->order('update_time desc,add_time desc')
             ->page($page,$pageSize)
