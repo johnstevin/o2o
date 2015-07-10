@@ -75,4 +75,15 @@ class RegionController extends ApiController
     {
         $this->apiSuccess(['data' => RegionModel::getInstance()->addRegion($name, $pid, $lng, $lat)]);
     }
+
+    /**
+     * 根据一个区域ID倒推，返回一个二维数组
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $id 区域ID
+     */
+    public function pushDownById($id)
+    {
+        $this->apiSuccess(['data'=>RegionModel::getInstance()->getRegionPath($id)]);
+    }
 }
