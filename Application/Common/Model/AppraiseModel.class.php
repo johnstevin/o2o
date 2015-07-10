@@ -86,13 +86,14 @@ class AppraiseModel extends RelationModel
             self::EXISTS_VALIDATE,
             'function'
         ],
-        [
-            'merchant_id',
-            'check_merchant_exist',
-            'merchantId非法',
-            self::EXISTS_VALIDATE,
-            'function'
-        ],
+        //TODO 目前没有送货员，等员工管理完成后再说
+//        [
+//            'merchant_id',
+//            'check_merchant_exist',
+//            'merchantId非法',
+//            self::EXISTS_VALIDATE,
+//            'function'
+//        ],
         [
             'grade_1',
             [
@@ -138,7 +139,13 @@ class AppraiseModel extends RelationModel
         [
             'status',
             self::STATUS_ACTIVE
-        ]
+        ],
+        [
+            'update_time',
+            'time',
+            self::MODEL_INSERT,
+            'function'
+        ],
     ];
 
     /**

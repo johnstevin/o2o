@@ -129,15 +129,13 @@ class ProductController extends ApiController
     public function getAppriseList($shopId,$page = 1, $pageSize = 10){
         try {
             $pageSize > 50 and $pageSize = 50;
-            $page--;
-            $page *= $pageSize;
 
             $this->apiSuccess(['data' =>D('Appraise')
                 ->join('join sq_member on sq_member.uid=sq_appraise.user_id')
                 ->join('join sq_ucenter_member on sq_ucenter_member.id=sq_appraise.user_id')
                 ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
                 ->where(['sq_appraise.shop_id'=>$shopId])
-                ->limit($page, $pageSize)
+                ->page($page, $pageSize)
                 ->order('sq_appraise.update_time')
                 ->field([
                     'sq_appraise.id','ifnull(sq_appraise.content,\'\') as content',
@@ -874,7 +872,7 @@ class ProductController extends ApiController
             $grade3=I('post.grade3',0);
             $content=I('post.content','');
 
-            $m=new OrderVehicleModel();
+            $m=new OrderModel();
             $data=$m->find($oid);
 
             AppraiseModel::addAppraise($oid,$data['shop_id'],$this->getUserId(),null,$content,$grade1,$grade2,$grade3);
