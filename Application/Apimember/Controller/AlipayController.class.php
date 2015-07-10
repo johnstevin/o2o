@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: biu
- * Date: 6/15/15
- * Time: 4:14 PM
- */
 namespace Apimember\Controller;
 
 use Common\Model\OrderModel;
@@ -14,6 +8,11 @@ require APP_PATH . 'Common/Vendor/alipay/alipay_md5.function.php';
 require APP_PATH . 'Common/Vendor/alipay/alipay_notify.class.php';
 require APP_PATH . 'Common/Vendor/alipay/alipay_submit.class.php';
 
+/**
+ * 支付宝控制器
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @package Apimember\Controller
+ */
 class AlipayController extends ApiController
 {
     /**
@@ -27,6 +26,10 @@ class AlipayController extends ApiController
 
     public static $alipayNotify;
 
+    /**
+     * 支付宝成功支付的回调接口
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     */
     public function callback()
     {
         $config = [
@@ -46,7 +49,7 @@ class AlipayController extends ApiController
         //商户订单号
         $out_trade_no = $_POST['out_trade_no'];
         $orderModel = OrderModel::getInstance();
-        $order = $orderModel->get($out_trade_no);
+        $order = $orderModel->getByCode($out_trade_no);
         if ($order['pay_status'] == OrderModel::PAY_STATUS_TRUE) {
             exit('success');//如果订单的状态已经是已经支付，则直接告诉支付宝成功鸟
         }
@@ -60,7 +63,24 @@ class AlipayController extends ApiController
             }
             $ids[] = $order['id'];//无论是否有子订单，都把父级订单的ID加入
             if ($orderModel->where(['id' => ['IN', $ids]])->save(['pay_status' => OrderModel::PAY_STATUS_TRUE])) {
-                //TODO 这儿要增加消息推送通知
+                $pushTitle = '订单已支付提醒';
+                if (empty($order['_childs'])) {
+                    $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $order['order_code'] . '】';
+                    $pushExtras = [
+                        'action' => 'orderDetail',
+                        'order_id' => $order['id']
+                    ];
+                    push_by_uid('STORE', get_shopkeeper_by_shopid($order['shop_id']), $pushContet, $pushExtras, $pushTitle);
+                } else {
+                    foreach ($order['_childs'] as $child) {
+                        $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $child['order_code'] . '】';
+                        $pushExtras = [
+                            'action' => 'orderDetail',
+                            'order_id' => $child['id']
+                        ];
+                        push_by_uid('STORE', get_shopkeeper_by_shopid($child['shop_id']), $pushContet, $pushExtras, $pushTitle);
+                    }
+                }
                 exit('success');//如果保存成功，则通知支付宝俺已经处理成功~\(≧▽≦)/~
             }
             exit('fail');
