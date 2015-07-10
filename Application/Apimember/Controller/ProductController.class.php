@@ -753,6 +753,7 @@ class ProductController extends ApiController
             ->join('left join sq_appraise on sq_appraise.order_id=sq_order.id')
             ->where($where)
             ->order('update_time desc,add_time desc')
+            ->group('sq_order.id')
             ->page($page,$pageSize)
             //->fetchSql()
             ->select();
