@@ -138,10 +138,15 @@ class ProductController extends ApiController
                 ->page($page, $pageSize)
                 ->order('sq_appraise.update_time')
                 ->field([
-                    'sq_appraise.id','ifnull(sq_appraise.content,\'\') as content',
-                    'sq_appraise.grade_1','sq_appraise.grade_2','sq_appraise.grade_3',
+                    'sq_appraise.id',
+                    'ifnull(sq_appraise.content,\'\') as content',
+                    'sq_appraise.grade_1',
+                    'sq_appraise.grade_2',
+                    'sq_appraise.grade_3',
                     '(sq_appraise.grade_1+sq_appraise.grade_2+sq_appraise.grade_3)/3 as grade',
-                    'sq_appraise.update_time','ifnull(sq_picture.path,\'\') as picture_path','sq_member.nickname'
+                    'sq_appraise.update_time',
+                    'if(anonymity=0,ifnull(sq_picture.path,\'\'),\'\') as picture_path',
+                    'if(anonymity=0,sq_member.nickname,\'匿名用户\') as nickname',
                 ])
                 ->select()],'');
         } catch (\Exception $ex) {
@@ -862,6 +867,7 @@ class ProductController extends ApiController
      * grade2 评分2
      * grade3 评分3
      * content 评价
+     * anonymity 是否匿名　０－不是，１－是
      * </pre>
      * @author WangJiang
      * @return json
@@ -874,12 +880,15 @@ class ProductController extends ApiController
             $grade1=I('post.grade1',0);
             $grade2=I('post.grade2',0);
             $grade3=I('post.grade3',0);
-            $content=I('post.content','');
+            $content=I('post.content');
+            $anonymity=I('post.anonymity',0);
+            if(empty($content))
+                $content='该用户很深沉，什么也没说。';
 
             $m=new OrderModel();
             $data=$m->find($oid);
 
-            AppraiseModel::addAppraise($oid,$data['shop_id'],$this->getUserId(),null,$content,$grade1,$grade2,$grade3);
+            AppraiseModel::addAppraise($oid,$data['shop_id'],$this->getUserId(),null,$content,$grade1,$grade2,$grade3,$anonymity);
 
             $this->apiSuccess(['data'=>[]],'成功');
         }catch (\Exception $ex) {
