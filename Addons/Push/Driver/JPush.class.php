@@ -4,7 +4,7 @@ namespace Addons\Push\Driver;
 use JPush\JPushClient;
 use JPush\Model as M;
 
-require __ROOT__ . '/vendor/autoload.php';
+require dirname(APP_PATH) . '/vendor/autoload.php';
 
 class JPush
 {
