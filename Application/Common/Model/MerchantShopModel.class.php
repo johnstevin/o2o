@@ -127,7 +127,19 @@ class MerchantShopModel extends AdvModel
      */
     protected $_auto = [
         ['type',1,self::MODEL_INSERT],
-        ['status',self::STATUS_CLOSE,self::MODEL_INSERT]
+        ['status',self::STATUS_CLOSE,self::MODEL_INSERT],
+        [
+            'create_time',
+            'time',
+            self::MODEL_INSERT,
+            'function'
+        ],
+        [
+            'edit_time',
+            'time',
+            self::MODEL_BOTH,
+            'function'
+        ],
     ];
 
     protected $autoinc=true;
@@ -349,10 +361,21 @@ class MerchantShopModel extends AdvModel
      */
     public function add(){
 
+//        $defaults=[
+//            'free_delivery_amount'=>20,
+//            'pay_delivery_amount'=>100
+//        ];
+
         $stat=[];
 
         $bind=[];
         $data=$this->data();
+//        foreach($defaults as $key=>$val){
+//            if(!array_key_exists($key,$data)){
+//                $data[$key]=$val;
+//            }
+//        }
+
         $shopVals=[];
         $shopFlds=[];
         foreach($data as $key=>$val){

@@ -135,7 +135,7 @@ class CategoryModel extends AdvModel
         [
             'update_time',
             'time',
-            self::MODEL_UPDATE,
+            self::MODEL_BOTH,
             'function'
         ],
         [

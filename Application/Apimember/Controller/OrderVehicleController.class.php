@@ -232,6 +232,7 @@ class OrderVehicleController extends ApiController
      * grade2 评分2
      * grade3 评分3
      * content 评价
+     * anonymity 是否匿名　０－不是，１－是
      * </pre>
      * @author WangJiang
      * @return json
@@ -244,7 +245,10 @@ class OrderVehicleController extends ApiController
             $grade1=I('post.grade1',0);
             $grade2=I('post.grade2',0);
             $grade3=I('post.grade3',0);
-            $content=I('post.content','');
+            $content=I('post.content');
+            $anonymity=I('post.anonymity',0);
+            if(empty($content))
+                $content='该用户很深沉，什么也没说。';
 
             $m=new OrderVehicleModel();
             $data=$m->find($oid);
@@ -262,6 +266,7 @@ class OrderVehicleController extends ApiController
                     'grade_2'=>$grade2,
                     'grade_3'=>$grade3,
                     'content'=>$content,
+                    'anonymity'=>$anonymity,
                 ]);
 
                 D()->commit();
