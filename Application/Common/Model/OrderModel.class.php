@@ -584,7 +584,7 @@ class OrderModel extends RelationModel
         }
         $total = $totalModel->count();
         $pagination = new Page($total, $pageSize);
-        $data = $model->relation('_childs')->field($fields)->limit($pagination->firstRow . ',' . $pagination->listRows)->select();
+        $data = $model->relation('_childs')->field($fields)->limit($pagination->firstRow . ',' . $pagination->listRows)->order('o.add_time desc,o.update_time desc')->select();
         $orderItemModel = M('OrderItem');
         $pdo = get_pdo();
         foreach ($data as &$item) {
