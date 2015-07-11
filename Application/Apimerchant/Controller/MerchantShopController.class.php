@@ -345,6 +345,7 @@ class MerchantShopController extends ApiController
             'ifnull(id_cart_front_pic.path,\'\') as id_cart_front_picture_path',
             'ifnull(id_cart_back_pic.path,\'\') as id_cart_back_picture_path',
             'st_astext(sq_merchant_shop.lnglat) as lnglat'])
+            ->where(['sq_merchant_shop.id'=>$id])
             ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
             ->join('left join sq_picture as yyzz_pic on yyzz_pic.id=sq_merchant_shop.yyzz_picture')
             ->join('left join sq_picture as spwsxkz_pic on spwsxkz_pic.id=sq_merchant_shop.spwsxkz_picture')
