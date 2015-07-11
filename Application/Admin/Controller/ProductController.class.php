@@ -253,8 +253,11 @@ class ProductController extends AdminController
             }
         } else {
 
+
             /* 获取产品信息 */
             $info = $id ? $Product->info($id) : '';
+                $info['brand'] = M('Brand')->where(array('id' => $info['brand_id']))->getField('title');
+                $info['norm'] = M('Norms')->where(array('id' => $info['norms_id']))->getField('title');
             $this->assign('info', $info);
             $this->meta_title = '审核商品';
             $this->display();

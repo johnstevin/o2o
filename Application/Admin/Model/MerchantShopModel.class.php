@@ -55,6 +55,12 @@ class MerchantShopModel extends AdvModel
 
 
         $result = $this->where($map)->order('id desc')->field($field)->select();
+
+        foreach($result as &$key){
+
+            $key['add_uid_text']=M('UcenterMember')->where(array('id'=>$key['add_uid']))->getField('mobile');
+        }
+        $result = int_to_string($result,array('type' => array(1 => '商超',  2 => '洗车'), 'open_status' => array(1 => '开放', 0 => '关闭')));
 //        return $result;
 
           return [
@@ -75,7 +81,7 @@ class MerchantShopModel extends AdvModel
         $map = array();
         $map['id'] = $id;
         $MerchantShop= $this->where($map)->field($field)->find();
-        $MerchantShop['_picture'] = M('Picture')->where(array('id' => $MerchantShop['picture']))->find();
+//        $MerchantShop['_picture'] = M('Picture')->where(array('id' => $MerchantShop['picture']))->find();
         $MerchantShop['_yyzz_picture'] = M('Picture')->where(array('id' => $MerchantShop['yyzz_picture']))->find();
         $MerchantShop['_spwsxkz_picture'] = M('Picture')->where(array('id' => $MerchantShop['spwsxkz_picture']))->find();
         $MerchantShop['_id_cart_front_picture'] = M('Picture')->where(array('id' => $MerchantShop['id_cart_front_picture']))->find();

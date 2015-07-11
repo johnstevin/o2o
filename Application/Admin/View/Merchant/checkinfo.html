@@ -21,9 +21,9 @@
                     <li role="presentation" class="active">
                         <a href="#home" aria-controls="home" role="tab" data-toggle="tab">商家资料</a>
                     </li>
-                    <li role="presentation">
-                        <a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">门店图片</a>
-                    </li>
+                    <!--<li role="presentation">-->
+                        <!--<a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">门店图片</a>-->
+                    <!--</li>-->
                     <li role="presentation"><a href="#messages" aria-controls="businessLicense" role="tab" data-toggle="tab">营业执照</a>
                     </li>
                     <li role="presentation"><a href="#legalPerson" aria-controls="legalPerson" role="tab" data-toggle="tab">法人信息</a>
@@ -92,15 +92,15 @@
                     </div>
 
 
-                    <div role="tabpanel" class="tab-pane" id="profile">
-                        <br>
-                        <!--<div class="row">-->
-                        <div class="col-xs-6 col-md-12">
-                            <a href="javascript:void(0)" class="thumbnail">
-                                <img src="{$_info['_picture']['path']|default=''}" alt="门店图片">
-                            </a>
-                        </div>
-                    </div>
+                    <!--<div role="tabpanel" class="tab-pane" id="profile">-->
+                        <!--<br>-->
+                        <!--&lt;!&ndash;<div class="row">&ndash;&gt;-->
+                        <!--<div class="col-xs-6 col-md-12">-->
+                            <!--<a href="javascript:void(0)" class="thumbnail">-->
+                                <!--<img src="{$_info['_picture']['path']|default=''}" alt="门店图片">-->
+                            <!--</a>-->
+                        <!--</div>-->
+                    <!--</div>-->
                     <!--</div>-->
                     <div role="tabpanel" class="tab-pane" id="messages">
                         <br>
@@ -145,7 +145,7 @@
         <hr>
         <div>
             <label for="reason" class="control-label">如果不通过请填写原因</label>
-            <textarea id="reason" class="form-control" rows="4" placeholder="不通过原因"></textarea>
+            <textarea id="reason" class="form-control" rows="4" placeholder="不通过原因">{$_info.message|default=''}</textarea>
             <!--<a class="btn btn-warning btn-refuse" href="javascript:void(0)" onclick="refuse()">不通过</a>-->
         </div>
 

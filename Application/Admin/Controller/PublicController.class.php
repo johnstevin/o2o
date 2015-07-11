@@ -171,7 +171,7 @@ class PublicController extends Controller {
             action_log('admin_logout', 'admin', is_admin_login(), is_admin_login(), 1);
             D('UcenterMember')->logout();
             session('[destroy]');
-            $this->success('退出成功！', U('login'));
+            $this->redirect('login');
         } else {
             $this->redirect('login');
         }

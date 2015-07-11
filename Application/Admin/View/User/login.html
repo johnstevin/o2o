@@ -17,7 +17,7 @@
                 <div class="text-center"><h3>用户登录</h3></div>
             </nav>
             <div id="msg"></div>
-            <form action="?" method="post" name="form">
+            <form action="?" method="post" name="form" class="form" >
                 <div class="form-group">
                     <label class="control-label" for="username">用户名</label>
                     <input type="text" class="form-control  input-lg" id="username" name="username" placeholder="请输入用户名/手机/邮箱">
@@ -56,6 +56,13 @@
 </html>
 <script>
     $(function(){
+        //回车提交
+        $(".form").keyup(function (e) {
+            if (e.keyCode === 13) {
+                login();
+                return false;
+            }
+        });
         //刷新验证码
         var verifyimg = $(".verifyimg").attr("src");
         $(".reloadverify").click(function(){

@@ -17,7 +17,7 @@
             <nav class="navbar">
                 <div class="text-center"><h3>员工注册</h3></div>
             </nav>
-            <form action="?" method="post" name="form">
+            <form action="?" method="post" name="form" class="form">
                 <div class="form-group">
                     <label for="mobile">账号</label>
                     <input type="text" class="form-control  input-lg" id="mobile" name="mobile" placeholder="手机号">
@@ -66,7 +66,13 @@
 </html>
 <script>
     $(document).ready(function () {
-
+        //回车提交
+        $(".form").keyup(function (e) {
+            if (e.keyCode === 13) {
+                register();
+                return false;
+            }
+        });
     });
 
     function getVerifyCode() {
