@@ -238,7 +238,7 @@ class MerchantDepotModel extends RelationModel
      */
     public static function checkDepotExist($id)
     {
-        return self::getById($id, 'id') ? true : false;
+        return self::getInstance()->getById($id, 'id') ? true : false;
     }
 
     /**
@@ -303,7 +303,7 @@ class MerchantDepotModel extends RelationModel
      * @param string|array $fields 要查询的字段
      * @return array|null
      */
-    public static function getById($id, $fields = '*')
+    public function getById($id, $fields = '*')
     {
         $id = intval($id);
         return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
@@ -341,21 +341,21 @@ class MerchantDepotModel extends RelationModel
         , $priceMin, $priceMax
         , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = [])
     {
-        if(count($shopIds)==1){
-            $data=$this->_get_depot_by_shop_id($shopIds[0], $categoryId, $brandId, $normId, $title
+        if (count($shopIds) == 1) {
+            $data = $this->_get_depot_by_shop_id($shopIds[0], $categoryId, $brandId, $normId, $title
                 , $priceMin, $priceMax
                 , $returnAlters, $page, $pageSize, $status, $groupIds);
             foreach ($data as &$dpt) {
                 $dpt['price_range'] = [$dpt['price'], $dpt['price']];
                 $dpt['alters'] = [
-                    ['id'=>$dpt['id'],
-                    'price'=>$dpt['price'],
-                    'shop_id'=>$dpt['shop_id'],
-                    'shop'=>$dpt['shop'],]
+                    ['id' => $dpt['id'],
+                        'price' => $dpt['price'],
+                        'shop_id' => $dpt['shop_id'],
+                        'shop' => $dpt['shop'],]
                 ];
             }
-        }else{
-            $data=$this->_get_depot_by_shop_ids($shopIds, $categoryId, $brandId, $normId, $title
+        } else {
+            $data = $this->_get_depot_by_shop_ids($shopIds, $categoryId, $brandId, $normId, $title
                 , $priceMin, $priceMax
                 , $returnAlters, $page, $pageSize, $status, $groupIds);
             foreach ($data as &$dpt) {
@@ -402,14 +402,15 @@ class MerchantDepotModel extends RelationModel
 
     private function _get_depot_by_shop_id($shopId, $categoryId, $brandId, $normId, $title
         , $priceMin, $priceMax
-        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = []){
+        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = [])
+    {
 
         $where = 'sq_merchant_depot.shop_id=:shopId and sq_merchant_depot.status=:status';
-        $bindValues[':shopId']=$shopId;
-        $bindValues[':status']=$status;
+        $bindValues[':shopId'] = $shopId;
+        $bindValues[':status'] = $status;
 
-        $cateChain=[$categoryId];
-        get_cate_chain_up([$categoryId],$cateChain);
+        $cateChain = [$categoryId];
+        get_cate_chain_up([$categoryId], $cateChain);
 
         if (!empty($categoryId)) {
             $where .= ' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id
@@ -454,10 +455,10 @@ class MerchantDepotModel extends RelationModel
 
         $this->field([
             'sq_merchant_depot.id'
-            ,'sq_merchant_depot.price'
-            ,'sq_merchant_shop.id as shop_id'
-            ,'sq_merchant_shop.title as shop'
-            ,'sq_merchant_depot.product_id'
+            , 'sq_merchant_depot.price'
+            , 'sq_merchant_shop.id as shop_id'
+            , 'sq_merchant_shop.title as shop'
+            , 'sq_merchant_depot.product_id'
             , 'sq_product.title as product'
             , 'sq_merchant_depot.status'
             , 'sq_product.description'
@@ -481,14 +482,15 @@ class MerchantDepotModel extends RelationModel
 
     private function _get_depot_by_shop_ids($shopIds, $categoryId, $brandId, $normId, $title
         , $priceMin, $priceMax
-        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = []){
+        , $returnAlters, $page, $pageSize, $status = self::STATUS_ACTIVE, $groupIds = [])
+    {
         $shopIds = $this->_filter_shops($shopIds, $groupIds);
         list($shopBindNames, $bindValues) = build_sql_bind($shopIds);
 
         $where = 'sq_merchant_depot.shop_id in (' . implode(',', $shopBindNames) . ')';
 
-        $cateChain=[$categoryId];
-        get_cate_chain_up([$categoryId],$cateChain);
+        $cateChain = [$categoryId];
+        get_cate_chain_up([$categoryId], $cateChain);
 
         if (!empty($categoryId)) {
             $where .= ' and sq_merchant_depot.status=1 and sq_merchant_depot.product_id

@@ -107,6 +107,18 @@ class OrderStatusModel extends RelationModel
         return self::$model instanceof self ? self::$model : self::$model = new self;
     }
 
+    /**
+     * 添加日志
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $userId 用户ID
+     * @param int $shopId 商铺ID
+     * @param int $merchantId 店长或者店铺管理员ID
+     * @param int $orderId 订单ID
+     * @param string $content 内容
+     * @param int $status 状态
+     * @return bool|int
+     */
     public function addLog($userId, $shopId, $merchantId, $orderId, $content, $status)
     {
         $data = [
