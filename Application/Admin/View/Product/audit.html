@@ -27,18 +27,18 @@
                 </tr>
                 <tr>
                     <td>品牌</td>
-                    <td>{$info.brand_id}</td>
+                    <td>{$info.brand}</td>
                 </tr>
                 <tr>
                     <td>规格</td>
-                    <td>{$info.norms_id}</td>
+                    <td>{$info.norm}</td>
                 </tr>
                 <tr>
                     <td>详细</td>
                     <td>{$info.detail}</td>
                 </tr>
                 <tr>
-                    <td>数量</td>
+                    <td>条形编码</td>
                     <td>{$info.number}</td>
                 </tr>
                 <tr>
@@ -47,7 +47,8 @@
                 </tr>
                 <tr>
                     <td>图片</td>
-                    <td>{$info.picture}</td>
+                    <td>
+                        <a class="upload-pre-item" class="thumbnail"><img style="width: 200px;height: 180px;" class="img-thumbnail" src="{$info['_picture']['path']|default=''}"/></a></td>
                 </tr>
                 </tbody>
             </table>
