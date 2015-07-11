@@ -4,7 +4,7 @@ namespace Addons\Push\Driver;
 use JPush\JPushClient;
 use JPush\Model as M;
 
-require __ROOT__ . 'vendor/autoload.php';
+require __ROOT__ . '/vendor/autoload.php';
 
 class JPush
 {
@@ -24,12 +24,12 @@ class JPush
     /**
      * 获取实例
      * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param string $appid 应用ID
      * @return self
      */
     public static function getInstance($appid)
     {
-        return self::$instance instanceof self ? self::$instance : self::$instance =
-            new self(C("JPUSH_{$appid}_APP_KEY"), C("JPUSH_{$appid}_MASTER_SECRET"));
+        return (isset(self::$instance[$appid]) && self::$instance[$appid] instanceof self) ? self::$instance[$appid] : self::$instance[$appid] = new self(C("JPUSH_{$appid}_APP_KEY"), C("JPUSH_{$appid}_MASTER_SECRET"));
     }
 
     /**
@@ -71,22 +71,39 @@ class JPush
             $client->setOptions(M\options(null, 604800, null, false));
         }
         return $client->setMessage(M\message($message_content, $message_title, $message_type, $extras))
-//            ->printJSON()//测试的时候开启可以打印出要发送的数据
+            ->printJSON()//测试的时候开启可以打印出要发送的数据
             ->send();
     }
 
     /**
      * 根据平台推送消息
      * @author Fufeng Nie <niefufeng@gmail.com>
-     * @param string|array $platform
+     * @param string|array $platform 推送到哪些设备，可传【all】或具体的设备名称【ios】、【android】和【winphone】,也可传多个设备
      * @param string $message_content 消息内容
      * @param string $message_title 消息标题
      * @param string $notification_content 通知内容
      * @param string $notification_title 通知标题
+     * @param array $extras 附加内容
+     * @param string $category 分类，只有苹果可用
      * @return bool
      */
-    public function pushByPlatform($platform, $message_content, $message_title, $notification_content, $notification_title)
+    public function pushByPlatform($platform, $notification_content, $extras = [], $notification_title = null, $message_content = null, $message_title = null, $category = null)
     {
+        //TODO 这个接口暂未测试
+        if (empty($platform)) E('必须指定推送设备');
+        if (is_string($platform)) $platform = explode(',', $platform);
+
+        $client = self::$client->push()
+            ->setPlatform($platform)
+            ->setNotification(M\notification($notification_content,
+                M\android($notification_content, $notification_title, null, $extras),
+                M\ios($notification_content, null, '+1', null, $extras, $category)));
+        if (APP_DEBUG) {
+            $client->setOptions(M\options(null, 604800, null, false));
+        }
+        return $client->setMessage(M\message($message_content, $message_title, null, $extras))
+//            ->printJSON()//测试的时候可以开启调试
+            ->send();
     }
 
     /**
