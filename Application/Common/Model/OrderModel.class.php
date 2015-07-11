@@ -681,6 +681,7 @@ class OrderModel extends RelationModel
     public function initOrder($cart, $deliveryMode = self::DELIVERY_MODE_DELIVERY, $deliveryTime = null, $lng, $lat, $split = true)
     {
         $cart = is_array($cart) ? $cart : json_decode($cart, true);
+        if ($deliveryMode == self::DELIVERY_MODE_DELIVERY && $deliveryTime < time()) E('配送时间不能小于当前时间');
         $depotModel = MerchantDepotModel::getInstance();
         $shopModel = MerchantShopModel::getInstance();
         if ($split) {//如果需要系统拆单
@@ -808,9 +809,9 @@ class OrderModel extends RelationModel
         $productPrice = 0;//所有商品的价格总和
         //如果用户指定了配送时间，则计算指定的配送时间距离当天的0:00的秒数；如果配送时间为0（马上配送），则计算当前时间到当天的秒数
         if ($deliveryTime) {
-            $deliveryTime = $deliveryTime - strtotime(date('Y-m-d', $deliveryTime));
+            $_deliveryTime = $deliveryTime - strtotime(date('Y-m-d', $deliveryTime));
         } else {
-            $deliveryTime = time() - strtotime(date('Y-m-d'));
+            $_deliveryTime = time() - strtotime(date('Y-m-d'));
         }
         //计算只是在免配送费的范围、是否在免配送费的距离内、免配送费的时间内
         /**
@@ -845,7 +846,7 @@ class OrderModel extends RelationModel
                 $priceDetail[$shopId]['distance'] = (int)$allShop[$shopId]['delivery_distance_cost'];
             }
             //如果现在的时间在收费配送时间内，则增加送货费
-            if ($allShop[$shopId]['pay_delivery_time_begin'] < $deliveryTime && $allShop[$shopId]['pay_delivery_time_end'] > $deliveryTime) {
+            if ($allShop[$shopId]['pay_delivery_time_begin'] < $_deliveryTime && $allShop[$shopId]['pay_delivery_time_end'] > $_deliveryTime) {
                 $priceDetail[$shopId]['time'] = (int)$allShop[$shopId]['delivery_time_cost'];
             }
             $priceDetail[$shopId]['deliveryTotal'] = $priceDetail[$shopId]['price'] + $priceDetail[$shopId]['time'] + $priceDetail[$shopId]['distance'];
@@ -1004,7 +1005,9 @@ class OrderModel extends RelationModel
                         'order_id' => $item['order_id']
                     ], $pushTitle);
                 }
-                return $parentId;//返回父级订单的ID
+                return [
+                    'order_id' => $parentId
+                ];//返回父级订单的ID
             } catch (Exception $e) {
                 //如果中途某个提交失败了，则回滚事务
                 $model->rollback();
@@ -1059,7 +1062,9 @@ class OrderModel extends RelationModel
                         'order_id' => $lastId
                     ];
                     push_by_uid('STORE', get_shopkeeper_by_shopid($data['shop_id']), $pushContent, $pushExtras, $pushTitle, $pushContent);
-                    return $lastId;
+                    return [
+                        'order_id' => $lastId
+                    ];
                 }
             } catch (Exception $e) {
                 //如果中途某个提交失败了，则回滚事务
@@ -1309,7 +1314,7 @@ class OrderModel extends RelationModel
             $saveStatus = $model->save(['status' => self::STATUS_USER_CONFIRM]);
         }
         if (!$saveStatus) E('确认订单失败或您已经确定过订单了');
-        $merchantInfo = UcenterMemberModel::get($merchantId, ['username', 'id']);//获取用户信息
+        $merchantInfo = UcenterMemberModel::get($merchantId, ['username', 'id']);//获取用 户信息
         $replaceContent = '商家：【' . isset($merchantInfo['username']) ? $merchantInfo['username'] : '' . '】于【' . date('Y - m - d H:i:s') . '】%s';
         if ($confirm) {//根据是否确定来生成不同的记录信息
             $replaceStr = '确认了订单【' . $orderInfo['order_code'] . '】，商家开始发货';
@@ -1448,10 +1453,12 @@ class OrderModel extends RelationModel
             ]
         ]);
         $pdo = get_pdo();
-        $sth = $pdo->prepare('SELECT ms.title shop_title,m.nickname,o.user_id,o.shop_id,o.order_code,um.username FROM sq_order o LEFT JOIN sq_merchant_shop ms ON ms.id=o.shop_id LEFT JOIN sq_member m ON m.uid=o.user_id LEFT JOIN sq_ucenter_member um ON um.id=o.user_id WHERE o.id=:id AND o.status IN (' . self::STATUS_MERCHANT_CONFIRM . ',' . self::STATUS_USER_CONFIRM . ')');
+        $sth = $pdo->prepare('SELECT ms.title shop_title,m.nickname,o.user_id,o.shop_id,o.order_code,um.username FROM sq_order o LEFT JOIN sq_merchant_shop ms ON ms.id=o.shop_id LEFT JOIN sq_member m ON m.uid=o.user_id LEFT JOIN sq_ucenter_member um ON um.id=o.user_id WHERE o.id=:id');
         $sth->execute([':id' => $id]);
         $orderInfo = $sth->fetch(\PDO::FETCH_ASSOC);
-        if (!$orderInfo || $orderInfo['user_id'] != $userId) E('没有权限取消订单');
+        if (!$orderInfo) E('订单不存在');
+        if ($orderInfo['status'])
+            if ($orderInfo['user_id'] != $userId) E('没有权限取消订单');
         $saveStatus = $model->save(['status' => self::STATUS_CANCEL]);
         $logData = [//订单状态日志记录数据
             'user_id' => $orderInfo['user_id'],
