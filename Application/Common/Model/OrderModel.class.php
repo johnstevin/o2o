@@ -276,7 +276,7 @@ class OrderModel extends RelationModel
         [
             'update_time',
             'time',
-            self::MODEL_UPDATE,
+            self::MODEL_BOTH,
             'function'
         ],
         [

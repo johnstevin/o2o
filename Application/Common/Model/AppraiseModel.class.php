@@ -86,13 +86,14 @@ class AppraiseModel extends RelationModel
             self::EXISTS_VALIDATE,
             'function'
         ],
-        [
-            'merchant_id',
-            'check_merchant_exist',
-            'merchantId非法',
-            self::EXISTS_VALIDATE,
-            'function'
-        ],
+        //TODO 目前没有送货员，等员工管理完成后再说
+//        [
+//            'merchant_id',
+//            'check_merchant_exist',
+//            'merchantId非法',
+//            self::EXISTS_VALIDATE,
+//            'function'
+//        ],
         [
             'grade_1',
             [
@@ -138,7 +139,13 @@ class AppraiseModel extends RelationModel
         [
             'status',
             self::STATUS_ACTIVE
-        ]
+        ],
+        [
+            'update_time',
+            'time',
+            self::MODEL_BOTH,
+            'function'
+        ],
     ];
 
     /**
@@ -258,9 +265,10 @@ class AppraiseModel extends RelationModel
      * @param float $grade1 评论星星
      * @param float $grade2 评论星星
      * @param float $grade3 评论星星
+     * @param int $anonymity 是否匿名
      * @return bool|int 如果添加成功返回添加成功的ID，否则返回false
      */
-    public static function addAppraise($orderId, $shopId, $userId, $merchantId, $content, $grade1, $grade2, $grade3)
+    public static function addAppraise($orderId, $shopId, $userId, $merchantId, $content, $grade1, $grade2, $grade3,$anonymity=0)
     {
         $data = [
             'order_id' => intval($orderId),
@@ -270,7 +278,8 @@ class AppraiseModel extends RelationModel
             'content' => trim($content),
             'grade_1' => floatval($grade1),
             'grade_2' => floatval($grade2),
-            'grade_3' => floatval($grade3)
+            'grade_3' => floatval($grade3),
+            'anonymity'=>$anonymity,
         ];
         $model = self::getInstance();
         if (!$model->create($data))

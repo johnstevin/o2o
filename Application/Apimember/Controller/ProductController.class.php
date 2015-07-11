@@ -6,6 +6,7 @@
 // +----------------------------------------------------------------------
 namespace Apimember\Controller;
 
+use Common\Model\AppraiseModel;
 use Common\Model\CategoryModel;
 use Common\Model\MerchantDepotModel;
 use Common\Model\MerchantShopModel;
@@ -128,21 +129,24 @@ class ProductController extends ApiController
     public function getAppriseList($shopId,$page = 1, $pageSize = 10){
         try {
             $pageSize > 50 and $pageSize = 50;
-            $page--;
-            $page *= $pageSize;
 
             $this->apiSuccess(['data' =>D('Appraise')
                 ->join('join sq_member on sq_member.uid=sq_appraise.user_id')
                 ->join('join sq_ucenter_member on sq_ucenter_member.id=sq_appraise.user_id')
                 ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
                 ->where(['sq_appraise.shop_id'=>$shopId])
-                ->limit($page, $pageSize)
+                ->page($page, $pageSize)
                 ->order('sq_appraise.update_time')
                 ->field([
-                    'sq_appraise.id','ifnull(sq_appraise.content,\'\') as content',
-                    'sq_appraise.grade_1','sq_appraise.grade_2','sq_appraise.grade_3',
+                    'sq_appraise.id',
+                    'ifnull(sq_appraise.content,\'\') as content',
+                    'sq_appraise.grade_1',
+                    'sq_appraise.grade_2',
+                    'sq_appraise.grade_3',
                     '(sq_appraise.grade_1+sq_appraise.grade_2+sq_appraise.grade_3)/3 as grade',
-                    'sq_appraise.update_time','ifnull(sq_picture.path,\'\') as picture_path','sq_member.nickname'
+                    'sq_appraise.update_time',
+                    'if(anonymity=0,ifnull(sq_picture.path,\'\'),\'\') as picture_path',
+                    'if(anonymity=0,sq_member.nickname,\'匿名用户\') as nickname',
                 ])
                 ->select()],'');
         } catch (\Exception $ex) {
@@ -740,23 +744,38 @@ class ProductController extends ApiController
                 'sq_order.address',
                 'sq_order.consignee',
                 'sq_order.delivery_price',
+                'sq_order.delivery_mode',
+                'sq_order.delivery_time',
                 'sq_order.update_time',
+                'sq_order.add_time',
+                'sq_order.pay_mode',
+                'sq_appraise.id IS NOT NULL as appraised',
+                'ifnull(sq_merchant_shop.phone_number,\'\') as shop_phone_number',
                 'ifnull(sq_merchant_shop.title,\'\') as shop_title',
                 'ifnull(sq_picture.path,\'\') as shop_picture'])
             ->join('left join sq_merchant_shop on sq_merchant_shop.id=shop_id')
             ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
+            ->join('left join sq_appraise on sq_appraise.order_id=sq_order.id')
             ->where($where)
-            ->order('update_time')
+            ->order('update_time desc,add_time desc')
+            ->group('sq_order.id')
             ->page($page,$pageSize)
+            //->fetchSql()
             ->select();
+
+        //dump($data);die;
 
         foreach($data as $k=>&$order){
             $items=D('OrderItem')
                 ->alias('oi')
-                ->field(['oi.*','sq_product.title','ifnull(sq_picture.path,\'\') as picture'])
+                ->field(['oi.*',
+                    'sq_product.title',
+                    'ifnull(sq_picture.path,\'\') as picture',
+                'ifnull(sq_norms.title,\'\') norms'])
                 ->where(['order_id'=>$order['id']])
                 ->join('join sq_product on sq_product.id=product_id')
                 ->join('left join sq_picture on sq_picture.id=picture')
+                ->join('left join sq_norms on sq_norms.id=sq_product.norms_id')
                 ->select();
             $order['_products']=$items;
             if(empty($items))
@@ -789,8 +808,8 @@ class ProductController extends ApiController
         $uid=$this->getUserId();
         $_GET['p']=$page;
 
-        $statusOrder=is_null($status) ? null :$orderStatuees[$status];
-        $statusOrderVeh=is_null($status) ? null :$orderVehStatuses[$status];
+        $statusOrder=(is_null($status) or $status=='' )? null :$orderStatuees[$status];
+        $statusOrderVeh=(is_null($status) or $status=='')? null :$orderVehStatuses[$status];
 
         //var_dump($statusOrder);
         //var_dump($statusOrderVeh);
@@ -802,34 +821,78 @@ class ProductController extends ApiController
         $iter_order_veh=(new \ArrayObject($orders_veh))->getIterator();
 
         $data=[];
-        while(true){
-            $iter_order->next();
-            $iter_order_veh->next();
-
+        while($iter_order->valid() and $iter_order_veh->valid()){
             $order=$iter_order->current();
             $order_veh=$iter_order_veh->current();
 
-            if(empty($order) and empty($order_veh))
+            if(empty($order) or empty($order_veh))
                 break;
-
-            if($order)
-                $order['order_type']='shop';
-            if($order_veh)
-                $order_veh['order_type']='vehicle';
-
-            if($order and $order_veh){
-                if($order['update_time']<$order_veh['update_time']){
-                    $data[]=$order;
-                    $data[]=$order_veh;
-                }else{
-                    $data[]=$order_veh;
-                    $data[]=$order;
-                }
-            }else if($order)
+            $order['order_type']='shop';
+            $order_veh['order_type']='vehicle';
+            if($order['update_time']<$order_veh['update_time']){
                 $data[]=$order;
-            else if($order_veh)
                 $data[]=$order_veh;
+            }else{
+                $data[]=$order_veh;
+                $data[]=$order;
+            }
+            $iter_order->next();
+            $iter_order_veh->next();
+        }
+
+        while($iter_order->valid()){
+
+            $order=$iter_order->current();
+            $order['order_type']='shop';
+            $data[]=$order;
+            $iter_order->next();
+        }
+
+        while($iter_order_veh->valid()){
+            $order_veh=$iter_order_veh->current();
+            $order_veh['order_type']='vehicle';
+            $data[]=$order_veh;
+            $iter_order_veh->next();
         }
         $this->apiSuccess(['data'=>$data],'');
+    }
+
+
+    /**
+     * 评价，POST参数
+     * <pre>
+     * 参数
+     * orderId 订单ID，必须
+     * grade1 评分1
+     * grade2 评分2
+     * grade3 评分3
+     * content 评价
+     * anonymity 是否匿名　０－不是，１－是
+     * </pre>
+     * @author WangJiang
+     * @return json
+     */
+    public function appraise(){
+        try{
+            if(!IS_POST)
+                E('非法调用，请用POST调用');
+            $oid=I('post.orderId');
+            $grade1=I('post.grade1',0);
+            $grade2=I('post.grade2',0);
+            $grade3=I('post.grade3',0);
+            $content=I('post.content');
+            $anonymity=I('post.anonymity',0);
+            if(empty($content))
+                $content='该用户很深沉，什么也没说。';
+
+            $m=new OrderModel();
+            $data=$m->find($oid);
+
+            AppraiseModel::addAppraise($oid,$data['shop_id'],$this->getUserId(),null,$content,$grade1,$grade2,$grade3,$anonymity);
+
+            $this->apiSuccess(['data'=>[]],'成功');
+        }catch (\Exception $ex) {
+            $this->apiError(51023, $ex->getMessage());
+        }
     }
 }

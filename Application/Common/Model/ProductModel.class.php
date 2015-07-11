@@ -22,6 +22,7 @@ class ProductModel extends RelationModel
         'id',
         'title',
         'brand_id',
+        'norms_id',
         'price',
         'detail',
         'add_time',
@@ -35,6 +36,7 @@ class ProductModel extends RelationModel
             'title' => 'varchar',
             'cate_id' => 'varchar',
             'brand_id' => 'int',
+            'norms_id'=>'int',
             'price' => 'decimal',
             'detail' => 'longtext',
             'add_time' => 'int',
@@ -107,7 +109,7 @@ class ProductModel extends RelationModel
         [
             'edit_time',
             'time',
-            self::MODEL_UPDATE,
+            self::MODEL_BOTH,
             'function'
         ],
         [

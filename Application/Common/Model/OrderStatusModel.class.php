@@ -86,7 +86,7 @@ class OrderStatusModel extends RelationModel
         [
             'update_time',
             'time',
-            self::MODEL_INSERT,
+            self::MODEL_BOTH,
             'function'
         ],
         [

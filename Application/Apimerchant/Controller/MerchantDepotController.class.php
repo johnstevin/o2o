@@ -85,15 +85,16 @@ class MerchantDepotController extends ApiController
 
             D()->startTrans();
             try {
-                $productId = D('Product')->add(['title' => $title
+                $productId = D('Product')->create(['title' => $title
                     , 'brand_id' => $brand_id
                     , 'norms_id' => $norm_id
                     , 'price' => $price
                     , 'picture' => $picture
+                    , 'description' => $remark
                     , 'number' => $number
                     , 'status' => ProductModel::STATUS_VERIFY
                     , 'create_uid' => $uid
-                    , 'source' => 2]);
+                    , 'source' => 2])->add();
 
                 D('ProductCategory')->add(['product_id' => $productId, 'category_id' => $category_id]);
 

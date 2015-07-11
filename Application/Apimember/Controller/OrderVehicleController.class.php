@@ -9,6 +9,7 @@
 namespace Apimember\Controller;
 
 
+use Common\Model\AppraiseModel;
 use Common\Model\MerchantModel;
 use Common\Model\MerchantShopModel;
 use Common\Model\OrderVehicleModel;
@@ -221,9 +222,8 @@ class OrderVehicleController extends ApiController
         }
     }
 
-    //TODO 等APP端开始再讨论细节
     /**
-     * 付费，POST参数
+     * 评价，POST参数
      * <pre>
      * 参数
      * orderId 订单ID，必须
@@ -232,40 +232,53 @@ class OrderVehicleController extends ApiController
      * grade2 评分2
      * grade3 评分3
      * content 评价
+     * anonymity 是否匿名　０－不是，１－是
      * </pre>
      * @author WangJiang
      * @return json
      */
-//    public function pay(){
-//        try{
-//            if(!IS_POST)
-//                E('非法调用，请用POST调用');
-//            $oid=I('post.orderId');
-//            $charge=I('post.charge',0);
-//            $grade1=I('post.grade1',0);
-//            $grade2=I('post.grade2',0);
-//            $grade3=I('post.grade3',0);
-//            $content=I('post.content','');
-//
-//            if($charge<15 and strlen($content)<25)
-//                E('请给出不少于25字的评价，谢谢。');
-//
-//            $m=new OrderVehicleModel();
-//            $m->find($oid);
-//
-//            D()->startTrans();
-//            try{
-//                $m->status=OrderVehicleModel::STATUS_CLOSED;
-//                $m->save();
-//
-//                D()->commit();
-//            }catch (\Exception $ex){
-//                D()->rollback();
-//                throw $ex;
-//            }
-//            $this->apiSuccess(null,'成功');
-//        }catch (\Exception $ex) {
-//            $this->apiError(51023, $ex->getMessage());
-//        }
-//    }
+    public function appraise(){
+        try{
+            if(!IS_POST)
+                E('非法调用，请用POST调用');
+            $oid=I('post.orderId');
+            $grade1=I('post.grade1',0);
+            $grade2=I('post.grade2',0);
+            $grade3=I('post.grade3',0);
+            $content=I('post.content');
+            $anonymity=I('post.anonymity',0);
+            if(empty($content))
+                $content='该用户很深沉，什么也没说。';
+
+            $m=new OrderVehicleModel();
+            $data=$m->find($oid);
+
+            D()->startTrans();
+            try{
+                $m->save(['id'=>$oid,'status'=>OrderVehicleModel::STATUS_CLOSED]);
+
+                D('Appraise')->add([
+                    'order_id'=>$oid,
+                    'shop_id'=>$data['shop_id'],
+                    'user_id'=>$this->getUserId(),
+                    'merchant_id'=>$data['worker_id'],
+                    'grade_1'=>$grade1,
+                    'grade_2'=>$grade2,
+                    'grade_3'=>$grade3,
+                    'content'=>$content,
+                    'anonymity'=>$anonymity,
+                ]);
+
+                D()->commit();
+
+                $this->apiSuccess(['data'=>[]],'成功');
+            }catch (\Exception $ex){
+                D()->rollback();
+                throw $ex;
+            }
+
+        }catch (\Exception $ex) {
+            $this->apiError(51023, $ex->getMessage());
+        }
+    }
 }

@@ -87,7 +87,7 @@ class OrderVehicleModel extends AdvModel{
         [
             'update_time',
             'time',
-            self::MODEL_UPDATE,
+            self::MODEL_BOTH,
             'function'
         ],
         [
@@ -388,11 +388,12 @@ class OrderVehicleModel extends AdvModel{
                 'sq_order_vehicle.car_number',
                 'sq_order_vehicle.price',
                 'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
+                'ifnull(user_picture_ids,\'\') as user_picture_ids',
                 'sq_order_vehicle.add_time',
                 'sq_order_vehicle.update_time',
+                'sq_order_vehicle.preset_time',
                 'consignee',
                 'mobile',
-
             ])
             ->where($where)
             ->page($page, $pageSize)
@@ -408,6 +409,14 @@ class OrderVehicleModel extends AdvModel{
                 $i['worker_pictures'][]=$p['path'];
             }
             unset($i['worder_picture_ids']);
+            $i['user_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['user_picture_ids']]])
+                        ->select() as $p){
+                $i['user_pictures'][]=$p['path'];
+            }
+            unset($i['user_picture_ids']);
         }
 
         return $data;
