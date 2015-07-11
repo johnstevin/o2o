@@ -38,7 +38,7 @@ class UserController extends ApiController {
                 $Ucenter  = D('UcenterMember');
                 $token = $Ucenter->login($username, $password, $registrationId,5);
                 if(0 < $token){
-                    $this->apiSuccess(array('data'=>array('token'=>$token,'auth'=>F('User/Login/merchant_auth' . $token))));
+                    $this->apiSuccess(array('data'=>array('token'=>$token,'auth'=>F('User/Login/merchant_auth' . $token))), '登陆成功');
                 } else {
                     switch($token) {
                         case 0:$error = '参数错误！'; break; //系统级别禁用
@@ -85,6 +85,12 @@ class UserController extends ApiController {
                     'uid'          => $uid,
                     'group_id'     => C('AUTH_GROUP_ID.GROUP_ID_MERCHANT'),
                     'role_id'      => C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO'),
+                    'status'       => 1,
+                );
+                $data[] = array(
+                    'uid'          => $uid,
+                    'group_id'     => C('AUTH_GROUP_ID.GROUP_ID_MEMBER_CLIENT'),
+                    'role_id'      => C('AUTH_ROLE_ID.ROLE_ID_MEMBER_CLIENT'),
                     'status'       => 1,
                 );
                 $result = $auth->addUserAccess($data);

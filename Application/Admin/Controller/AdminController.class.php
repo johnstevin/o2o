@@ -355,4 +355,12 @@ class AdminController extends Controller
         $this->ajaxReturn($data);
     }
 
+    /**
+     * @param    $uid
+     * @author   Stevin.John@qq.com
+     */
+    private function isOnline ( $uid ) {
+
+    }
+
 }

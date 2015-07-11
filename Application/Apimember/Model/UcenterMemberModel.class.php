@@ -22,7 +22,7 @@ class UcenterMemberModel extends AdvModel {
         array('password', '6,32', -4, self::EXISTS_VALIDATE, 'length'), //密码长度不合法
 
         /* 验证手机号码 */
-        array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', -9, self::EXISTS_VALIDATE), //手机格式不正确 TODO:
+        //array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', -9, self::EXISTS_VALIDATE), //手机格式不正确 TODO:
         array('mobile', 'checkDenyMobile', -10, self::EXISTS_VALIDATE, 'callback'), //过滤手机黑名单
         array('mobile', '', -11, self::EXISTS_VALIDATE, 'unique'), //手机号被占用
 

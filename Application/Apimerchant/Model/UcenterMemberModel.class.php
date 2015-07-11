@@ -153,20 +153,22 @@ class UcenterMemberModel extends AdvModel {
         if ($admin->getDbError())
             return -3;  //插入或更新管理员信息失败
         /* 是否有总店未审核 */
-        $shopFields = 'id,group_id,status';
+        $shopFields = 'id,group_id,message,status';
         $shopMaps   = array('status'=>array('in','2,3'),'add_uid'=>$user['id']);
         $shopModel  = M('MerchantShop');
         $shopRes    = $shopModel->field($shopFields)->where($shopMaps)->find();
 
         if (empty($shopRes)) {
             /* 获取组织关系 */
+            //$acMap    = array('uid'=>$user['id'],'status'=>1,'group_id'=>C('AUTH_GROUP_ID.GROUP_ID_MERCHANT'));
             $acMap    = array('uid'=>$user['id'],'status'=>1);
             $acFields = 'uid,group_id,role_id';
             $acRes    = D("AuthAccess")->lists($acMap, $acFields);
             if ( $acRes === false )
                 return -7;  //获取权限失败
             $acCount  = count($acRes);
-            if ( $acCount > 1) {
+            // TODO 这里有问题
+            if ( $acCount > 2) {
                 $group_tree = array();
             } else {
                 $group_tree = array(
@@ -174,6 +176,7 @@ class UcenterMemberModel extends AdvModel {
                     'role_id'     => _merchant_roleName($acRes[0]['role_id']),
                     'shop_id'     => 0,
                     'shop_status' => 0,
+                    'shop_message'=> '',
                 );
             }
 
@@ -183,6 +186,7 @@ class UcenterMemberModel extends AdvModel {
                 'role_id'     => _merchant_roleName(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO')),
                 'shop_id'     => $shopRes['id'],
                 'shop_status' => $shopRes['status'],
+                'shop_message'=> is_null($shopRes['message']) ? '' : $shopRes['message'],
             );
         }
 
