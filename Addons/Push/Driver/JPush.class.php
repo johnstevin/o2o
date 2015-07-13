@@ -4,7 +4,7 @@ namespace Addons\Push\Driver;
 use JPush\JPushClient;
 use JPush\Model as M;
 
-require dirname(APP_PATH) . '/vendor/autoload.php';
+require realpath(dirname(APP_PATH)) . '/vendor/autoload.php';
 
 class JPush
 {
@@ -71,7 +71,7 @@ class JPush
             $client->setOptions(M\options(null, 604800, null, false));
         }
         return $client->setMessage(M\message($message_content, $message_title, $message_type, $extras))
-            ->printJSON()//测试的时候开启可以打印出要发送的数据
+//            ->printJSON()//测试的时候开启可以打印出要发送的数据
             ->send();
     }
 
