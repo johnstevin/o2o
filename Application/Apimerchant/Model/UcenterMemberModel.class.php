@@ -118,7 +118,7 @@ class UcenterMemberModel extends AdvModel {
             /* 验证用户密码 */
             if(generate_password($password, $user['saltkey']) === $user['password']){
                 /* 极光推送服务 */
-                update_device_tag_alias('STORE',$registrationId, $user['id']);
+                //update_device_tag_alias('STORE',$registrationId, $user['id']);
                 //是管理员，插入或更新数据admin
                 return $this->updateLogin($user); //登录成功，返回用户ID
             } else {

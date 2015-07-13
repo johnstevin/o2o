@@ -32,7 +32,8 @@ class UserController extends ApiController {
             if(IS_POST){
                 $username = I('post.username') == '' ? E('手机号不能为空') : I('post.username');
                 $password = I('post.password') == '' ? E('密码不能为空') : I('post.password');
-                $registrationId = I('post.registrationId') == '' ? E('注册码不能为空') : I('post.registrationId');
+                //$registrationId = I('post.registrationId') == '' ? E('注册码不能为空') : I('post.registrationId');
+                $registrationId = '';
 
                 $Ucenter  = D('UcenterMember');
                 $token = $Ucenter->login($username, $password, $registrationId, 5);
