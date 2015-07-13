@@ -129,9 +129,10 @@ class AppraiseModel extends RelationModel
             [
                 self::ANONYMITY_TRUE,
                 self::ANONYMITY_FALSE
-            ],
-            '匿名类型非法',
-            'in'
+           ],
+           '匿名类型非法',
+           self::EXISTS_VALIDATE,
+           'in'
         ],
     ];
 
@@ -270,6 +271,7 @@ class AppraiseModel extends RelationModel
      */
     public static function addAppraise($orderId, $shopId, $userId, $merchantId, $content, $grade1, $grade2, $grade3,$anonymity=0)
     {
+
         $data = [
             'order_id' => intval($orderId),
             'shop_id' => intval($shopId),
@@ -279,8 +281,9 @@ class AppraiseModel extends RelationModel
             'grade_1' => floatval($grade1),
             'grade_2' => floatval($grade2),
             'grade_3' => floatval($grade3),
-            'anonymity'=>$anonymity,
+            'anonymity'=>intval($anonymity),
         ];
+//E(json_encode($data));
         $model = self::getInstance();
         if (!$model->create($data))
             E($model->getError());//如果验证不通过，直接抛出异常
