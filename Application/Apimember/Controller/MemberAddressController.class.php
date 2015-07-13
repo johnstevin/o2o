@@ -39,8 +39,10 @@ class MemberAddressController extends ApiController
      * @param float $lat 纬度
      * @param bool $isDefault 是否为默认地址
      */
-    public function update($id, $name, $address, $mobile, $streetNumber, $lng = null, $lat = null, $isDefault = null)
+    public function update($id, $name = null, $address = null, $mobile = null, $streetNumber = null, $lng = null, $lat = null, $isDefault = null)
     {
+        if (!$old = MemberAddressModel::getInstance()->find($id)) E('地址记录不存在');
+        if ($old['uid'] != $this->getUserId()) E('您没有权限修改这个地址记录');
         $this->apiSuccess(['data' => MemberAddressModel::getInstance()->updateAddress($id, $name, $address, $mobile, $streetNumber, $lng, $lat, $isDefault)]);
     }
 
