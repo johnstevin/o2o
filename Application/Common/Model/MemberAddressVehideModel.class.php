@@ -72,7 +72,8 @@ class MemberAddressVehideModel extends AdvModel
             'check_user_exist',
             '用户ID非法',
             self::MUST_VALIDATE,
-            'function'
+            'function',
+            self::MODEL_INSERT
         ],
         [
             'region_id',
@@ -106,7 +107,17 @@ class MemberAddressVehideModel extends AdvModel
             'car_number',
             'require',
             '车牌号不能为空',
-            self::MUST_VALIDATE
+            self::MUST_VALIDATE,
+            '',
+            self::MODEL_INSERT
+        ],
+        [
+            'car_number',
+            'require',
+            '车牌号不能为空',
+            self::EXISTS_VALIDATE,
+            '',
+            self::MODEL_UPDATE
         ]
     ];
 
@@ -180,12 +191,69 @@ class MemberAddressVehideModel extends AdvModel
             ':picture_id' => $pictureId,
             ':lng' => floatval($lng),
             ':lat' => floatval($lat),
-            ':street_number' => trim($streetNumber)
+            ':street_number' => trim($streetNumber),
+            ':status' => self::STATUS_ACTIVE
         ];
-        $sql = 'INSERT INTO sq_member_address_vehide (user_id, region_id, car_number, lnglat, address, `default`, picture_id) VALUES (:user_id,:region_id,:car_number,point(:lng,:lat),:address,:isDefault,:street_number)';
+        $sql = 'INSERT INTO sq_member_address_vehide (user_id, car_number, lnglat, address, `default`, picture_id,street_number,status) VALUES (:user_id,:car_number,point(:lng,:lat),:address,:isDefault,:picture_id,:street_number,:status)';
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
         return $pdo->lastInsertId();
+    }
+
+    /**
+     * 更新地址
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $id 地址ID
+     * @param null|string $carNumber 车牌号
+     * @param null|string $address 地址
+     * @param null|int|bool $isDefault 是否设为默认
+     * @param null|int $pictureId 图片ID
+     * @param null|string $streetNumber 门牌号
+     * @param null|float $lng 经度
+     * @param null|float $lat 纬度
+     * @return bool
+     */
+    public function updateAddress($id, $carNumber = null, $address = null, $isDefault = null, $pictureId = null, $streetNumber = null, $lng = null, $lat = null)
+    {
+        $data = ['id' => intval($id)];
+        if (!$id = intval($id)) E('id非法');
+        if (!empty($carNumber)) $data['car_number'] = trim($carNumber);
+        if (!empty($address)) $data['address'] = trim($address);
+        if (!empty($pictureId)) $data['picture_id'] = intval($pictureId);
+        if (!empty($streetNumber)) $data['street_number'] = trim($streetNumber);
+        if ($isDefault !== null) $data['default'] = intval($isDefault);
+        if (!empty($lng) && !empty($lat)) {
+            $data['lnglat'] = floatval($lng) . ',' . floatval($lat);
+        }
+        if (empty($data)) return true;
+        $model = self::getInstance();
+        if (!$model->create($data)) {
+            E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
+        }
+        if (!$oldAddress = $model->where(['id' => intval($id), 'status' => self::STATUS_ACTIVE])->find()) {
+            E('地址不存在');
+        }
+        if ($isDefault) {//如果当前这个被设为默认地址了，其他的都变成将就
+            $model->where(['user_id' => $oldAddress['user_id']])->save(['default' => self::DEFAULT_FALSE]);
+        }
+        $sql = 'UPDATE sq_member_address_vehide SET ';
+        foreach ($data as $field => $item) {
+            $bindStr = ':' . $field;
+            if ($field == $this->pk) continue;
+            if ($this->fields['_type'][$field] === 'point') {
+                $sql .= '`' . $field . '`=point(' . $item . '),';
+            } else {
+                $sql .= '`' . $field . '`=' . $bindStr . ',';
+                $bind[$bindStr] = $item;
+            }
+        }
+        $sql = rtrim($sql, ',') . ' WHERE id = :id';
+        $bind[':id'] = intval($id);
+        $pdo = get_pdo();
+        $sth = $pdo->prepare($sql);
+        $result = $sth->execute($bind);
+        return $result;
     }
 
     /**
