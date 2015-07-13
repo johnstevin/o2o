@@ -47,6 +47,7 @@ class MemberAddressVehideModel extends AdvModel
         'address',
         'status',
         'default',
+        'mobile',
         'picture_id',
         'street_number',
         '_type' => [
@@ -56,6 +57,7 @@ class MemberAddressVehideModel extends AdvModel
             'car_number' => 'varchar',
             'lnglat' => 'point',
             'address' => 'varchar',
+            'mobile' => 'varchar',
             'status' => 'tinyint',
             'default' => 'tinyint',
             'picture_id' => 'int',
@@ -168,9 +170,10 @@ class MemberAddressVehideModel extends AdvModel
      * @param float $lng 经度
      * @param float $lat 纬度
      * @param string $streetNumber 门牌号
+     * @param string|int $mobile 联系电话
      * @return string
      */
-    public function addAddress($userId, $carNumber, $address, $isDefault, $pictureId, $lng, $lat, $streetNumber)
+    public function addAddress($userId, $carNumber, $address, $isDefault, $pictureId, $lng, $lat, $streetNumber, $mobile)
     {
         $pdo = get_pdo();
         $data = [
@@ -179,7 +182,8 @@ class MemberAddressVehideModel extends AdvModel
             'address' => $address,
             'default' => $isDefault,
             'picture_id' => $pictureId,
-            'street_number' => $streetNumber
+            'street_number' => $streetNumber,
+            'mobile' => $mobile
         ];
         $model = self::getInstance();
         if (!$model->create($data)) E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
@@ -192,9 +196,10 @@ class MemberAddressVehideModel extends AdvModel
             ':lng' => floatval($lng),
             ':lat' => floatval($lat),
             ':street_number' => trim($streetNumber),
-            ':status' => self::STATUS_ACTIVE
+            ':status' => self::STATUS_ACTIVE,
+            ':mobile' => $mobile
         ];
-        $sql = 'INSERT INTO sq_member_address_vehide (user_id, car_number, lnglat, address, `default`, picture_id,street_number,status) VALUES (:user_id,:car_number,point(:lng,:lat),:address,:isDefault,:picture_id,:street_number,:status)';
+        $sql = 'INSERT INTO sq_member_address_vehide (user_id, car_number, lnglat, address, `default`, picture_id,street_number,status,mobile) VALUES (:user_id,:car_number,point(:lng,:lat),:address,:isDefault,:picture_id,:street_number,:status,:mobile)';
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
         return $pdo->lastInsertId();
@@ -212,9 +217,10 @@ class MemberAddressVehideModel extends AdvModel
      * @param null|string $streetNumber 门牌号
      * @param null|float $lng 经度
      * @param null|float $lat 纬度
+     * @param string|int $mobile 联系电话
      * @return bool
      */
-    public function updateAddress($id, $carNumber = null, $address = null, $isDefault = null, $pictureId = null, $streetNumber = null, $lng = null, $lat = null)
+    public function updateAddress($id, $carNumber = null, $address = null, $isDefault = null, $pictureId = null, $streetNumber = null, $lng = null, $lat = null, $mobile = null)
     {
         $data = ['id' => intval($id)];
         if (!$id = intval($id)) E('id非法');
@@ -226,6 +232,7 @@ class MemberAddressVehideModel extends AdvModel
         if (!empty($lng) && !empty($lat)) {
             $data['lnglat'] = floatval($lng) . ',' . floatval($lat);
         }
+        if (!empty($mobile)) $data['mobile'] = $mobile;
         if (empty($data)) return true;
         $model = self::getInstance();
         if (!$model->create($data)) {
@@ -283,5 +290,20 @@ class MemberAddressVehideModel extends AdvModel
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
         return $sth->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * 删除地址
+     * @author Fufeng Nie <niefueng@gmail.com>
+     *
+     * @param int $id ID
+     * @param bool|true $logic 是否逻辑删除
+     * @return bool|mixed
+     */
+    public function deleteById($id, $logic = true)
+    {
+        if (!$id = intval($id)) E('ID非法');
+        if ($logic) return self::getInstance()->where(['id' => $id, 'status' => self::STATUS_ACTIVE])->save(['status' => self::STATUS_DELETE]);
+        return self::getInstance()->delete($id);
     }
 }
