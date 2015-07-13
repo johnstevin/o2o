@@ -10,8 +10,21 @@ use Common\Model\MemberAddressVehideModel;
  */
 class MemberAddressVehideController extends ApiController
 {
-    public function add($userId, $carNumber, $address, $isDefault, $pictureId, $lng, $lat, $regionId = null)
+    /**
+     * 添加停车地址
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param $userId
+     * @param $carNumber
+     * @param $address
+     * @param $isDefault
+     * @param $pictureId
+     * @param $lng
+     * @param $lat
+     * @param $streetNumber
+     */
+    public function add($userId, $carNumber, $address, $isDefault, $pictureId, $lng, $lat, $streetNumber)
     {
-        $this->apiSuccess(['data' => MemberAddressVehideModel::getInstance()->addAddress($userId, $carNumber, $address, $isDefault, $pictureId, $lng, $lat, $regionId)]);
+        $this->apiSuccess(['data' => MemberAddressVehideModel::getInstance()->addAddress($userId, $carNumber, $address, $isDefault, $pictureId, $lng, $lat, $streetNumber)]);
     }
 }
