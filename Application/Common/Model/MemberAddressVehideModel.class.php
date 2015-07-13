@@ -48,6 +48,7 @@ class MemberAddressVehideModel extends AdvModel
         'status',
         'default',
         'picture_id',
+        'street_number',
         '_type' => [
             'id' => 'int',
             'user_id' => 'int',
@@ -57,7 +58,8 @@ class MemberAddressVehideModel extends AdvModel
             'address' => 'varchar',
             'status' => 'tinyint',
             'default' => 'tinyint',
-            'picture_id' => 'int'
+            'picture_id' => 'int',
+            'street_number' => 'varchar'
         ]
     ];
 
@@ -154,10 +156,10 @@ class MemberAddressVehideModel extends AdvModel
      * @param int $pictureId 图片ID
      * @param float $lng 经度
      * @param float $lat 纬度
-     * @param null|int $regionId 区域ID
+     * @param string $streetNumber 门牌号
      * @return string
      */
-    public function addAddress($userId, $carNumber, $address, $isDefault, $pictureId, $lng, $lat, $regionId = null)
+    public function addAddress($userId, $carNumber, $address, $isDefault, $pictureId, $lng, $lat, $streetNumber)
     {
         $pdo = get_pdo();
         $data = [
@@ -166,25 +168,52 @@ class MemberAddressVehideModel extends AdvModel
             'address' => $address,
             'default' => $isDefault,
             'picture_id' => $pictureId,
+            'street_number' => $streetNumber
         ];
-        if (!empty($regionId)) $data['region_id'] = $regionId;
         $model = self::getInstance();
         if (!$model->create($data)) E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         $bind = [
             ':user_id' => $userId,
             ':car_number' => $carNumber,
-            ':address' => $address,
-            ':isDefault' => $isDefault,
+            ':address' => trim($address),
+            ':isDefault' => intval($isDefault),
             ':picture_id' => $pictureId,
-            ':lng' => $lng,
-            ':lat' => $lat,
-            ':region_id' => intval($regionId)
+            ':lng' => floatval($lng),
+            ':lat' => floatval($lat),
+            ':street_number' => trim($streetNumber)
         ];
-        $lng = floatval($lng);
-        $lat = floatval($lat);
-        $sql = 'INSERT INTO sq_member_address_vehide (user_id, region_id, car_number, lnglat, address, `default`, picture_id) VALUES (:user_id,:region_id,:car_number,point(:lng,:lat),:address,:isDefault,:picture_id)';
+        $sql = 'INSERT INTO sq_member_address_vehide (user_id, region_id, car_number, lnglat, address, `default`, picture_id) VALUES (:user_id,:region_id,:car_number,point(:lng,:lat),:address,:isDefault,:street_number)';
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
         return $pdo->lastInsertId();
+    }
+
+    /**
+     * 获取列表
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $userId 用户ID
+     * @param null $status 状态
+     * @param int $pageSize 分页大小
+     * @return array
+     */
+    public function getList($userId, $status = null, $pageSize = 10)
+    {
+        $nowPage = $_GET['p'] ?: 1;
+        $pdo = get_pdo();
+        $bind = [
+            ':user_id' => intval($userId)
+        ];
+        $sql = 'SELECT mav.user_id,mav.id,mav.address,mav.car_number,mav.status,mav.region_id,picture.path picture,mav.`default` FROM sq_member_address_vehide mav LEFT JOIN sq_picture picture ON mav.picture_id=picture.id WHERE mav.user_id = :user_id AND ';
+        if ($status !== null && array_key_exists($status, self::getStatusOptions())) {
+            $sql .= 'mav.status = :status';
+            $bind[':status'] = intval($status);
+        } else {
+            $sql .= 'mav.status != :status';
+            $bind[':status'] = self::STATUS_DELETE;
+        }
+        $sth = $pdo->prepare($sql);
+        $sth->execute($bind);
+        return $sth->fetchAll(\PDO::FETCH_ASSOC);
     }
 }
