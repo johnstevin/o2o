@@ -106,7 +106,9 @@ class MemberAddressModel extends RelationModel
             'address',
             'require',
             '地址不能为空',
-            self::MUST_VALIDATE
+            self::MUST_VALIDATE,
+            '',
+            self::MODEL_INSERT
         ],
         [
             'mobile',
@@ -338,6 +340,7 @@ class MemberAddressModel extends RelationModel
                 $data['patientia'] = 0;
             }
         }
+        if (empty($data)) return true;
         if (!$model->create($data)) {//利用模型的规则检测数据是否合法
             E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         }
