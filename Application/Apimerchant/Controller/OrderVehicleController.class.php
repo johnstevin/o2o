@@ -278,6 +278,11 @@ class OrderVehicleController extends ApiController{
             E('用户无权修改此订单');
 
         //var_dump($data);
+        $filter=['address','car_number','preset_time','lnglat'];
+        foreach($data as $k=>$v){
+            if(!in_array($k,$filter))
+                unset($data[$k]);
+        }
         $model->data($data);
         $model->update($id);
         action_log('api_update_order_veh', $model, $id, UID,2);
@@ -317,6 +322,40 @@ class OrderVehicleController extends ApiController{
 
         action_log('api_reassign_order_veh', $model, $id, UID,2);
         //TODO 实现消息推送$wid
+
+        $this->apiSuccess(['data'=>[]], '操作成功');
+    }
+
+    /**
+     * 管理员取消订单,POST数据，需要accesstoken
+     * <pre>
+     * id 订单ID
+     * </pre>
+     * @author WangJiang
+     */
+    public function cancel(){
+        if(!IS_POST)
+            E('非法调用，请用POST命令');
+
+        $id=I('post.id');//为了避免传递参数时混淆，强制指定post
+
+        $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
+        $groupIds=$this->getUserGroupIds($mgrRoleId,true);
+
+        $model=D('OrderVehicle');
+        $order=$model
+            //->field(['st_astext(lnglat) as lnglat','preset_time'])
+            ->find($id);
+        //var_dump($order);die;
+        if(empty($order))
+            E('订单不存在');
+        $shop=D('MerchantShop')->find($order['shop_id']);
+        if(!in_array($shop['group_id'],$groupIds))
+            E('用户无权修改此订单');
+
+        $model->save(['id'=>$id,'status'=>OrderVehicleModel::STATUS_CANCELED]);
+
+        //TODO 实现消息推送，通知用户该订单取消，同时附上取消人和原因
 
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
