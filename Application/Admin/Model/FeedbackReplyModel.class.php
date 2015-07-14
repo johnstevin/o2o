@@ -1,12 +1,13 @@
 <?php
 
 namespace Admin\Model;
+
 use Think\Model;
+
 /**
  * 反馈回复模型
  * @author liuhui
  */
-
 class FeedbackReplyModel extends Model
 {
     protected $_validate = array(
@@ -15,7 +16,7 @@ class FeedbackReplyModel extends Model
 
     protected $_auto = array(
         array('sys_uid', UID, self::MODEL_INSERT),
-        array('reply_ip','get_client_ip', self::MODEL_INSERT, 'function', 1),
+        array('reply_ip', 'get_client_ip', self::MODEL_INSERT, 'function', 1),
         array('reply_time', NOW_TIME, self::MODEL_INSERT),
     );
 
@@ -29,7 +30,15 @@ class FeedbackReplyModel extends Model
     {
         $map = array();
         $map['fid'] = $id;
-        return $this->field($field)->order('reply_time')->where($map)->select();
+        $reply = $this->field($field)->order('reply_time')->where($map)->select();
+        foreach ($reply as &$key) {
+            $key['show_name'] = M('UcenterMember')->where(array('id' => $key['sys_uid']))->getField('mobile');
+
+            if (!empty($key['show_name'])) {
+                $key['show_name'] = substr_replace($key['show_name'], '*****',3,5);
+            }
+        }
+        return $reply;
     }
 
     /**
@@ -48,8 +57,8 @@ class FeedbackReplyModel extends Model
         if (empty($data['id'])) {
 
 
-            if( $data['from_uid']!=UID){
-                M('Feedback')->where(array('id' =>$data['fid'] ))->setField('status', 1);
+            if ($data['from_uid'] != UID) {
+                M('Feedback')->where(array('id' => $data['fid']))->setField('status', 1);
             }
 
             $res = $this->add();
