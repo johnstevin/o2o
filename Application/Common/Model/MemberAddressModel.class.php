@@ -51,6 +51,7 @@ class MemberAddressModel extends RelationModel
         'status',
         'lnglat',
         'patientia',
+        'street_number',
         '_type' => [
             'id' => 'int',
             'uid' => 'int',
@@ -60,7 +61,8 @@ class MemberAddressModel extends RelationModel
             'mobile' => 'char',
             'status' => 'tinyint',
             'lnglat' => 'point',
-            'patientia' => 'tinyint'
+            'patientia' => 'tinyint',
+            'street_number' => 'varchar'
         ]
     ];
 
@@ -104,7 +106,9 @@ class MemberAddressModel extends RelationModel
             'address',
             'require',
             '地址不能为空',
-            self::MUST_VALIDATE
+            self::MUST_VALIDATE,
+            '',
+            self::MODEL_INSERT
         ],
         [
             'mobile',
@@ -257,20 +261,20 @@ class MemberAddressModel extends RelationModel
      * @param string $name 收货人姓名
      * @param string $address 收货地址
      * @param string|int $mobile 收货人联系方式
-     * @param int $regionId 区域ID
+     * @param string $streetNumber 门牌号
      * @param float $lng 经度
      * @param float $lat 纬度
      * @param bool $isDefault 是否为默认地址
      * @return int|bool 添加成功返回地址ID，否则返回false
      */
-    public function addAddress($uid, $name, $address, $mobile, $regionId, $lng = null, $lat = null, $isDefault = false)
+    public function addAddress($uid, $name, $address, $mobile, $streetNumber, $lng = null, $lat = null, $isDefault = false)
     {
         $data = [
             'uid' => intval($uid),
             'name' => trim($name),
             'address' => trim($address),
             'mobile' => $mobile,
-            'region_id' => intval($regionId),
+            'street_number' => trim($streetNumber),
             'patientia' => intval($isDefault),
             'status' => self::STATUS_ACTIVE
         ];
@@ -313,13 +317,13 @@ class MemberAddressModel extends RelationModel
      * @param string $name 收货人姓名
      * @param string $address 收货地址
      * @param int|string $mobile 收货人联系方式
-     * @param int $regionId 区域ID
+     * @param string $streetNumber 门牌号
      * @param float $lng 经度
      * @param float $lat 纬度
      * @param bool $isDefault 是否为默认地址
      * @return bool 是否更新成功
      */
-    public function updateAddress($id, $name = null, $address = null, $mobile = null, $regionId = null, $lng = null, $lat = null, $isDefault = null)
+    public function updateAddress($id, $name = null, $address = null, $mobile = null, $streetNumber = null, $lng = null, $lat = null, $isDefault = null)
     {
         $model = self::getInstance();
         $data = [];
@@ -327,7 +331,7 @@ class MemberAddressModel extends RelationModel
         if (!empty($name)) $data['name'] = trim($name);
         if (!empty($address)) $data['address'] = trim($address);
         if (!empty($mobile)) $data['mobile'] = $mobile;
-        if (!empty($regionId)) $data['region_id'] = intval($regionId);
+        if (!empty($streetNumber)) $data['street_number'] = trim($streetNumber);
         if (!empty($lng) && !empty($lat)) $data['lnglat'] = 'POINT(' . floatval($lng) . ' ' . floatval($lat) . ')';
         if ($isDefault !== null) {
             if ($isDefault) {
@@ -336,6 +340,7 @@ class MemberAddressModel extends RelationModel
                 $data['patientia'] = 0;
             }
         }
+        if (empty($data)) return true;
         if (!$model->create($data)) {//利用模型的规则检测数据是否合法
             E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
         }

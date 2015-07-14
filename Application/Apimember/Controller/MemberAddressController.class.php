@@ -17,14 +17,14 @@ class MemberAddressController extends ApiController
      * @param string $name 收货人姓名
      * @param string $address 收货地址
      * @param string|int $mobile 联系方式
-     * @param int $regionId 区域ID
+     * @param string $streetNumber 门牌号
      * @param float $lng 经度
      * @param float $lat 纬度
      * @param bool $isDefault 是否为默认地址
      */
-    public function add($name, $address, $mobile, $regionId, $lng = null, $lat = null, $isDefault = false)
+    public function add($name, $address, $mobile, $streetNumber, $lng = null, $lat = null, $isDefault = false)
     {
-        $this->apiSuccess(['data' => MemberAddressModel::getInstance()->addAddress($this->getUserId(), $name, $address, $mobile, $regionId, $lng, $lat, $isDefault)]);
+        $this->apiSuccess(['data' => MemberAddressModel::getInstance()->addAddress($this->getUserId(), $name, $address, $mobile, $streetNumber, $lng, $lat, $isDefault)]);
     }
 
     /**
@@ -34,14 +34,16 @@ class MemberAddressController extends ApiController
      * @param string $name 收货人姓名
      * @param string $address 收货地址
      * @param int|string $mobile 联系方式
-     * @param int $regionId 区域ID
+     * @param string $streetNumber 门牌号
      * @param float $lng 经度
      * @param float $lat 纬度
      * @param bool $isDefault 是否为默认地址
      */
-    public function update($id, $name, $address, $mobile, $regionId, $lng = null, $lat = null, $isDefault = null)
+    public function update($id, $name = null, $address = null, $mobile = null, $streetNumber = null, $lng = null, $lat = null, $isDefault = null)
     {
-        $this->apiSuccess(['data' => MemberAddressModel::getInstance()->updateAddress($id, $name, $address, $mobile, $regionId, $lng, $lat, $isDefault)]);
+        if (!$old = MemberAddressModel::getInstance()->find($id)) E('地址记录不存在');
+        if ($old['uid'] != $this->getUserId()) E('您没有权限修改这个地址记录');
+        $this->apiSuccess(['data' => MemberAddressModel::getInstance()->updateAddress($id, $name, $address, $mobile, $streetNumber, $lng, $lat, $isDefault)]);
     }
 
     /**
