@@ -324,7 +324,17 @@ function check_region_exist($id)
  */
 function create_order_code()
 {
-    return date('YmdHis') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8);
+    return 'S' . date('YmdHis') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8);
+}
+
+/**
+ * 生成洗车订单（因为模型的自动完成没法传参数，所以写成了两个方法）
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @return string
+ */
+function create_vehide_order_code()
+{
+    return 'V' . date('YmdHis') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8);
 }
 
 /**
@@ -965,7 +975,8 @@ function send_get($url)
  */
 function get_pdo()
 {
-    return new PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';charset=' . C('DB_CHARSET') . ';port' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'), [
+    static $pdo = null;
+    return $pdo instanceof PDO ? $pdo : $pdo = new PDO(C('DB_TYPE') . ':host=' . C('DB_HOST') . ';dbname=' . C('DB_NAME') . ';charset=' . C('DB_CHARSET') . ';port' . C('DB_PORT'), C('DB_USER'), C('DB_PWD'), [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
 }
