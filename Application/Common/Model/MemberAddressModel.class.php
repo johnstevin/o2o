@@ -405,7 +405,7 @@ class MemberAddressModel extends RelationModel
     public function getDefault($userId)
     {
         $pdo = get_pdo();
-        $sql = 'SELECT mav.id,mav.user_id,mav.region_id,mav.car_number,astext(mav.lnglat) lnglat,mav.address,mav.status,`mav.default`,sq_picture.path picture FROM sq_member_address_vehide mav LEFT JOIN sq_picture ON sq_picture.id=mav.picture_id WHERE user_id=:user_id AND status=:status AND `default`=:isDefault';
+        $sql = 'SELECT m.id,m.uid,m.name,m.street_number,m.region_id,astext(m.lnglat) lnglat,m.address,m.status,m.patientia FROM sq_member_address m WHERE m.uid=:user_id AND m.status=:status AND m.patientia=:isDefault';
         $sth = $pdo->prepare($sql);
         $sth->execute([':status' => self::STATUS_ACTIVE, ':user_id' => intval($userId), ':isDefault' => self::DEFAULT_TRUE]);
         $data = $sth->fetch(\PDO::FETCH_ASSOC);
