@@ -60,24 +60,52 @@ class AuthAccessModel extends Model
      * $gid array(array())二位数组
      * @author liuhui
      */
-    public function addToRole($uid, $gid)
+    public function addToRole($uid, $gid,$type)
     {
 
         $uid = is_array($uid) ? implode(',', $uid) : trim($uid, ',');
         $gid = is_array($gid) ? $gid : explode(',', trim($gid, ','));
-        $merchant = C('AUTH_ROLE_ID')['ROLE_ID_MERCHANT_COMMITINFO'];
+
 
         //TODO 事物控制
         $Access = M(self::AUTH_ACCESS);
         if (isset($_REQUEST['batch'])) {
-            //为单个用户批量添加用户组时,先删除旧数据
-            $del = $Access->where(array('uid' => array('in', $uid)))->delete();
+
+           $map= array('uid' => array('in', $uid));
+
+            //先删除旧数据
+            switch (strtolower($type)) {
+                case '1':
+                    $where = array('type' => C('AUTH_GROUP_TYPE')['ADMIN']);
+                    break;
+                case'3':
+                    $where = array('type' => C('AUTH_GROUP_TYPE')['MEMBER']);
+                    break;
+                case'2':
+                    $where = array('type' => C('AUTH_GROUP_TYPE')['MERCHANT']);
+                    break;
+                default:
+                    $this->error='参数错误';
+                    return false;
+                    break;
+            }
+
+            $ids = M('AuthGroup')->field('id')->where($where)->select();
+
+            $ids=array_column($ids,'id');
+
+            $w = array('group_id'=>array('in',$ids));
+
+            $map=array_merge($map,$w);
+
+            $del = $Access->where($map)->delete();
+
         }
 
         $uid_arr = explode(',', $uid);
         $uid_arr = array_diff($uid_arr, array(C('USER_ADMINISTRATOR')));
         $add = array();
-        $where = array();
+
         if ($del !== false) {
 
 
@@ -105,17 +133,12 @@ class AuthAccessModel extends Model
                             $add[] = array('group_id' => $k, 'uid' => $u, 'role_id' => $g, 'status' => '1');
 
 
-                            if ($merchant == $g) {
-                                $where[] = $u;
-                            }
                         }
                     }
                 }
             }
             $Access->addAll($add);
-            if (!empty($where)) {
-                M('UcenterMember')->where(array('id' => array('in', $where)))->setField('is_merchant', 1);
-            }
+
         }
         if ($Access->getDbError()) {
             if (count($uid_arr) == 1 && count($gid) == 1) {

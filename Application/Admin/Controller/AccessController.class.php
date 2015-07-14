@@ -52,22 +52,23 @@ class AccessController extends AdminController
         /*根据用户type判断是组织类型*/
         $_type = I('_type');
         $map = array();
-        if (!IS_ROOT) {
-            switch (strtolower($_type)) {
-                case '1':
-                    $map = array('type' => C('AUTH_GROUP_TYPE')['ADMIN']);
-                    break;
-                case'3':
-                    $map = array('type' => C('AUTH_GROUP_TYPE')['MEMBER']);
-                    break;
-                case'2':
-                    $map = array('type' => C('AUTH_GROUP_TYPE')['MERCHANT']);
-                    break;
-                default:
-                    $this->error('参数错误');
-                    break;
-            }
+
+        switch (strtolower($_type)) {
+            case '1':
+                $map = array('type' => C('AUTH_GROUP_TYPE')['ADMIN']);
+                break;
+            case'3':
+                $map = array('type' => C('AUTH_GROUP_TYPE')['MEMBER']);
+                break;
+            case'2':
+                $map = array('type' => C('AUTH_GROUP_TYPE')['MERCHANT']);
+                break;
+            default:
+                $this->error('参数错误');
+                break;
         }
+
+
         /*获取组织*/
         $AuthGroup = D('AuthGroup');
         $auth_Groups = $AuthGroup->getGroups($map, 'id,pid,title');
@@ -102,6 +103,7 @@ class AccessController extends AdminController
             }
         }
 
+
 //        echo "<pre>";
 //        print_r($auth_Groups);
 //        echo "</pre>";
@@ -122,6 +124,8 @@ class AccessController extends AdminController
         $uid = I('uid');
 
         $gid = I('group_role');
+
+        $type=I('_type');
 
         if (empty($uid)) {
             $this->error('参数有误');
@@ -144,7 +148,7 @@ class AccessController extends AdminController
 
         }
 
-        if ($AuthAccess->addToRole($uid, $gid)) {
+        if ($AuthAccess->addToRole($uid, $gid,$type)) {
 
 
             //记录行为
