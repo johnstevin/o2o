@@ -395,4 +395,25 @@ class MemberAddressModel extends RelationModel
     {
         return self::getInstance()->where(['id' => intval($id)])->save(['status' => self::STATUS_ACTIVE]);
     }
+
+    /**
+     * 获取默认的地址
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $userId 用户ID
+     * @return mixed
+     */
+    public function getDefault($userId)
+    {
+        $pdo = get_pdo();
+        $sql = 'SELECT mav.id,mav.user_id,mav.region_id,mav.car_number,astext(mav.lnglat) lnglat,mav.address,mav.status,`mav.default`,sq_picture.path picture FROM sq_member_address_vehide mav LEFT JOIN sq_picture ON sq_picture.id=mav.picture_id WHERE user_id=:user_id AND status=:status AND `default`=:isDefault';
+        $sth = $pdo->prepare($sql);
+        $sth->execute([':status' => self::STATUS_ACTIVE, ':user_id' => intval($userId), ':isDefault' => self::DEFAULT_TRUE]);
+        $data = $sth->fetch(\PDO::FETCH_ASSOC);
+        list($lng, $lat) = explode(' ', substr($data['lnglat'], 6, -1));
+        $data['lnglat'] = [
+            'lng' => $lng,
+            'lat' => $lat
+        ];
+        return $data;
+    }
 }
