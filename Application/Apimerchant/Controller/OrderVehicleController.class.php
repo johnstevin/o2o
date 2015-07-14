@@ -118,6 +118,7 @@ class OrderVehicleController extends ApiController{
                 'status',
                 'worker_id',
                 'address',
+                'street_number',
                 'car_number',
                 'price',
                 'ifnull(user_picture_ids,\'\') as user_picture_ids',
@@ -149,20 +150,83 @@ class OrderVehicleController extends ApiController{
      * @param int $pageSize 页大小
      * @return json
      */
-    public function getList($status = null,$page = 1, $pageSize = 10){
+    public function getList($status = null,$payStatus=null,$page = 1, $pageSize = 10){
         $pageSize > 50 and $pageSize = 50;
 //        $page--;
 //        $page *= $pageSize;
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $gids=$this->getUserGroupIds($mgrRoleId,true);//获得管理分组
+        $gids=implode(',',$gids);
+
+        $where['_string']='shop_id in (select id from sq_merchant_shop where group_id in ('.$gids.'))';
+        if(!is_null($status)){
+            if(is_array($status))
+                $where['sq_order_vehicle.status']=['in',$status];
+            else
+                $where['sq_order_vehicle.status']=$status;
+        }
+        if(!is_null($payStatus))
+            $where['sq_order_vehicle.pay_status']=$payStatus;
+
         $data=D('OrderVehicle')
-            ->join('inner join sq_merchant_shop on sq_merchant_shop.group_id in (:groupIds)')
-            ->where('shop_id in (select id from sq_merchant_shop where group_id in (:groupIds))')
-            ->bind([':groupIds'=>implode(',',$gids)])
+            //->join('inner join sq_merchant_shop on sq_merchant_shop.group_id in ('.$gids.')')
+            ->field([
+                'st_astext(lnglat) as lnglat',
+                'id',
+                'order_code',
+                'user_id',
+                'shop_id',
+                'status',
+                'worker_id',
+                'address',
+                'street_number',
+                'car_number',
+                'mobile',
+                'price',
+                'ifnull(user_picture_ids,\'\') as user_picture_ids',
+                'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
+                'add_time',
+                'update_time',
+            ])
+            ->where($where)
             ->page($page,$pageSize)
-            //->fetchSql()
+          //  ->fetchSql()
             ->select();
         //var_dump($data);die;
+
+        foreach($data as &$i){
+            $i['user_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['user_picture_ids']]])
+                        ->select() as $p){
+                $i['user_pictures'][]=$p['path'];
+            }
+            unset($i['user_picture_ids']);
+
+            $i['worker_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['worder_picture_ids']]])
+                        ->select() as $p){
+                $i['worker_pictures'][]=$p['path'];
+            }
+            unset($i['worder_picture_ids']);
+
+            $user=D('UcenterMember')
+                ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+                ->where(['sq_ucenter_member.id'=>$i['user_id']])
+                ->find();
+            $i['user_name']=$user['real_name'];
+            $i['user_picture']=$user['path']?$user['path']:"";
+
+            $user=D('UcenterMember')
+                ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+                ->where(['sq_ucenter_member.id'=>$i['worker_id']])
+                ->find();
+            $i['worker_name']=$user['real_name'];
+            $i['worker_picture']=$user['path']?$user['path']:"";
+        }
         $this->apiSuccess(['data' => $data], '');
     }
 
@@ -253,6 +317,7 @@ class OrderVehicleController extends ApiController{
      * <pre>
      * id 订单ID
      * address string 新地址，可选
+     * street_number 车辆地址门牌号，可选
      * lnglat  "lng lat" 新经纬度，可选
      * preset_time int 新服务时间，可选
      * car_number string 新车牌 可选
@@ -284,8 +349,8 @@ class OrderVehicleController extends ApiController{
                 unset($data[$k]);
         }
         $model->data($data);
-        $model->update($id);
-        action_log('api_update_order_veh', $model, $id, UID,2);
+        if($model->update($id))
+            action_log('api_update_order_veh', $model, $id, UID,2);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 

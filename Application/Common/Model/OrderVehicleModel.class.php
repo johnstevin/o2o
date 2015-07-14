@@ -31,6 +31,7 @@ class OrderVehicleModel extends AdvModel{
         'status',
         'worker_id',
         'address',
+        'street_number',
         'lnglat',
         'preset_time',
         'car_number',
@@ -51,6 +52,7 @@ class OrderVehicleModel extends AdvModel{
             'status'=>'int',
             'worker_id'=>'int',
             'address'=>'string',
+            'street_number'=>'string',
             'lnglat'=>'point',
             'preset_time'=>'int',
             'car_number'=>'string',
@@ -288,7 +290,7 @@ class OrderVehicleModel extends AdvModel{
         //var_dump($bind);die;
 
         if(empty($sets))
-            E('没有可以修改的数据');
+            return false;
 
         $bind[':id']=$id;
         return do_transaction([
@@ -316,9 +318,9 @@ class OrderVehicleModel extends AdvModel{
 
     private static function _get_status_chain(){
         return [
-            ['id'=>0,[1]],
+            ['id'=>0,[1,6]],
             ['id'=>1,[2,6,0]],
-            ['id'=>2,[3]],
+            ['id'=>2,[3,6]],
             ['id'=>3,[4]],
             ['id'=>4,[5]]
         ];
@@ -397,7 +399,7 @@ class OrderVehicleModel extends AdvModel{
             ])
             ->where($where)
             ->page($page, $pageSize)
-            ->order('sq_order_vehicle.update_time')
+            ->order('sq_order_vehicle.update_time desc')
             ->select();
 
         foreach($data as &$i){
