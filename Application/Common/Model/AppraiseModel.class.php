@@ -129,10 +129,10 @@ class AppraiseModel extends RelationModel
             [
                 self::ANONYMITY_TRUE,
                 self::ANONYMITY_FALSE
-           ],
-           '匿名类型非法',
-           self::EXISTS_VALIDATE,
-           'in'
+            ],
+            '匿名类型非法',
+            self::EXISTS_VALIDATE,
+            'in'
         ],
     ];
 
@@ -269,7 +269,7 @@ class AppraiseModel extends RelationModel
      * @param int $anonymity 是否匿名
      * @return bool|int 如果添加成功返回添加成功的ID，否则返回false
      */
-    public static function addAppraise($orderId, $shopId, $userId, $merchantId, $content, $grade1, $grade2, $grade3,$anonymity=0)
+    public static function addAppraise($orderId, $shopId, $userId, $merchantId, $content, $grade1, $grade2, $grade3, $anonymity = 0)
     {
 
         $data = [
@@ -281,12 +281,12 @@ class AppraiseModel extends RelationModel
             'grade_1' => floatval($grade1),
             'grade_2' => floatval($grade2),
             'grade_3' => floatval($grade3),
-            'anonymity'=>intval($anonymity),
+            'anonymity' => intval($anonymity),
         ];
 //E(json_encode($data));
         $model = self::getInstance();
         if (!$model->create($data))
-            E($model->getError());//如果验证不通过，直接抛出异常
+            E(is_array($model->getError()) ? current($model->getError()) : $model->getError());//如果验证不通过，直接抛出异常
         return $model->add();
     }
 
@@ -301,9 +301,9 @@ class AppraiseModel extends RelationModel
     public static function deleteAppraise($id, $logic = true)
     {
         if ($logic) {
-            return self::getInstance()->delete(intval($id));
+            return self::getInstance()->save(['id' => intval($id), 'status' => self::STATUS_DELETE]);
         }
-        return self::getInstance()->save(['id' => intval($id), 'status' => self::STATUS_DELETE]);
+        return self::getInstance()->delete(intval($id));
     }
 
 }
