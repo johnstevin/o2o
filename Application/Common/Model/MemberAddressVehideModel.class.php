@@ -325,4 +325,25 @@ class MemberAddressVehideModel extends AdvModel
         if ($logic) return self::getInstance()->where(['id' => $id, 'status' => self::STATUS_ACTIVE])->save(['status' => self::STATUS_DELETE]);
         return self::getInstance()->delete($id);
     }
+
+    /**
+     * 获得用户的默认地址
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $userId 用户ID
+     * @return mixed
+     */
+    public function getDefault($userId)
+    {
+        $pdo = get_pdo();
+        $sql = 'SELECT * FROM sq_member_address WHERE uid=:uid AND patientia=:isDefault AND status=:status';
+        $sth = $pdo->prepare($sql);
+        $sth->execute([':status' => self::STATUS_ACTIVE, ':uid' => $userId, ':isDefault' => self::DEFAULT_TRUE]);
+        $data = $sth->fetch(\PDO::FETCH_ASSOC);
+        list($lng, $lat) = explode(' ', substr($data['lnglat'], 6, -1));
+        $data['lnglat'] = [
+            'lng' => $lng,
+            'lat' => $lat
+        ];
+        return $data;
+    }
 }
