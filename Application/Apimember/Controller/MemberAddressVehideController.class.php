@@ -74,4 +74,13 @@ class MemberAddressVehideController extends ApiController
     {
         $this->apiSuccess(['data' => MemberAddressVehideModel::getInstance()->getList($this->getUserId(), $status, $pageSize)]);
     }
+
+    /**
+     * 获得用户的默认地址
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     */
+    public function getDefault()
+    {
+        $this->apiSuccess(['data' => MemberAddressVehideModel::getInstance()->getDefault($this->getUserId())]);
+    }
 }
