@@ -290,6 +290,7 @@ class MemberAddressVehideModel extends AdvModel
             $sql .= 'mav.status != :status';
             $bind[':status'] = self::STATUS_DELETE;
         }
+        $sql .= ' ORDER BY mav.id DESC';
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
         $list = $sth->fetchAll(\PDO::FETCH_ASSOC);
