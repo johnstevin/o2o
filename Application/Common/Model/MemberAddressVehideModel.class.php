@@ -279,7 +279,7 @@ class MemberAddressVehideModel extends AdvModel
         $bind = [
             ':user_id' => intval($userId)
         ];
-        $sql = 'SELECT mav.user_id,mav.id,mav.address,mav.car_number,mav.status,mav.region_id,picture.path picture,mav.`default` FROM sq_member_address_vehide mav LEFT JOIN sq_picture picture ON mav.picture_id=picture.id WHERE mav.user_id = :user_id AND ';
+        $sql = 'SELECT mav.user_id,mav.id,mav.address,mav.car_number,mav.status,mav.region_id,picture.path picture,mav.`default`,astext(mav.lnglat) lnglat,mav.street_number FROM sq_member_address_vehide mav LEFT JOIN sq_picture picture ON mav.picture_id=picture.id WHERE mav.user_id = :user_id AND ';
         if ($status !== null && array_key_exists($status, self::getStatusOptions())) {
             $sql .= 'mav.status = :status';
             $bind[':status'] = intval($status);
@@ -289,7 +289,22 @@ class MemberAddressVehideModel extends AdvModel
         }
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
-        return $sth->fetchAll(\PDO::FETCH_ASSOC);
+        $list = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($list as &$item) {
+            if (empty($item['lnglat'])) {
+                $item['lnglat'] = [
+                    'lng' => 0,
+                    'lat' => 0
+                ];
+                continue;
+            }
+            list($lng, $lat) = explode(' ', substr($item['lnglat'], 6, -1));
+            $item['lnglat'] = [
+                'lng' => $lng,
+                'lat' => $lat
+            ];
+        }
+        return $list;
     }
 
     /**
