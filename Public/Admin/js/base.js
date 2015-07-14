@@ -412,3 +412,23 @@ function Save(Url, selector) {
         }
     })
 }
+function ajaxSave(Url, selector) {
+    $.ajax({
+        type: 'POST',
+        url: Url,
+        data: $('#' + selector).serialize(),
+        dataType: 'json',
+        success: function (data) {
+            ajaxSuccess(data);
+        },
+        error: function () {
+            //   alert("内部错误！");
+            Messenger().post({
+                message: "对不起,出错了,请稍后重试,如果一直出现此异常,请联系我们!",
+                type: 'error',
+                showCloseButton: true,
+                hideAfter: 2
+            });
+        }
+    })
+}

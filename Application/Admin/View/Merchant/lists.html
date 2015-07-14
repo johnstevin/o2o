@@ -13,7 +13,9 @@
             <th>创建时间</th>
             <th>添加用户</th>
             <th>状态</th>
+
             <th>商户审核</th>
+            <th>详细信息</th>
             <th>操作</th>
         </tr>
         </thead>
@@ -31,12 +33,15 @@
                 <td>{$vo.create_time|time_format}</td>
                 <td>{$vo.add_uid_text}</td>
                 <td>{$vo.status|getShopStatus}</td>
+
                 <td>
 
                     <in name="vo.status" value="0,2,3">
                         <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('checkInfo','shop_id='.$vo['id'])}">商户审核</a>&nbsp;&nbsp;&nbsp;&nbsp;
                     </in>
                 </td>
+
+                <td> <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('detail','shop_id='.$vo['id'])}">详细信息</a></td>
 
                 <td>
                     <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" href="{:U('modify','shop_id='.$vo['id'])}">修改组织</a>
