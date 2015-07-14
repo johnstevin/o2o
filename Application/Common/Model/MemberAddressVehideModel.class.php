@@ -335,9 +335,9 @@ class MemberAddressVehideModel extends AdvModel
     public function getDefault($userId)
     {
         $pdo = get_pdo();
-        $sql = 'SELECT * FROM sq_member_address WHERE uid=:uid AND patientia=:isDefault AND status=:status';
+        $sql = 'SELECT mav.id,mav.user_id,mav.region_id,mav.car_number,astext(mav.lnglat) lnglat,mav.address,mav.status,mav.status,mav.`default`,mav_picture.path picture,mav.street_number,mav.mobile FROM sq_member_address_vehide mav LEFT JOIN sq_picture mav_picture ON mav.picture_id=mav_picture.id WHERE mav.user_id=:user_id AND mav.`default`=:isDefault AND mav.status =:status';
         $sth = $pdo->prepare($sql);
-        $sth->execute([':status' => self::STATUS_ACTIVE, ':uid' => $userId, ':isDefault' => self::DEFAULT_TRUE]);
+        $sth->execute([':status' => self::STATUS_ACTIVE, ':user_id' => $userId, ':isDefault' => self::DEFAULT_TRUE]);
         $data = $sth->fetch(\PDO::FETCH_ASSOC);
         list($lng, $lat) = explode(' ', substr($data['lnglat'], 6, -1));
         $data['lnglat'] = [
