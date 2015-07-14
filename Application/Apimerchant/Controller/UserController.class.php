@@ -482,11 +482,11 @@ class UserController extends ApiController {
         if($shop_id==0)
             $this->apiError('40030', '非法操作');
         $model = D('MerchantShop');
-        $result = $model->get($shop_id, 'id,group_id,type');
+        $result = $model->get($shop_id);
         if(empty($result))
             $this->apiError('40031', '找不到此店铺');
         $group_id  = $result['group_id'];
-        switch( $result['type'] ){
+        switch($result['type']){
             case 1 : $role_id = C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_STAFF');     break;
             case 2 : $role_id = C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER'); break;
             default : $this->apiError('40032', '店铺类型错误');
@@ -498,7 +498,7 @@ class UserController extends ApiController {
             'role_id'    => $role_id,
         );
         $field = 'uid';
-        $uids = $auth->get( $map,$field );
+        $uids = $auth->get($map,$field);
         if($uids == -1)
             $this->apiError('40033', '获取员工失败');
         $uids = implode(',',$uids);

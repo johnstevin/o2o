@@ -15,7 +15,7 @@ class SystemController extends ApiController{
         $map = array(
             'status' => 1,
             'package_type' => C('VERSION_PACKAGE_TYPE.MEMBER'),
-            'version_type' => C('VERSION_TYPE.RELEASE'),
+            //  'version_type' => C('VERSION_TYPE.RELEASE'),
         );
 
         $result = $model->field($fields)->where($map)->order('version desc')->limit(1)->select();

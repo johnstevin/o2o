@@ -126,7 +126,8 @@ class MerchantShopModel extends AdvModel
      * @var array
      */
     protected $_auto = [
-        ['type',1,self::MODEL_INSERT],
+        //TODO liuhui type默认被定死了
+        //['type',1,self::MODEL_INSERT],
         ['status',self::STATUS_CLOSE,self::MODEL_INSERT],
         [
             'create_time',
@@ -328,6 +329,7 @@ class MerchantShopModel extends AdvModel
             ,'sq_merchant_shop.title'
             ,'sq_merchant_shop.picture'
             ,'sq_merchant_shop.description'
+            ,'sq_merchant_shop.group_id'
             ,'sq_merchant_shop.type'
             ,'sq_merchant_shop.phone_number'
             ,'sq_merchant_shop.address'

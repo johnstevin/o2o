@@ -2,7 +2,7 @@
     <div class=" col-sm-6 col-lg-4">
         <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-category"
            class="btn btn-success"
-           href="{:U('add')}">新 增</a>
+           href="{:U('add')}">提交工单</a>
     </div>
     <!-- 高级搜索 -->
     <div class="search-form fr cf  col-sm-6 col-lg-8">
@@ -25,11 +25,12 @@
                 <tr>
                     <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
                     <th>工单编号</th>
-                    <th>问题内容</th>
+                    <th>问题标题</th>
                     <th>问题分类</th>
                     <th>提交时间</th>
                     <th>状态</th>
                     <th>详细</th>
+                    <th>编辑</th>
                     <th>删除</th>
                 </tr>
                 </thead>
@@ -39,18 +40,21 @@
                         <tr>
                             <td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}"/></td>
                             <td>{$vo.id}</td>
-                            <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                                   href="{:U('edit?id='.$vo['id'])}">{$vo.title}</a></td>
-                            <td>{$vo.cate_id}</td>
+                            <td><a class="ajax-loading"
+                                   href="{:U('detail?id='.$vo['id'])}">{$vo.title}</a></td>
+                            <td>{$vo.cate_id|get_feedback_type}</td>
                             <td>{$vo.create_time|time_format}</td>
                             <td>{$vo.status_text}</td>
                             <td>
+                                <a class="ajax-loading" href="{:U('detail?id='.$vo['id'])}">详细</a>
+                            </td>
+                            <td>
                                 <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                                   href="{:U('edit?id='.$vo['id'])}">详细</a>
+                                   href="{:U('edit?id='.$vo['id'])}">编辑</a>
                             </td>
                             <td>
 
-                                <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
+                                <a href="{:U('Feedback/changeStatus?method=delete&id='.$vo['id'])}"
                                    class="confirm ajax-get">删除</a>
                             </td>
 
@@ -94,4 +98,14 @@
         }
     });
     baseJs();
+    //ajax loading请求
+    $('.ajax-loading').click(function () {
+        var target;
+        if ((target = $(this).attr('href')) || (target = $(this).attr('url'))) {
+            contentload(target);
+        }
+
+        return false;
+    });
+
 </script>
