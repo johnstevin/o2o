@@ -177,10 +177,12 @@ class OrderVehicleController extends ApiController{
                 'user_id',
                 'shop_id',
                 'status',
+                'pay_status',
                 'worker_id',
                 'address',
                 'street_number',
                 'car_number',
+                'preset_time',
                 'mobile',
                 'price',
                 'ifnull(user_picture_ids,\'\') as user_picture_ids',
@@ -251,7 +253,7 @@ class OrderVehicleController extends ApiController{
     /**
      * <pre>
      * 洗车工接受订单，订单状态转换成已接单,POST数据，需要accesstoken
-     * int orderId 订单ID、必须
+     * int id 订单ID、必须
      * </pre>
      * @author WangJiang
      */
@@ -259,7 +261,7 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
-        $oid=I('post.orderId');
+        $oid=I('post.id');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_CONFIRM);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -267,7 +269,7 @@ class OrderVehicleController extends ApiController{
     /**
      * <pre>
      * 洗车工开始处理订单，订单状态转换成开始处理,POST数据，需要accesstoken
-     * int orderId 订单ID、必须
+     * int id 订单ID、必须
      * </pre>
      * @author WangJiang
      */
@@ -275,7 +277,7 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
-        $oid=I('post.orderId');
+        $oid=I('post.id');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_TREATING);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -283,7 +285,7 @@ class OrderVehicleController extends ApiController{
     /**
      * <pre>
      * 洗车工处理完毕，订单状态转换成处理完毕,POST数据，需要accesstoken
-     * int orderId 订单ID、必须
+     * int id 订单ID、必须
      * </pre>
      * @author WangJiang
      */
@@ -291,7 +293,7 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
-        $oid=I('post.orderId');
+        $oid=I('post.id');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_DONE);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -299,7 +301,7 @@ class OrderVehicleController extends ApiController{
     /**
      * <pre>
      * 洗车工拒绝订单，一种情况，系统自动排单，洗车工发现不属于自己负责地区，可以选择拒绝,POST数据，需要accesstoken
-     * int orderId 订单ID、必须
+     * int id 订单ID、必须
      * </pre>
      * @author WangJiang
      */
@@ -307,7 +309,7 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
-        $oid=I('post.orderId');
+        $oid=I('post.id');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_NO_WORKER);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -315,12 +317,13 @@ class OrderVehicleController extends ApiController{
     /**
      * 管理员修改订单数据,POST数据，需要accesstoken
      * <pre>
-     * id 订单ID
-     * address string 新地址，可选
-     * street_number 车辆地址门牌号，可选
-     * lnglat  "lng lat" 新经纬度，可选
-     * preset_time int 新服务时间，可选
-     * car_number string 新车牌 可选
+     * id 订单ID，必须
+     * address string 新地址
+     * street_number 车辆地址门牌
+     * lnglat  "lng lat" 新经纬度
+     * preset_time int 新服务时间
+     * car_number string 新车牌
+     * remark 说明
      * </pre>
      * @author WangJiang
      */
@@ -351,13 +354,15 @@ class OrderVehicleController extends ApiController{
         $model->data($data);
         if($model->update($id))
             action_log('api_update_order_veh', $model, $id, UID,2);
+
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
     /**
      * 管理员重新分配订单,POST数据，需要accesstoken
      * <pre>
-     * id 订单ID
+     * id 订单ID，必须
+     * remark 说明
      * </pre>
      * @author WangJiang
      */
@@ -394,7 +399,8 @@ class OrderVehicleController extends ApiController{
     /**
      * 管理员取消订单,POST数据，需要accesstoken
      * <pre>
-     * id 订单ID
+     * id 订单ID，必须
+     * remark 说明
      * </pre>
      * @author WangJiang
      */
@@ -403,22 +409,12 @@ class OrderVehicleController extends ApiController{
             E('非法调用，请用POST命令');
 
         $id=I('post.id');//为了避免传递参数时混淆，强制指定post
+        $remark=I('post.remark');
 
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $groupIds=$this->getUserGroupIds($mgrRoleId,true);
 
-        $model=D('OrderVehicle');
-        $order=$model
-            //->field(['st_astext(lnglat) as lnglat','preset_time'])
-            ->find($id);
-        //var_dump($order);die;
-        if(empty($order))
-            E('订单不存在');
-        $shop=D('MerchantShop')->find($order['shop_id']);
-        if(!in_array($shop['group_id'],$groupIds))
-            E('用户无权修改此订单');
-
-        $model->save(['id'=>$id,'status'=>OrderVehicleModel::STATUS_CANCELED]);
+        (new OrderVehicleModel())->managerCancel($id,$remark,$groupIds);
 
         //TODO 实现消息推送，通知用户该订单取消，同时附上取消人和原因
 

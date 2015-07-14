@@ -310,10 +310,65 @@ class OrderVehicleModel extends AdvModel{
     public function userCancel($oid,$uid){
         $data=$this->find($oid);
         //print_r($data);die;
+        //echo json_encode(['user_id'=>$data['user_id'],'uid'=>$uid,'oid'=>$oid]);die;
         $this->_assert_new_status($data['status'],self::STATUS_CANCELED);
+        //var_dump($data['user_id']);var_dump($uid);var_dump($data['user_id']!=intval($uid));die;
         if($data['user_id']!=$uid)
             E('非本人操作');
-        $this->save(['id'=>$data['id'],'status'=>self::STATUS_CANCELED]);
+        $ovs=D('OrderVehicleStatus');
+
+        $this->startTrans();
+        try{
+            $this->save(['id'=>$data['id'],'status'=>self::STATUS_CANCELED]);
+            if(!$ovs->create([
+                'order_id'=>$oid,
+                'user_id'=>$uid,//$order['user_id'],
+                //'merchant_id'=>0,
+                'shop_id'=>$data['shop_id'],
+                'status' => self::STATUS_CANCELED,
+                'content' => '用户取消订单',
+            ]))
+                E('参数传递失败 '.$ovs->getError());
+            $ovs->add();
+            $this->commit();
+        }catch(\Exception $ex){
+            $this->rollback();
+        }
+    }
+
+    public function managerCancel($id,$remark,$groupIds){
+
+        $model=D('OrderVehicle');
+        $order=$model
+            //->field(['st_astext(lnglat) as lnglat','preset_time'])
+            ->find($id);
+        //var_dump($order);die;
+        if(empty($order))
+            E('订单不存在');
+        $shop=D('MerchantShop')->find($order['shop_id']);
+        if(!in_array($shop['group_id'],$groupIds))
+            E('用户无权修改此订单');
+
+        $ovs=D('OrderVehicleStatus');
+
+        $model->startTrans();
+        try{
+            $model->save(['id'=>$id,'status'=>OrderVehicleModel::STATUS_CANCELED]);
+            if(!$ovs->create([
+                'order_id'=>$id,
+                //'user_id'=>0,//$order['user_id'],
+                'merchant_id'=>$this->getUserId(),
+                'shop_id'=>$order['shop_id'],
+                'status' => OrderVehicleModel::STATUS_CANCELED,
+                'content' => $remark ?$remark:'经理取消订单',
+            ]))
+                E('参数传递失败 '.$ovs->getError());
+
+            $ovs->add();
+            $model->commit();
+        }catch (\Exception $ex){
+            $model->rollback();
+        }
     }
 
     private static function _get_status_chain(){
@@ -349,11 +404,35 @@ class OrderVehicleModel extends AdvModel{
      * @param $status
      */
     public function workerChaneStatus($oid,$uid,$status){
+        if($status==self::STATUS_CANCELED)
+            E('服务人员不能取消订单');
         $data=$this->find($oid);
         if($data['worker_id']!=$uid)
             E('非本人操作');
         $this->_assert_new_status($data['status'],$status);
-        $this->save(['id'=>$data['id'],'status'=>$status]);
+
+        $ovs=new OrderVehicleStatusModel();
+
+        $this->startTrans();
+        try{
+            $this->save(['id'=>$data['id'],'status'=>$status]);
+
+            //var_dump($ovs->getError());die;
+            if(!$ovs->create([
+                'order_id'=>$oid,
+                //'user_id'=>0,//$order['user_id'],
+                'merchant_id'=>$uid,
+                'shop_id'=>$data['shop_id'],
+                'status' => $status,
+                'content' => '服务人员修改状态',
+            ]))
+                E('参数传递失败 '.$ovs->getError());
+
+            $ovs->add();
+            $this->commit();
+        }catch(\Exception $ex){
+            $this->rollback();
+        }
         //TODO 消息推送
     }
 
