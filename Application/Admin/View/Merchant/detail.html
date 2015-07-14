@@ -1,0 +1,147 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+    </button>
+    <h4 class="modal-title">
+        <h4>{$_meta_title}</h4>
+    </h4>
+</div>
+<div class="modal-body">
+    <div class="container-fluid">
+        <div>
+
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active">
+                    <a href="#home" aria-controls="home" role="tab" data-toggle="tab">商家资料</a>
+                </li>
+                <li role="presentation">
+                    <a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">门店图片</a>
+                </li>
+                <li role="presentation"><a href="#messages" aria-controls="businessLicense" role="tab"
+                                           data-toggle="tab">营业执照</a>
+                </li>
+                <li role="presentation"><a href="#legalPerson" aria-controls="legalPerson" role="tab" data-toggle="tab">法人信息</a>
+                </li>
+                <li role="presentation"><a href="#licence" aria-controls="licence" role="tab"
+                                           data-toggle="tab">食品流通许可证</a>
+                </li>
+            </ul>
+
+            <!-- Tab panes -->
+            <div class="tab-content">
+
+
+                <div role="tabpanel" class="tab-pane active" id="home">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                            <tr>
+                                <th width="10%">名称</th>
+                                <th>信息</th>
+
+                            </tr>
+                            </thead>
+                            <tbody>
+
+                            <tr>
+                                <td>店铺ID</td>
+                                <td>{$_info.id}</td>
+                            </tr>
+                            <tr>
+                                <td>店铺名称</td>
+                                <td>{$_info.title}</td>
+                            </tr>
+                            <tr>
+                                <td>店铺介绍</td>
+                                <td>{$_info.description}</td>
+                            </tr>
+                            <tr>
+                                <td>所属组织</td>
+                                <td>{$_info.group_id|getGroupById='title'}</td>
+                            </tr>
+                            <tr>
+                                <td>店铺类型</td>
+                                <td>{$_info.type|getShopType}</td>
+                            </tr>
+                            <tr>
+                                <td>是否总店</td>
+                                <td>{$_info.pid}</td>
+                            </tr>
+                            <tr>
+                                <td>添加用户</td>
+                                <td>{$_info.id}</td>
+                            </tr>
+                            <tr>
+                                <td>区域</td>
+                                <td>{$_info.id}</td>
+                            </tr>
+                            <tr>
+                                <td>店铺状态</td>
+                                <td>{$_info.status|getShopStatus}</td>
+                            </tr>
+
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div role="tabpanel" class="tab-pane" id="profile">
+                    <br>
+
+                    <div class="col-xs-6 col-md-12">
+                        <a href="javascript:void(0)" class="thumbnail">
+                            <img src="{$_info['_picture']['path']|default=''}" alt="门店图片">
+                        </a>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="messages">
+                    <br>
+
+                    <div class="col-xs-6 col-md-12">
+
+                        <a href="javascript:void(0)" class="thumbnail">
+                            <img src="{$_info['_yyzz_picture']['path']|default=''}" alt="营业执照">
+                        </a>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="legalPerson">
+                    <br>
+
+                    <div class="col-xs-6 col-md-6">
+                        <a href="javascript:void(0)" class="thumbnail">
+                            <img src="{$_info['_id_cart_front_picture']['path']|default=''}" alt="法人信息正面">
+                        </a>
+                    </div>
+                    <div class="col-xs-6 col-md-6">
+                        <a href="javascript:void(0)" class="thumbnail">
+                            <img src="{$_info['_id_cart_back_picture']['path']|default=''}" alt="法人信息背面">
+                        </a>
+                    </div>
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="licence">
+                    <br>
+
+                    <div class="col-xs-6 col-md-12">
+                        <a href="javascript:void(0)" class="thumbnail">
+                            <img src="{$_info['_spwsxkz_picture']['path']|default=''}" alt="营业许可证">
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!--<hr>-->
+        <!--<div>-->
+            <!--<label for="reason" class="control-label">如果不通过请填写原因</label>-->
+            <!--<textarea id="reason" class="form-control" rows="4"-->
+                      <!--placeholder="不通过原因">{$_info.message|default=''}</textarea>-->
+        <!--</div>-->
+
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">关&nbsp;&nbsp;&nbsp;闭</button>
+</div>

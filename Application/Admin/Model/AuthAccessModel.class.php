@@ -65,7 +65,9 @@ class AuthAccessModel extends Model
 
         $uid = is_array($uid) ? implode(',', $uid) : trim($uid, ',');
         $gid = is_array($gid) ? $gid : explode(',', trim($gid, ','));
+        $merchant = C('AUTH_ROLE_ID')['ROLE_ID_MERCHANT_COMMITINFO'];
 
+        //TODO 事物控制
         $Access = M(self::AUTH_ACCESS);
         if (isset($_REQUEST['batch'])) {
             //为单个用户批量添加用户组时,先删除旧数据
@@ -75,6 +77,7 @@ class AuthAccessModel extends Model
         $uid_arr = explode(',', $uid);
         $uid_arr = array_diff($uid_arr, array(C('USER_ADMINISTRATOR')));
         $add = array();
+        $where = array();
         if ($del !== false) {
 
 
@@ -100,11 +103,19 @@ class AuthAccessModel extends Model
 //                                }
 //                            }
                             $add[] = array('group_id' => $k, 'uid' => $u, 'role_id' => $g, 'status' => '1');
+
+
+                            if ($merchant == $g) {
+                                $where[] = $u;
+                            }
                         }
                     }
                 }
             }
             $Access->addAll($add);
+            if (!empty($where)) {
+                M('UcenterMember')->where(array('id' => array('in', $where)))->setField('is_merchant', 1);
+            }
         }
         if ($Access->getDbError()) {
             if (count($uid_arr) == 1 && count($gid) == 1) {
@@ -148,7 +159,7 @@ class AuthAccessModel extends Model
      * @return array  用户所拥有的组织
      * @author liuhui
      */
-    static public function getUserGroup($uid, $type=null)
+    static public function getUserGroup($uid, $type = null)
     {
         static $group = array();
         if (isset($group[$uid]))

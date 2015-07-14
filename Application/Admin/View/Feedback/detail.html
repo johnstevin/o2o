@@ -1,0 +1,118 @@
+<div>
+    <a class="btn btn-success ajax-loading"
+       href="{:U('index')}">返回列表</a>
+    <eq name="info.user_id" value="$uid">
+        <neq name="info.status" value="2">
+            <a href="{:U('Feedback/changeStatus?method=offfeedback&id='.$info['id'])}"
+               class="confirm ajax-get btn btn-info">关闭工单</a>
+        </neq>
+    </eq>
+</div>
+<hr>
+<div class="progress">
+    <div class="progress-bar progress-bar-warning" style="width: 35%">
+        待处理
+    </div>
+
+    <switch name="info.status" >
+        <case value="1" break="0或1">
+            <div class="progress-bar progress-bar-info" style="width: 35%">
+                处理中
+            </div>
+        </case>
+        <case value="2">
+            <div class="progress-bar progress-bar-info" style="width: 35%">
+                处理中
+            </div>
+            <div class="progress-bar progress-bar-success" style="width: 30%">
+                处理结束
+            </div>
+        </case>
+        <default />
+    </switch>
+
+</div>
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">{$meta_title}</h3>
+    </div>
+    <div class="panel-body">
+
+        <p>
+            标题： {$info.title}<br>
+            分类： {$info.cate_id|get_feedback_type}<br>
+            描述： {$info.description}<br>
+        </p>
+        <small>{$info.create_time|time_format}</small>
+
+
+    </div>
+</div>
+
+<div class="panel panel-info">
+    <div class="panel-heading">
+        <h3 class="panel-title">回复记录</h3>
+    </div>
+    <div class="panel-body">
+        <notempty name="replys">
+            <volist name="replys" id="vo">
+                <eq name="vo.sys_uid" value="$uid">
+                    <blockquote class="bg-success blockquote-reverse">
+                        <h5>{$vo.content}</h5>
+                        <br>
+                        <small>{$vo.reply_time|time_format}</small>
+                        <!--//<footer>{//$vo.reply_time|time_format}</footer>-->
+                    </blockquote>
+                    <else/>
+                    <blockquote>
+                        <h5>{$vo.content}</h5>
+                        <br>
+                        <small>{$vo.reply_time|time_format}</small>
+                    </blockquote>
+                </eq>
+            </volist>
+            <else/>
+            暂时还没有回复内容!
+        </notempty>
+    </div>
+</div>
+
+<div class="panel panel-info">
+    <div class="panel-heading">
+        <h3 class="panel-title">回复</h3>
+    </div>
+    <neq name="info.status" value="2">
+        <div class="panel-body">
+            <form id="fm" method="post">
+          <textarea id="content" rows="3" placeholder="请输入信息" name="content"
+                    class="form-control"></textarea>
+                <input type="hidden" name="fid" value="{$info.id|default=''}">
+                <input type="hidden" name="from_uid" value="{$info.user_id|default=''}">
+            </form>
+
+        </div>
+        <div class="panel-footer">
+            <button type="button" class="btn btn-success" onclick="ajaxSave('{:U()}','fm')">提交</button>
+        </div>
+        <else/>
+        <div class="panel-body">
+            该工单已经关闭了！
+        </div>
+
+    </neq>
+</div>
+
+<script>
+    baseJs();
+    //ajax loading请求
+    $('.ajax-loading').click(function () {
+        var target;
+        if ((target = $(this).attr('href')) || (target = $(this).attr('url'))) {
+            contentload(target);
+        }
+
+        return false;
+    });
+
+</script>

@@ -49,6 +49,16 @@ function get_config_type($type=0){
 }
 
 /**
+ * 获取配置的类型
+ * @param string $type 配置类型
+ * @return string
+ */
+function get_feedback_type($type=0){
+    $list = C('FEEDBACK_CATEGORY');
+    return $list[$type]['TITLE'];
+}
+
+/**
  * 获取配置的分组
  * @param string $group 配置分组
  * @return string

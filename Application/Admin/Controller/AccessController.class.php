@@ -52,19 +52,21 @@ class AccessController extends AdminController
         /*根据用户type判断是组织类型*/
         $_type = I('_type');
         $map = array();
-        switch (strtolower($_type)) {
-            case '1':
-                $map = array('type' => C('AUTH_GROUP_TYPE')['ADMIN']);
-                break;
-            case'3':
-                $map = array('type' =>  C('AUTH_GROUP_TYPE')['MEMBER']);
-                break;
-            case'2':
-                $map = array('type' =>  C('AUTH_GROUP_TYPE')['MERCHANT']);
-                break;
-            default:
-                $this->error('参数错误');
-                break;
+        if (!IS_ROOT) {
+            switch (strtolower($_type)) {
+                case '1':
+                    $map = array('type' => C('AUTH_GROUP_TYPE')['ADMIN']);
+                    break;
+                case'3':
+                    $map = array('type' => C('AUTH_GROUP_TYPE')['MEMBER']);
+                    break;
+                case'2':
+                    $map = array('type' => C('AUTH_GROUP_TYPE')['MERCHANT']);
+                    break;
+                default:
+                    $this->error('参数错误');
+                    break;
+            }
         }
         /*获取组织*/
         $AuthGroup = D('AuthGroup');
@@ -146,7 +148,7 @@ class AccessController extends AdminController
 
 
             //记录行为
-            action_log('admin_authorize','AuthAccess',$uid,UID,1);
+            action_log('admin_authorize', 'AuthAccess', $uid, UID, 1);
 
 
             $this->success('操作成功');
@@ -178,7 +180,7 @@ class AccessController extends AdminController
         if ($AuthRule->addToRule($role, $rule)) {
 
             //记录行为
-            action_log('admin_add_rule','AuthRoleRule',$role,UID,1);
+            action_log('admin_add_rule', 'AuthRoleRule', $role, UID, 1);
 
             $this->success('操作成功');
         } else {

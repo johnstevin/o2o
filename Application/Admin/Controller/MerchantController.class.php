@@ -108,6 +108,24 @@ class MerchantController extends AdminController
         }
     }
 
+    /**
+     * 详细
+     */
+    public function detail()
+    {
+
+        $shop_id = is_numeric(I('get.shop_id')) ? I('get.shop_id') : 0;
+        $shop_id !== 0 ?: $this->error('禁止操作');
+        $result = D('MerchantShop')->info($shop_id, '*');
+        $this->assign('_info', $result);
+        $this->assign('_meta_title', '商户信息');
+        $this->display();
+
+    }
+
+    /**
+     * 修改组织
+     */
     public function modify()
     {
         if (IS_POST) {
