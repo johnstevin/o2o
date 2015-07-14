@@ -199,6 +199,9 @@ class MemberAddressVehideModel extends AdvModel
             ':status' => self::STATUS_ACTIVE,
             ':mobile' => $mobile
         ];
+        if ($isDefault) {
+            $model->where(['user_id' => $userId])->save(['default' => self::DEFAULT_FALSE]);
+        }
         $sql = 'INSERT INTO sq_member_address_vehide (user_id, car_number, lnglat, address, `default`, picture_id,street_number,status,mobile) VALUES (:user_id,:car_number,point(:lng,:lat),:address,:isDefault,:picture_id,:street_number,:status,:mobile)';
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
@@ -279,7 +282,7 @@ class MemberAddressVehideModel extends AdvModel
         $bind = [
             ':user_id' => intval($userId)
         ];
-        $sql = 'SELECT mav.user_id,mav.id,mav.address,mav.car_number,mav.status,mav.region_id,picture.path picture,mav.`default`,astext(mav.lnglat) lnglat,mav.street_number FROM sq_member_address_vehide mav LEFT JOIN sq_picture picture ON mav.picture_id=picture.id WHERE mav.user_id = :user_id AND ';
+        $sql = 'SELECT mav.user_id,mav.id,mav.address,mav.car_number,mav.status,mav.region_id,picture.path picture,mav.`default`,astext(mav.lnglat) lnglat,mav.street_number,mav.mobile FROM sq_member_address_vehide mav LEFT JOIN sq_picture picture ON mav.picture_id=picture.id WHERE mav.user_id = :user_id AND ';
         if ($status !== null && array_key_exists($status, self::getStatusOptions())) {
             $sql .= 'mav.status = :status';
             $bind[':status'] = intval($status);
