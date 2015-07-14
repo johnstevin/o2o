@@ -309,6 +309,7 @@ class OrderVehicleModel extends AdvModel{
      */
     public function userCancel($oid,$uid){
         $data=$this->find($oid);
+
         //print_r($data);die;
         //echo json_encode(['user_id'=>$data['user_id'],'uid'=>$uid,'oid'=>$oid]);die;
         $this->_assert_new_status($data['status'],self::STATUS_CANCELED);
@@ -348,7 +349,8 @@ class OrderVehicleModel extends AdvModel{
         $shop=D('MerchantShop')->find($order['shop_id']);
         if(!in_array($shop['group_id'],$groupIds))
             E('用户无权修改此订单');
-
+        if(!in_array($data['status'],[0,1,2]))
+            E('订单已经不能取消');
         $ovs=D('OrderVehicleStatus');
 
         $model->startTrans();
@@ -375,7 +377,7 @@ class OrderVehicleModel extends AdvModel{
         return [
             ['id'=>0,[1,6]],
             ['id'=>1,[2,6,0]],
-            ['id'=>2,[3,6]],
+            ['id'=>2,[3]],
             ['id'=>3,[4]],
             ['id'=>4,[5]]
         ];
@@ -393,7 +395,7 @@ class OrderVehicleModel extends AdvModel{
                 return;
             }
         }
-        E('当前状态不能在改变');
+        E('当前状态不能改变');
     }
 
     /**
