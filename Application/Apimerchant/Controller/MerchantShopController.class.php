@@ -223,7 +223,8 @@ class MerchantShopController extends ApiController
                 $pageSize > 50 and $pageSize = 50;
 
                 //获得担任店长的商铺组
-                $groupIds=$this->getUserGroupIds(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'),true);
+                $roleId=$type==1?C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'):C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');
+                $groupIds=$this->getUserGroupIds($roleId,true);
                 //dump($groupIds);die;
                 $model = D('MerchantShop');
 
