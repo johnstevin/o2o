@@ -153,6 +153,56 @@ class AuthAccessModel extends Model
     }
 
 
+
+
+    /**
+     * 审核授权
+     * 示例: 把uid=1的用户添加到group_id为1,2的组 `AuthGroupModel->addToGroup(1,'1,2');`
+     * $gid array(array())二位数组
+     * @author liuhui
+     */
+    public function CheckMerchantRole($uid, $gid,$rid)
+    {
+
+        if (!is_numeric($uid) && !is_numeric($gid)&&!is_numeric($rid)) {
+            $this->error = "参数非法";
+            return false;
+        }
+        /*删除以前的数据*/
+        $map= array(
+            'uid' => $uid,
+            'group_id' => C('AUTH_GROUP_ID')['GROUP_ID_MERCHANT'],
+            'role_id'=>C('AUTH_ROLE_ID')['ROLE_ID_MERCHANT_COMMITINFO'],
+        );
+
+        $del = $this->where($map)->delete();
+
+        $add = array();
+
+        if ($del !== false) {
+
+              $add['uid'] = $uid;
+              $add['group_id'] = $gid;
+              $add['role_id'] = $rid;
+              $add['status'] = 1;
+              $add['description']='审核插入的数据';
+
+            }
+            $this->add($add);
+
+        if ($this->getDbError()) {
+
+            return false;
+        } else {
+
+            return true;
+        }
+    }
+
+
+
+
+
     /**
      * 返回用户所属角色信息
      * @param  int $uid 用户id
@@ -222,6 +272,73 @@ class AuthAccessModel extends Model
         }
         $group[$uid] = $user_groups ? $user_groups : array();
         return $group[$uid];
+    }
+
+
+    /**
+     * 管理员改变成商家
+     * @param $uid
+     * @return bool
+     */
+    public function changeGroup(){
+
+        $uid=I('uid');
+        if(empty($uid)){
+            $this->error='参数非法';
+            return false;
+        }
+
+        $group_id= C('AUTH_GROUP_ID')['GROUP_ID_MERCHANT'];
+        $role_id= C('AUTH_ROLE_ID')['ROLE_ID_MERCHANT_COMMITINFO'];
+        $map=array(
+            'uid'=>$uid,
+            'group_id'=>$group_id,
+            'role_id'=>$role_id,
+        );
+        $data=array(
+            'uid'=>$uid,
+            'group_id'=>$group_id,
+            'role_id'=>$role_id,
+            'description'=>"管理员=>商家",
+            'status'=>1,
+        );
+
+
+        $where=$this->where($map)->count();
+
+
+        M()->startTrans();
+
+        if(false!==D('UcenterMember')->where(array('id'=>$uid))->setField('is_merchant',1)) {
+            if ($where<=0) {
+
+                if(false!==$this->add($data)){
+
+                    M()->commit();
+                    return true;
+
+                }else{
+
+                    M()->rollback();
+
+                    $this->error='保存失败';
+                    return false;
+
+                }
+            }else{
+
+                M()->commit();
+                return true;
+            }
+        }else{
+
+            M()->rollback();
+
+            $this->error='保存失败';
+            return false;
+
+        }
+
     }
 
 }

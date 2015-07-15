@@ -137,6 +137,7 @@ class GroupController extends AdminController
                 if (!($cate && 1 == $cate['status'])) {
                     $this->error('指定的上级组织机构不存在或被禁用！');
                 }
+                ++$cate['level'];
             }
 
             /* 获取组织信息 */

@@ -12,6 +12,8 @@ use Think\Model\AdvModel;
 class MerchantModel extends AdvModel
 {
     protected static $model;
+
+    const DEFAULT_PHOTO = 'Uploads/Product/2015/06/24/233.jpg';
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
@@ -357,8 +359,17 @@ class MerchantModel extends AdvModel
                 ->field($field)
                 ->table('__UCENTER_MEMBER__ a')
                 ->join('__MERCHANT__ b ON  a.id = b.id','LEFT')
+                ->join('__PICTURE__ c ON  a.photo = c.id', 'LEFT')
                 ->where(array('a.is_merchant'=>array('eq', '1'),'a.id'=>$mapUid))
                 ->select();
+
+            //头像为空时返回默认图片
+            foreach($userInfo as &$key) {
+                if (empty($key['photo'])) {
+                    $key['photo'] = self::DEFAULT_PHOTO;
+                }
+            }
+
             if(empty($userInfo))
                 E(-1);
             return $userInfo;

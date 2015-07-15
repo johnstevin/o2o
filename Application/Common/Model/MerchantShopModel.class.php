@@ -424,15 +424,15 @@ class MerchantShopModel extends AdvModel
 
         //
 
-        $stat[]=[
-            'sql'=>'UPDATE sq_auth_access SET role_id=:role_id WHERE uid=:uid;',
-            'bind'=>[
-                ':uid'=>$data['add_uid'],
-                ':role_id'=>$data['type']==1
-                    ?C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')
-                    :C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER')
-            ]
-        ];
+//        $stat[]=[
+//            'sql'=>'UPDATE sq_auth_access SET role_id=:role_id WHERE uid=:uid;',
+//            'bind'=>[
+//                ':uid'=>$data['add_uid'],
+//                ':role_id'=>$data['type']==1
+//                    ?C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')
+//                    :C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER')
+//            ]
+//        ];
 
         //print_r($sql);var_dump($bind);die;
         return do_transaction($stat);

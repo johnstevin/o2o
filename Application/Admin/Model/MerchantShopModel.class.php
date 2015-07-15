@@ -24,7 +24,7 @@ class MerchantShopModel extends AdvModel
         $group_id === null ?: $map['group_id'] = $group_id;
         //筛选出属于他自己的区域
         if (!IS_ROOT) {
-            $authRegion = S('AUTH_ADMIN_REGION');
+            $authRegion = S(UID.'AUTH_ADMIN_REGION');
             //print_r($authRegion);
             $Region_arr = is_array($authRegion) ? $authRegion : explode(',', trim($authRegion, ','));
             $where = array('region_id' => array('in', $Region_arr));
@@ -112,7 +112,7 @@ class MerchantShopModel extends AdvModel
         }
         //检查商铺区域是否在他的权限范围内
         if (!IS_ROOT) {
-            $authRegion = S('AUTH_ADMIN_REGION');
+            $authRegion = S(UID.'AUTH_ADMIN_REGION');
             if (!in_array($info['region_id'], $authRegion)) {
                 $this->error = '该商铺不属你你的管辖范围内';
                 return false;
@@ -127,7 +127,7 @@ class MerchantShopModel extends AdvModel
         $data['pid'] = $info['group_id'];
         $data['public'] = 1;
         $data['status'] = 1;
-        $data['type'] = C('auth_group_type')['MERCHANT'];
+        $data['type'] =C('auth_group_type')['MERCHANT'];
         $Group->create($data);
 
         // 保存组织
@@ -142,10 +142,10 @@ class MerchantShopModel extends AdvModel
             if (false !== $GroupRegion->add($Region)) {
 
                 //保存角色、组织和权限关系
-                $arr[$res][]=  typeToRole($info['type']);
+                $rid=  typeToRole($info['type']);
                 $AuthAccess = D('AuthAccess');
 
-                if (false !== $AuthAccess->addToRole($info['add_uid'], $arr)) {
+                if (false !== $AuthAccess->CheckMerchantRole($info['add_uid'], $res,$rid)) {
                     //修改状态
                     $info['status'] = 1;
                     $info['group_id'] = $res;

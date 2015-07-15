@@ -79,7 +79,6 @@ class AccessController extends AdminController
             $hasAccess[$access['group_id']][] = $access['role_id'];
         }
 
-
         /*获取组织下的所有的角色*/
         $AuthRole = M('AuthRole');
         foreach ($auth_Groups as &$key) {
@@ -189,6 +188,23 @@ class AccessController extends AdminController
             $this->success('操作成功');
         } else {
             $this->error($AuthRule->getError());
+        }
+    }
+
+    /**
+     * 管理员变商家
+     */
+    public function changeGroup(){
+
+        $AuthAccess=D('AuthAccess');
+        if (false!==$AuthAccess->changeGroup()) {
+
+            $this->success('保存成功！');
+
+        } else {
+
+            $error = $AuthAccess->getError();
+            $this->error(empty($error) ? '未知错误' : $error);
         }
     }
 }
