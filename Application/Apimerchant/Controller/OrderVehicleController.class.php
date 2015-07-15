@@ -97,7 +97,7 @@ class OrderVehicleController extends ApiController{
      * }
      * ```
      */
-    public function getSelfList($status = null,$page = 1, $pageSize = 10){
+    public function getSelfList($status = null,$payStatus = null,$page = 1, $pageSize = 10){
         $pageSize > 50 and $pageSize = 50;
         $page--;
         $page *= $pageSize;
@@ -107,6 +107,8 @@ class OrderVehicleController extends ApiController{
 
         if(!is_null($status))
             $where['status']=$status;
+        if(!is_null($payStatus))
+            $where['sq_order_vehicle.pay_status']=$payStatus;
 
         $m = D('OrderVehicle');
         $data = $m
@@ -116,12 +118,14 @@ class OrderVehicleController extends ApiController{
                 'user_id',
                 'shop_id',
                 'status',
+                'pay_status',
                 'worker_id',
                 'address',
                 'street_number',
                 'car_number',
                 'price',
                 'ifnull(user_picture_ids,\'\') as user_picture_ids',
+                'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
                 'add_time',
                 'update_time',
             ])
@@ -137,6 +141,22 @@ class OrderVehicleController extends ApiController{
                 $i['user_pictures'][]=$p['path'];
             }
             unset($i['user_picture_ids']);
+
+            $i['worker_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['worder_picture_ids']]])
+                        ->select() as $p){
+                $i['worker_pictures'][]=$p['path'];
+            }
+            unset($i['worder_picture_ids']);
+
+            $user=D('UcenterMember')
+                ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+                ->where(['sq_ucenter_member.id'=>$i['user_id']])
+                ->find();
+            $i['user_name']=$user['real_name'];
+            $i['user_picture']=$user['path']?$user['path']:"";
         }
 
         $this->apiSuccess(['data' => $data], '');
