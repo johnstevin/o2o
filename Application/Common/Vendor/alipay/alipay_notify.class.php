@@ -14,7 +14,7 @@
  */
 
 require_once("alipay_core.function.php");
-require_once("alipay_md5.function.php");
+require_once("alipay_rsa.function.php");
 
 class AlipayNotify {
     /**
@@ -125,8 +125,8 @@ class AlipayNotify {
 		
 		$isSgin = false;
 		switch (strtoupper(trim($this->alipay_config['sign_type']))) {
-			case "MD5" :
-				$isSgin = md5Verify($prestr, $sign, $this->alipay_config['key']);
+			case "RSA" :
+				$isSgin = rsaVerify($prestr, trim($this->alipay_config['ali_public_key_path']), $sign);
 				break;
 			default :
 				$isSgin = false;
