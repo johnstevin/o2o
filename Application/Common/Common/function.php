@@ -1272,3 +1272,20 @@ function update_device_tag_alias($appid, $registrationId, $alias = null, $addTag
         return;
     return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
 }
+
+/**
+ * @param $arr
+ * @param $field
+ * @author Stevin.John@qq.com
+ */
+function _arrMinByField ( $acRes, $field ) {
+    if (count($acRes) < 1) return $acRes;
+    $mainRes = $acRes[0];
+    foreach ($acRes as $k=>$val) {
+        $val[$field] = intval($val[$field]);
+        if ($mainRes[$field] > $val[$field]) {
+            $mainRes = $val;
+        }
+    }
+    return $mainRes;
+}

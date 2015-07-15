@@ -70,6 +70,10 @@ class UserController extends ApiController {
             if(IS_POST){
                 $mobile     = I('post.mobile');
                 $password   = I('post.password');
+                $code       = I('post.code');
+
+                if(!verify_sms_code($mobile,$code))
+                    $this->apiError(40012,$this->showRegError(-14));
 
                 $Ucenter = D('UcenterMember');
                 D()->startTrans();
@@ -119,6 +123,7 @@ class UserController extends ApiController {
             case -11: $error = '手机号被占用！'; break;
             case -12: $error = '用户注册失败！code:-12'; break;
             case -13: $error = '分配授权失败！code:-13'; break;
+            case -14: $error = '验证码错误！code:-14'; break;
             default:  $error = '未知错误';
         }
         return $error;

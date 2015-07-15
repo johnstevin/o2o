@@ -67,18 +67,28 @@ class AuthAccessModel extends AdvModel {
     }
 
     /**
-     * TODO 这里可以做一些高级筛选
-     * @param $map
      * @param string $field
-     * @return bool|mixed
+     * @param int $type
+     * @param int $uid
+     * @param int $group_id
+     * @param int $role_id
+     * @param int $status
+     * @return bool
+     * @author Stevin.John@qq.com
      */
-    public function lists( $map, $field='*' ) {
-        $result = $this->field($field)->where($map)->select();
-        if( empty($result) ){
-            return false;
-        } else {
-            return $result;
-        }
+    public function lists( $field = '*', $type = 0, $uid = 0, $group_id = 0, $role_id = 0, $status = null ) {
+        $uid == 0 ? '' :        $map['a.uid'] = $uid;
+        $group_id == 0 ? '' :   $map['a.group_id'] = $group_id;
+        $role_id == 0 ? '' :    $map['a.role_id'] = $role_id;
+        $status === null ? '' : $map['a.status'] = $status;
+        $type == 0 ? '' :       $map['g.type'] = $type;
+        $acLists = $this
+                    ->field($field)
+                    ->table('__AUTH_ACCESS__ a')
+                    ->join('__AUTH_GROUP__ g ON g.id = a.group_id')
+                    ->where($map)
+                    ->select();
+        return $acLists;
     }
 
 

@@ -152,43 +152,8 @@ class UcenterMemberModel extends AdvModel {
 
         if ($admin->getDbError())
             return -3;  //插入或更新管理员信息失败
-        /* 是否有总店未审核 */
-        $shopFields = 'id,group_id,message,status';
-        $shopMaps   = array('status'=>array('in','2,3'),'add_uid'=>$user['id']);
-        $shopModel  = M('MerchantShop');
-        $shopRes    = $shopModel->field($shopFields)->where($shopMaps)->find();
 
-        if (empty($shopRes)) {
-            /* 获取组织关系 */
-            //$acMap    = array('uid'=>$user['id'],'status'=>1,'group_id'=>C('AUTH_GROUP_ID.GROUP_ID_MERCHANT'));
-            $acMap    = array('uid'=>$user['id'],'status'=>1);
-            $acFields = 'uid,group_id,role_id';
-            $acRes    = D("AuthAccess")->lists($acMap, $acFields);
-            if ( $acRes === false )
-                return -7;  //获取权限失败
-            $acCount  = count($acRes);
-            // TODO 这里有问题
-            if ( $acCount > 2) {
-                $group_tree = array();
-            } else {
-                $group_tree = array(
-                    'group_id'    => 0,
-                    'role_id'     => _merchant_roleName($acRes[0]['role_id']),
-                    'shop_id'     => 0,
-                    'shop_status' => 0,
-                    'shop_message'=> '',
-                );
-            }
-
-        } else {
-            $group_tree = array(
-                'group_id'    => $shopRes['group_id'],
-                'role_id'     => _merchant_roleName(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO')),
-                'shop_id'     => $shopRes['id'],
-                'shop_status' => $shopRes['status'],
-                'shop_message'=> is_null($shopRes['message']) ? '' : $shopRes['message'],
-            );
-        }
+        $group_tree  =  $this->loginAccess($user['id']);
 
         /* 记录登录SESSION和COOKIES */
         $auth = array(
@@ -201,6 +166,113 @@ class UcenterMemberModel extends AdvModel {
         $token=$user['id'];
         set_merchant_login($token,$auth);
         return encode_token($token);
+    }
+
+    protected function loginAccess ( $uid ) {
+        /* 是否有总店未审核 */
+//        $shopFields = 'id,group_id,message,status';
+//        $shopMaps   = array('status'=>array('in','2,3'),'add_uid'=>$uid);
+//        $shopModel  = M('MerchantShop');
+//        $shopRes    = $shopModel->field($shopFields)->where($shopMaps)->find();
+//
+//        if (empty($shopRes)) {
+//            /* 获取组织关系 */
+//            //$acMap    = array('uid'=>$user['id'],'status'=>1,'group_id'=>C('AUTH_GROUP_ID.GROUP_ID_MERCHANT'));
+//            $acMap    = array('uid'=>$uid,'status'=>1);
+//            $acFields = 'uid,group_id,role_id';
+//            $acRes    = D("AuthAccess")->lists($acMap, $acFields);
+//            if ( $acRes === false )
+//                return -7;  //获取权限失败
+//            $acCount  = count($acRes);
+//            // TODO 这里有问题
+//            if ( $acCount > 2) {
+//                $group_tree = array();
+//            } else {
+//                $group_tree = array(
+//                    'group_id'    => 0,
+//                    'role_id'     => _merchant_roleName($acRes[0]['role_id']),
+//                    'shop_id'     => 0,
+//                    'shop_status' => 0,
+//                    'shop_message'=> '',
+//                );
+//            }
+//
+//
+//
+//
+//        } else {
+//            $group_tree = array(
+//                'group_id'    => $shopRes['group_id'],
+//                'role_id'     => _merchant_roleName(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO')),
+//                'shop_id'     => $shopRes['id'],
+//                'shop_status' => $shopRes['status'],
+//                'shop_message'=> is_null($shopRes['message']) ? '' : $shopRes['message'],
+//            );
+//        }
+
+        /* 2015-7-14 改进 */
+        $role1    = C('AUTH_GROUP_ID.GROUP_ID_MERCHANT').        ':'.C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO');
+        $role2    = C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_SHOP').   ':'.C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER');
+        $role3    = C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_SHOP').   ':'.C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_STAFF');
+        $role4    = C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_VEHICLE').':'.C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');
+        $role5    = C('AUTH_GROUP_ID.GROUP_ID_MERCHANT_VEHICLE').':'.C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
+
+        $acFields = 'a.uid,a.group_id,a.role_id,g.level,g.title';
+        $acRes    = D("AuthAccess")->lists($acFields, C('AUTH_GROUP_TYPE.MERCHANT'), $uid, 0, 0, 1);
+        if(empty($acRes)) return 'Failed to get permission!';
+        $acRes = _arrMinByField( $acRes, 'level' );
+        $strJoin  = $acRes['group_id'].':'.$acRes['role_id'];
+
+        switch ( $strJoin ) {
+            case $role1 :
+                $res = $this->_checkShopByAdduid('id,group_id,message,status', $uid, null, '2,3');
+                if ($res === null) return [
+                    'group_id'    => 0,
+                    'role_id'     => _merchant_roleName(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO')),
+                    'shop_id'     => 0,
+                    'shop_status' => 0,
+                    'shop_message'=> '',
+                    'sys_message' => '注册后未填写店铺资料',
+                ];
+                return [
+                    'group_id'    => $res['group_id'],
+                    'role_id'     => _merchant_roleName(C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_COMMITINFO')),
+                    'shop_id'     => $res['id'],
+                    'shop_status' => $res['status'],
+                    'shop_message'=> is_null($res['message']) ? '' : $res['message'],
+                    'sys_message' => '注册后修改店铺资料',
+                ];
+
+                break;
+            default     :
+                $res = $this->_checkShopByAdduid('id,group_id,message,status', null, $acRes['group_id'], 1);
+                if ($res === null) return [
+                    'group_id'    => 0,
+                    'role_id'     => _merchant_roleName($acRes['role_id']),
+                    'shop_id'     => 0,
+                    'shop_status' => 0,
+                    'shop_message'=> '',
+                    'sys_message' => '非正常操作的找不到店铺',
+                ];
+                return [
+                    'group_id'    => $acRes['group_id'],
+                    'role_id'     => _merchant_roleName($acRes['role_id']),
+                    'shop_id'     => $res['id'],
+                    'shop_status' => $res['status'],
+                    'shop_message'=> '',
+                    'sys_message' => '正常的店铺',
+                ];
+        }
+
+
+    }
+
+    protected function _checkShopByAdduid ($fields = '*', $uid = null, $group_id = null, $status = null) {
+        $uid === null ? : $map['add_uid'] = $uid;
+        $group_id === null ? : $map['group_id'] = $group_id;
+        $map['status'] = count(explode(',', $status)) > 1 ? ['in',$status] : $status;
+        $model = M('MerchantShop');
+        return $model->field($fields)->where($map)->find();
     }
 
     /**
