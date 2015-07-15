@@ -97,8 +97,8 @@
         </div>
         <div class="footer">
             <input type="hidden" name="id" value="{$info.id|default=''}">
-            <input type="hidden" name="type" value="{$category['type']}">
-            <input type="hidden" name="level" value="{$category['level']|default=''}"/>
+            <input type="hidden" name="type" value="{:isset($category['type'])?$category['type']:$info['type']}">
+            <input type="hidden" name="level" value="{$category['level']|default=0}"/>
             <input type="hidden" name="pid" value="{:isset($category['id'])?$category['id']:$info['pid']}">
             <!--<button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>-->
             <!--<button type="submit" class="btn btn-primary">确 定</button>-->

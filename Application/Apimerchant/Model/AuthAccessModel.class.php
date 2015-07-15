@@ -22,6 +22,7 @@ class AuthAccessModel extends AdvModel {
     const AUTH_EXTEND               = 'auth_extend';       // 动态权限扩展信息表
     const AUTH_GROUP                = 'auth_group';        // 组织表名
 
+    const AUTH_STATUS_DELETE         = -1;
     const AUTH_STATUS_AWAIT         = 0;                   // 待审核
     const AUTH_STATUS_PASS          = 1;                   // 审核通过
     const AUTH_STATUS_NOPASS        = 2;                   // 审核未通过
@@ -52,18 +53,7 @@ class AuthAccessModel extends AdvModel {
      * @return array|int
      */
     public function get( $map, $field='*' ){
-        $result = $this->field($field)->where($map)->select();
-        if( empty($result) ){
-            return -1; //
-        } else {
-            foreach ($result as $v) {
-                $tempArr[] = $v['uid'];
-            }
-            return array_unique($tempArr);
-        }
-
-
-
+        return $this->field($field)->where($map)->select();
     }
 
     /**
@@ -91,6 +81,71 @@ class AuthAccessModel extends AdvModel {
         return $acLists;
     }
 
+    /**
+     * 员工审核->成功
+     * @param $uid
+     * @param $group_id
+     * @param $role_id
+     * @return bool
+     */
+    public function CheckSuccess($uid,$group_id,$role_id){
+        $map = array(
+            'uid'       =>$uid,
+            'group_id'  => $group_id,
+            'role_id'   => $role_id,
+            'status'    =>array('neq','-1'),
+        );
+        return  $this->where($map)->setField('status',self::AUTH_STATUS_PASS);
+    }
+
+
+    /**
+     * 员工审核->失败
+     * @param $uid
+     * @param $group_id
+     * @param $role_id
+     * @return bool
+     */
+    public function CheckFail($uid,$group_id,$role_id){
+        $map = array(
+            'uid'       =>$uid,
+            'group_id'  => $group_id,
+            'role_id'   => $role_id,
+            'status'    =>array('neq','-1'),
+        );
+
+        M()->startTrans();
+
+       if(false!==$this->where($map)->delete()){
+           if(false!==M('UcenterMember')->where(array('id'=>$uid))->delete()){
+               if(false!==M('Merchant')->where(array('id'=>$uid))->delete()){
+                   M()->commit();
+                   return true;
+           }else{
+               M()->rollback();
+               E('保存失败');
+           }
+           }else{
+               M()->rollback();
+               E('保存失败');
+           }
+       } else{
+          M()->rollback();
+           E('保存失败');
+       };
+    }
+
+
+    public function staffDelete($uid,$group_id,$role_id){
+        $map = array(
+            'uid'       =>$uid,
+            'group_id'  => $group_id,
+            'role_id'   => $role_id,
+            'status'    =>array('neq','-1'),
+        );
+        return $this->where($map)->setField('status',self::AUTH_STATUS_DELETE);
+
+    }
 
 }
 

@@ -363,7 +363,7 @@ class UcenterMemberModel extends Model
 
                 /*查询*/
                 $UserInfo = $this
-                    ->field('a.id,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                    ->field('a.id,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time,a.is_merchant')
                     ->table('__UCENTER_MEMBER__ a')
                     ->join('__ADMIN__ b ON  a.id = b.id', 'LEFT')
                     ->where($map)
@@ -402,7 +402,7 @@ class UcenterMemberModel extends Model
 
 
                 $UserInfo = $this
-                    ->field('a.id,a.mobile,a.username,a.email,a.real_name,a.reg_time,b.status,b.last_login_ip,b.last_login_time,b.score,b.login')
+                    ->field('a.id,a.mobile,a.username,a.email,a.real_name,a.reg_time,b.status,b.last_login_ip,b.last_login_time,b.score,b.login,a.is_merchant')
                     ->table('__UCENTER_MEMBER__ a')
                     ->join('__MEMBER__ b ON  a.id = b.uid', 'LEFT')
                     //->where(array('a.is_admin'=>array('neq', '1'),'a.is_merchant'=>array('neq', '1'),'a.is_member'=>array('eq', '1')))

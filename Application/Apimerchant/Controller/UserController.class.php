@@ -496,19 +496,147 @@ class UserController extends ApiController {
         $map = array(
             'group_id'   => $group_id,
             'role_id'    => $role_id,
+            'status'    =>array('neq','-1'),
         );
-        $field = 'uid';
+        $field = 'uid,status';
         $uids = $auth->get($map,$field);
-        if($uids == -1)
+        if($uids === false)
             $this->apiError('40033', '获取员工失败');
-        $uids = implode(',',$uids);
-        $mapUcenter  = array('in',$uids);
-        $fieldUcenter      = 'a.id,a.mobile,a.real_name,a.username,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time';
+
+        $uid_arr = array_unique(array_column($uids,'uid'));
+
+        $mapUcenter  = array('in',$uid_arr);
+
+        $fieldUcenter      = 'a.id,a.mobile,a.real_name,a.username,a.email,a.reg_time,b.status,b.last_login_ip,c.path as photo,b.last_login_time,b.total_orders';
+
         $resultUserInfos = $this->userInfos($mapUcenter,$fieldUcenter);
+
+
+        // 创建基于主键的数组引用
+        $refer = [];
+
+        foreach ($uids as $key => $data) {
+            $refer[$data['uid']] =& $uids[$key];
+        }
+
+
+        foreach($resultUserInfos as &$key){
+
+            $key['check_status']=$refer[$key['id']]['status'];
+        }
+
         $this->apiSuccess(array('data'=>$resultUserInfos),'获取员工成功');
 
 
     }
 
+    /**
+     * 员工审核
+     * type：1通过，0不通过
+     */
+    public function staffCheck(){
+
+        $this->getUserId();
+
+        $uid=I('id');
+
+        $type=I('type');
+
+        $shop_id  = is_numeric(I('shop_id')) ? I('shop_id') : 0;
+
+        if(empty($uid)||empty($type)){
+            $this->apiError('40060', '参数非法');
+        }
+
+
+        if($shop_id==0)
+            $this->apiError('40030', '非法操作');
+        $model = D('MerchantShop');
+        $result = $model->get($shop_id);
+        if(empty($result))
+            $this->apiError('40031', '找不到此店铺');
+        $group_id  = $result['group_id'];
+        switch($result['type']){
+            case 1 : $role_id = C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_STAFF');     break;
+            case 2 : $role_id = C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER'); break;
+            default : $this->apiError('40032', '店铺类型错误');
+        }
+
+        $AuthAccess=D('AuthAccess');
+        if($type=='1'){
+
+            if (false!== $AuthAccess->CheckSuccess($uid,$group_id,$role_id)) {
+                $this->apiSuccess(null,'审核成功',null);
+            } else {
+                $this->apiError('40037', ' 审核员工失败');
+            }
+        }
+        else if($type=='2'){
+
+            if (true=== $AuthAccess->CheckFail($uid,$group_id,$role_id)) {
+                $this->apiSuccess(null,'保存成功',null);
+            } else {
+                $this->apiError('40037', '保存失败');
+            }
+        }
+        else{
+            $this->apiError('40060', '参数非法');
+        }
+    }
+
+    /**
+     * 获取员工详细信息
+     * type：1，0不通过
+     */
+    public function staffDetail(){
+        $this->getUserId();
+
+        $uid=I('id');
+
+        if(empty($uid)){
+            $this->apiError('40030', '非法操作');
+        }
+
+        $map=array('eq', $uid);
+
+        $field= 'a.id,a.mobile,a.real_name,a.username,a.email,b.status,c.path as photo,b.total_orders';
+
+        $result=$this->userInfos($map,$field);
+
+        $this->apiSuccess(array('data'=>$result[0]),'获取员工信息成功');
+    }
+
+
+    /**
+     * 删除员工
+     */
+    public function staffDelete(){
+
+        $this->getUserId();
+
+        $uid=I('id');
+
+        $shop_id  = is_numeric(I('shop_id')) ? I('shop_id') : 0;
+
+        if($shop_id==0)
+            $this->apiError('40030', '非法操作');
+        $model = D('MerchantShop');
+        $result = $model->get($shop_id);
+        if(empty($result))
+            $this->apiError('40031', '找不到此店铺');
+        $group_id  = $result['group_id'];
+        switch($result['type']){
+            case 1 : $role_id = C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_STAFF');     break;
+            case 2 : $role_id = C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER'); break;
+            default : $this->apiError('40032', '店铺类型错误');
+        }
+
+        $AuthAccess=D('AuthAccess');
+        if (true=== $AuthAccess->staffDelete($uid,$group_id,$role_id)) {
+            $this->apiSuccess(null,'保存成功',null);
+        } else {
+            $this->apiError('40037', '保存失败');
+        }
+    }
 
 }
