@@ -357,7 +357,7 @@ class OrderVehicleModel extends AdvModel
         }
     }
 
-    public function managerCancel($id,$remark,$groupIds){
+    public function managerCancel($uid,$id,$remark,$groupIds){
 
         $model=D('OrderVehicle');
         $order=$model
@@ -369,7 +369,7 @@ class OrderVehicleModel extends AdvModel
         $shop=D('MerchantShop')->find($order['shop_id']);
         if(!in_array($shop['group_id'],$groupIds))
             E('用户无权修改此订单');
-        if(!in_array($data['status'],[0,1,2]))
+        if(!in_array($order['status'],[0,1,2]))
             E('订单已经不能取消');
         $ovs=D('OrderVehicleStatus');
 
@@ -379,7 +379,7 @@ class OrderVehicleModel extends AdvModel
             if(!$ovs->create([
                 'order_id'=>$id,
                 //'user_id'=>0,//$order['user_id'],
-                'merchant_id'=>$this->getUserId(),
+                'merchant_id'=>$uid,
                 'shop_id'=>$order['shop_id'],
                 'status' => OrderVehicleModel::STATUS_CANCELED,
                 'content' => $remark ?$remark:'经理取消订单',
@@ -482,6 +482,7 @@ class OrderVehicleModel extends AdvModel
             ->field(['st_astext(sq_order_vehicle.lnglat) as lnglat',
                 'sq_order_vehicle.id',
                 'ifnull(sq_merchant_shop.title,\'\') as shop_title',
+                'ifnull(sq_merchant_shop.phone_number,\'\') as shop_phone_number',
                 'ifnull(sq_picture.path,\'\') as shop_picture',
                 'sq_order_vehicle.order_code',
                 'sq_order_vehicle.user_id',
