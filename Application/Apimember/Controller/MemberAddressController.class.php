@@ -80,4 +80,13 @@ class MemberAddressController extends ApiController
     {
         $this->apiSuccess(MemberAddressModel::getInstance()->getLists($this->getUserId(), $name, $regionId, $status, $fields, $pageSize));
     }
+
+    /**
+     * 获得用户的默认地址
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     */
+    public function getDefault()
+    {
+        $this->apiSuccess(['data' => MemberAddressModel::getInstance()->getDefault($this->getUserId())]);
+    }
 }

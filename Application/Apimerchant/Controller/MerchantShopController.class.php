@@ -136,7 +136,7 @@ class MerchantShopController extends ApiController
                 if (!($data = $model->create()))
                     E('参数传递失败');
                 $data['add_uid'] = $this->getUserId();
-                $data['group_id'] = $this->_get_group_id($data['type']);
+                $data['group_id'] = $this->_get_group_id(intval($data['type']));
                 $model->data($data);
                 $newId=intval($model->add());
                 action_log('api_create_shop', $model, $newId, UID,2);

@@ -199,6 +199,9 @@ class MemberAddressVehideModel extends AdvModel
             ':status' => self::STATUS_ACTIVE,
             ':mobile' => $mobile
         ];
+        if ($isDefault) {
+            $model->where(['user_id' => $userId])->save(['default' => self::DEFAULT_FALSE]);
+        }
         $sql = 'INSERT INTO sq_member_address_vehide (user_id, car_number, lnglat, address, `default`, picture_id,street_number,status,mobile) VALUES (:user_id,:car_number,point(:lng,:lat),:address,:isDefault,:picture_id,:street_number,:status,:mobile)';
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
@@ -279,7 +282,7 @@ class MemberAddressVehideModel extends AdvModel
         $bind = [
             ':user_id' => intval($userId)
         ];
-        $sql = 'SELECT mav.user_id,mav.id,mav.address,mav.car_number,mav.status,mav.region_id,picture.path picture,mav.`default` FROM sq_member_address_vehide mav LEFT JOIN sq_picture picture ON mav.picture_id=picture.id WHERE mav.user_id = :user_id AND ';
+        $sql = 'SELECT mav.user_id,mav.id,mav.address,mav.car_number,mav.status,mav.region_id,picture.path picture,mav.`default`,astext(mav.lnglat) lnglat,mav.street_number,mav.mobile,mav.picture_id FROM sq_member_address_vehide mav LEFT JOIN sq_picture picture ON mav.picture_id=picture.id WHERE mav.user_id = :user_id AND ';
         if ($status !== null && array_key_exists($status, self::getStatusOptions())) {
             $sql .= 'mav.status = :status';
             $bind[':status'] = intval($status);
@@ -287,9 +290,25 @@ class MemberAddressVehideModel extends AdvModel
             $sql .= 'mav.status != :status';
             $bind[':status'] = self::STATUS_DELETE;
         }
+        $sql .= ' ORDER BY mav.id DESC';
         $sth = $pdo->prepare($sql);
         $sth->execute($bind);
-        return $sth->fetchAll(\PDO::FETCH_ASSOC);
+        $list = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        foreach ($list as &$item) {
+            if (empty($item['lnglat'])) {
+                $item['lnglat'] = [
+                    'lng' => 0,
+                    'lat' => 0
+                ];
+                continue;
+            }
+            list($lng, $lat) = explode(' ', substr($item['lnglat'], 6, -1));
+            $item['lnglat'] = [
+                'lng' => $lng,
+                'lat' => $lat
+            ];
+        }
+        return $list;
     }
 
     /**
@@ -305,5 +324,26 @@ class MemberAddressVehideModel extends AdvModel
         if (!$id = intval($id)) E('ID非法');
         if ($logic) return self::getInstance()->where(['id' => $id, 'status' => self::STATUS_ACTIVE])->save(['status' => self::STATUS_DELETE]);
         return self::getInstance()->delete($id);
+    }
+
+    /**
+     * 获得用户的默认地址
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $userId 用户ID
+     * @return mixed
+     */
+    public function getDefault($userId)
+    {
+        $pdo = get_pdo();
+        $sql = 'SELECT mav.id,mav.user_id,mav.region_id,mav.car_number,astext(mav.lnglat) lnglat,mav.address,mav.status,mav.status,mav.`default`,mav_picture.path picture,mav.street_number,mav.mobile FROM sq_member_address_vehide mav LEFT JOIN sq_picture mav_picture ON mav.picture_id=mav_picture.id WHERE mav.user_id=:user_id AND mav.`default`=:isDefault AND mav.status =:status';
+        $sth = $pdo->prepare($sql);
+        $sth->execute([':status' => self::STATUS_ACTIVE, ':user_id' => $userId, ':isDefault' => self::DEFAULT_TRUE]);
+        $data = $sth->fetch(\PDO::FETCH_ASSOC);
+        list($lng, $lat) = explode(' ', substr($data['lnglat'], 6, -1));
+        $data['lnglat'] = [
+            'lng' => $lng,
+            'lat' => $lat
+        ];
+        return $data;
     }
 }

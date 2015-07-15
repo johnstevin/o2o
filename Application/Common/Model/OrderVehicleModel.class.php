@@ -11,7 +11,12 @@ namespace Common\Model;
 
 use Think\Model\AdvModel;
 
-class OrderVehicleModel extends AdvModel{
+class OrderVehicleModel extends AdvModel
+{
+    /**
+     * @var self
+     */
+    private static $instance;
     #订单状态（0-未分配，1-已分配，2-已接单，3-处理中，4-处理完，5-订单结束，6订单取消）'
     const STATUS_NO_WORKER = 0;
     const STATUS_HAS_WORKER = 1;
@@ -21,7 +26,18 @@ class OrderVehicleModel extends AdvModel{
     const STATUS_CLOSED = 5;
     const STATUS_CANCELED = 6;
 
-    protected $pk     = 'id';
+    protected $pk = 'id';
+    protected $autoinc = true;
+
+    /**
+     * 获取当前模型的实例
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @return \Common\Model\OrderVehicleModel
+     */
+    public static function getInstance()
+    {
+        return self::$instance instanceof self ? self::$instance : self::$instance = new self;
+    }
 
     protected $fields = [
         'id',
@@ -100,7 +116,7 @@ class OrderVehicleModel extends AdvModel{
         ],
         [
             'order_code',
-            'create_order_code',
+            'create_vehide_order_code',
             self::MODEL_INSERT,
             'function'
         ]
@@ -112,42 +128,42 @@ class OrderVehicleModel extends AdvModel{
             'currency',
             '价格格式错误',
             [self::EXISTS_VALIDATE,
-            self::MODEL_BOTH]
+                self::MODEL_BOTH]
         ],
         [
             'address',
             'require',
             '地址不能为空',
             [self::MUST_VALIDATE,
-            self::MODEL_INSERT]
+                self::MODEL_INSERT]
         ],
         [
             'consignee',
             'require',
             '车主姓名不能为空',
             [self::MUST_VALIDATE,
-            self::MODEL_INSERT]
+                self::MODEL_INSERT]
         ],
         [
             'mobile',
             'require',
             '车主手机不能为空',
             [self::MUST_VALIDATE,
-            self::MODEL_INSERT]
+                self::MODEL_INSERT]
         ],
         [
             'lnglat',
             'require',
             '坐标不能为空',
             [self::MUST_VALIDATE,
-            self::MODEL_INSERT]
+                self::MODEL_INSERT]
         ],
         [
             'preset_time',
             'require',
             '预定时间不能为空',
             [self::MUST_VALIDATE,
-            self::MODEL_INSERT]
+                self::MODEL_INSERT]
         ],
         [
             'status',
@@ -187,8 +203,9 @@ class OrderVehicleModel extends AdvModel{
         'order_code',
     ];
 
-    protected function _after_find(&$result,$options='') {
-        parent::_after_select($result,$options);
+    protected function _after_find(&$result, $options = '')
+    {
+        parent::_after_select($result, $options);
         $this->_after_query_row($result);
         //echo '<pre>';
         //print_r($result);
@@ -199,9 +216,10 @@ class OrderVehicleModel extends AdvModel{
      * @param $resultSet
      * @param string $options
      */
-    protected function _after_select(&$resultSet,$options) {
-        parent::_after_select($resultSet,$options);
-        foreach($resultSet as &$row){
+    protected function _after_select(&$resultSet, $options)
+    {
+        parent::_after_select($resultSet, $options);
+        foreach ($resultSet as &$row) {
             $this->_after_query_row($row);
         }
     }
@@ -214,7 +232,7 @@ class OrderVehicleModel extends AdvModel{
     protected function _after_query_row(&$row)
     {
         foreach ($row as $k => &$v) {
-            $type=$this->fields['_type'][$k];
+            $type = $this->fields['_type'][$k];
             if ($type == 'point') {
                 $lls = substr($v, 6, strlen($v) - 7);
                 $ll = explode(' ', $lls);
@@ -228,62 +246,64 @@ class OrderVehicleModel extends AdvModel{
      * @author WangJiang
      * @param $success 成功回调
      */
-    public function insert($success){
+    public function insert($success)
+    {
 
-        $data=$this->data();
+        $data = $this->data();
 
-        $bind=[];
-        $orderVals=[];
-        $orderFlds=[];
-        foreach($data as $key=>$val){
-            if(!in_array($key,$this->fields,true)){
+        $bind = [];
+        $orderVals = [];
+        $orderFlds = [];
+        foreach ($data as $key => $val) {
+            if (!in_array($key, $this->fields, true)) {
                 unset($data[$key]);
                 continue;
             }
-            $bindName=":$key";
-            if($this->fields['_type'][$key]=='point'){
-                $orderVals[]="st_geomfromtext($bindName)";
-                $bind[$bindName]="POINT($val)";
-                $orderFlds[]=$key;
-            }else{
-                $orderVals[]=$bindName;
-                $bind[$bindName]=$val;
-                $orderFlds[]=$key;
+            $bindName = ":$key";
+            if ($this->fields['_type'][$key] == 'point') {
+                $orderVals[] = "st_geomfromtext($bindName)";
+                $bind[$bindName] = "POINT($val)";
+                $orderFlds[] = $key;
+            } else {
+                $orderVals[] = $bindName;
+                $bind[$bindName] = $val;
+                $orderFlds[] = $key;
             }
         }
 
         return do_transaction([
-            ['sql'=>'INSERT INTO sq_order_vehicle('.implode(',',$orderFlds).') VALUES('.implode(',',$orderVals).');',
-            'bind'=>$bind,
-            'newId'=>true]
+            ['sql' => 'INSERT INTO sq_order_vehicle(' . implode(',', $orderFlds) . ') VALUES(' . implode(',', $orderVals) . ');',
+                'bind' => $bind,
+                'newId' => true]
         ]);
     }
 
-    public function update($id){
+    public function update($id)
+    {
 
-        $data=$this->data();
+        $data = $this->data();
 
         //检查状态变化是否合法
-        $order=$this->find($id);
-        if(isset($data['status']))
-            $this->_assert_new_status($order['status'],$data['status']);
+        $order = $this->find($id);
+        if (isset($data['status']))
+            $this->_assert_new_status($order['status'], $data['status']);
 
-        $bind=[];
-        $sets=[];
-        foreach($data as $key=>$val){
-            if($key==$this->pk)
+        $bind = [];
+        $sets = [];
+        foreach ($data as $key => $val) {
+            if ($key == $this->pk)
                 continue;
-            if(!in_array($key,$this->fields,true)){
+            if (!in_array($key, $this->fields, true)) {
                 unset($data[$key]);
                 continue;
             }
-            $bindName=":$key";
-            if($this->fields['_type'][$key]=='point'){
-                $bind[$bindName]="POINT($val)";
-                $sets[]=$key.'='."st_geomfromtext($bindName)";
-            }else{
-                $bind[$bindName]=$val;
-                $sets[]=$key.'='.$bindName;
+            $bindName = ":$key";
+            if ($this->fields['_type'][$key] == 'point') {
+                $bind[$bindName] = "POINT($val)";
+                $sets[] = $key . '=' . "st_geomfromtext($bindName)";
+            } else {
+                $bind[$bindName] = $val;
+                $sets[] = $key . '=' . $bindName;
             }
         }
 
@@ -292,11 +312,11 @@ class OrderVehicleModel extends AdvModel{
         if(empty($sets))
             return false;
 
-        $bind[':id']=$id;
+        $bind[':id'] = $id;
         return do_transaction([
-            ['sql'=>'UPDATE sq_order_vehicle set '.implode(',',$sets).' where id=:id;',
-                'bind'=>$bind,
-                'newId'=>false]
+            ['sql' => 'UPDATE sq_order_vehicle set ' . implode(',', $sets) . ' where id=:id;',
+                'bind' => $bind,
+                'newId' => false]
         ]);
 
     }
@@ -373,7 +393,8 @@ class OrderVehicleModel extends AdvModel{
         }
     }
 
-    private static function _get_status_chain(){
+    private static function _get_status_chain()
+    {
         return [
             ['id'=>0,[1,6]],
             ['id'=>1,[2,6,0]],
@@ -387,10 +408,11 @@ class OrderVehicleModel extends AdvModel{
      * @param $oldStatus
      * @param $newStatus
      */
-    private function _assert_new_status($oldStatus,$newStatus){
-        foreach(self::_get_status_chain() as $i){
-            if($i['id']==$oldStatus){
-                if(!in_array($newStatus,$i[0]))
+    private function _assert_new_status($oldStatus, $newStatus)
+    {
+        foreach (self::_get_status_chain() as $i) {
+            if ($i['id'] == $oldStatus) {
+                if (!in_array($newStatus, $i[0]))
                     E('当前状态不能改变为指定状态');
                 return;
             }
@@ -438,20 +460,21 @@ class OrderVehicleModel extends AdvModel{
         //TODO 消息推送
     }
 
-    public function getUserList($uid,$status,$payStatus,$orderCode,$page, $pageSize){
+    public function getUserList($uid, $status, $payStatus, $orderCode, $page, $pageSize)
+    {
         $pageSize > 50 and $pageSize = 50;
-        $where['sq_order_vehicle.user_id']=$uid;
+        $where['sq_order_vehicle.user_id'] = $uid;
 
-        if(!is_null($status)){
-            if(is_array($status))
-                $where['sq_order_vehicle.status']=['in',$status];
+        if (!is_null($status)) {
+            if (is_array($status))
+                $where['sq_order_vehicle.status'] = ['in', $status];
             else
-                $where['sq_order_vehicle.status']=$status;
+                $where['sq_order_vehicle.status'] = $status;
         }
-        if(!is_null($payStatus))
-            $where['sq_order_vehicle.pay_status']=$payStatus;
-        if(!is_null($orderCode))
-            $where['sq_order_vehicle.order_code']=$orderCode;
+        if (!is_null($payStatus))
+            $where['sq_order_vehicle.pay_status'] = $payStatus;
+        if (!is_null($orderCode))
+            $where['sq_order_vehicle.order_code'] = $orderCode;
         $data = $this
             ->join('left join sq_merchant_shop on sq_merchant_shop.id=sq_order_vehicle.shop_id')
             ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
@@ -483,21 +506,21 @@ class OrderVehicleModel extends AdvModel{
             ->order('sq_order_vehicle.update_time desc')
             ->select();
 
-        foreach($data as &$i){
-            $i['worker_pictures']=[];
-            foreach(D('Picture')
-                        ->field(['path'])
-                        ->where(['id'=>['in',$i['worder_picture_ids']]])
-                        ->select() as $p){
-                $i['worker_pictures'][]=$p['path'];
+        foreach ($data as &$i) {
+            $i['worker_pictures'] = [];
+            foreach (D('Picture')
+                         ->field(['path'])
+                         ->where(['id' => ['in', $i['worder_picture_ids']]])
+                         ->select() as $p) {
+                $i['worker_pictures'][] = $p['path'];
             }
             unset($i['worder_picture_ids']);
-            $i['user_pictures']=[];
-            foreach(D('Picture')
-                        ->field(['path'])
-                        ->where(['id'=>['in',$i['user_picture_ids']]])
-                        ->select() as $p){
-                $i['user_pictures'][]=$p['path'];
+            $i['user_pictures'] = [];
+            foreach (D('Picture')
+                         ->field(['path'])
+                         ->where(['id' => ['in', $i['user_picture_ids']]])
+                         ->select() as $p) {
+                $i['user_pictures'][] = $p['path'];
             }
             unset($i['user_picture_ids']);
         }
@@ -505,4 +528,72 @@ class OrderVehicleModel extends AdvModel{
         return $data;
     }
 
+
+    /**
+     * 根据order_code获取订单信息
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param string $code 订单代码
+     * @param bool|false $getShop 是否关联获取商铺信息
+     * @param bool|false $getUser 是否获取用户信息
+     * @return mixed
+     */
+    public function getByCode($code, $getShop = false, $getUser = false)
+    {
+        if ($code = trim($code) === '') E('订单code非法');
+        $model = self::getInstance();
+        $fields = [
+            'ov.id',
+            'ov.order_code',
+            'ov.user_id',
+            'ov.shop_id',
+            'ov.status',
+            'ov.worker_id',
+            'ov.address',
+            'astest(ov.lnglat) lnglat',
+            'ov.car_number',
+            'ov.price',
+            'ov.user_picture_ids',
+            'ov.worder_picture_ids',
+            'ov.add_time',
+            'ov.update_time',
+            'ov.preset_time',
+            'ov.pay_status'
+        ];
+        if ($getShop) {
+            $fields = array_merge($fields, [
+                'shop.id _shop_id',
+                'shop.title _shop_title',
+                'shop.phone _shop_phone',
+                'shop.address _shop_address',
+            ]);
+            $model->join('LEFT JOIN sq_merchant_shop shop ON ov.shop_id=shop.id');
+        }
+        if ($getUser) {
+            $fields = array_merge($fields, [
+                'user.nickname _user_nickname',
+                'user.sex _user_sex',
+                'user.birthday _user_birthday'
+            ]);
+            $model->join('LEFT JOIN sq_member user ON user.uid=ov.user_id');
+        }
+        $data = $model->field($fields)->where(['ov.order_code' => $code])->find();
+        if ($getShop) {
+            $data['_shop'] = [
+                'id' => $data['_shop_id'],
+                'title' => $data['_shop_title'],
+                'phone' => $data['_shop_phone'],
+                'address' => $data['_shop_address'],
+            ];
+            unset($data['_shop_id'], $data['_shop_address'], $data['_shop_phone'], $data['_shop_title']);
+        }
+        if ($getUser) {
+            $data['_user'] = [
+                'nickname' => $data['_user_nickname'],
+                'sex' => $data['_user_sex'],
+                'birthday' => $data['_user_birthday']
+            ];
+            unset($data['_user_nickname'], $data['_user_birthday'], $data['_user_sex']);
+        }
+        return $data;
+    }
 }

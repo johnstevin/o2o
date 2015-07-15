@@ -67,12 +67,20 @@ class MemberAddressVehideController extends ApiController
      * 获取地址列表
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
-     * @param int $userId 用户ID
      * @param null $status 状态
      * @param int $pageSize 分页大小
      */
-    public function lists($userId, $status = null, $pageSize = 10)
+    public function lists($status = null, $pageSize = 10)
     {
-        $this->apiSuccess(['data' => MemberAddressVehideModel::getInstance()->getList($userId, $status, $pageSize)]);
+        $this->apiSuccess(['data' => MemberAddressVehideModel::getInstance()->getList($this->getUserId(), $status, $pageSize)]);
+    }
+
+    /**
+     * 获得用户的默认地址
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     */
+    public function getDefault()
+    {
+        $this->apiSuccess(['data' => MemberAddressVehideModel::getInstance()->getDefault($this->getUserId())]);
     }
 }

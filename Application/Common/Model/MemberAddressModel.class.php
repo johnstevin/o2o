@@ -242,9 +242,14 @@ class MemberAddressModel extends RelationModel
                         'lng' => $lng,
                         'lat' => $lat
                     ];
+                } else {
+                    $list['lnglat'] = [
+                        'lng' => '0',
+                        'lat' => '0'
+                    ];
                 }
                 if (!empty($list['region_id'])) {
-                    $list['region'] = RegionModel::getInstance()->getRegionPath(3528);
+//                    $list['region'] = RegionModel::getInstance()->getRegionPath(3528);
                 }
             }
         }
@@ -394,5 +399,26 @@ class MemberAddressModel extends RelationModel
     public static function activeAddress($id)
     {
         return self::getInstance()->where(['id' => intval($id)])->save(['status' => self::STATUS_ACTIVE]);
+    }
+
+    /**
+     * 获取默认的地址
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param int $userId 用户ID
+     * @return mixed
+     */
+    public function getDefault($userId)
+    {
+        $pdo = get_pdo();
+        $sql = 'SELECT m.id,m.uid,m.name,m.street_number,m.region_id,astext(m.lnglat) lnglat,m.address,m.status,m.patientia,m.mobile FROM sq_member_address m WHERE m.uid=:user_id AND m.status=:status AND m.patientia=:isDefault';
+        $sth = $pdo->prepare($sql);
+        $sth->execute([':status' => self::STATUS_ACTIVE, ':user_id' => intval($userId), ':isDefault' => self::DEFAULT_TRUE]);
+        $data = $sth->fetch(\PDO::FETCH_ASSOC);
+        list($lng, $lat) = explode(' ', substr($data['lnglat'], 6, -1));
+        $data['lnglat'] = [
+            'lng' => $lng,
+            'lat' => $lat
+        ];
+        return $data;
     }
 }

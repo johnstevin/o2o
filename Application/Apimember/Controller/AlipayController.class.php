@@ -2,6 +2,7 @@
 namespace Apimember\Controller;
 
 use Common\Model\OrderModel;
+use Common\Model\OrderVehicleModel;
 
 require APP_PATH . 'Common/Vendor/alipay/alipay_core.function.php';
 require APP_PATH . 'Common/Vendor/alipay/alipay_md5.function.php';
@@ -48,41 +49,60 @@ class AlipayController extends ApiController
         }
         //商户订单号
         $out_trade_no = $_POST['out_trade_no'];
-        $orderModel = OrderModel::getInstance();
-        $order = $orderModel->getByCode($out_trade_no);
-        if ($order['pay_status'] == OrderModel::PAY_STATUS_TRUE) {
-            exit('success');//如果订单的状态已经是已经支付，则直接告诉支付宝成功鸟
-        }
-        //判断交易状态
-        if ($_POST['trade_status'] == 'TRADE_FINISHED' || $_POST['trade_status'] == 'TRADE_SUCCESS') {//普通接口在支付成功后的状态，高级接口在支付成功后会返回【TRADE_SUCCESS】，3个月后才会返回【TRADE_FINISHED】
-            $ids = [];
-            if (!empty($order['_childs'])) {
-                $ids = array_map(function ($v) {
-                    return $v['id'];
-                }, $order['_childs']);
+        $first = substr($out_trade_no, 0, 1);//截取订单的第一位
+        if ($first === 'S') {//如果第一位是S，那么就是商超订单
+            $orderModel = OrderModel::getInstance();
+            $order = $orderModel->getByCode($out_trade_no);
+            if ($order['pay_status'] == OrderModel::PAY_STATUS_TRUE) {
+                exit('success');//如果订单的状态已经是已经支付，则直接告诉支付宝成功鸟
             }
-            $ids[] = $order['id'];//无论是否有子订单，都把父级订单的ID加入
-            if ($orderModel->where(['id' => ['IN', $ids]])->save(['pay_status' => OrderModel::PAY_STATUS_TRUE])) {
-                $pushTitle = '订单已支付提醒';
-                if (empty($order['_childs'])) {
-                    $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $order['order_code'] . '】';
-                    $pushExtras = [
-                        'action' => 'orderDetail',
-                        'order_id' => $order['id']
-                    ];
-                    push_by_uid('STORE', get_shopkeeper_by_shopid($order['shop_id']), $pushContet, $pushExtras, $pushTitle);
-                } else {
-                    foreach ($order['_childs'] as $child) {
-                        $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $child['order_code'] . '】';
+            //判断交易状态
+            if ($_POST['trade_status'] == 'TRADE_FINISHED' || $_POST['trade_status'] == 'TRADE_SUCCESS') {//普通接口在支付成功后的状态，高级接口在支付成功后会返回【TRADE_SUCCESS】，3个月后才会返回【TRADE_FINISHED】
+                $ids = [];
+                if (!empty($order['_childs'])) {
+                    $ids = array_map(function ($v) {
+                        return $v['id'];
+                    }, $order['_childs']);
+                }
+                $ids[] = $order['id'];//无论是否有子订单，都把父级订单的ID加入
+                if ($orderModel->where(['id' => ['IN', $ids]])->save(['pay_status' => OrderModel::PAY_STATUS_TRUE])) {
+                    $pushTitle = '订单已支付提醒';
+                    if (empty($order['_childs'])) {
+                        $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $order['order_code'] . '】';
                         $pushExtras = [
                             'action' => 'orderDetail',
-                            'order_id' => $child['id']
+                            'order_id' => $order['id']
                         ];
-                        push_by_uid('STORE', get_shopkeeper_by_shopid($child['shop_id']), $pushContet, $pushExtras, $pushTitle);
+                        push_by_uid('STORE', get_shopkeeper_by_shopid($order['shop_id']), $pushContet, $pushExtras, $pushTitle);
+                    } else {
+                        foreach ($order['_childs'] as $child) {
+                            $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $child['order_code'] . '】';
+                            $pushExtras = [
+                                'action' => 'orderDetail',
+                                'order_id' => $child['id']
+                            ];
+                            push_by_uid('STORE', get_shopkeeper_by_shopid($child['shop_id']), $pushContet, $pushExtras, $pushTitle);
+                        }
                     }
+                    exit('success');//如果保存成功，则通知支付宝俺已经处理成功~\(≧▽≦)/~
                 }
-                exit('success');//如果保存成功，则通知支付宝俺已经处理成功~\(≧▽≦)/~
+                exit('fail');
             }
+        } else {//否则就是洗车订单
+            if (!$order = OrderVehicleModel::getInstance()->getByCode($out_trade_no)) exit('fail');
+            if ($order['pay_status'] == 1) {
+                exit('success');
+            }
+            if (OrderVehicleModel::getInstance()->where(['id' => $order['id']])->save(['pay_status' => 1])) {
+                $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $order['order_code'] . '】';
+                $pushTitle = '订单已支付提醒';
+                $pushExtras = [
+                    'action' => 'VihedeOrderDetail',
+                    'order_id' => $order['id']
+                ];
+                push_by_uid('STORE', get_shopkeeper_by_shopid($order['shop_id']), $pushContet, $pushExtras, $pushTitle);
+                exit('success');
+            };
             exit('fail');
         }
     }
