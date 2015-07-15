@@ -242,9 +242,14 @@ class MemberAddressModel extends RelationModel
                         'lng' => $lng,
                         'lat' => $lat
                     ];
+                } else {
+                    $list['lnglat'] = [
+                        'lng' => '0',
+                        'lat' => '0'
+                    ];
                 }
                 if (!empty($list['region_id'])) {
-                    $list['region'] = RegionModel::getInstance()->getRegionPath(3528);
+//                    $list['region'] = RegionModel::getInstance()->getRegionPath(3528);
                 }
             }
         }
