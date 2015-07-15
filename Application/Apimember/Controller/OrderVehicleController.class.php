@@ -118,6 +118,7 @@ class OrderVehicleController extends ApiController
      * 参数：
      * worker_id 洗车工ID
      * address 车辆地址，必须
+     * street_number 车辆地址门牌号，必须
      * car_number 车牌号，必须
      * consignee 车主姓名，必须
      * mobile 车主电话，必须
@@ -203,7 +204,7 @@ class OrderVehicleController extends ApiController
      * 取消订单，POST参数
      * <pre>
      * 参数
-     * orderId 订单ID，必须
+     * id 订单ID，必须
      * </pre>
      * @author WangJiang
      * @return json
@@ -212,11 +213,11 @@ class OrderVehicleController extends ApiController
         try{
             if(!IS_POST)
                 E('非法调用，请用POST调用');
-            $oid=I('post.orderId');
+            $oid=I('post.id');
             $m=new OrderVehicleModel();
             $m->userCancel($oid,$this->getUserId());
             action_log('api_cancel_order_veh', $m, $oid, UID,3);
-            $this->apiSuccess(null,'成功');
+            $this->apiSuccess(['data'=>[]],'成功');
         }catch (\Exception $ex) {
             $this->apiError(51022, $ex->getMessage());
         }

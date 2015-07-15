@@ -294,6 +294,11 @@ function check_order_exist($id)
     return \Common\Model\OrderModel::checkOrderExist($id);
 }
 
+function check_order_vehicle_exist($id){
+
+    return !empty((new \Common\Model\OrderVehicleModel)->find($id));
+}
+
 /**
  * 检测分类是否存在
  * @author Fufeng Nie <niefufeng@gmail.com>

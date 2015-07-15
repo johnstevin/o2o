@@ -25,12 +25,8 @@ class MerchantController extends ApiController {
      * @param int $pageSize 单页大小，可选
      * @return json
      */
-    public function getCarWashers($lat, $lng, $range = 100,$presetTime=null,$name=null,$number=null,$page=1,$pageSize=10){
+    public function getCarWashers($lat, $lng, $range = 100,$presetTime,$name=null,$number=null,$page=1,$pageSize=10){
         try {
-
-//            $page--;
-//            $page *= $pageSize;
-
             $this->apiSuccess(['data' => (new MerchantModel())
                 ->getCarWashersNearby($lat, $lng, $range,$presetTime,$name, $number,$page,$pageSize)],'');
         } catch (\Exception $ex) {

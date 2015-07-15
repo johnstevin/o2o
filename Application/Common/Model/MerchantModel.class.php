@@ -207,9 +207,10 @@ class MerchantModel extends AdvModel
         $bind[':presetTime']=$presetTime-$timeRange;
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
         $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
-            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)
+            ' and sq_merchant.status=1
+              and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId and sq_auth_access.status=1)
               and sq_merchant.id not in (select worker_id from sq_order_vehicle
-                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3))';
+                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3) and worker_id=sq_merchant.id)';
 
         if(!is_null($number))
             $where['sq_merchant.number']=$number;
@@ -220,8 +221,9 @@ class MerchantModel extends AdvModel
         $data=$this
             ->join('left join sq_merchant_shop on sq_merchant_shop.group_id in
                 (select sq_auth_access.group_id from sq_auth_access where
-                        sq_auth_access.uid=sq_merchant.id and
-                        sq_auth_access.role_id=:roleId)')
+                        sq_auth_access.uid=sq_merchant.id
+                        and sq_auth_access.status=1
+                        and sq_auth_access.role_id=:roleId)')
             ->where($where)
             ->field(['sq_merchant.id'
                 ,'ifnull(sq_merchant_shop.id,0) as shop_id'
@@ -242,7 +244,9 @@ class MerchantModel extends AdvModel
             ->page($page,$pageSize)
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
             ->group('sq_merchant.id')
+            //->fetchSql()
             ->select();
+        //var_dump($data);die;
 
         foreach($data as &$i){
             $i['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id']
@@ -262,14 +266,16 @@ class MerchantModel extends AdvModel
         $bind[':presetTime']=$presetTime-$timeRange;
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
         $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
-            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId)
+            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId and sq_auth_access.status=1)
               and sq_merchant.id not in (select worker_id from sq_order_vehicle
-                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3))';
+                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3) and worker_id=sq_merchant.id)';
 
         $data=$this
             ->join('left join sq_merchant_shop on sq_merchant_shop.group_id in
                         (select sq_auth_access.group_id from sq_auth_access where
-                            sq_auth_access.uid=sq_merchant.id)')
+                        sq_auth_access.uid=sq_merchant.id
+                        and sq_auth_access.status=1
+                        and sq_auth_access.role_id=:roleId)')
             ->where($where)->bind($bind)
             ->field(['sq_merchant.id','ifnull(sq_merchant_shop.id,0) as shop_id'])
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')

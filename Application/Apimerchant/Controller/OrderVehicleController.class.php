@@ -97,7 +97,7 @@ class OrderVehicleController extends ApiController{
      * }
      * ```
      */
-    public function getSelfList($status = null,$page = 1, $pageSize = 10){
+    public function getSelfList($status = null,$payStatus = null,$page = 1, $pageSize = 10){
         $pageSize > 50 and $pageSize = 50;
         $page--;
         $page *= $pageSize;
@@ -107,6 +107,8 @@ class OrderVehicleController extends ApiController{
 
         if(!is_null($status))
             $where['status']=$status;
+        if(!is_null($payStatus))
+            $where['sq_order_vehicle.pay_status']=$payStatus;
 
         $m = D('OrderVehicle');
         $data = $m
@@ -116,11 +118,14 @@ class OrderVehicleController extends ApiController{
                 'user_id',
                 'shop_id',
                 'status',
+                'pay_status',
                 'worker_id',
                 'address',
+                'street_number',
                 'car_number',
                 'price',
                 'ifnull(user_picture_ids,\'\') as user_picture_ids',
+                'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
                 'add_time',
                 'update_time',
             ])
@@ -136,6 +141,22 @@ class OrderVehicleController extends ApiController{
                 $i['user_pictures'][]=$p['path'];
             }
             unset($i['user_picture_ids']);
+
+            $i['worker_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['worder_picture_ids']]])
+                        ->select() as $p){
+                $i['worker_pictures'][]=$p['path'];
+            }
+            unset($i['worder_picture_ids']);
+
+            $user=D('UcenterMember')
+                ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+                ->where(['sq_ucenter_member.id'=>$i['user_id']])
+                ->find();
+            $i['user_name']=$user['real_name'];
+            $i['user_picture']=$user['path']?$user['path']:"";
         }
 
         $this->apiSuccess(['data' => $data], '');
@@ -149,20 +170,85 @@ class OrderVehicleController extends ApiController{
      * @param int $pageSize 页大小
      * @return json
      */
-    public function getList($status = null,$page = 1, $pageSize = 10){
+    public function getList($status = null,$payStatus=null,$page = 1, $pageSize = 10){
         $pageSize > 50 and $pageSize = 50;
 //        $page--;
 //        $page *= $pageSize;
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $gids=$this->getUserGroupIds($mgrRoleId,true);//获得管理分组
+        $gids=implode(',',$gids);
+
+        $where['_string']='shop_id in (select id from sq_merchant_shop where group_id in ('.$gids.'))';
+        if(!is_null($status)){
+            if(is_array($status))
+                $where['sq_order_vehicle.status']=['in',$status];
+            else
+                $where['sq_order_vehicle.status']=$status;
+        }
+        if(!is_null($payStatus))
+            $where['sq_order_vehicle.pay_status']=$payStatus;
+
         $data=D('OrderVehicle')
-            ->join('inner join sq_merchant_shop on sq_merchant_shop.group_id in (:groupIds)')
-            ->where('shop_id in (select id from sq_merchant_shop where group_id in (:groupIds))')
-            ->bind([':groupIds'=>implode(',',$gids)])
+            //->join('inner join sq_merchant_shop on sq_merchant_shop.group_id in ('.$gids.')')
+            ->field([
+                'st_astext(lnglat) as lnglat',
+                'id',
+                'order_code',
+                'user_id',
+                'shop_id',
+                'status',
+                'pay_status',
+                'worker_id',
+                'address',
+                'street_number',
+                'car_number',
+                'preset_time',
+                'mobile',
+                'price',
+                'ifnull(user_picture_ids,\'\') as user_picture_ids',
+                'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
+                'add_time',
+                'update_time',
+            ])
+            ->where($where)
             ->page($page,$pageSize)
-            //->fetchSql()
+          //  ->fetchSql()
             ->select();
         //var_dump($data);die;
+
+        foreach($data as &$i){
+            $i['user_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['user_picture_ids']]])
+                        ->select() as $p){
+                $i['user_pictures'][]=$p['path'];
+            }
+            unset($i['user_picture_ids']);
+
+            $i['worker_pictures']=[];
+            foreach(D('Picture')
+                        ->field(['path'])
+                        ->where(['id'=>['in',$i['worder_picture_ids']]])
+                        ->select() as $p){
+                $i['worker_pictures'][]=$p['path'];
+            }
+            unset($i['worder_picture_ids']);
+
+            $user=D('UcenterMember')
+                ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+                ->where(['sq_ucenter_member.id'=>$i['user_id']])
+                ->find();
+            $i['user_name']=$user['real_name'];
+            $i['user_picture']=$user['path']?$user['path']:"";
+
+            $user=D('UcenterMember')
+                ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+                ->where(['sq_ucenter_member.id'=>$i['worker_id']])
+                ->find();
+            $i['worker_name']=$user['real_name'];
+            $i['worker_picture']=$user['path']?$user['path']:"";
+        }
         $this->apiSuccess(['data' => $data], '');
     }
 
@@ -187,7 +273,7 @@ class OrderVehicleController extends ApiController{
     /**
      * <pre>
      * 洗车工接受订单，订单状态转换成已接单,POST数据，需要accesstoken
-     * int orderId 订单ID、必须
+     * int id 订单ID、必须
      * </pre>
      * @author WangJiang
      */
@@ -195,7 +281,7 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
-        $oid=I('post.orderId');
+        $oid=I('post.id');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_CONFIRM);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -203,7 +289,7 @@ class OrderVehicleController extends ApiController{
     /**
      * <pre>
      * 洗车工开始处理订单，订单状态转换成开始处理,POST数据，需要accesstoken
-     * int orderId 订单ID、必须
+     * int id 订单ID、必须
      * </pre>
      * @author WangJiang
      */
@@ -211,7 +297,7 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
-        $oid=I('post.orderId');
+        $oid=I('post.id');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_TREATING);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -219,7 +305,7 @@ class OrderVehicleController extends ApiController{
     /**
      * <pre>
      * 洗车工处理完毕，订单状态转换成处理完毕,POST数据，需要accesstoken
-     * int orderId 订单ID、必须
+     * int id 订单ID、必须
      * </pre>
      * @author WangJiang
      */
@@ -227,7 +313,7 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
-        $oid=I('post.orderId');
+        $oid=I('post.id');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_DONE);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -235,7 +321,7 @@ class OrderVehicleController extends ApiController{
     /**
      * <pre>
      * 洗车工拒绝订单，一种情况，系统自动排单，洗车工发现不属于自己负责地区，可以选择拒绝,POST数据，需要accesstoken
-     * int orderId 订单ID、必须
+     * int id 订单ID、必须
      * </pre>
      * @author WangJiang
      */
@@ -243,7 +329,7 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
-        $oid=I('post.orderId');
+        $oid=I('post.id');
         (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_NO_WORKER);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -251,11 +337,13 @@ class OrderVehicleController extends ApiController{
     /**
      * 管理员修改订单数据,POST数据，需要accesstoken
      * <pre>
-     * id 订单ID
-     * address string 新地址，可选
-     * lnglat  "lng lat" 新经纬度，可选
-     * preset_time int 新服务时间，可选
-     * car_number string 新车牌 可选
+     * id 订单ID，必须
+     * address string 新地址
+     * street_number 车辆地址门牌
+     * lnglat  "lng lat" 新经纬度
+     * preset_time int 新服务时间
+     * car_number string 新车牌
+     * remark 说明
      * </pre>
      * @author WangJiang
      */
@@ -278,16 +366,23 @@ class OrderVehicleController extends ApiController{
             E('用户无权修改此订单');
 
         //var_dump($data);
+        $filter=['address','car_number','preset_time','lnglat'];
+        foreach($data as $k=>$v){
+            if(!in_array($k,$filter))
+                unset($data[$k]);
+        }
         $model->data($data);
-        $model->update($id);
-        action_log('api_update_order_veh', $model, $id, UID,2);
+        if($model->update($id))
+            action_log('api_update_order_veh', $model, $id, UID,2);
+
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
     /**
      * 管理员重新分配订单,POST数据，需要accesstoken
      * <pre>
-     * id 订单ID
+     * id 订单ID，必须
+     * remark 说明
      * </pre>
      * @author WangJiang
      */
@@ -317,6 +412,31 @@ class OrderVehicleController extends ApiController{
 
         action_log('api_reassign_order_veh', $model, $id, UID,2);
         //TODO 实现消息推送$wid
+
+        $this->apiSuccess(['data'=>[]], '操作成功');
+    }
+
+    /**
+     * 管理员取消订单,POST数据，需要accesstoken
+     * <pre>
+     * id 订单ID，必须
+     * remark 说明
+     * </pre>
+     * @author WangJiang
+     */
+    public function cancel(){
+        if(!IS_POST)
+            E('非法调用，请用POST命令');
+
+        $id=I('post.id');//为了避免传递参数时混淆，强制指定post
+        $remark=I('post.remark');
+
+        $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
+        $groupIds=$this->getUserGroupIds($mgrRoleId,true);
+
+        (new OrderVehicleModel())->managerCancel($id,$remark,$groupIds);
+
+        //TODO 实现消息推送，通知用户该订单取消，同时附上取消人和原因
 
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
