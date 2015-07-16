@@ -319,6 +319,7 @@ class MerchantDepotModel extends RelationModel
                 self::STATUS_DELETE
             ];
         }
+        $where['md.id'] = $id;
         $where['p.status'] = ProductModel::STATUS_ACTIVE;
         $model = self::getInstance();
         $fields = [
@@ -335,7 +336,6 @@ class MerchantDepotModel extends RelationModel
             'p.detail',
             'p.number',
             'product_picture.path picture',
-            'p.'
         ];
         $model->join('LEFT JOIN sq_product p ON md.product_id=p.id');
         $model->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id');
