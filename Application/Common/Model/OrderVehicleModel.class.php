@@ -483,7 +483,7 @@ class OrderVehicleModel extends AdvModel
                 'sq_order_vehicle.id',
                 'ifnull(sq_merchant_shop.title,\'\') as shop_title',
                 'ifnull(sq_merchant_shop.phone_number,\'\') as shop_phone_number',
-                'ifnull(sq_picture.path,\'\') as shop_picture',
+                'ifnull(sq_picture.path,\'\') as shop_photo',
                 'sq_order_vehicle.order_code',
                 'sq_order_vehicle.user_id',
                 //'ifnull(sq_ucenter_member.real_name,\'\') as user_name',
@@ -529,8 +529,8 @@ class OrderVehicleModel extends AdvModel
                 ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
                 ->where(['sq_ucenter_member.id'=>$i['worker_id']])
                 ->find();
-            $i['worker_name']=$user['real_name'];
-            $i['worker_picture']=$user['path']?$user['path']:"";
+            $i['worker_name']=$user['real_name']?$user['real_name']:'';
+            $i['worker_photo']=$user['path']?$user['path']:'';
         }
 
         return $data;
