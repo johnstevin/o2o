@@ -524,6 +524,13 @@ class OrderVehicleModel extends AdvModel
                 $i['user_pictures'][] = $p['path'];
             }
             unset($i['user_picture_ids']);
+
+            $user=D('UcenterMember')
+                ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+                ->where(['sq_ucenter_member.id'=>$i['worker_id']])
+                ->find();
+            $i['worker_name']=$user['real_name'];
+            $i['worker_picture']=$user['path']?$user['path']:"";
         }
 
         return $data;

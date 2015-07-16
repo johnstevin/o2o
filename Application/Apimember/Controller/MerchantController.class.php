@@ -34,6 +34,11 @@ class MerchantController extends ApiController {
         }
     }
 
+    public function get($id,$lng=null,$lat=null){
+        $this->apiSuccess(['data' => (new MerchantModel())
+            ->get($id,$lng,$lat)],'');
+    }
+
     /**
      * 获得洗车工评价
      * @author WangJiang
