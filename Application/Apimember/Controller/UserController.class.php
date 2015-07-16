@@ -130,6 +130,21 @@ class UserController extends ApiController {
     }
 
     /**
+     * 获得验证码
+     * @author WangJiang
+     * @param $mobile
+     * @return json
+     */
+    public function getVerifyCode($mobile){
+        try{
+            send_sms_code($mobile);
+            $this->apiSuccess(['data'=>''],'');
+        }catch (\Exception $ex){
+            $this->apiError(40009,$ex->getMessage());
+        }
+    }
+
+    /**
      * <pre>
      * 退出登陆
      * string accesstoken 调用令牌
