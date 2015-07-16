@@ -55,7 +55,7 @@ function get_config_type($type=0){
  */
 function get_feedback_type($type=0){
     $list = C('FEEDBACK_CATEGORY');
-    return $list[$type]['TITLE'];
+    return $type?$list[$type]:'';;
 }
 
 /**

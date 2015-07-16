@@ -29,7 +29,7 @@
 			<div class="col-md-10">
 				<select name="type" class="form-control">
 					<volist name="Think.config.CONFIG_TYPE_LIST" id="type">
-						<option value="{$key}">{$type}</option>
+						<option value="{$key}" <eq name="key" value="$info.type"> selected</eq>>{$type}</option>
 					</volist>
 				</select>
 			</div>
@@ -40,7 +40,7 @@
 				<select name="group" class="form-control">
 					<option value="0">不分组</option>
 					<volist name="Think.config.CONFIG_GROUP_LIST" id="group">
-						<option value="{$key}">{$group}</option>
+						<option value="{$key}" <eq name="key" value="$info.group"> selected</eq>>{$group}</option>
 					</volist>
 				</select>
 			</div>
@@ -75,11 +75,4 @@
     <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
     <button type="button" class="btn btn-primary"  onclick="Save('{:U()}','fm')">保存</button>
 </div>
-
-	<!--<script type="text/javascript">-->
-		<!--Think.setValue("type", {$info.type|default=0});-->
-		<!--Think.setValue("group", {$info.group|default=0});-->
-<!--//		//导航高亮-->
-<!--//		highlight_subnav('{:U('Config/index')}');-->
-	<!--</script>-->
 

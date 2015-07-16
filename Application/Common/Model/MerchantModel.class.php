@@ -193,7 +193,7 @@ class MerchantModel extends AdvModel
     }
 
     /**
-     * 获得附件洗车工
+     * 获得附近洗车工
      * @author WangJiang
      * @param $lat
      * @param $lng
@@ -204,12 +204,23 @@ class MerchantModel extends AdvModel
      * @param $page
      * @param $pageSize
      */
-    public function getCarWashersNearby($lat, $lng, $range,$presetTime,$name,$number,$page,$pageSize){
+    public function getCarWashersNearby($lat, $lng, $range,$presetTime,$name,$number,$page,$pageSize,$order){
         $pageSize > 50 and $pageSize = 50;
         $timeRange=C('AUTO_MERCHANT_SCAN.PRESET_TIME');
 
+        /*排序*/
+        if ($order === 'order') {
+            $order='orders desc';
+        } elseif ($order==='time') {
+            $order= 'times';
+        }else{
+            $order='ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))';
+        }
+
+
         $this->join('JOIN sq_ucenter_member on sq_ucenter_member.id=sq_merchant.id');
         $this->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo');
+        $this->join('left join sq_order_vehicle on sq_order_vehicle.worker_id=sq_merchant.id');
 
         $bind[':presetTime']=$presetTime-$timeRange;
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
@@ -217,7 +228,9 @@ class MerchantModel extends AdvModel
             ' and sq_merchant.status=1
               and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId and sq_auth_access.status=1)
               and sq_merchant.id not in (select worker_id from sq_order_vehicle
-                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3) and worker_id=sq_merchant.id)';
+                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3) and worker_id=sq_merchant.id)
+                and sq_order_vehicle.status in ('.OrderVehicleModel::STATUS_HAS_WORKER.','.OrderVehicleModel::STATUS_TREATING .','.OrderVehicleModel::STATUS_CONFIRM.')';
+
 
         if(!is_null($number))
             $where['sq_merchant.number']=$number;
@@ -246,22 +259,24 @@ class MerchantModel extends AdvModel
                 ,'(sq_merchant.grade_1+sq_merchant.grade_2+sq_merchant.grade_3)/3 as grade'
                 ,'ifnull(sq_picture.path,\'\') as photo_path'
                 ,'sq_merchant.total_orders'
+                ,'count(sq_order_vehicle.id) as orders'
+                ,'(:presetTime - sq_order_vehicle.preset_time) as times'
             ])
             ->bind($bind)
             ->page($page,$pageSize)
-            ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
+            ->order($order)
             ->group('sq_merchant.id')
             //->fetchSql()
             ->select();
         //var_dump($data);die;
 
-        foreach($data as &$i){
-            $i['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id']
-                ,'status'=>['in',[
-                    OrderVehicleModel::STATUS_HAS_WORKER,
-                    OrderVehicleModel::STATUS_TREATING,
-                    OrderVehicleModel::STATUS_CONFIRM]]])->count();
-        }
+//        foreach($data as &$i){
+//            $i['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id']
+//                ,'status'=>['in',[
+//                    OrderVehicleModel::STATUS_HAS_WORKER,
+//                    OrderVehicleModel::STATUS_TREATING,
+//                    OrderVehicleModel::STATUS_CONFIRM]]])->count();
+//        }
 
         return $data;
     }
@@ -397,6 +412,43 @@ class MerchantModel extends AdvModel
                 ->join('__MERCHANT__ b ON  a.id = b.id','LEFT')
                 ->join('__PICTURE__ c ON  a.photo = c.id', 'LEFT')
                 ->where(array('a.is_merchant'=>array('eq', '1'),'a.id'=>$mapUid))
+                ->select();
+
+            //头像为空时返回默认图片
+            foreach($userInfo as &$key) {
+                if (empty($key['photo'])) {
+                    $key['photo'] = self::DEFAULT_PHOTO;
+                }
+            }
+
+            if(empty($userInfo))
+                E(-1);
+            return $userInfo;
+
+        }catch (\Exception $ex){
+            return $ex->getMessage();
+        }
+    }
+
+    /**
+     * 带分页的获取商户信息
+     * @param $mapUid
+     * @param string $field
+     * @return mixed|string
+     */
+    public function getStaffInfos( $mapUid, $field = true,$pageSize = 20 ){
+        try{
+
+            $p=I('p');
+            if(empty($p))
+                E(-1);
+            $userInfo=$this
+                ->field($field)
+                ->table('__UCENTER_MEMBER__ a')
+                ->join('__MERCHANT__ b ON  a.id = b.id','LEFT')
+                ->join('__PICTURE__ c ON  a.photo = c.id', 'LEFT')
+                ->where(array('a.is_merchant'=>array('eq', '1'),'a.id'=>$mapUid))
+                ->page($p,$pageSize)
                 ->select();
 
             //头像为空时返回默认图片

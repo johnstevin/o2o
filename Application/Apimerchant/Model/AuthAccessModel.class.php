@@ -22,7 +22,7 @@ class AuthAccessModel extends AdvModel {
     const AUTH_EXTEND               = 'auth_extend';       // 动态权限扩展信息表
     const AUTH_GROUP                = 'auth_group';        // 组织表名
 
-    const AUTH_STATUS_DELETE         = -1;
+    const AUTH_STATUS_DELETE        = -1;
     const AUTH_STATUS_AWAIT         = 0;                   // 待审核
     const AUTH_STATUS_PASS          = 1;                   // 审核通过
     const AUTH_STATUS_NOPASS        = 2;                   // 审核未通过
@@ -141,7 +141,6 @@ class AuthAccessModel extends AdvModel {
             'uid'       =>$uid,
             'group_id'  => $group_id,
             'role_id'   => $role_id,
-            'status'    =>array('neq','-1'),
         );
         return $this->where($map)->setField('status',self::AUTH_STATUS_DELETE);
 
