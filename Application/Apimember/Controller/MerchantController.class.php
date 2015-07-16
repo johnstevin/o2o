@@ -23,12 +23,13 @@ class MerchantController extends ApiController {
      * @param string $name 员姓名，可选
      * @param int $page 页号，可选
      * @param int $pageSize 单页大小，可选
+     * @param string $order 排序字段 order:order是按订单排序，time是按时间排序
      * @return json
      */
-    public function getCarWashers($lat, $lng, $range = 100,$presetTime,$name=null,$number=null,$page=1,$pageSize=10){
+    public function getCarWashers($lat, $lng, $range = 100,$presetTime,$name=null,$number=null,$page=1,$pageSize=10,$order = ''){
         try {
             $this->apiSuccess(['data' => (new MerchantModel())
-                ->getCarWashersNearby($lat, $lng, $range,$presetTime,$name, $number,$page,$pageSize)],'');
+                ->getCarWashersNearby($lat, $lng, $range,$presetTime,$name, $number,$page,$pageSize,$order)],'');
         } catch (\Exception $ex) {
             $this->apiError(51002, $ex->getMessage());
         }

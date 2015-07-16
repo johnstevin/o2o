@@ -511,7 +511,7 @@ class UserController extends ApiController {
 
         $resultUserInfos =  D("Merchant")->getStaffInfos($mapUcenter,$fieldUcenter);
 
-        if($resultUserInfos==-1)
+        if(false===$resultUserInfos)
             $this->apiError('40033', '获取员工失败');
         // 创建基于主键的数组引用
         $refer = [];
