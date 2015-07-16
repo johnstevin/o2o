@@ -509,9 +509,10 @@ class UserController extends ApiController {
 
         $fieldUcenter      = 'a.id,a.mobile,a.real_name,a.username,a.email,a.reg_time,b.status,b.last_login_ip,c.path as photo,b.last_login_time,b.total_orders';
 
-        $resultUserInfos = $this->userInfos($mapUcenter,$fieldUcenter);
+        $resultUserInfos =  D("Merchant")->getStaffInfos($mapUcenter,$fieldUcenter);
 
-
+        if($resultUserInfos==-1)
+            $this->apiError('40033', '获取员工失败');
         // 创建基于主键的数组引用
         $refer = [];
 
@@ -632,10 +633,10 @@ class UserController extends ApiController {
         }
 
         $AuthAccess=D('AuthAccess');
-        if (true=== $AuthAccess->staffDelete($uid,$group_id,$role_id)) {
-            $this->apiSuccess(null,'保存成功',null);
+        if (false!== $AuthAccess->staffDelete($uid,$group_id,$role_id)) {
+            $this->apiSuccess(null,'删除成功',null);
         } else {
-            $this->apiError('40037', '保存失败');
+            $this->apiError('40037', '删除失败');
         }
     }
 

@@ -379,4 +379,41 @@ class MerchantModel extends AdvModel
         }
     }
 
+    /**
+     * 带分页的获取商户信息
+     * @param $mapUid
+     * @param string $field
+     * @return mixed|string
+     */
+    public function getStaffInfos( $mapUid, $field = true,$pageSize = 20 ){
+        try{
+
+            $p=I('p');
+            if(empty($p))
+                E(-1);
+            $userInfo=$this
+                ->field($field)
+                ->table('__UCENTER_MEMBER__ a')
+                ->join('__MERCHANT__ b ON  a.id = b.id','LEFT')
+                ->join('__PICTURE__ c ON  a.photo = c.id', 'LEFT')
+                ->where(array('a.is_merchant'=>array('eq', '1'),'a.id'=>$mapUid))
+                ->page($p,$pageSize)
+                ->select();
+
+            //头像为空时返回默认图片
+            foreach($userInfo as &$key) {
+                if (empty($key['photo'])) {
+                    $key['photo'] = self::DEFAULT_PHOTO;
+                }
+            }
+
+            if(empty($userInfo))
+                E(-1);
+            return $userInfo;
+
+        }catch (\Exception $ex){
+            return $ex->getMessage();
+        }
+    }
+
 }
