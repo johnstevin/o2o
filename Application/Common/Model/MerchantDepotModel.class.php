@@ -299,14 +299,104 @@ class MerchantDepotModel extends RelationModel
      * 根据ID获取商家信息
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
-     * @param int $id
-     * @param string|array $fields 要查询的字段
-     * @return array|null
+     * @param int $id 商品ID
+     * @param null|int $status 商品状态，传【null】查询状态不等于删除的商品
+     * @param bool|false $getCategorys 是否获得分类
+     * @param bool|false $getShop 是否获得商铺
+     * @param bool|false $getBrand 是否获得品牌
+     * @param bool|false $getNorm 是否获得规格
+     * @return array
      */
-    public function getById($id, $fields = '*')
+    public function getById($id, $status = null, $getCategorys = false, $getShop = false, $getBrand = false, $getNorm = false)
     {
-        $id = intval($id);
-        return $id ? self::getInstance()->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->field($fields)->find() : null;
+        if (!$id = intval($id)) E('商品ID非法');
+        //如果状态不为null且在系统的状态里，则取传的状态，否则取不为【已删除】的状态
+        if ($status !== null && array_key_exists($status, self::getStatusOptions())) {
+            $where['md.status'] = $status;
+        } else {
+            $where['md.status'] = [
+                'NEQ',
+                self::STATUS_DELETE
+            ];
+        }
+        $where['md.id'] = $id;
+        $where['p.status'] = ProductModel::STATUS_ACTIVE;
+        $model = self::getInstance();
+        $fields = [
+            'md.id',
+            'md.shop_id',
+            'md.product_id',
+            'md.status',
+            'md.price',
+            'md.add_time',
+            'md.remark',
+            'p.title',
+            'p.brand_id',
+            'p.norms_id',
+            'p.detail',
+            'p.number',
+            'product_picture.path picture',
+        ];
+        $model->join('LEFT JOIN sq_product p ON md.product_id=p.id');
+        $model->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id');
+        if ($getShop) {
+            $fields = array_merge($fields, [
+                'shop.title _shop_title',
+                'shop.phone_number _shop_phone',
+                'shop.address _shop_address',
+                'shop.open_status _shop_open_status',
+                'shop_picture.path _shop_picture'
+            ]);
+            $model->join('LEFT JOIN sq_merchant_shop shop ON md.shop_id=shop.id');
+            $model->join('LEFT JOIN sq_picture shop_picture ON shop.picture=shop_picture.id');
+        }
+        if ($getBrand) {
+            $fields = array_merge($fields, [
+                'b.title _brand_title',
+                'b_picture.path _brand_logo',
+                'b.description _brand_description'
+            ]);
+            $model->join('LEFT JOIN sq_brand b ON p.brand_id=b.id');
+            $model->join('LEFT JOIN sq_picture b_picture ON b.logo=b_picture.id');
+        }
+        if ($getNorm) {
+            $fields = array_merge($fields, [
+                'n.title _norm_title'
+            ]);
+            $model->join('LEFT JOIN sq_norms n ON p.norms_id=n.id');
+        }
+        if (!$data = $model->field($fields)->where($where)->alias('md')->find()) return [];
+        if ($getNorm) {
+            $data['_norm'] = [
+                'id' => $data['norms_id'],
+                'title' => $data['_norm_title']
+            ];
+            unset($data['_norm_title']);
+        }
+        if ($getShop) {
+            $data['_shop'] = [
+                'id' => $data['shop_id'],
+                'title' => $data['_shop_title'],
+                'phone' => $data['_shop_phone'],
+                'address' => $data['_shop_address'],
+                'open_status' => $data['_shop_open_status'],
+                'picture' => $data['_shop_picture']
+            ];
+            unset($data['_shop_title'], $data['_shop_phone'], $data['_shop_address'], $data['_shop_open_status'], $data['_shop_picture']);
+        }
+        if ($getBrand) {
+            $data['_brand'] = [
+                'id' => $data['brand_id'],
+                'title' => $data['_brand_title'],
+                'logo' => $data['_brand_logo'],
+                'description' => $data['_brand_description']
+            ];
+            unset($data['_brand_title'], $data['_brand_description'], $data['_brand_logo']);
+        }
+        if ($getCategorys) {
+            $data['_categorys'] = CategoryModel::getInstance()->field('c.*')->where(['pc.product_id' => $data['product_id']])->join('RIGHT JOIN sq_product_category pc ON pc.category_id=c.id')->alias('c')->select();
+        }
+        return $data;
     }
 
     /**

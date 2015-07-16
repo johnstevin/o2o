@@ -414,6 +414,7 @@ class MemberAddressModel extends RelationModel
         $sth = $pdo->prepare($sql);
         $sth->execute([':status' => self::STATUS_ACTIVE, ':user_id' => intval($userId), ':isDefault' => self::DEFAULT_TRUE]);
         $data = $sth->fetch(\PDO::FETCH_ASSOC);
+        if (empty($data)) return [];
         list($lng, $lat) = explode(' ', substr($data['lnglat'], 6, -1));
         $data['lnglat'] = [
             'lng' => $lng,

@@ -8,6 +8,7 @@ require APP_PATH . 'Common/Vendor/alipay/alipay_core.function.php';
 require APP_PATH . 'Common/Vendor/alipay/alipay_md5.function.php';
 require APP_PATH . 'Common/Vendor/alipay/alipay_notify.class.php';
 require APP_PATH . 'Common/Vendor/alipay/alipay_submit.class.php';
+require APP_PATH . 'Common/Vendor/alipay/alipay_rsa.function.php';
 
 /**
  * 支付宝控制器
