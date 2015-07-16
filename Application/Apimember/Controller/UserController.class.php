@@ -72,6 +72,8 @@ class UserController extends ApiController {
                 $password   = I('post.password');
                 $code       = I('post.code');
 
+                //$this->apiError(40012,'code='.$code);
+
                 if(!verify_sms_code($mobile,$code))
                     $this->apiError(40012,$this->showRegError(-14));
 

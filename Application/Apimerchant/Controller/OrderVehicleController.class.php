@@ -350,31 +350,7 @@ class OrderVehicleController extends ApiController{
     public function update(){
         if(!IS_POST)
             E('非法调用，请用POST命令');
-        $model=D('OrderVehicle');
-        if (!($data=$model->create()))
-            E('参数传递失败'.$model->getError());
-
-        $id=I('post.id');//为了避免传递参数时混淆，强制指定post
-
-        $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
-        $groupIds=$this->getUserGroupIds($mgrRoleId,true);
-        $order=$model->find($id);
-        if(empty($order))
-            E('订单不存在');
-        $shop=D('MerchantShop')->find($order['shop_id']);
-        if(!in_array($shop['group_id'],$groupIds))
-            E('用户无权修改此订单');
-
-        //var_dump($data);
-        $filter=['address','car_number','preset_time','lnglat'];
-        foreach($data as $k=>$v){
-            if(!in_array($k,$filter))
-                unset($data[$k]);
-        }
-        $model->data($data);
-        if($model->update($id))
-            action_log('api_update_order_veh', $model, $id, UID,2);
-
+        $this->__update();
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
@@ -390,17 +366,20 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
 
+        $this->__update();
+
         $id=I('post.id');//为了避免传递参数时混淆，强制指定post
 
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $groupIds=$this->getUserGroupIds($mgrRoleId,true);
 
         $model=D('OrderVehicle');
-        $order=$model->field(['st_astext(lnglat) as lnglat','preset_time'])->find($id);
+        $order=$model->field(['st_astext(lnglat) as lnglat','preset_time','shop_id'])->find($id);
         //var_dump($order);die;
         if(empty($order))
             E('订单不存在');
         $shop=D('MerchantShop')->find($order['shop_id']);
+//        var_dump($order);var_dump($shop);var_dump($groupIds);die;
         if(!in_array($shop['group_id'],$groupIds))
             E('用户无权修改此订单');
 
@@ -434,10 +413,38 @@ class OrderVehicleController extends ApiController{
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $groupIds=$this->getUserGroupIds($mgrRoleId,true);
 
-        (new OrderVehicleModel())->managerCancel($id,$remark,$groupIds);
+        (new OrderVehicleModel())->managerCancel($this->getUserId(),$id,$remark,$groupIds);
 
         //TODO 实现消息推送，通知用户该订单取消，同时附上取消人和原因
 
         $this->apiSuccess(['data'=>[]], '操作成功');
+    }
+
+    private function __update()
+    {
+        $model = D('OrderVehicle');
+        if (!($data = $model->create()))
+            E('参数传递失败' . $model->getError());
+
+        $id = I('post.id');//为了避免传递参数时混淆，强制指定post
+
+        $mgrRoleId = C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
+        $groupIds = $this->getUserGroupIds($mgrRoleId, true);
+        $order = $model->find($id);
+        if (empty($order))
+            E('订单不存在');
+        $shop = D('MerchantShop')->find($order['shop_id']);
+        if (!in_array($shop['group_id'], $groupIds))
+            E('用户无权修改此订单');
+
+        //var_dump($data);
+        $filter = ['address', 'car_number', 'preset_time', 'lnglat'];
+        foreach ($data as $k => $v) {
+            if (!in_array($k, $filter))
+                unset($data[$k]);
+        }
+        $model->data($data);
+        if ($model->update($id))
+            action_log('api_update_order_veh', $model, $id, UID, 2);
     }
 }

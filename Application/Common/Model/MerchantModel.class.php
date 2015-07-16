@@ -158,6 +158,11 @@ class MerchantModel extends AdvModel
         ]
     ];
 
+    protected function _after_find(&$result,$options='') {
+        parent::_after_select($result,$options);
+        $this->_after_query_row($result);
+    }
+
     /**
      * 处理point类型字段值
      * @param $resultSet
@@ -338,13 +343,44 @@ class MerchantModel extends AdvModel
     /**
      * 根据ID获取商家信息
      * @param int $id 商家ID
-     * @param string|array $fields 要查询的字段
      * @return array|null
      */
-    public static function get($id, $fields = '*')
+    public function get($id,$lng,$lat)
     {
-        $id = intval($id);
-        return $id ? self::getInstance()->field($fields)->where(['status' => self::STATUS_ACTIVE, 'id' => $id])->find() : null;
+        $field=[
+            'sq_merchant.id',
+            'number',
+            'grade_1',
+            'grade_2',
+            'grade_3',
+            '(grade_1+grade_2+grade_3)/3 grade',
+            'total_orders',
+            'st_astext(lnglat) as lnglat',
+            'real_name',
+            'ifnull(sq_picture.path,\'\') as photo_path',];
+
+        $bind=[];
+        if(is_numeric($lng) and is_numeric($lat)){
+            $field[]='ST_Distance_Sphere(lnglat,POINT(:lng,:lat)) as distance';
+            $bind[':lng']=$lng;
+            $bind[':lat']=$lat;
+        }
+
+        $data= $this
+            ->field($field)
+            ->join('join sq_ucenter_member on sq_ucenter_member.id=sq_merchant.id')
+            ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+            ->bind($bind)
+            ->where(['sq_merchant.id'=>$id])
+            ->find();
+        if(empty($data))
+            E('该员工不存在');
+        $data['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id']
+            ,'status'=>['in',[
+                OrderVehicleModel::STATUS_HAS_WORKER,
+                OrderVehicleModel::STATUS_TREATING,
+                OrderVehicleModel::STATUS_CONFIRM]]])->count();
+        return $data;
     }
 
     /**
