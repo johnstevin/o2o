@@ -13,6 +13,7 @@ class AppraiseModel extends RelationModel
 {
     protected static $model;
     protected $autoinc = true;
+    protected $pk = 'id';
     ## 状态常量
     const STATUS_DELETE = -1;//逻辑删除
     const STATUS_ACTIVE = 1;//正常
