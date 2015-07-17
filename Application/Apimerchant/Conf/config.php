@@ -27,5 +27,5 @@ return array(
     /* 后台错误页面模板 ×××××××××××开发使用×××××××××× */
 
     /* 异常配置 */
-    'ERROR_PAGE' => __ROOT__.'/Public/exception.php',
+    //'ERROR_PAGE' => __ROOT__.'/Public/exception.php',
 );

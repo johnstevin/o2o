@@ -99,11 +99,11 @@ class OrderVehicleController extends ApiController{
      */
     public function getSelfList($status = null,$payStatus = null,$page = 1, $pageSize = 10){
         $pageSize > 50 and $pageSize = 50;
-        $page--;
-        $page *= $pageSize;
+
         $uid = $this->getUserId();
 
         $where['worker_id']=$uid;
+        $where['status']=array('GT',OrderVehicleModel::STATUS_NO_WORKER);
 
         if(!is_null($status))
             $where['status']=$status;
@@ -128,34 +128,38 @@ class OrderVehicleController extends ApiController{
                 'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
                 'add_time',
                 'update_time',
+                'preset_time',
             ])
             ->where($where)
-            ->limit($page, $pageSize)->select();
+            ->page($page, $pageSize)->select();
 
         foreach($data as &$i){
-            $i['user_pictures']=[];
-            foreach(D('Picture')
-                        ->field(['path'])
+//            foreach(D('Picture')
+//                        ->field(['path'])
+//                        ->where(['id'=>['in',$i['user_picture_ids']]])
+//                        ->select() as $p){
+//                $i['user_pictures'][]=$p['path'];
+//            }
+
+
+            $i['user_pictures']=array_column(D('Picture')->field(['path'])
                         ->where(['id'=>['in',$i['user_picture_ids']]])
-                        ->select() as $p){
-                $i['user_pictures'][]=$p['path'];
-            }
+                        ->select(),'path');
+
             unset($i['user_picture_ids']);
 
-            $i['worker_pictures']=[];
-            foreach(D('Picture')
+            $i['worker_pictures']=array_column(D('Picture')
                         ->field(['path'])
                         ->where(['id'=>['in',$i['worder_picture_ids']]])
-                        ->select() as $p){
-                $i['worker_pictures'][]=$p['path'];
-            }
+                        ->select(),'path');
+
             unset($i['worder_picture_ids']);
 
             $user=D('UcenterMember')
                 ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
                 ->where(['sq_ucenter_member.id'=>$i['user_id']])
                 ->find();
-            $i['user_name']=$user['real_name'];
+            $i['user_name']=$user['real_name']?$user['real_name']:"";
             $i['user_picture']=$user['path']?$user['path']:"";
         }
 
@@ -172,8 +176,6 @@ class OrderVehicleController extends ApiController{
      */
     public function getList($status = null,$payStatus=null,$page = 1, $pageSize = 10){
         $pageSize > 50 and $pageSize = 50;
-//        $page--;
-//        $page *= $pageSize;
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $gids=$this->getUserGroupIds($mgrRoleId,true);//获得管理分组
         $gids=implode(',',$gids);
@@ -217,22 +219,16 @@ class OrderVehicleController extends ApiController{
         //var_dump($data);die;
 
         foreach($data as &$i){
-            $i['user_pictures']=[];
-            foreach(D('Picture')
+            $i['user_pictures']= array_column(D('Picture')
                         ->field(['path'])
                         ->where(['id'=>['in',$i['user_picture_ids']]])
-                        ->select() as $p){
-                $i['user_pictures'][]=$p['path'];
-            }
+                        ->select(),'path');
             unset($i['user_picture_ids']);
 
-            $i['worker_pictures']=[];
-            foreach(D('Picture')
+            $i['worker_pictures']=array_column(D('Picture')
                         ->field(['path'])
                         ->where(['id'=>['in',$i['worder_picture_ids']]])
-                        ->select() as $p){
-                $i['worker_pictures'][]=$p['path'];
-            }
+                        ->select(), 'path');
             unset($i['worder_picture_ids']);
 
             $user=D('UcenterMember')
@@ -314,7 +310,7 @@ class OrderVehicleController extends ApiController{
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
         $oid=I('post.id');
-        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_DONE);
+        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_DONE,$photo=true);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 

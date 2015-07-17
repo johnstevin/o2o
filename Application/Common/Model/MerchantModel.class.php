@@ -341,7 +341,7 @@ class MerchantModel extends AdvModel
     public static function checkMerchantExist($id)
     {
         $id = intval($id);
-        return self::get($id, 'id') ? true : false;
+        return self::getInstance()->get($id) ? true : false;
     }
 
     /**
@@ -360,7 +360,7 @@ class MerchantModel extends AdvModel
      * @param int $id 商家ID
      * @return array|null
      */
-    public function get($id,$lng,$lat)
+    public function get($id,$lng=null,$lat=null)
     {
         $field=[
             'sq_merchant.id',
@@ -390,8 +390,7 @@ class MerchantModel extends AdvModel
             ->find();
         if(empty($data))
             E('该员工不存在');
-        $data['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id']
-            ,'status'=>['in',[
+        $data['orders']=D('OrderVehicle')->where(['worker_id'=>$data['id'],'status'=>['in',[
                 OrderVehicleModel::STATUS_HAS_WORKER,
                 OrderVehicleModel::STATUS_TREATING,
                 OrderVehicleModel::STATUS_CONFIRM]]])->count();
@@ -421,8 +420,8 @@ class MerchantModel extends AdvModel
                 }
             }
 
-            if(empty($userInfo))
-                E(-1);
+//            if(empty($userInfo))
+//                E('未找到相关资料');
             return $userInfo;
 
         }catch (\Exception $ex){
@@ -441,7 +440,7 @@ class MerchantModel extends AdvModel
 
             $p=I('p');
             if(empty($p))
-                E(-1);
+                E('请传入页码参数');
             $userInfo=$this
                 ->field($field)
                 ->table('__UCENTER_MEMBER__ a')
@@ -458,8 +457,8 @@ class MerchantModel extends AdvModel
                 }
             }
 
-            if(empty($userInfo))
-                E(-1);
+//            if(empty($userInfo))
+//                E('未找到相关资料');
             return $userInfo;
 
         }catch (\Exception $ex){

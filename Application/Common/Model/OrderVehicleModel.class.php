@@ -427,7 +427,7 @@ class OrderVehicleModel extends AdvModel
      * @param $uid
      * @param $status
      */
-    public function workerChaneStatus($oid,$uid,$status){
+    public function workerChaneStatus($oid,$uid,$status,$photo=false){
         if($status==self::STATUS_CANCELED)
             E('服务人员不能取消订单');
         $data=$this->find($oid);
@@ -437,20 +437,42 @@ class OrderVehicleModel extends AdvModel
 
         $ovs=new OrderVehicleStatusModel();
 
+
+        /*图片上传*/
+
+        if($photo){
+
+        $type='UCENTER_MEMBER';
+
+        $photoinfos=$this->upload_picture(UID,$type);
+
+        $photos[]=$photoinfos['filedata'];
+
+        $worder_picture_ids=array_column($photos,'id');
+
+        $worder_picture_ids = is_array($worder_picture_ids) ? implode(',', $worder_picture_ids) : trim($worder_picture_ids, ',');
+
+        }
+
         $this->startTrans();
         try{
-            $this->save(['id'=>$data['id'],'status'=>$status]);
 
+            if($photo) {
+                $this->save(['id' => $data['id'], 'status' => $status, 'worder_picture_ids' => $worder_picture_ids]);
+            }else{
+                $this->save(['id' => $data['id'], 'status' => $status]);
+            }
             //var_dump($ovs->getError());die;
             if(!$ovs->create([
                 'order_id'=>$oid,
-                //'user_id'=>0,//$order['user_id'],
+                'user_id'=>$data['user_id'],
                 'merchant_id'=>$uid,
                 'shop_id'=>$data['shop_id'],
                 'status' => $status,
                 'content' => '服务人员修改状态',
             ]))
                 E('参数传递失败 '.$ovs->getError());
+
 
             $ovs->add();
             $this->commit();
@@ -459,6 +481,29 @@ class OrderVehicleModel extends AdvModel
         }
         //TODO 消息推送
     }
+
+  public function upload_picture($uid, $type)
+    {
+        $type = strtoupper($type);
+        //print_r("{$type}_PICTURE_UPLOAD");
+        print_r($_FILES['filedata']);
+        /* 调用文件上传组件上传文件 */
+        $Picture = new PictureModel();
+        $pic_driver = C('PICTURE_UPLOAD_DRIVER');
+        $info = $Picture->upload(
+            $uid,
+            $_FILES,
+            C("{$type}_PICTURE_UPLOAD"),
+            C('PICTURE_UPLOAD_DRIVER'),
+            C("UPLOAD_{$pic_driver}_CONFIG")
+        );
+
+        if ($info == false)
+            E($Picture->getError());
+
+        return $info;
+    }
+
 
     public function getUserList($uid, $status, $payStatus, $orderCode, $page, $pageSize)
     {
