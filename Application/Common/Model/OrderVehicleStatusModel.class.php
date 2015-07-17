@@ -12,6 +12,9 @@ use Think\Model\AdvModel;
 
 class OrderVehicleStatusModel extends AdvModel
 {
+    protected $pk = 'id';
+    protected $autoinc = true;
+
     protected $fields = [
         'id',
         'user_id',

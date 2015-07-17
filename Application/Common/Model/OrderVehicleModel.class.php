@@ -546,6 +546,7 @@ class OrderVehicleModel extends AdvModel
                 'sq_order_vehicle.preset_time',
                 'consignee',
                 'mobile',
+                'sq_order_vehicle.street_number'
             ])
             ->where($where)
             ->page($page, $pageSize)

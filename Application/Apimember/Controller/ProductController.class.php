@@ -676,7 +676,7 @@ class ProductController extends ApiController
      */
     public function lists($categoryIds = null, $brandId = null, $normsIds = null, $title = null, $pagesize = 10, $status = ProductModel::STATUS_ACTIVE, $getCategorys = false, $getBrand = false)
     {
-        $this->apiSuccess(ProductModel::getLists($categoryIds, $brandId, $normsIds, $status, $title, $pagesize, $getCategorys, $getBrand));
+        $this->apiSuccess(ProductModel::getInstance()->getLists($categoryIds, $brandId, $normsIds, $status, $title, $pagesize, $getCategorys, $getBrand));
     }
 
     /**

@@ -13,6 +13,9 @@ class MerchantModel extends AdvModel
 {
     protected static $model;
 
+    protected $pk = 'id';
+    protected $autoinc = false;
+
     const DEFAULT_PHOTO = 'Uploads/Product/2015/06/24/233.jpg';
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
@@ -177,7 +180,6 @@ class MerchantModel extends AdvModel
 
     /**
      * @param $row
-     * @param $v
      * @return array
      */
     protected function _after_query_row(&$row)
@@ -432,7 +434,8 @@ class MerchantModel extends AdvModel
     /**
      * 带分页的获取商户信息
      * @param $mapUid
-     * @param string $field
+     * @param string|bool|array $field
+     * @param int $pageSize 分页大小
      * @return mixed|string
      */
     public function getStaffInfos( $mapUid, $field = true,$pageSize = 20 ){

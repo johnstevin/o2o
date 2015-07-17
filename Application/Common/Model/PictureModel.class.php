@@ -11,6 +11,8 @@ use Think\Upload;
  */
 
 class PictureModel extends Model{
+    protected $pk = 'id';
+    protected $autoinc = true;
     /**
      * 自动完成
      * @var array
@@ -65,6 +67,7 @@ class PictureModel extends Model{
      * 下载指定文件
      * @param  number  $root 文件存储根目录
      * @param  integer $id   文件ID
+     * @param  callable $callback 下载回调函数，一般用于增加下载次数
      * @param  string   $args     回调函数参数
      * @return boolean       false-下载失败，否则输出下载文件
      */
@@ -94,6 +97,7 @@ class PictureModel extends Model{
     /**
      * 检测当前上传的文件是否已经存在
      * @param  array   $file 文件上传数组
+     * @throws \Exception
      * @return boolean       文件信息， false - 不存在该文件
      */
     public function isFile($file){
