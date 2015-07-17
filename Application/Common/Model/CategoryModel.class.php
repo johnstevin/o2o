@@ -6,6 +6,8 @@ use Think\Model\AdvModel;
 class CategoryModel extends AdvModel
 {
     protected static $model;
+    protected $pk = 'id';
+    protected $autoinc = true;
 
     ## 状态常量
     const STATUS_DELETE = -1;//逻辑删除
