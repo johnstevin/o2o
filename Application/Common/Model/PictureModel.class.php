@@ -11,6 +11,8 @@ use Think\Upload;
  */
 
 class PictureModel extends Model{
+    protected $pk = 'id';
+    protected $autoinc = true;
     /**
      * 自动完成
      * @var array
