@@ -216,7 +216,7 @@ class MerchantModel extends AdvModel
         } elseif ($order==='time') {
             $order= 'times';
         }else{
-            $order='ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))';
+            $order='ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))';
         }
 
 
