@@ -22,6 +22,8 @@ use Think\Page;
 class MemberAddressModel extends RelationModel
 {
     protected static $model;
+
+    protected $pk = 'id';
     protected $autoinc = true;
 
     ## 状态常量
