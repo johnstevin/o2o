@@ -53,11 +53,12 @@ class JPush
         if (is_array($uid)) {
             foreach ($uid as $id) {
                 $id = (string)intval($id);
-                if ($id !== '0') {
+                if ($id != 0) {
                     $ids[] = $id;
                 }
             }
         }
+        if (empty($ids)) return false;
         $ids = array_unique($ids);
         $client = self::$client->push()
             ->setPlatform(M\all)
