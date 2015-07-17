@@ -5,15 +5,17 @@ use Think\Model\AdvModel;
 
 class UcenterMemberModel extends AdvModel
 {
+    protected $pk = 'id';
+    protected $autoinc = true;
     protected static $model;
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
 
-    protected $_validate = array(
-        array('real_name','','真实姓名已存在',self::EXISTS_VALIDATE, 'unique'),
-        array('email','','邮箱已存在',self::EXISTS_VALIDATE, 'unique'),
+    protected $_validate = [
+        ['real_name', '', '真实姓名已存在', self::EXISTS_VALIDATE, 'unique'],
+        ['email', '', '邮箱已存在', self::EXISTS_VALIDATE, 'unique'],
 
-    );
+    ];
 
     /**
      * 获取当前模型实例
