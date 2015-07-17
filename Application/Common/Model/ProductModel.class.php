@@ -229,7 +229,7 @@ class ProductModel extends RelationModel
      * @param string|array $fields 要查询的字段
      * @return array
      */
-    public static function getLists($categoryIds = null, $brandId = null, $normsIds = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $getCategorys = false, $getBrand = false, $fields = '*')
+    public function getLists($categoryIds = null, $brandId = null, $normsIds = null, $status = self::STATUS_ACTIVE, $title = null, $pageSize = 10, $getCategorys = false, $getBrand = false, $fields = '*')
     {
         $where = [];
         if ($status === null || !array_key_exists($status, self::getStatusOptions())) {//如果状态为空或者不在系统定义的状态里
