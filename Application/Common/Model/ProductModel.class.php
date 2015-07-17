@@ -12,6 +12,9 @@ use Think\Page;
 class ProductModel extends RelationModel
 {
     protected static $model;
+
+    protected $pk = 'id';
+    protected $autoinc = true;
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
     const STATUS_CLOSE = 0;//关闭
