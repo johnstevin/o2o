@@ -11,6 +11,7 @@ use Think\Model\RelationModel;
 class OrderStatusModel extends RelationModel
 {
     public static $model;//当前模型实例
+    protected $pk = 'id';
     protected $autoinc = true;
     protected $fields = [
         'id',
