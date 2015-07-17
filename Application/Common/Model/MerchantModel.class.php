@@ -180,7 +180,6 @@ class MerchantModel extends AdvModel
 
     /**
      * @param $row
-     * @param $v
      * @return array
      */
     protected function _after_query_row(&$row)
