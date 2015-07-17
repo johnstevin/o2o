@@ -442,13 +442,11 @@ class OrderVehicleModel extends AdvModel
 
         if($photo){
 
-        $type='UCENTER_MEMBER';
+        $type='VEHICLE_WORDER';
 
-        $photoinfos=$this->upload_picture(UID,$type);
+        $photoinfos=upload_picture($uid,$type);
 
-        $photos[]=$photoinfos['filedata'];
-
-        $worder_picture_ids=array_column($photos,'id');
+        $worder_picture_ids=array_column($photoinfos,'id');
 
         $worder_picture_ids = is_array($worder_picture_ids) ? implode(',', $worder_picture_ids) : trim($worder_picture_ids, ',');
 
@@ -480,28 +478,6 @@ class OrderVehicleModel extends AdvModel
             $this->rollback();
         }
         //TODO 消息推送
-    }
-
-  public function upload_picture($uid, $type)
-    {
-        $type = strtoupper($type);
-        //print_r("{$type}_PICTURE_UPLOAD");
-        print_r($_FILES['filedata']);
-        /* 调用文件上传组件上传文件 */
-        $Picture = new PictureModel();
-        $pic_driver = C('PICTURE_UPLOAD_DRIVER');
-        $info = $Picture->upload(
-            $uid,
-            $_FILES,
-            C("{$type}_PICTURE_UPLOAD"),
-            C('PICTURE_UPLOAD_DRIVER'),
-            C("UPLOAD_{$pic_driver}_CONFIG")
-        );
-
-        if ($info == false)
-            E($Picture->getError());
-
-        return $info;
     }
 
 
