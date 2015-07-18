@@ -227,7 +227,8 @@ class MerchantModel extends AdvModel
         $bind[':presetTime']=$presetTime-$timeRange;
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
         $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
-            ' and sq_merchant.status=1
+            ' and ST_Distance_Sphere(sq_merchant.centre_lnglat,sq_merchant.lnglat) <= sq_merchant.service_scope
+              and sq_merchant.status=1
               and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId and sq_auth_access.status=1)
               and sq_merchant.id not in (select worker_id from sq_order_vehicle
                 where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3) and worker_id=sq_merchant.id)
@@ -249,7 +250,7 @@ class MerchantModel extends AdvModel
             ->where($where)
             ->field(['sq_merchant.id'
                 ,'ifnull(sq_merchant_shop.id,0) as shop_id'
-                ,'sq_merchant.number'
+                ,'ifnull(sq_merchant.number,\'\') as number'
                 ,'sq_ucenter_member.mobile'
                 ,'sq_ucenter_member.real_name'
                 ,'sq_ucenter_member.photo'
@@ -290,7 +291,8 @@ class MerchantModel extends AdvModel
         $bind[':presetTime']=$presetTime-$timeRange;
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
         $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
-            ' and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId and sq_auth_access.status=1)
+            ' and ST_Distance_Sphere(sq_merchant.centre_lnglat,sq_merchant.lnglat) <= sq_merchant.service_scope
+              and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId and sq_auth_access.status=1)
               and sq_merchant.id not in (select worker_id from sq_order_vehicle
                 where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3) and worker_id=sq_merchant.id)';
 
@@ -304,7 +306,7 @@ class MerchantModel extends AdvModel
             ->field(['sq_merchant.id','ifnull(sq_merchant_shop.id,0) as shop_id'])
             ->order('ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))')
             //->fetchSql()
-            ->find();
+            ->select();
 
         //var_dump($data);die;
 
@@ -469,4 +471,44 @@ class MerchantModel extends AdvModel
         }
     }
 
+
+    public function saveInfo($data)
+    {
+        try {
+
+            if(!is_array($data)) {
+                E('参数错误');
+            }
+
+         empty($data) ? E('修改字段不能为空'):'';
+
+
+            $uid=$data['uid'];
+            $service_scope=intval($data['service_scope']);
+            $centre_lnglat=$data['centre_lnglat'];
+            $centre_ads=$data['centre_ads'];
+            if (!is_numeric($service_scope))
+                E('范围必须是数值');
+
+            $this->execute("update __MERCHANT__ set centre_lnglat=point($centre_lnglat),service_scope=$service_scope,centre_ads='$centre_ads' where id=$uid");
+
+            return true;
+
+        } catch (\Exception $ex) {
+
+            return $ex->getMessage();
+
+        }
+    }
+
+
+
+    /**
+     * 保存坐标
+     * @return bool|string
+     */
+    public function savelnglat($id,$lnglat)
+    {
+        return  $this->execute("update __MERCHANT__ set lnglat=point($lnglat) where id=$id");
+    }
 }
