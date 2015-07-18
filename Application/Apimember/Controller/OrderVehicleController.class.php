@@ -156,9 +156,10 @@ class OrderVehicleController extends ApiController
                     if(empty($worker))
                         E('没有找到合适的服务人员');
 
+
                     $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
-                    $data['worker_id']=$worker['id'];
-                    $data['shop_id']=$worker['shop_id'];
+                    $data['worker_id']=$worker[0]['id'];
+                    $data['shop_id']=$worker[0]['shop_id'];
 
                 }else
                     $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;

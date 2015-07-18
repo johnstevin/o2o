@@ -203,13 +203,9 @@ class UserController extends ApiController {
 
         $map=array('eq', $uid);
 
-        $field= 'a.id,a.mobile,a.real_name,a.username,a.email,b.status,c.path as photo,b.total_orders';
+        $field= 'a.id,a.mobile,a.real_name,ifnull(a.username,"") as username,ifnull(a.email,"") as email,b.status,c.path as photo,b.total_orders,b.service_scope,astext(b.centre_lnglat) as lnglat,b.centre_ads';
 
         $result=$this->userInfos($map,$field);
-
-        if($result[0]['username']==null)$result[0]['username']="";
-
-        if($result[0]['email']==null)$result[0]['email']="";
 
         $this->apiSuccess(array('data'=>$result[0]),'获取员工信息成功');
     }
@@ -224,7 +220,7 @@ class UserController extends ApiController {
      */
     public function editInfo(){
         try {
-            $uid = $this->getUserId();
+            $uid=$this->getUserId();
             $type = I('get.type');
             switch ( $type ) {
                 case 'photo' :
@@ -240,10 +236,15 @@ class UserController extends ApiController {
                     $data['real_name'] = $real_name;
                     $data['id'] = $uid;
                     break;
-                case 'nickname' :
-                    $model = D("Member");
-                    $nickname = I('post.nickname');
-                    $data['nickname'] = $nickname;
+                case 'location' :
+                    $model = D("Merchant");
+
+                    $data['centre_ads']=I('post.centre_ads');
+
+                    $data['service_scope'] = I('post.service_scope');
+
+                    $data['centre_lnglat'] = I('post.centre_lnglat');
+
                     $data['uid'] = $uid;
                     break;
                 case 'email' :
@@ -553,6 +554,10 @@ class UserController extends ApiController {
         );
         $field = 'uid,status';
         $uids = $auth->get($map,$field);
+        if(empty($uids))
+            $this->apiSuccess(array('data'=>array()),'获取员工成功');
+
+
         if($uids === false)
             $this->apiError('40033', '获取员工失败');
 
@@ -691,6 +696,38 @@ class UserController extends ApiController {
         } else {
             $this->apiError('40037', '删除失败');
         }
+    }
+
+    /**
+     * 员工定位
+     * accesstoken=100
+     * lnglat 坐标：122,111
+     */
+    public function staffOrientation(){
+
+        if (IS_POST) {
+
+            $lnglat=I('lnglat');
+
+            if(empty($lnglat)){
+                $this->apiError('40094','参数非法');
+            }
+
+            $uid=$this->getUserId();
+
+            $Merchant = D('Merchant');
+
+            if (false !== $Merchant->savelnglat($uid,$lnglat)) {
+
+                $this->apiSuccess(null,'保存地址成功');
+
+            } else {
+                $this->apiError('40093','保存失败');
+            }
+        } else {
+            $this->apiError('40093','非法请求');
+        }
+
     }
 
 }
