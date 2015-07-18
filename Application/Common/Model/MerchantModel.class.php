@@ -13,6 +13,9 @@ class MerchantModel extends AdvModel
 {
     protected static $model;
 
+    protected $pk = 'id';
+    protected $autoinc = false;
+
     const DEFAULT_PHOTO = 'Uploads/Product/2015/06/24/233.jpg';
     ## 状态常量
     const STATUS_ACTIVE = 1;//正常
@@ -177,7 +180,6 @@ class MerchantModel extends AdvModel
 
     /**
      * @param $row
-     * @param $v
      * @return array
      */
     protected function _after_query_row(&$row)
@@ -214,7 +216,7 @@ class MerchantModel extends AdvModel
         } elseif ($order==='time') {
             $order= 'times';
         }else{
-            $order='ST_Distance_Sphere(sq_merchant.lnglat,POINT(:lng,:lat))';
+            $order='ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))';
         }
 
 
@@ -341,7 +343,7 @@ class MerchantModel extends AdvModel
     public static function checkMerchantExist($id)
     {
         $id = intval($id);
-        return self::get($id, 'id') ? true : false;
+        return self::getInstance()->get($id) ? true : false;
     }
 
     /**
@@ -360,7 +362,7 @@ class MerchantModel extends AdvModel
      * @param int $id 商家ID
      * @return array|null
      */
-    public function get($id,$lng,$lat)
+    public function get($id,$lng=null,$lat=null)
     {
         $field=[
             'sq_merchant.id',
@@ -390,8 +392,7 @@ class MerchantModel extends AdvModel
             ->find();
         if(empty($data))
             E('该员工不存在');
-        $data['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id']
-            ,'status'=>['in',[
+        $data['orders']=D('OrderVehicle')->where(['worker_id'=>$data['id'],'status'=>['in',[
                 OrderVehicleModel::STATUS_HAS_WORKER,
                 OrderVehicleModel::STATUS_TREATING,
                 OrderVehicleModel::STATUS_CONFIRM]]])->count();
@@ -421,8 +422,8 @@ class MerchantModel extends AdvModel
                 }
             }
 
-            if(empty($userInfo))
-                E(-1);
+//            if(empty($userInfo))
+//                E('未找到相关资料');
             return $userInfo;
 
         }catch (\Exception $ex){
@@ -433,7 +434,8 @@ class MerchantModel extends AdvModel
     /**
      * 带分页的获取商户信息
      * @param $mapUid
-     * @param string $field
+     * @param string|bool|array $field
+     * @param int $pageSize 分页大小
      * @return mixed|string
      */
     public function getStaffInfos( $mapUid, $field = true,$pageSize = 20 ){
@@ -441,7 +443,7 @@ class MerchantModel extends AdvModel
 
             $p=I('p');
             if(empty($p))
-                E(-1);
+                E('请传入页码参数');
             $userInfo=$this
                 ->field($field)
                 ->table('__UCENTER_MEMBER__ a')
@@ -458,8 +460,8 @@ class MerchantModel extends AdvModel
                 }
             }
 
-            if(empty($userInfo))
-                E(-1);
+//            if(empty($userInfo))
+//                E('未找到相关资料');
             return $userInfo;
 
         }catch (\Exception $ex){

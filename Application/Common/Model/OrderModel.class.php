@@ -550,9 +550,6 @@ class OrderModel extends RelationModel
             $where['o.user_id'] = intval($userId);
             $where['o.pid'] = 0;//如果根据用户来查，需要把父级也查出来
         }
-        if (!empty($shopId) && !empty($userId)) {
-            $where['o.pid'] = 0;
-        }
         if ($status !== null) {
             $status = is_array($status) ?: explode(',', $status);
             $where['o.status'] = [
@@ -997,7 +994,7 @@ class OrderModel extends RelationModel
                 F('user / cart / ' . $userId, null);//如果订单提交成功，则清空用户的购物车
                 S($orderKey, null);
                 $statusLogModel->addAll($logData);
-                $pushContent = '用户【' . $userInfo['nickname'] . '】提交了新订单，请您及时处理';
+                $pushContent = '您有新订单，请及时处理';
                 $pushTitle = '您有新的订单';
                 foreach ($pushOrderId as $item) {
                     push_by_uid('STORE', get_shopkeeper_by_shopid($item['shop_id']), $pushContent, [
@@ -1055,7 +1052,7 @@ class OrderModel extends RelationModel
                     $content = '系统：【' . $userInfo['nickname'] . '】于【' . date('Y - m - d H:i:s') . '】提交了订单【' . $orderCode . '】，等待商家审核';
                     //$statusLogModel->addLog($userId, $data['shop_id'], get_shopkeeper_by_shopid($data['shop_id']), $lastId, $content, self::STATUS_MERCHANT_CONFIRM);
 
-                    $pushContent = '用户【' . $userInfo['nickname'] . '】提交了新订单，请您及时处理';
+                    $pushContent = '您有新订单，请及时处理';
                     $pushTitle = '您有新的订单';
                     $pushExtras = [
                         'action' => 'orderDetail',

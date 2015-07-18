@@ -10,6 +10,9 @@ use Think\Model\RelationModel;
 class MemberModel extends RelationModel
 {
     protected static $model;
+    protected $pk = 'uid';
+    protected $autoinc = false;
+
     ## 状态常量
 
     const DEFAULT_PHOTO = 'Uploads/Product/2015/06/24/233.jpg';
@@ -88,11 +91,11 @@ class MemberModel extends RelationModel
                 ->table('__UCENTER_MEMBER__ a')
                 ->join('__MEMBER__ b ON  a.id = b.uid', 'LEFT')
                 ->join('__PICTURE__ c ON  a.photo = c.id', 'LEFT')
-                ->where(array('a.is_member' => array('eq', '1'), 'b.status' => array('eq', '1'), 'a.id' => $mapUid))
+                ->where(['a.is_member' => ['eq', '1'], 'b.status' => ['eq', '1'], 'a.id' => $mapUid])
                 ->find();
             //头像为空时返回默认图片
             if (empty($userInfo['photo'])) {
-            $userInfo['photo'] = self::DEFAULT_PHOTO;
+                $userInfo['photo'] = self::DEFAULT_PHOTO;
             }
 
             if (empty($userInfo))

@@ -11,6 +11,8 @@ use Think\Model;
  */
 class RegionModel extends Model
 {
+    protected $pk = 'id';
+    protected $autoinc = true;
     protected static $model;
     ## 状态常量
     const STATUS_DELETE = -1;//逻辑删除

@@ -22,6 +22,8 @@ use Think\Page;
 class MemberAddressModel extends RelationModel
 {
     protected static $model;
+
+    protected $pk = 'id';
     protected $autoinc = true;
 
     ## 状态常量
@@ -132,7 +134,7 @@ class MemberAddressModel extends RelationModel
             'class_name' => 'Member',
             'foreign_key' => 'uid',
             'mapping_name' => '_user',
-            'condition' => 'status !=' . self::STATUS_DELETE
+            'condition' => 'status != -1'
         ]
     ];
 

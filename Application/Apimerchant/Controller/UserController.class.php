@@ -160,7 +160,9 @@ class UserController extends ApiController {
     public function logout(){
         D('UcenterMember')->logout($this->getToken());
         //session('[destroy]');
-        $this->apiSuccess(null,'退出成功！');
+        //如果已经登出，则通知极光删除设备的别名
+        remove_device_alias('STORE', I('post.registrationId'));
+        $this->apiSuccess(null, '退出成功！');
     }
 
     /**
@@ -187,6 +189,32 @@ class UserController extends ApiController {
 
     }
 
+
+    /**
+     * 获取员工详细信息
+     */
+    public function getUserInfo(){
+
+        $uid=$this->getUserId();
+
+        if(empty($uid)){
+            $this->apiError('40030', '非法操作');
+        }
+
+        $map=array('eq', $uid);
+
+        $field= 'a.id,a.mobile,a.real_name,a.username,a.email,b.status,c.path as photo,b.total_orders';
+
+        $result=$this->userInfos($map,$field);
+
+        if($result[0]['username']==null)$result[0]['username']="";
+
+        if($result[0]['email']==null)$result[0]['email']="";
+
+        $this->apiSuccess(array('data'=>$result[0]),'获取员工信息成功');
+    }
+
+
     /**
      * @ignore
      * 用户个人修改
@@ -199,6 +227,31 @@ class UserController extends ApiController {
             $uid = $this->getUserId();
             $type = I('get.type');
             switch ( $type ) {
+                case 'photo' :
+                    $ptype= 'UCENTER_MEMBER';
+                    $info=upload_picture($uid,$ptype);
+                    $model = D("UcenterMember");
+                    $data['id'] = $uid;
+                    $data['photo']=$info['filedata']['id'];
+                    break;
+                case 'real_name' :
+                    $model = D("UcenterMember");
+                    $real_name = I('post.real_name');
+                    $data['real_name'] = $real_name;
+                    $data['id'] = $uid;
+                    break;
+                case 'nickname' :
+                    $model = D("Member");
+                    $nickname = I('post.nickname');
+                    $data['nickname'] = $nickname;
+                    $data['uid'] = $uid;
+                    break;
+                case 'email' :
+                    $model = D("UcenterMember");
+                    $email = I('post.email');
+                    $data['email'] = $email;
+                    $data['id'] = $uid;
+                    break;
                 case 'password' :
                     $model = D("UcenterMember");
                     $opassword = I('post.opassword');

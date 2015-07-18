@@ -11,6 +11,10 @@ function checkIpFormat($ip)
     return filter_var($ip, FILTER_VALIDATE_IP) ? true : false;
 }
 
+/**
+ * 获取IP4地址数字
+ * @return int
+ */
 function get_client_ip_to_int()
 {
     return get_client_ip(1, true);
@@ -128,7 +132,7 @@ function build_words_query($words, $words_op, $flds, &$map)
  * @access public
  * @param array $list 查询结果
  * @param string $field 排序的字段名
- * @param array $sortby 排序类型
+ * @param string $sortby 排序类型
  * asc正向排序 desc逆向排序 nat自然排序
  * @return array
  */
@@ -294,7 +298,8 @@ function check_order_exist($id)
     return \Common\Model\OrderModel::checkOrderExist($id);
 }
 
-function check_order_vehicle_exist($id){
+function check_order_vehicle_exist($id)
+{
 
     return !empty((new \Common\Model\OrderVehicleModel)->find($id));
 }
@@ -344,6 +349,7 @@ function create_vehide_order_code()
 
 /**
  * 检测当前用户是否为管理员
+ * @param int $uid 用户ID
  * @return boolean true-管理员，false-非管理员
  */
 function is_administrator($uid = null)
@@ -355,6 +361,7 @@ function is_administrator($uid = null)
 /**
  * 时间戳格式化
  * @param int $time
+ * @param string $format 格式化的格式
  * @return string 完整的时间显示
  */
 function time_format($time = NULL, $format = 'Y-m-d H:i')
@@ -394,6 +401,7 @@ function is_admin_login()
 }
 
 /**
+ * @param string $token TOKEN
  * @return int
  */
 function is_merchant_login($token)
@@ -430,6 +438,7 @@ function clear_merchant_login($token)
 }
 
 /**
+ * @param string $token TOKEN
  * @return int
  */
 function is_member_login($token)
@@ -552,7 +561,6 @@ function int_to_string(&$data, $map = ['status' => [1 => '正常', -1 => '删除
  * 通过数值构建SQL参数绑定
  * @author WangJiang
  * @param array $list 条件数组
- * @param array $bindNames
  * @param array $bindValues
  * @param string $prefix 参数名称前缀
  * @return array [$bindNames,$bindValues] $bindNames 参数名称, $bindValues参数绑定用于bind调用
@@ -692,7 +700,7 @@ function parse_action($action = null, $self)
 
 /**
  * 执行行为
- * @param array $rules 解析后的规则数组
+ * @param array|bool $rules 解析后的规则数组
  * @param int $action_id 行为id
  * @param array $user_id 执行的用户id
  * @return boolean false 失败 ， true 成功
@@ -1290,14 +1298,73 @@ function update_device_tag_alias($appid, $registrationId, $alias = null, $addTag
 }
 
 /**
- * @param $arr
+ * 根据设备推送消息
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param string $appId 用户ID，目前有【STORE】和【CLIENT】两个
+ * @param string|array $platform 设备，可传【all】、【ios】、【android】和【winphone】，可传多个
+ * @param string $notification_content 通知内容
+ * @param array $extras 扩展信息
+ * @param null|string $notification_title 通知标题
+ * @param null|string $message_content 消息内容
+ * @param null|string $message_title 消息标题
+ * @param null $category 消息分类（仅IOS8+有效）
+ * @return bool
+ */
+function push_by_platform($appId, $platform, $notification_content, $extras = [], $notification_title = null, $message_content = '', $message_title = null, $category = null)
+{
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->pushByPlatform($platform, $notification_content, $extras, $notification_title, $message_content, $message_title, $category);
+}
+
+/**
+ * 删除设备的别名
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param string $registrationId 设备注册ID
+ * @param string $appId 应用ID
+ * @return \JPush\Model\DeviceResponse
+ */
+function remove_device_alias($appId, $registrationId)
+{
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceAlias($registrationId);
+}
+
+/**
+ * 删除设备的标签
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param string $appId 应用ID
+ * @param string $registrationId 设备注册ID
+ * @return \JPush\Model\DeviceResponse
+ */
+function remove_device_tag($appId, $registrationId)
+{
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceTag($registrationId);
+}
+
+/**
+ * 删除别名
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param string $appId 应用ID
+ * @param string $alias 别名
+ * @return \JPush\Model\DeviceResponse
+ */
+function delete_alias($appId, $alias)
+{
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->deleteAlias($alias);
+}
+
+/**
+ * @param $acRes
  * @param $field
  * @author Stevin.John@qq.com
  */
-function _arrMinByField ( $acRes, $field ) {
+function _arrMinByField($acRes, $field)
+{
     if (count($acRes) < 1) return $acRes;
     $mainRes = $acRes[0];
-    foreach ($acRes as $k=>$val) {
+    foreach ($acRes as $k => $val) {
         $val[$field] = intval($val[$field]);
         if ($mainRes[$field] > $val[$field]) {
             $mainRes = $val;
