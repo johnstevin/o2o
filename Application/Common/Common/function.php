@@ -1311,9 +1311,48 @@ function update_device_tag_alias($appid, $registrationId, $alias = null, $addTag
  * @param null $category 消息分类（仅IOS8+有效）
  * @return bool
  */
-function push_by_platform($appId, $platform, $notification_content, $extras = [], $notification_title = null, $message_content = null, $message_title = null, $category = null)
+function push_by_platform($appId, $platform, $notification_content, $extras = [], $notification_title = null, $message_content = '', $message_title = null, $category = null)
 {
     return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->pushByPlatform($platform, $notification_content, $extras, $notification_title, $message_content, $message_title, $category);
+}
+
+/**
+ * 删除设备的别名
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param string $registrationId 设备注册ID
+ * @param string $appId 应用ID
+ * @return \JPush\Model\DeviceResponse
+ */
+function remove_device_alias($appId, $registrationId)
+{
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceAlias($registrationId);
+}
+
+/**
+ * 删除设备的标签
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param string $appId 应用ID
+ * @param string $registrationId 设备注册ID
+ * @return \JPush\Model\DeviceResponse
+ */
+function remove_device_tag($appId, $registrationId)
+{
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceTag($registrationId);
+}
+
+/**
+ * 删除别名
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ *
+ * @param string $appId 应用ID
+ * @param string $alias 别名
+ * @return \JPush\Model\DeviceResponse
+ */
+function delete_alias($appId, $alias)
+{
+    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->deleteAlias($alias);
 }
 
 /**
