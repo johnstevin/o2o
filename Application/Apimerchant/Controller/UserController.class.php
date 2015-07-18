@@ -160,7 +160,9 @@ class UserController extends ApiController {
     public function logout(){
         D('UcenterMember')->logout($this->getToken());
         //session('[destroy]');
-        $this->apiSuccess(null,'退出成功！');
+        //如果已经登出，则通知极光删除设备的别名
+        remove_device_alias('STORE', I('post.registrationId'));
+        $this->apiSuccess(null, '退出成功！');
     }
 
     /**
