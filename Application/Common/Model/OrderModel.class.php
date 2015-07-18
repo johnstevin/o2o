@@ -550,9 +550,6 @@ class OrderModel extends RelationModel
             $where['o.user_id'] = intval($userId);
             $where['o.pid'] = 0;//如果根据用户来查，需要把父级也查出来
         }
-        if (!empty($shopId) && !empty($userId)) {
-            $where['o.pid'] = 0;
-        }
         if ($status !== null) {
             $status = is_array($status) ?: explode(',', $status);
             $where['o.status'] = [
