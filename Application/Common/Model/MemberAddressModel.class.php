@@ -134,7 +134,7 @@ class MemberAddressModel extends RelationModel
             'class_name' => 'Member',
             'foreign_key' => 'uid',
             'mapping_name' => '_user',
-            'condition' => 'status !=' . self::STATUS_DELETE
+            'condition' => 'status != -1'
         ]
     ];
 
