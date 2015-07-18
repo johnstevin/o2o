@@ -21,6 +21,7 @@ class Redis extends Cache {
 	 * 架构函数
      * @param array $options 缓存参数
      * @access public
+     * @author Modify by Stevin.John@qq.com
      */
     public function __construct($options=array()) {
         if ( !extension_loaded('redis') ) {
@@ -30,18 +31,21 @@ class Redis extends Cache {
             'host'          => C('REDIS_HOST') ? : '127.0.0.1',
             'port'          => C('REDIS_PORT') ? : 6379,
             'timeout'       => C('DATA_CACHE_TIMEOUT') ? : false,
+            'db_index'      => C('REDIS_DB_INDEX') ? : 0,
             'persistent'    => false,
         ),$options);
 
         $this->options =  $options;
         $this->options['expire'] =  isset($options['expire'])?  $options['expire']  :   C('DATA_CACHE_TIME');
         $this->options['prefix'] =  isset($options['prefix'])?  $options['prefix']  :   C('DATA_CACHE_PREFIX');        
-        $this->options['length'] =  isset($options['length'])?  $options['length']  :   0;        
+        $this->options['length'] =  isset($options['length'])?  $options['length']  :   0;
+        $this->options['db_index'] = isset($options['db_index']) ? $options['db_index'] : 0;
         $func = $options['persistent'] ? 'pconnect' : 'connect';
         $this->handler  = new \Redis;
         $options['timeout'] === false ?
             $this->handler->$func($options['host'], $options['port']) :
             $this->handler->$func($options['host'], $options['port'], $options['timeout']);
+        $options['db_index']  === 0 ? : $this->select($options['db_index']);
     }
 
     /**
@@ -104,4 +108,12 @@ class Redis extends Cache {
         return $this->handler->flushDB();
     }
 
+    /**
+     * @access public
+     * @return boolean
+     * @author Stevin.John@qq.com
+     */
+    public function select() {
+        return $this->handler->select($this->options['db_index']);
+    }
 }

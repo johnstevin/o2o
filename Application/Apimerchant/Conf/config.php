@@ -22,7 +22,7 @@ return array(
     /* 数据缓存设置 */
     // TODO : 关于设置缓存前缀后无法读取缓存的问题，后面在处理，目前只发现file类型存在问题
     //'DATA_CACHE_PREFIX'    => 'o2o_merchant_', // 缓存前缀
-    'DATA_CACHE_TYPE'      => 'File', // 数据缓存类型
+    //'DATA_CACHE_TYPE'      => 'File', // 数据缓存类型
 
     /* 后台错误页面模板 ×××××××××××开发使用×××××××××× */
 

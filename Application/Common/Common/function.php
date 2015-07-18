@@ -1267,7 +1267,7 @@ function push_by_uid($appid, $uid, $notification_content, $extras = [], $notific
     //开发模式下，不检查验证码，不推送消息
     if (!empty(C('DEVELOPMENT_MODE')))
         return;
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
+    //return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
 }
 
 /**

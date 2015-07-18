@@ -15,8 +15,6 @@ return array(
     'COOKIE_PREFIX'  => 'o2o_admin_',
 
     /* 数据缓存设置 */
-    'DATA_CACHE_PREFIX'    => 'o2o_admin_', // 缓存前缀
-    'DATA_CACHE_TYPE'      => 'File', // 数据缓存类型
 
     /* 后台错误页面模板 */
     'TMPL_ACTION_ERROR'     =>  MODULE_PATH.'View/Public/error.html', // 默认错误跳转对应的模板文件

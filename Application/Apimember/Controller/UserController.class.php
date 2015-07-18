@@ -297,10 +297,10 @@ class UserController extends ApiController {
                     $model  = M("UcenterMember");
                     //TODO 这里做手机认证
                     $map = array(
-                        'is_merchant' => 1,
+                        'is_member' => 1,
                         'mobile'      => $mobile,
                     );
-                    $model->field('id')->where($map)->find() ? '' : E('该手机号未注册或不是商家用户');
+                    $model->field('id')->where($map)->find() ? '' : E('该手机号未注册或不是用户');
                     $randVal = generate_saltKey();
                     S('_Member_User_ForgetPwd_randVal_'.$mobile, $randVal, 300);
                     $this->apiSuccess(array('data'=>array('randVal'=>$randVal)), '请点下一步');

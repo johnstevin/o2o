@@ -28,7 +28,7 @@ class AdminController extends Controller
         $config = S('DB_CONFIG_DATA');
         if (!$config) {
             $config = api('Config/lists');
-            S('DB_CONFIG_DATA', $config, 5);
+            S('DB_CONFIG_DATA', $config);
         }
         C($config);
 
@@ -359,7 +359,7 @@ class AdminController extends Controller
      * @param    $uid
      * @author   Stevin.John@qq.com
      */
-    private function isOnline ( $uid ) {
+    public function isOnline ( $uid ) {
 
     }
 
