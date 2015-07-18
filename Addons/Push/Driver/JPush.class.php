@@ -70,6 +70,7 @@ class JPush
             }
         }
         if (empty($ids)) return false;
+        if (empty($message_content)) $message_content = $notification_content;
         $ids = array_unique($ids);
         $client = self::$client->push()
             ->setPlatform(M\all)
@@ -77,7 +78,7 @@ class JPush
 //        if (!empty($notification_content)) {
         $client->setNotification(M\notification($notification_content,
             M\android($notification_content, $notification_title, null, $extras),
-            M\ios($notification_content, null, '+1', null, $extras, $category)));
+            M\ios($notification_content, 'default', '+1', null, $extras, $category)));
 //        }
         if (APP_DEBUG) {
             $client->setOptions(M\options(null, 604800, null, false));
@@ -99,17 +100,18 @@ class JPush
      * @param string $category 分类，只有苹果可用
      * @return bool
      */
-    public function pushByPlatform($platform, $notification_content, $extras = [], $notification_title = null, $message_content = null, $message_title = null, $category = null)
+    public function pushByPlatform($platform, $notification_content, $extras = [], $notification_title = null, $message_content = '', $message_title = null, $category = null)
     {
         //TODO 这个接口暂未测试
         if (empty($platform)) E('必须指定推送设备');
-        if (is_string($platform)) $platform = explode(',', $platform);
-
+        if (is_string($platform) && strpos($platform, ',')) $platform = explode(',', $platform);
+        if (empty($message_content)) $message_content = $notification_content;
         $client = self::$client->push()
             ->setPlatform($platform)
+            ->setAudience(M\all)
             ->setNotification(M\notification($notification_content,
                 M\android($notification_content, $notification_title, null, $extras),
-                M\ios($notification_content, null, '+1', null, $extras, $category)));
+                M\ios($notification_content, 'default', '+1', null, $extras, $category)));
         if (APP_DEBUG) {
             $client->setOptions(M\options(null, 604800, null, false));
         }
