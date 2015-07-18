@@ -359,7 +359,13 @@ class AdminController extends Controller
      * @param    $uid
      * @author   Stevin.John@qq.com
      */
-    public function isOnline ( $uid ) {
+    public function isOnline ( $accesstoken ) {
+
+        $cache = [
+            'uid'            => '',
+            'last_ac_time'   => '',
+        ];
+        $res = S('ADMIN_ONLINE');
 
     }
 
