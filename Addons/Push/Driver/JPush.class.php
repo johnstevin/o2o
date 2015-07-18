@@ -6,9 +6,20 @@ use JPush\Model as M;
 
 require realpath(dirname(APP_PATH)) . '/vendor/autoload.php';
 
+/**
+ * 极光推送
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @package Addons\Push\Driver
+ */
 class JPush
 {
+    /**
+     * @var \JPush\JPushClient
+     */
     public static $client;//推送SDK实例
+    /**
+     * @var self
+     */
     public static $instance;//当前类实例
 
     /**
@@ -119,6 +130,42 @@ class JPush
      */
     public function updateDeviceTagAlias($registrationId, $alias = null, $addTags = null, $removeTags = null)
     {
-        return self::$client->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
+        return self::$client->updateDeviceTagAlias($registrationId, (string)$alias, $addTags, $removeTags);
+    }
+
+    /**
+     * 根据设备注册ID移除这个设备的所有别名
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string $registrationId 设备注册ID
+     * @return \JPush\Model\DeviceResponse
+     */
+    public function removeDeviceAlias($registrationId)
+    {
+        return self::$client->removeDeviceAlias($registrationId);
+    }
+
+    /**
+     * 根据设备注册ID删除设备所有的标签
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string $registrationId 设备注册ID
+     * @return \JPush\Model\DeviceResponse
+     */
+    public function removeDeviceTag($registrationId)
+    {
+        return self::$client->removeDeviceTag($registrationId);
+    }
+
+    /**
+     * 删除别名（当删除一个用户的时候使用）
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string $alias 别名
+     * @return \JPush\Model\DeviceResponse
+     */
+    public function deleteAlias($alias)
+    {
+        return self::$client->deleteAlias((string)$alias);
     }
 }
