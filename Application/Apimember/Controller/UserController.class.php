@@ -32,8 +32,8 @@ class UserController extends ApiController {
             if(IS_POST){
                 $username = I('post.username') == '' ? E('手机号不能为空') : I('post.username');
                 $password = I('post.password') == '' ? E('密码不能为空') : I('post.password');
-                //$registrationId = I('post.registrationId') == '' ? E('注册码不能为空') : I('post.registrationId');
-                $registrationId = '';
+                $registrationId = I('post.registrationId') == '' ? E('注册码不能为空') : I('post.registrationId');
+                //$registrationId = '';
 
                 $Ucenter  = D('UcenterMember');
                 $token = $Ucenter->login($username, $password, $registrationId, 5);
@@ -157,6 +157,8 @@ class UserController extends ApiController {
     public function logout(){
         D('UcenterMember')->logout($this->getToken());
         //session('[destroy]');
+        //如果已经登出，则通知极光删除设备的别名
+        remove_device_alias('CLIENT', I('post.registrationId'));
         $this->apiSuccess(null,'退出成功！');
     }
 
