@@ -352,6 +352,13 @@ class OrderVehicleModel extends AdvModel
                 E('参数传递失败 '.$ovs->getError());
             $ovs->add();
             $this->commit();
+
+            /*用户取消订单消息推送*/
+            push_by_uid('STORE',$data['worker_id'],'用户取消了订单',[
+                'action'=>'vehicleDetail',
+                'order_id'=>$oid
+            ],'用户取消了订单');
+
         }catch(\Exception $ex){
             $this->rollback();
         }
@@ -442,7 +449,7 @@ class OrderVehicleModel extends AdvModel
 
         if($photo){
 
-        $type='VEHICLE_WORDER';
+        $type='CARWASH_MERCHANT';
 
         $photoinfos=upload_picture($uid,$type);
 
@@ -477,7 +484,12 @@ class OrderVehicleModel extends AdvModel
         }catch(\Exception $ex){
             $this->rollback();
         }
-        //TODO 消息推送
+
+        /*用户取消订单消息推送*/
+        push_by_uid('CLIENT',$data['user_id'],'服务人员修改了订单状态',[
+            'action'=>'vehicleDetail',
+            'order_id'=>$oid
+        ],'服务人员修改了订单状态');
     }
 
 

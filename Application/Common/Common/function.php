@@ -1,6 +1,9 @@
 <?php
 use Common\Model\PictureModel;
 
+// OneThink常量定义
+const SQ_VERSION    = '1.1.141212';
+const SQ_ADDON_PATH = './Addons/';
 /**
  * 检查IP是否合法
  * @param string $ip 要检查的IP地址
@@ -218,6 +221,69 @@ function tree_to_list($tree, $child = '_child', $order = 'id', &$list = [])
         $list = list_sort_by($list, $order, $sortby = 'asc');
     }
     return $list;
+}
+
+/**
+ * 处理插件钩子
+ * @param string $hook   钩子名称
+ * @param mixed $params 传入参数
+ * @return void
+ */
+function hook($hook,$params=array()){
+    \Think\Hook::listen($hook,$params);
+}
+
+/**
+ * 获取插件类的类名
+ * @param strng $name 插件名
+ */
+function get_addon_class($name){
+    $class = "Addons\\{$name}\\{$name}Addon";
+    return $class;
+}
+
+/**
+ * 获取插件类的配置文件数组
+ * @param string $name 插件名
+ */
+function get_addon_config($name){
+    $class = get_addon_class($name);
+    if(class_exists($class)) {
+        $addon = new $class();
+        return $addon->getConfig();
+    }else {
+        return array();
+    }
+}
+
+/**
+ * 插件显示内容里生成访问插件的url
+ * @param string $url url
+ * @param array $param 参数
+ * @author liu hui
+ */
+function addons_url($url, $param = array()){
+    $url        = parse_url($url);
+    $case       = C('URL_CASE_INSENSITIVE');
+    $addons     = $case ? parse_name($url['scheme']) : $url['scheme'];
+    $controller = $case ? parse_name($url['host']) : $url['host'];
+    $action     = trim($case ? strtolower($url['path']) : $url['path'], '/');
+
+    /* 解析URL带的参数 */
+    if(isset($url['query'])){
+        parse_str($url['query'], $query);
+        $param = array_merge($query, $param);
+    }
+
+    /* 基础参数 */
+    $params = array(
+        '_addons'     => $addons,
+        '_controller' => $controller,
+        '_action'     => $action,
+    );
+    $params = array_merge($params, $param); //添加额外参数
+
+    return U('Addons/execute', $params);
 }
 
 /**
@@ -846,14 +912,14 @@ function bacth_check_can_modify_depot($uid, $depotId)
 }
 
 /**
- * 是否店长，抛异常
+ * 是否店长或者管理员，抛异常
  * @author WangJiang
  * @param int $uid 用户ID
  * @param int $gid 分组ID
  */
 function except_merchant_manager($uid, $gid)
 {
-    if (!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid, 'role_id' => C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER')])->find())
+    if (!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid, 'role_id' =>array('in',[ C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'), C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER')])])->find())
         E('用户无权限操作该店铺');
 }
 
@@ -1294,7 +1360,7 @@ function update_device_tag_alias($appid, $registrationId, $alias = null, $addTag
     //开发模式下，不检查验证码，不推送消息
     if (!empty(C('DEVELOPMENT_MODE')))
         return;
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
+//    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
 }
 
 /**
@@ -1313,7 +1379,7 @@ function update_device_tag_alias($appid, $registrationId, $alias = null, $addTag
  */
 function push_by_platform($appId, $platform, $notification_content, $extras = [], $notification_title = null, $message_content = '', $message_title = null, $category = null)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->pushByPlatform($platform, $notification_content, $extras, $notification_title, $message_content, $message_title, $category);
+//    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->pushByPlatform($platform, $notification_content, $extras, $notification_title, $message_content, $message_title, $category);
 }
 
 /**
@@ -1326,7 +1392,7 @@ function push_by_platform($appId, $platform, $notification_content, $extras = []
  */
 function remove_device_alias($appId, $registrationId)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceAlias($registrationId);
+//    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceAlias($registrationId);
 }
 
 /**
@@ -1339,7 +1405,7 @@ function remove_device_alias($appId, $registrationId)
  */
 function remove_device_tag($appId, $registrationId)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceTag($registrationId);
+//    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceTag($registrationId);
 }
 
 /**
@@ -1352,7 +1418,7 @@ function remove_device_tag($appId, $registrationId)
  */
 function delete_alias($appId, $alias)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->deleteAlias($alias);
+//    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->deleteAlias($alias);
 }
 
 /**

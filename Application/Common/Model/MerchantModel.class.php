@@ -231,8 +231,7 @@ class MerchantModel extends AdvModel
               and sq_merchant.status=1
               and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId and sq_auth_access.status=1)
               and sq_merchant.id not in (select worker_id from sq_order_vehicle
-                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3) and worker_id=sq_merchant.id)
-                and sq_order_vehicle.status in ('.OrderVehicleModel::STATUS_HAS_WORKER.','.OrderVehicleModel::STATUS_TREATING .','.OrderVehicleModel::STATUS_CONFIRM.')';
+                where preset_time>:presetTime and sq_order_vehicle.status in (1,2,3) and worker_id=sq_merchant.id)';
 
 
         if(!is_null($number))
@@ -486,6 +485,12 @@ class MerchantModel extends AdvModel
             $uid=$data['uid'];
             $service_scope=intval($data['service_scope']);
             $centre_lnglat=$data['centre_lnglat'];
+
+            $arr = explode(",",$centre_lnglat);
+            if ($arr[0]== 0||$arr[1]==0)
+
+                E('定位失败,请重新定位！');
+
             $centre_ads=$data['centre_ads'];
             if (!is_numeric($service_scope))
                 E('范围必须是数值');
