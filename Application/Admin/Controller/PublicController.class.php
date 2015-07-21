@@ -23,8 +23,12 @@ class PublicController extends Controller {
             if(!check_verify($verify)){
                 $this->error('验证码输入错误！');
             }
+            $token = I('post.token') == '' ? $this->error('请正确设置安全码!') : I('post.token');
+            $randCache = S('ADMIN_LOGIN_TOKEN_'.$token);
+            $randCache !== false ? '' : $this->error('已超时，请重新设置!');
+            $randCache == $token ? '' : $this->error('安全码不正确!');
             $Ucenter = D('UcenterMember');
-            $uid = $Ucenter->login($username, $password, 5);
+            $uid = $Ucenter->login($username, $password, $token, 5);
             if(0 < $uid){
                 action_log('admin_login', 'admin', $uid, $uid, 1);
                 $this->success('登录成功！', U('Index/index'));
@@ -49,7 +53,9 @@ class PublicController extends Controller {
                     S('DB_CONFIG_DATA',$config);
                 }
                 C($config); //添加配置
-                
+                $randVal = generate_saltKey(18);
+                S('ADMIN_LOGIN_TOKEN_'.$randVal, $randVal, 60);
+                $this->assign('token', $randVal);
                 $this->display('User/login');
             }
         }

@@ -1294,7 +1294,7 @@ function update_device_tag_alias($appid, $registrationId, $alias = null, $addTag
     //开发模式下，不检查验证码，不推送消息
     if (!empty(C('DEVELOPMENT_MODE')))
         return;
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
+    //return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
 }
 
 /**

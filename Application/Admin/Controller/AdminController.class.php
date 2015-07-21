@@ -24,6 +24,9 @@ class AdminController extends Controller
         if (!UID) {// 还没登录 跳转到登录页面
             $this->redirect('Public/login');
         }
+
+        $this->isOnline(UID, time());
+
         /* 读取数据库中的配置 */
         $config = S('DB_CONFIG_DATA');
         if (!$config) {
@@ -359,14 +362,12 @@ class AdminController extends Controller
      * @param    $uid
      * @author   Stevin.John@qq.com
      */
-    public function isOnline ( $accesstoken ) {
-
-        $cache = [
-            'uid'            => '',
-            'last_ac_time'   => '',
-        ];
-        $res = S('ADMIN_ONLINE');
-
+    public function isOnline ( $uid, $ac_time ) {
+        $res = S('ADMIN_ONLINE_'.$uid);
+        !$res ? $this->error('超时！请重新登陆') : '';
+        $res['token'] === session('admin_auth')['token'] ? : $this->error('您的账号已在其它地方登陆，请重新登陆');
+        $res['last_login_time'] = $ac_time;
+        S('ADMIN_ONLINE_'.$uid, $res, 1200);
     }
 
 }

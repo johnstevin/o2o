@@ -87,7 +87,7 @@ class UcenterMemberModel extends Model
      * @return integer           登录成功-用户ID，登录失败-错误编号
      * @author stevin.john
      */
-    public function login($username, $password, $type = 1)
+    public function login($username, $password, $token, $type = 1)
     {
         $map = array();
         switch ($type) {
@@ -119,7 +119,7 @@ class UcenterMemberModel extends Model
             /* 验证用户密码 */
             if (generate_password($password, $user['saltkey']) === $user['password']) {
                 //是管理员，插入或更新数据admin
-                return $this->updateLogin($user); //登录成功，返回用户ID
+                return $this->updateLogin($user, $token); //登录成功，返回用户ID
             } else {
                 return -2; //密码错误
             }
@@ -133,7 +133,7 @@ class UcenterMemberModel extends Model
      * @param  integer $uid 用户ID
      * @author  stevin.john
      */
-    protected function updateLogin($user)
+    protected function updateLogin($user, $token)
     {
         $data = array(
             'id' => $user['id'],
@@ -158,12 +158,19 @@ class UcenterMemberModel extends Model
             'uid' => $user['id'],
             'mobile' => $user['mobile'],
             'last_login_time' => $data['last_login_time'],
+            'token'     => $token,
         );
 
         session('admin_auth', $auth);
         session('admin_auth_sign', data_auth_sign($auth));
 
+        $this->_setOnline($auth);
+
         return $user['id'];
+    }
+
+    private function _setOnline($auth) {
+        S('ADMIN_ONLINE_'.$auth['uid'], $auth, 1200);
     }
 
     /**

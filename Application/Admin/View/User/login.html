@@ -98,12 +98,13 @@
             return false;
         }
         password = $.md5(password);
+        token = '{$token}';
 
         $.ajax({
             type: "POST",
             url: '{:U("Public/login")}',
             dataType: "json",
-            data: {"username": username, "password": password,"verify":verify},
+            data: {"username": username, "password": password,"verify":verify,"token":token},
             beforeSend: function () {
                 $('#msg').addClass('alert alert-success').html("正在登陆...");
             },
