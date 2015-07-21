@@ -245,6 +245,20 @@ class OrderController extends ApiController
     }
 
     /**
+     * 根据ID查找一条订单记录（与find的区别是这个接口的返回数据格式和lists一致）
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $id 订单ID
+     * @param bool|false $getProducts 是否要获取产品信息
+     * @param bool|false $getShop 是否要获取店铺信息
+     * @param bool|false $getUser 是否要获取用户信息
+     */
+    public function findById($id, $getProducts = false, $getShop = false, $getUser = false)
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->getLists(null, $this->getUserId(), null, null, null, $getShop, $getUser, $getProducts, 10, $id)]);
+    }
+
+    /**
      * ###获取子订单列表,需要accesstoken
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
