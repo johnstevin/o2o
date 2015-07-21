@@ -117,6 +117,7 @@ class OrderVehicleController extends ApiController
      * <pre>
      * 参数：
      * worker_id 洗车工ID
+     * shop_id 商店id
      * address 车辆地址，必须
      * street_number 车辆地址门牌号，必须
      * car_number 车牌号，必须
@@ -176,6 +177,11 @@ class OrderVehicleController extends ApiController
                         //TODO 实现消息推送$wid
                     }
                 }));
+
+                push_by_uid('STORE',$data['worker_id'],'您有新订单，请及时处理',[
+                    'action'=>'vehicleDetail',
+                    'order_id'=>$newId
+                ],'您有新的订单');
 
                 action_log('api_create_order_veh', $model, $newId, UID,3);
 
@@ -272,6 +278,12 @@ class OrderVehicleController extends ApiController
                 ]);
 
                 D()->commit();
+
+                /*用户取消订单消息推送*/
+                push_by_uid('STORE',$data['worker_id'],'用户评价了订单',[
+                    'action'=>'vehicleDetail',
+                    'order_id'=>$oid
+                ],'用户评价了订单');
 
                 $this->apiSuccess(['data'=>[]],'成功');
             }catch (\Exception $ex){

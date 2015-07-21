@@ -37,8 +37,9 @@
                     <label for="description" class="control-label col-md-2">描述</label>
 
                     <div class="col-md-10">
-                                <textarea id="description" rows="4" placeholder="请输入描述信息" name="description"
-                                          class="form-control">{$info.description|default=''}</textarea>
+                            <textarea id="description" rows="4" name="description">{$info.description|default=''}</textarea>
+                            {:hook('topicComment', array('name'=>'description','value'=>info.description))}
+
                     </div>
                 </div>
 

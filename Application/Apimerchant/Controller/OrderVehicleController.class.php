@@ -129,8 +129,10 @@ class OrderVehicleController extends ApiController{
                 'add_time',
                 'update_time',
                 'preset_time',
+                'add_time',
             ])
             ->where($where)
+            ->order('update_time desc,add_time desc')
             ->page($page, $pageSize)->select();
 
         foreach($data as &$i){
