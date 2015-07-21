@@ -390,6 +390,12 @@ class OrderVehicleController extends ApiController{
         action_log('api_reassign_order_veh', $model, $id, UID,2);
         //TODO 实现消息推送$wid
 
+        /*用户取消订单消息推送*/
+        push_by_uid('CLIENT',$order['user_id'],'管理员重新分配订单',[
+            'action'=>'vehicleOrderDetail',
+            'order_id'=>$id
+        ],'管理员重新分配订单');
+
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
@@ -414,7 +420,6 @@ class OrderVehicleController extends ApiController{
         (new OrderVehicleModel())->managerCancel($this->getUserId(),$id,$remark,$groupIds);
 
         //TODO 实现消息推送，通知用户该订单取消，同时附上取消人和原因
-
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 

@@ -355,7 +355,7 @@ class OrderVehicleModel extends AdvModel
 
             /*用户取消订单消息推送*/
             push_by_uid('STORE',$data['worker_id'],'用户取消了订单',[
-                'action'=>'vehicleDetail',
+                'action'=>'vehicleOrderDetail',
                 'order_id'=>$oid
             ],'用户取消了订单');
 
@@ -398,6 +398,12 @@ class OrderVehicleModel extends AdvModel
         }catch (\Exception $ex){
             $model->rollback();
         }
+
+        /*用户取消订单消息推送*/
+        push_by_uid('CLIENT',$order['user_id'],'取消的原因'.$remark,[
+            'action'=>'vehicleOrderDetail',
+            'order_id'=>$id
+        ],'您的订单被取消');
     }
 
     private static function _get_status_chain()
@@ -487,7 +493,7 @@ class OrderVehicleModel extends AdvModel
 
         /*用户取消订单消息推送*/
         push_by_uid('CLIENT',$data['user_id'],'服务人员修改了订单状态',[
-            'action'=>'vehicleDetail',
+            'action'=>'vehicleOrderDetail',
             'order_id'=>$oid
         ],'服务人员修改了订单状态');
     }
