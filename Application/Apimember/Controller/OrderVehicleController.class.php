@@ -179,8 +179,8 @@ class OrderVehicleController extends ApiController
                 }));
 
                 push_by_uid('STORE',$data['worker_id'],'您有新订单，请及时处理',[
-                    'action'=>'vehicleDetail',
-                    'order_id'=>$newId
+                    'action'=>'vehicleOrderDetail',
+                    'order_id'=>$newId,
                 ],'您有新的订单');
 
                 action_log('api_create_order_veh', $model, $newId, UID,3);
@@ -281,7 +281,7 @@ class OrderVehicleController extends ApiController
 
                 /*用户取消订单消息推送*/
                 push_by_uid('STORE',$data['worker_id'],'用户评价了订单',[
-                    'action'=>'vehicleDetail',
+                    'action'=>'vehicleOrderDetail',
                     'order_id'=>$oid
                 ],'用户评价了订单');
 
