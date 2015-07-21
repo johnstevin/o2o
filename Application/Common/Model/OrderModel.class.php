@@ -538,10 +538,14 @@ class OrderModel extends RelationModel
      * @param bool $getUser 是否获得用户信息
      * @param bool $getProducts 是否查询订单下的商品列表
      * @param int $pageSize 分页大小
+     * @param int $id 订单ID（这个是为了查询单个订单加的参数）
      * @return array|null
      */
-    public function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $deliveryMode = null, $getShop = false, $getUser = false, $getProducts = false, $pageSize = 10)
+    public function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $deliveryMode = null, $getShop = false, $getUser = false, $getProducts = false, $pageSize = 10, $id = null)
     {
+        if ($id = intval($id)) {
+            $where['o.id'] = $id;
+        }
         if (empty($shopId) && empty($userId)) E('非法请求');
         if (!empty($shopId)) {
             $where['o.shop_id'] = intval($shopId);
@@ -646,7 +650,7 @@ class OrderModel extends RelationModel
         }
 
         return [
-            'data' => $data,
+            'data' => $id ? current($data) : $data,
             'pagination' => $pagination->show()
         ];
     }
