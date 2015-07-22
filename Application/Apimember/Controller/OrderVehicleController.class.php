@@ -22,7 +22,7 @@ class OrderVehicleController extends ApiController
      * @param null $status （0-未分配，1-已分配，2-已接单，3-处理中，4-处理完，5-订单结束，6订单取消）
      * @param null $orderCode 订单号
      * @param int $page 页码，从1开始
-     * @param int $pageSize，页大小
+     * @param int $pageSize ，页大小
      * @return json
      * ``` json
      * {
@@ -101,12 +101,12 @@ class OrderVehicleController extends ApiController
      * }
      * ```
      */
-    public function getList($status = null,$payStatus=null, $orderCode = null, $page = 1, $pageSize = 10)
+    public function getList($status = null, $payStatus = null, $orderCode = null, $page = 1, $pageSize = 10)
     {
         try {
             $uid = $this->getUserId();
             //print_r($m->getLastSql());die;
-            $this->apiSuccess(['data' => (new OrderVehicleModel())->getUserList($uid,$status,$payStatus,$orderCode,$page,$pageSize)], '');
+            $this->apiSuccess(['data' => (new OrderVehicleModel())->getUserList($uid, $status, $payStatus, $orderCode, $page, $pageSize)], '');
         } catch (\Exception $ex) {
             $this->apiError(51002, $ex->getMessage());
         }
@@ -130,7 +130,8 @@ class OrderVehicleController extends ApiController
      * @author WangJiang
      * @return json
      */
-    public function create(){
+    public function create()
+    {
         /*
          * 洗车下单流程：
          *  if 设置worker_id then 将status设置为已分配，插入记录，向worker_id推送消息
@@ -144,48 +145,48 @@ class OrderVehicleController extends ApiController
 
                 //print_r($model);die;
 
-                if (!($data=$model->create()))
-                    E('参数传递失败,'.$model->getError());
+                if (!($data = $model->create()))
+                    E('参数传递失败,' . $model->getError());
 
                 //print_r(json_encode($data));die;
 
-                $data['user_id']=$this->getUserId();
-                if(!array_key_exists('worker_id',$data) or empty($data['worker_id'])){
-                    list($lng,$lat)=explode(' ',$data['lnglat']);
-                    $worker=(new MerchantModel())->getAvailableWorker($lng,$lat,$data['preset_time']);
+                $data['user_id'] = $this->getUserId();
+                if (!array_key_exists('worker_id', $data) or empty($data['worker_id'])) {
+                    list($lng, $lat) = explode(' ', $data['lnglat']);
+                    $worker = (new MerchantModel())->getAvailableWorker($lng, $lat, $data['preset_time']);
 
-                    if(empty($worker))
+                    if (empty($worker))
                         E('没有找到合适的服务人员');
 
 
-                    $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
-                    $data['worker_id']=$worker[0]['id'];
-                    $data['shop_id']=$worker[0]['shop_id'];
+                    $data['status'] = OrderVehicleModel::STATUS_HAS_WORKER;
+                    $data['worker_id'] = $worker[0]['id'];
+                    $data['shop_id'] = $worker[0]['shop_id'];
 
-                }else
-                    $data['status']=OrderVehicleModel::STATUS_HAS_WORKER;
+                } else
+                    $data['status'] = OrderVehicleModel::STATUS_HAS_WORKER;
 
-                $wid=$data['worker_id'];
+                $wid = $data['worker_id'];
 
                 //判断是否推送消息
-                $sendMsg=$data['status']==OrderVehicleModel::STATUS_HAS_WORKER;
+                $sendMsg = $data['status'] == OrderVehicleModel::STATUS_HAS_WORKER;
 
                 $model->data($data);
 
-                $newId=intval($model->insert(function() use ($sendMsg,$wid){
-                    if($sendMsg){
+                $newId = intval($model->insert(function () use ($sendMsg, $wid) {
+                    if ($sendMsg) {
                         //TODO 实现消息推送$wid
                     }
                 }));
 
-                push_by_uid('STORE',$data['worker_id'],'您有新订单，请及时处理',[
-                    'action'=>'vehicleOrderDetail',
-                    'order_id'=>$newId,
-                ],'您有新的订单');
+                push_by_uid('STORE', $data['worker_id'], '您有新订单，请及时处理', [
+                    'action' => 'vehicleOrderDetail',
+                    'order_id' => $newId,
+                ], '您有新的订单');
 
-                action_log('api_create_order_veh', $model, $newId, UID,3);
+                action_log('api_create_order_veh', $model, $newId, UID, 3);
 
-                $this->apiSuccess(['data'=>['id' => $newId]],'');
+                $this->apiSuccess(['data' => ['id' => $newId]], '');
             } else
                 E('非法调用，请用POST调用');
         } catch (\Exception $ex) {
@@ -199,10 +200,11 @@ class OrderVehicleController extends ApiController
      * @param $city
      * @param $district
      */
-    private function _get_car_wash_shop($province,$city,$district){
-        $shop=D('MerchantShop')
+    private function _get_car_wash_shop($province, $city, $district)
+    {
+        $shop = D('MerchantShop')
             ->where(' group_id in (select group_id from sq_auth_group_region where region_id in (select id from sq_region where name=:city))')
-            ->bind([':city'=>$city])
+            ->bind([':city' => $city])
             ->find();
         return $shop ? $shop['id'] : null;
     }
@@ -216,16 +218,17 @@ class OrderVehicleController extends ApiController
      * @author WangJiang
      * @return json
      */
-    public function cancel(){
-        try{
-            if(!IS_POST)
+    public function cancel()
+    {
+        try {
+            if (!IS_POST)
                 E('非法调用，请用POST调用');
-            $oid=I('post.id');
-            $m=new OrderVehicleModel();
-            $m->userCancel($oid,$this->getUserId());
-            action_log('api_cancel_order_veh', $m, $oid, UID,3);
-            $this->apiSuccess(['data'=>[]],'成功');
-        }catch (\Exception $ex) {
+            $oid = I('post.id');
+            $m = new OrderVehicleModel();
+            $m->userCancel($oid, $this->getUserId());
+            action_log('api_cancel_order_veh', $m, $oid, UID, 3);
+            $this->apiSuccess(['data' => []], '成功');
+        } catch (\Exception $ex) {
             $this->apiError(51022, $ex->getMessage());
         }
     }
@@ -245,54 +248,65 @@ class OrderVehicleController extends ApiController
      * @author WangJiang
      * @return json
      */
-    public function appraise(){
-        try{
-            if(!IS_POST)
+    public function appraise()
+    {
+        try {
+            if (!IS_POST)
                 E('非法调用，请用POST调用');
-            $oid=I('post.orderId');
-            $grade1=I('post.grade1',0);
-            $grade2=I('post.grade2',0);
-            $grade3=I('post.grade3',0);
-            $content=I('post.content');
-            $anonymity=I('post.anonymity',0);
-            if(empty($content))
-                $content='该用户很深沉，什么也没说。';
+            $oid = I('post.orderId');
+            $grade1 = I('post.grade1', 0);
+            $grade2 = I('post.grade2', 0);
+            $grade3 = I('post.grade3', 0);
+            $content = I('post.content');
+            $anonymity = I('post.anonymity', 0);
+            if (empty($content))
+                $content = '该用户很深沉，什么也没说。';
 
-            $m=new OrderVehicleModel();
-            $data=$m->find($oid);
+            $m = new OrderVehicleModel();
+            $data = $m->find($oid);
 
             D()->startTrans();
-            try{
-                $m->save(['id'=>$oid,'status'=>OrderVehicleModel::STATUS_CLOSED]);
+            try {
+                $m->save(['id' => $oid, 'status' => OrderVehicleModel::STATUS_CLOSED]);
 
                 D('Appraise')->add([
-                    'order_id'=>$oid,
-                    'shop_id'=>$data['shop_id'],
-                    'user_id'=>$this->getUserId(),
-                    'merchant_id'=>$data['worker_id'],
-                    'grade_1'=>$grade1,
-                    'grade_2'=>$grade2,
-                    'grade_3'=>$grade3,
-                    'content'=>$content,
-                    'anonymity'=>$anonymity,
+                    'order_id' => $oid,
+                    'shop_id' => $data['shop_id'],
+                    'user_id' => $this->getUserId(),
+                    'merchant_id' => $data['worker_id'],
+                    'grade_1' => $grade1,
+                    'grade_2' => $grade2,
+                    'grade_3' => $grade3,
+                    'content' => $content,
+                    'anonymity' => $anonymity,
                 ]);
 
                 D()->commit();
 
                 /*用户取消订单消息推送*/
-                push_by_uid('STORE',$data['worker_id'],'用户评价了订单',[
-                    'action'=>'vehicleOrderDetail',
-                    'order_id'=>$oid
-                ],'用户评价了订单');
+                push_by_uid('STORE', $data['worker_id'], '用户评价了订单', [
+                    'action' => 'vehicleOrderDetail',
+                    'order_id' => $oid
+                ], '用户评价了订单');
 
-                $this->apiSuccess(['data'=>[]],'成功');
-            }catch (\Exception $ex){
+                $this->apiSuccess(['data' => []], '成功');
+            } catch (\Exception $ex) {
                 D()->rollback();
                 throw $ex;
             }
 
-        }catch (\Exception $ex) {
+        } catch (\Exception $ex) {
             $this->apiError(51023, $ex->getMessage());
         }
+    }
+
+    /**
+     * 根据订单code查找订单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param $code
+     */
+    public function findByCode($code)
+    {
+        $this->apiSuccess(['data' => OrderVehicleModel::getInstance()->getByCode($code)]);
     }
 }
