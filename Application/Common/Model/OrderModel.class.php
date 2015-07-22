@@ -546,7 +546,7 @@ class OrderModel extends RelationModel
         if ($id = intval($id)) {
             $where['o.id'] = $id;
         }
-        if (empty($shopId) && empty($userId)) E('非法请求');
+        if (empty($shopId) && empty($userId) && empty($id)) E('非法请求');
         if (!empty($shopId)) {
             $where['o.shop_id'] = intval($shopId);
         }
@@ -586,6 +586,10 @@ class OrderModel extends RelationModel
         $total = $totalModel->count();
         $pagination = new Page($total, $pageSize);
         $data = $model->relation('_childs')->field($fields)->limit($pagination->firstRow . ',' . $pagination->listRows)->order('o.add_time desc,o.update_time desc')->select();
+        if (empty($data)) return [
+            'data' => [],
+            'pagination' => ''
+        ];
         $orderItemModel = M('OrderItem');
         $pdo = get_pdo();
         foreach ($data as &$item) {
@@ -650,7 +654,7 @@ class OrderModel extends RelationModel
         }
 
         return [
-            'data' => $id ? current($data) : $data,
+            'data' => $data,
             'pagination' => $pagination->show()
         ];
     }
