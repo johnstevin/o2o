@@ -469,75 +469,102 @@ function is_admin_login()
 /**
  * @param string $token TOKEN
  * @return int
+ * @author Stevin.John@qq.com
  */
 function is_merchant_login($token)
 {
-    $user = F('User/Login/merchant_auth' . $token);
+    $user = S('MT_OL_' . $token);
     if (empty($user)) {
         return 0;
     } else {
-        return F('User/Login/merchant_auth_sign' . $token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return $user['uid'];
     }
 }
 
 /**
  * 设置Merchant登录状态
- * @author WangJiang
+ * @author WangJiang,Stevin.John@qq.com
  * @param $token
  * @param $auth
  */
-function set_merchant_login($token, $auth)
-{
-    F('User/Login/merchant_auth' . $token, $auth);
-    F('User/Login/merchant_auth_sign' . $token, data_auth_sign($auth));
+function set_merchant_login($token, $auth){
+    S('MT_OL_' . $token, $auth, 1200);
+    S('MT_OL_' . $auth['uid'], ['ac_time'=>$auth['ac_time'],'token'=>$token], 1200);
 }
 
 /**
  * 清除Merchant登录状态
- * @author WangJiang
+ * @author WangJiang,Stevin.John@qq.com
  * @param $token
  */
-function clear_merchant_login($token)
-{
-    F('User/Login/merchant_auth' . $token, null);
-    F('User/Login/merchant_auth_sign' . $token, null);
+function clear_merchant_login($token){
+    $user = S('MT_OL_' . $token);
+    S('MT_OL_' . $token) || S('MT_OL_' . $user['uid']) ? S('MT_OL_' . $token, null) && S('MT_OL_' . $user['uid'], null) : '';
+}
+
+/**
+ * @param $token
+ * @author Stevin.John@qq.com
+ */
+function isMTOL($token) {
+    $user = S('MT_OL_' . $token);
+    $uol  = S('MT_OL_' . $user['uid']);
+    if ($user && $uol) {
+        $uol['token'] === $token ? : E('您的账号已在其它地方登陆，请您重新登陆');
+        $user['ac_time'] = time();
+        set_merchant_login($token, $user, 1200);
+    } else
+        E('Abnormal login');
 }
 
 /**
  * @param string $token TOKEN
  * @return int
+ * @author Stevin.John@qq.com
  */
-function is_member_login($token)
-{
-    $user = F('User/Login/member_auth' . $token);
+function is_member_login($token){
+    $user = S('ME_OL_' . $token);
     if (empty($user)) {
         return 0;
     } else {
-        return F('User/Login/member_auth_sign' . $token) == data_auth_sign($user) ? $user['uid'] : 0;
+        return $user['uid'];
     }
 }
 
 /**
  * 设置Member登录状态
- * @author WangJiang
+ * @author WangJiang,Stevin.John@qq.com
  * @param $token
  * @param $auth
  */
-function set_member_login($token, $auth)
-{
-    F('User/Login/member_auth' . $token, $auth);
-    F('User/Login/member_auth_sign' . $token, data_auth_sign($auth));
+function set_member_login($token, $auth){
+    S('ME_OL_' . $token, $auth, 1200);
+    S('ME_OL_' . $auth['uid'], ['ac_time'=>$auth['ac_time'],'token'=>$token], 1200);
 }
 
 /**
  * 清除Member登录状态
- * @author WangJiang
+ * @author WangJiang,Stevin.John@qq.com
  * @param $token
  */
-function clear_member_login($token)
-{
-    F('User/Login/member_auth' . $token, null);
-    F('User/Login/member_auth_sign' . $token, null);
+function clear_member_login($token){
+    $user = S('ME_OL_' . $token);
+    S('ME_OL_' . $token) || S('ME_OL_' . $user['uid']) ? S('ME_OL_' . $token, null) && S('ME_OL_' . $user['uid'], null) : '';
+}
+
+/**
+ * @param $token
+ * @author Stevin.John@qq.com
+ */
+function isMEOL($token) {
+    $user = S('ME_OL_' . $token);
+    $uol  = S('ME_OL_' . $user['uid']);
+    if ($user && $uol) {
+        $uol['token'] === $token ? : E('您的账号已在其它地方登陆，请您重新登陆');
+        $user['ac_time'] = time();
+        set_member_login($token, $user, 1200);
+    } else
+        E('Abnormal login');
 }
 
 /**
@@ -842,24 +869,22 @@ function getUcenterMobile($uid = 0)
 
 /**
  * 加密token
- * @author WangJiang
+ * @author WangJiang,Stevin.John@qq.com
  * @param string $token
  * @return string
  */
-function encode_token($token)
-{
-    return $token;
+function encode_token($token){
+    return base64_encode($token);
 }
 
 /**
  * 解密token
- * @author WangJiang
+ * @author WangJiang,Stevin.John@qq.com
  * @param string $token
  * @return string
  */
-function decode_token($token)
-{
-    return $token;
+function decode_token($token) {
+    return base64_decode($token);
 }
 
 /**
@@ -1437,4 +1462,85 @@ function _arrMinByField($acRes, $field)
         }
     }
     return $mainRes;
+}
+
+/**
+ * @return string
+ * @author Stevin.John@qq.com
+ */
+function create_unique() {
+    $data = $_SERVER['HTTP_USER_AGENT'] . $_SERVER['REMOTE_ADDR'] . time() . rand();
+    return substr(sha1($data), 4, 24);
+}
+
+/**
+ * @return bool
+ * @author Stevin.John@qq.com
+ */
+function is_mobile_request(){
+    $_SERVER['ALL_HTTP'] = isset($_SERVER['ALL_HTTP']) ? $_SERVER['ALL_HTTP'] : '';
+    $mobile_browser = '0';
+    if(preg_match('/(up.browser|up.link|mmp|symbian|smartphone|midp|wap|phone|iphone|ipad|ipod|android|xoom)/i', strtolower($_SERVER['HTTP_USER_AGENT'])))
+        $mobile_browser++;
+    if((isset($_SERVER['HTTP_ACCEPT'])) and (strpos(strtolower($_SERVER['HTTP_ACCEPT']),'application/vnd.wap.xhtml+xml') !== false))
+        $mobile_browser++;
+    if(isset($_SERVER['HTTP_X_WAP_PROFILE']))
+        $mobile_browser++;
+    if(isset($_SERVER['HTTP_PROFILE']))
+        $mobile_browser++;
+    $mobile_ua = strtolower(substr($_SERVER['HTTP_USER_AGENT'],0,4));
+    $mobile_agents = array(
+        'w3c ','acs-','alav','alca','amoi','audi','avan','benq','bird','blac',
+        'blaz','brew','cell','cldc','cmd-','dang','doco','eric','hipt','inno',
+        'ipaq','java','jigs','kddi','keji','leno','lg-c','lg-d','lg-g','lge-',
+        'maui','maxo','midp','mits','mmef','mobi','mot-','moto','mwbp','nec-',
+        'newt','noki','oper','palm','pana','pant','phil','play','port','prox',
+        'qwap','sage','sams','sany','sch-','sec-','send','seri','sgh-','shar',
+        'sie-','siem','smal','smar','sony','sph-','symb','t-mo','teli','tim-',
+        'tosh','tsm-','upg1','upsi','vk-v','voda','wap-','wapa','wapi','wapp',
+        'wapr','webc','winw','winw','xda','xda-'
+    );
+    if(in_array($mobile_ua, $mobile_agents))
+        $mobile_browser++;
+    if(strpos(strtolower($_SERVER['ALL_HTTP']), 'operamini') !== false)
+        $mobile_browser++;
+    // Pre-final check to reset everything if the user is on Windows
+    if(strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'windows') !== false)
+        $mobile_browser=0;
+    // But WP7 is also Windows, with a slightly different characteristic
+    if(strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'windows phone') !== false)
+        $mobile_browser++;
+    if($mobile_browser>0)
+        return true;
+    else
+        return false;
+}
+
+/**
+ * @return bool
+ * @author Stevin.John@qq.com
+ */
+function browsers(){
+    global $HTTP_USER_AGENT ;
+    if (isset($HTTP_USER_AGENT)){
+        $sAgent = $HTTP_USER_AGENT;
+    }else{
+        $sAgent = $_SERVER['HTTP_USER_AGENT'];
+    }
+    if (strpos($sAgent,'MSIE') !== false && strpos($sAgent,'mac') === false && strpos($sAgent,'Opera') === false){
+        $iVersion = (float)substr($sAgent,strpos($sAgent,'MSIE') + 5,3);
+        return ($iVersion >= 5.5) ;
+    }else if (strpos($sAgent,'Gecko/') !== false){
+        $iVersion = (int)substr($sAgent,strpos($sAgent,'Gecko/') + 6,8);
+        return ($iVersion >= 20030210) ;
+    }else{
+        return false;
+    }
+}
+
+/**
+ * @author Stevin.John@qq.com
+ */
+function gather(){
+    $_SERVER['HTTP_USER_AGENT'] ? : E('未授权的终端');
 }

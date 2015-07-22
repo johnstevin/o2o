@@ -88,7 +88,7 @@ class UcenterMemberModel extends AdvModel {
      * @return integer           登录成功-用户ID，登录失败-错误编号
      * @author stevin.john
      */
-    public function login($username, $password, $registrationId, $type = 1){
+    public function login($username, $password, $registrationId, $random, $type = 1){
         $map = array();
         switch ($type) {
             case 1:
@@ -120,6 +120,7 @@ class UcenterMemberModel extends AdvModel {
             if(generate_password($password, $user['saltkey']) === $user['password']){
                 /* 极光推送服务 */
                 update_device_tag_alias('CLIENT',$registrationId, $user['id']);
+                $user['random'] = $random;
                 return $this->updateLogin($user); //登录成功，返回用户ID
             } else {
                 return -2; //密码错误
@@ -157,12 +158,15 @@ class UcenterMemberModel extends AdvModel {
         $auth = array(
             'uid'             => $user['id'],
             'mobile'          => $user['mobile'],
-            'last_login_time' => $data['last_login_time']
+            'last_login_time' => $data['last_login_time'],
+            'random'          => $user['random'],
+            'unique'          => create_unique(),
+            'ac_time'         => time(),
         );
 
-        $token=$user['id'];
+        $token = md5($auth['random'] . $auth['unique']);
         set_member_login($token,$auth);
-        return encode_token($token);
+        return $token;
     }
 
     /**

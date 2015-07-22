@@ -20,10 +20,15 @@ return array(
     'SESSION_PREFIX' => 'o2o_member',
 
     /* 数据缓存设置 */
-    'DATA_CACHE_PREFIX'    => 'o2o_member_', // 缓存前缀
+    //'DATA_CACHE_PREFIX'    => 'o2o_member_', // 缓存前缀
 
     /* 后台错误页面模板 ×××××××××××开发使用×××××××××× */
 
     /* 异常配置 */
     'ERROR_PAGE' => __ROOT__.'/Public/exception.php',
+
+    'APIMEM_ALLOW_ACCESS' => [
+        'user/login',
+        'user/register',
+    ],
 );
