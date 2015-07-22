@@ -103,7 +103,7 @@ return [
         'PARTNER' => '2088911724694760',//合作身份者id
         'SELLER_EMAIL' => 'liuhui@zqdn.cn',//收款支付宝账号
         'KEY' => '4f2hf0tjpxrrzy8p5r2i3jyyp68g81b2',//安全检验码，以数字和字母组成的32位字符
-        'SIGN_TYPE' => 'RAS',//签名方式
+        'SIGN_TYPE' => 'RSA',//签名方式
         'TRANSPORT' => 'http',//访问模式,根据自己的服务器是否支持ssl访问，若支持请选择https；若不支持请选择http
     ],
 
