@@ -1089,7 +1089,7 @@ function redirect($url, $time=0, $msg='') {
  * @return mixed
  */
 function S($name,$value='',$options=null) {
-    static $cache   =   '';
+    //static $cache   =   ''; //Modify By Stevin.John@qq.com
     if(is_array($options)){
         // 缓存操作的同时初始化
         $type       =   isset($options['type'])?$options['type']:'';

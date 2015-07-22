@@ -28,4 +28,12 @@ return array(
 
     /* 异常配置 */
     'ERROR_PAGE' => __ROOT__.'/Public/exception.php',
+
+    'APIMCHT_ALLOW_ACCESS' => [
+        'user/login',
+        'user/register',
+    ],
+
+
+
 );

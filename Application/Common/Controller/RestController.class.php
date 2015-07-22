@@ -15,11 +15,10 @@ use Think\Controller;
  * Class RestController
  * @package Common\Controller
  */
-abstract class RestController extends Controller
-{
+abstract class RestController extends Controller {
 
-    protected $api;             //UserApi
-    protected $isInternalCall = false;  //是否内部调用
+    protected $api;
+    private $isInternalCall = false;
 
     /**
      * 找不到接口时调用该函数
@@ -29,7 +28,28 @@ abstract class RestController extends Controller
         $this->apiError(404, "找不到该接口");
     }
 
+    /**
+     * @return mixed
+     * @author Stevin.John@qq.com
+     */
+    protected function _initialize(){
+        $this->_exception_handler();
+        if ( C('API_WEB_CALL') === false )
+            is_mobile_request() ? : E('请在移动设备登陆!');
+
+    }
+
+    /**
+     * @param $token
+     * @return mixed
+     * @author Stevin.John@qq.com
+     */
     abstract protected function isLogin($token);
+
+    /**
+     * @author Stevin.John@qq.com
+     */
+    abstract protected function isOL();
 
     /**
      * 获得调用token
@@ -38,7 +58,8 @@ abstract class RestController extends Controller
     protected function getToken()
     {
         //客户端将token放入自定义header，access_token中
-        return $_SERVER['HTTP_ACCESSTOKEN'] ?: I('accesstoken');//I('server.ACCESSTOKEN',null);
+        $token = $_SERVER['HTTP_ACCESSTOKEN'] ?: I('accesstoken');//I('server.ACCESSTOKEN',null);
+        return decode_token($token);
     }
 
     /**
@@ -50,8 +71,7 @@ abstract class RestController extends Controller
         if (defined('UID')) return UID;
 
         $token = $this->getToken();
-        $loginId = decode_token($token);
-        define('UID', $this->isLogin($loginId));
+        define('UID', $this->isLogin($token));
         if (!UID)
             E('用户未登录，不能访问该方法。');
         return UID;
@@ -107,8 +127,7 @@ abstract class RestController extends Controller
         return $access;
     }
 
-    public function _initialize()
-    {
+    protected function _exception_handler(){
         set_exception_handler(function ($e) {
             header('Content-Type:application/json; charset=utf-8');
 //            header('HTTP/1.1 ' . $e->getCode() . ' Not Found');

@@ -29,16 +29,16 @@ class UserController extends ApiController {
      */
     public function login(){
         try{
-            if(IS_POST){
-                $username = I('post.username') == '' ? E('手机号不能为空') : I('post.username');
-                $password = I('post.password') == '' ? E('密码不能为空') : I('post.password');
-                $registrationId = I('post.registrationId') == '' ? E('注册码不能为空') : I('post.registrationId');
-                //$registrationId = '';
+            if(1){
+                $username = I('username') == '' ? E('手机号不能为空') : I('username');
+                $password = I('password') == '' ? E('密码不能为空') : I('password');
+                $registrationId = I('registrationId') == '' ? E('注册码不能为空') : I('registrationId');
+                $random   = I('random') == '' ? E('请正确传递散列数') : I('random');
 
                 $Ucenter  = D('UcenterMember');
-                $token = $Ucenter->login($username, $password, $registrationId, 5);
-                if(0 < $token){
-                    $this->apiSuccess(['data'=>['token'=>$token]], '登陆成功');
+                $token = $Ucenter->login($username, $password, $registrationId, $random, 5);
+                if(strlen($token)==32){
+                    $this->apiSuccess(['data'=>['token'=>encode_token($token)]], '登陆成功');
                 } else {
                     switch($token) {
                         case 0:$error = '参数错误！'; break; //系统级别禁用
@@ -156,7 +156,6 @@ class UserController extends ApiController {
      */
     public function logout(){
         D('UcenterMember')->logout($this->getToken());
-        //session('[destroy]');
         //如果已经登出，则通知极光删除设备的别名
         remove_device_alias('CLIENT', I('post.registrationId'));
         $this->apiSuccess(null,'退出成功！');
@@ -288,8 +287,8 @@ class UserController extends ApiController {
             $step   = I('get.step');
             switch ( $step ) {
                 case 1 :
-                    $mobile = I('post.mobile');
-                    $code   = I('post.code');
+                    $mobile = I('mobile');
+                    $code   = I('code');
                     verify_sms_code($mobile,$code) ? '' : E('验证码错误或已过期，请重新获取');
 
                     $rules = array(
@@ -303,16 +302,16 @@ class UserController extends ApiController {
                         'mobile'      => $mobile,
                     );
                     $model->field('id')->where($map)->find() ? '' : E('该手机号未注册或不是用户');
-                    $randVal = generate_saltKey();
+                    $randVal = md5(generate_saltKey());
                     S('_Member_User_ForgetPwd_randVal_'.$mobile, $randVal, 300);
                     $this->apiSuccess(array('data'=>array('randVal'=>$randVal)), '请点下一步');
 
                     break;
                 case 2 :
                     //TODO 这里要做验证
-                    $mobile    = I('post.mobile') != '' ? I('post.mobile') :   E('请设置手机号');
-                    $password  = I('post.password') != '' ? I('post.password') : E('请设置密码');
-                    $randVal   = I('post.randval') != '' ? I('post.randval') :  E('不安全的密码设置');
+                    $mobile    = I('mobile') != '' ? I('mobile') :   E('请设置手机号');
+                    $password  = I('password') != '' ? I('password') : E('请设置密码');
+                    $randVal   = I('randval') != '' ? I('randval') :  E('不安全的密码设置');
                     // TODO : 这里涉及到如果设置缓存前缀无法读取的问题，后期解决
                     $randCache = S('_Member_User_ForgetPwd_randVal_'.$mobile);
                     $randCache !== false ? '' : E('已超时，请重新设置');

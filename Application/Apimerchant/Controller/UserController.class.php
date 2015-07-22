@@ -28,14 +28,22 @@ class UserController extends ApiController {
      */
     public function login(){
         try{
-            if(IS_POST){
+            if(1){
                 $username = I('username');
                 $password = I('password');
                 $registrationId = I('post.registrationId') == '' ? E('注册码不能为空') : I('post.registrationId');
+                $random   = I('random') == '' ? E('请正确传递散列数') : I('random');
                 $Ucenter  = D('UcenterMember');
-                $token = $Ucenter->login($username, $password, $registrationId,5);
-                if(0 < $token){
-                    $this->apiSuccess(array('data'=>array('token'=>$token,'auth'=>F('User/Login/merchant_auth' . $token))), '登陆成功');
+                $token = $Ucenter->login($username, $password, $registrationId, $random, 5);
+                if(strlen($token)==32){
+                    $this->apiSuccess([
+                        'data'=>[
+                            'token'  => encode_token($token),
+                            'auth'   => [
+                                'group_tree'  => S('MT_OL_' . $token)['group_tree'],
+                            ]
+                        ],
+                    ], '登陆成功');
                 } else {
                     switch($token) {
                         case 0:$error = '参数错误！'; break; //系统级别禁用
@@ -156,7 +164,6 @@ class UserController extends ApiController {
     public function logout(){
         if(!IS_POST) E('非法请求');
         D('UcenterMember')->logout($this->getToken());
-        //session('[destroy]');
         //如果已经登出，则通知极光删除设备的别名
         remove_device_alias('STORE', I('post.registrationId'));
         $this->apiSuccess(null, '退出成功！');
@@ -340,7 +347,7 @@ class UserController extends ApiController {
                         'mobile'      => $mobile,
                     );
                     $model->field('id')->where($map)->find() ? '' : E('该手机号未注册或不是商家用户');
-                    $randVal = generate_saltKey();
+                    $randVal = md5(generate_saltKey());
                     S('_Merchant_User_ForgetPwd_randVal_'.$mobile, $randVal, 300);
                     $this->apiSuccess(array('data'=>array('randVal'=>$randVal)), '请点下一步');
 
@@ -352,7 +359,7 @@ class UserController extends ApiController {
                     $randVal   = I('post.randval') != '' ? I('post.randval') :  E('不安全的密码设置');
                     // TODO : 这里涉及到如果设置缓存前缀无法读取的问题，后期解决
                     $randCache = S('_Merchant_User_ForgetPwd_randVal_'.$mobile);
-                    $randCache !== false ? '' : E('已超时，请重新设置');
+                    $randCache ? '' : E('已超时，请重新设置');
                     $randCache == $randVal ? '' : E('安全码不正确');
 
                     $model  = D("UcenterMember");
@@ -528,7 +535,6 @@ class UserController extends ApiController {
      * @author : Stevin.John@qq.com
      */
     public function staffManage(){
-        $this->getUserId();
         $shop_id  = is_numeric(I('get.shop_id')) ? I('get.shop_id') : 0;
         if($shop_id==0)
             $this->apiError('40030', '非法操作');
