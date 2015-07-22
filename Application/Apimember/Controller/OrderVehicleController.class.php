@@ -178,7 +178,7 @@ class OrderVehicleController extends ApiController
                     }
                 }));
 
-                push_by_uid('STORE',$data['worker_id'],'您有新订单，请及时处理',[
+                push_by_uid('STORE',$data['worker_id'],'您有一个新订单，请及时处理！',[
                     'action'=>'vehicleOrderDetail',
                     'order_id'=>$newId,
                 ],'您有新的订单');
@@ -263,8 +263,7 @@ class OrderVehicleController extends ApiController
 
             D()->startTrans();
             try{
-                $m->save(['id'=>$oid,'status'=>OrderVehicleModel::STATUS_CLOSED]);
-
+               $m->save(['id'=>$oid,'status'=>OrderVehicleModel::STATUS_CLOSED]);
                 D('Appraise')->add([
                     'order_id'=>$oid,
                     'shop_id'=>$data['shop_id'],
@@ -275,15 +274,16 @@ class OrderVehicleController extends ApiController
                     'grade_3'=>$grade3,
                     'content'=>$content,
                     'anonymity'=>$anonymity,
+                    'status'=>$m::APPRAISE_END,
                 ]);
 
                 D()->commit();
 
-                /*用户取消订单消息推送*/
-                push_by_uid('STORE',$data['worker_id'],'用户评价了订单',[
+                /*订单消息推送*/
+                push_by_uid('STORE',$data['worker_id'],'用户付款并评价了订单【'.$data['order_code'].'】，点击查看详细...',[
                     'action'=>'vehicleOrderDetail',
                     'order_id'=>$oid
-                ],'用户评价了订单');
+                ],'用户付款并评价了订单');
 
                 $this->apiSuccess(['data'=>[]],'成功');
             }catch (\Exception $ex){

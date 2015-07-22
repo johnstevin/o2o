@@ -1,108 +1,74 @@
 
-<div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
-    </button>
-    <h4 class="modal-title">{$meta_title}</h4>
-</div>
-<div class="modal-body">
-
-    <div class="form-horizontal">
-        <form id="fm" method="post">
-            <div class="form-horizontal">
-
-                <div class="form-group">
-                    <label for="title" class="control-label col-md-2">标题</label>
-
-                    <div class="col-md-10">
-                        <input id="title" type="text" name="title" class="form-control" placeholder="请输入标题"
-                               value="{$info.title}"/>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label  class="control-label col-md-2">分类</label>
-
-                    <div class="col-md-10">
-                        <select  name="cate_id" class="form-control">
-                            <volist name="Think.config.FEEDBACK_CATEGORY" id="category">
-                                <option value="{$key}" <eq name="key" value="$info.cate_id"> selected</eq>>{$category}</option>
-                            </volist>
-                        </select>
-
-                    </div>
-                </div>
 
 
-                <div class="form-group">
-                    <label class="control-label col-md-2">描述</label>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">{$meta_title}</h3>
+    </div>
+    <div class="panel-body">
+        <form id="fm" method="post" class="form-horizontal">
 
-                    <div class="col-md-10">
-                            <textarea  rows="4" name="description">{$info.description|default=''}</textarea>
-                            <!--{//:hook('topicComment', array('name'=>'description','value'=>info.description))}-->
 
-                    </div>
-                </div>
+            <div class="form-group">
+                <label for="title">标题</label>
 
-                <div class="form-group">
-                    <label for="picture" class="control-label col-md-2">图片</label>
 
-                    <div class="col-md-10">
-                        <div id="picture" class="controls">
-                            <input type="file" id="upload_picture">
-                            <!--<p><a class="btn btn-success" href="javascript:$('#upload_picture').uploadify('upload')">上传</a></p>-->
-                            <input type="hidden" name="picture_id" id="picture_id" value="{$info.picture_id|default=''}"/>
+                <input id="title" type="text" name="title" class="form-control" placeholder="请输入标题"
+                       value="{$info.title}"/>
 
-                            <div class="upload-img-box">
-                                <a class="upload-pre-item" class="thumbnail"><img class="img-thumbnail" src="{$info['_picture']['path']|default=''}"/></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
+
+            <div class="form-group">
+                <label>分类</label>
+
+
+                <select name="cate_id" class="form-control">
+                    <volist name="Think.config.FEEDBACK_CATEGORY" id="category">
+                        <option value="{$key}"
+                        <eq name="key" value="$info.cate_id"> selected</eq>
+                        >{$category}</option>
+                    </volist>
+                </select>
+
+
+            </div>
+
+
+            <div class="form-group">
+                <label>描述</label>
+
+
+                <textarea rows="4" name="description" >{$info.description|default=''}</textarea>
+                {:hook('topicComment', array('name'=>'description','value'=>info.description))}
+
+            </div>
+
+
             <div class="footer">
                 <input type="hidden" name="id" value="{$info.id|default=''}">
                 <input type="hidden" name="status" value="{$info.status|default=0}">
-                <!--<button class="btn btn-default" onclick="javascript:history.back(-1);return false;">返 回</button>-->
-                <!--<button type="submit" class="btn btn-primary">确 定</button>-->
             </div>
         </form>
+
+    </div>
+    <div class="panel-footer">
+        <a class="btn btn-success ajax-loading"
+           href="{:U('index')}">返回</a>
+        <button type="button" class="btn btn-success" onclick="ajaxSave('{:U()}','fm')">提交</button>
     </div>
 </div>
 
-<div class="modal-footer">
-    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-    <button type="button" class="btn btn-primary"  onclick="Save('{:U()}','fm')">保存</button>
-</div>
 <script>
-    //上传图片
-    /* 初始化上传插件 */
-    $("#upload_picture").uploadify({
-        // "height": 30,
-//        'auto': false,
-        "swf": "__STATIC__/uploadify/uploadify.swf",
-        "fileObjName": "download",
-        "buttonText": "选择图片",
-        "uploader": "{:U('Feedback/uploadPicture',array('session_id'=>session_id()))}",
-        // "width": 120,
-        'removeTimeout': 1,
-        'fileTypeExts': '*.jpg; *.png; *.gif;',
-        "onUploadSuccess": uploadPicture,
-        'onFallback': function () {
-            alert('未检测到兼容版本的Flash.');
+
+    //ajax loading请求
+    $('.ajax-loading').click(function () {
+        var target = getCookie('o2o_admin___forward__')
+        if (target == "" || target == null) {
+            target = $(this).attr('href');
         }
+        contentload(target);
+
+        return false;
     });
-    function uploadPicture(file, data) {
-        var data = $.parseJSON(data);
-        var src = '';
-        if (data.status) {
-            $("#picture_id").val(data.id);
-            src = data.url || '__ROOT__' + data.path
-            $("#picture_id").parent().find('.upload-img-box').html(
-                    '<a class="upload-pre-item" ><img class="img-thumbnail" src="' + src + '"/></a>'
-            );
-        } else {
-            onSuccess(data);
-        }
-    }
 
 </script>

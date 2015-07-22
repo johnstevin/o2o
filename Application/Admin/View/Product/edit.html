@@ -1,4 +1,5 @@
 
+<script type="text/javascript" src="__STATIC__/webuploader/webuploader.min.js"></script>
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
     </button>
@@ -107,21 +108,22 @@
                     <textarea id="description" rows="4" type="text" name="description" class="form-control">{$info.description|default=''}</textarea>
                 </div>
             </div>
+
+
+
             <div class="form-group">
-                <label for="logo" class="control-label col-md-2">图片</label>
-
+                <label class="control-label col-md-2">图片</label>
+            <!--上传图片部分-->
                 <div class="col-md-10">
-                    <div id="logo" class="controls">
-                        <input type="file" id="upload_picture">
-                        <!--<p><a class="btn btn-success" href="javascript:$('#upload_picture').uploadify('upload')">上传</a></p>-->
-                        <input type="hidden" name="picture" id="cover_id" value="{$info.picture|default=''}"/>
-
-                        <div class="upload-img-box">
-                            <a class="upload-pre-item" class="thumbnail"><img class="img-thumbnail" src="{$info['_picture']['path']|default=''}"/></a>
-                        </div>
-                    </div>
+                <!--用来存放item-->
+                <input type="hidden" name="picture" id="cover_id" value="{$info.picture|default=''}"/>
+                <div id="filePicker">选择图片</div>
+                <div id="fileList" class="uploader-list"></div>
+                <div class="upload-img-box">
+                    <a class="upload-pre-item" class="thumbnail"><img class="img-thumbnail" src="{$info['_picture']['path']|default=''}"/></a>
                 </div>
             </div>
+                </div>
 
         </div>
         <div class="footer">
@@ -140,25 +142,50 @@
 </div>
 
 <script>
-    //上传图片
-    /* 初始化上传插件 */
-    $("#upload_picture").uploadify({
-       // "height": 30,
-//        'auto': false,
-        "swf": "__STATIC__/uploadify/uploadify.swf",
-        "fileObjName": "download",
-        "buttonText": "选择图片",
-        "uploader": "{:U('File/uploadPicture',array('session_id'=>session_id()))}",
-       // "width": 120,
-        'removeTimeout': 1,
-        'fileTypeExts': '*.jpg; *.png; *.gif;',
-        "onUploadSuccess": uploadPicture,
-        'onFallback': function () {
-            alert('未检测到兼容版本的Flash.');
+
+    // 初始化Web Uploader
+    var uploader = WebUploader.create({
+
+        // 选完文件后，是否自动上传。
+        auto: true,
+
+        // swf文件路径
+        swf: '__STATIC__/webuploader/js/Uploader.swf',
+
+        // 文件接收服务端。
+        server: "{:U('File/uploadPicture')}",
+
+        // 选择文件的按钮。可选。
+        // 内部根据当前运行是创建，可能是input元素，也可能是flash.
+        pick: '#filePicker',
+
+        // 只允许选择图片文件。
+        accept: {
+            title: 'Images',
+            extensions: 'gif,jpg,jpeg,bmp,png',
+            mimeTypes: 'image/*'
         }
     });
-    function uploadPicture(file, data) {
-        var data = $.parseJSON(data);
+
+    // 文件上传过程中创建进度条实时显示。
+    uploader.on( 'uploadProgress', function( file, percentage ) {
+        var $li = $( '#fileList'),
+                $percent = $li.find('.progress span');
+
+        // 避免重复创建
+        if ( !$percent.length ) {
+            $percent = $('<p class="progress"><span></span></p>')
+                    .appendTo( $li )
+                    .find('span');
+        }
+
+        $percent.css( 'width', percentage * 100 + '%' );
+    });
+
+    // 文件上传成功，给item添加成功class, 用样式标记上传成功。
+    uploader.on( 'uploadSuccess', function( file ,data) {
+
+        $( '#fileList' ).addClass('upload-state-done');
         var src = '';
         if (data.status) {
             $("#cover_id").val(data.id);
@@ -169,7 +196,30 @@
         } else {
             onSuccess(data);
         }
-    }
+
+    });
+
+    // 文件上传失败，显示上传出错。
+    uploader.on( 'uploadError', function( file ,result) {
+        var $li = $( '#fileList' ),
+                $error = $li.find('div.error');
+
+        // 避免重复创建
+        if ( !$error.length ) {
+            $error = $('<div class="error"></div>').appendTo( $li );
+        }
+
+        $error.text('上传失败');
+    });
+
+    // 完成上传完了，成功或者失败，先删除进度条。
+    uploader.on( 'uploadComplete', function( file ) {
+        $( '#fileList').find('.progress').remove();
+    });
+
+
+
+
     $('#category1').change(function () {
         // alert($(this).val());
 

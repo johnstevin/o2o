@@ -216,7 +216,7 @@ class MerchantModel extends AdvModel
         } elseif ($order==='time') {
             $order= 'times';
         }else{
-            $order='ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat))';
+            $order='distance';
         }
 
 
@@ -226,7 +226,7 @@ class MerchantModel extends AdvModel
 
         $bind[':presetTime']=$presetTime-$timeRange;
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
-        $where['_string']=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
+        $where['_string']=build_distance_sql_where($lng,$lat, 'sq_merchant.service_scope',$bind,'sq_merchant.lnglat',$type=false).
             ' and ST_Distance_Sphere(sq_merchant.centre_lnglat,sq_merchant.lnglat) <= sq_merchant.service_scope
               and sq_merchant.status=1
               and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId and sq_auth_access.status=1)
@@ -268,9 +268,9 @@ class MerchantModel extends AdvModel
             ->page($page,$pageSize)
             ->order($order)
             ->group('sq_merchant.id')
-            //->fetchSql()
+//            ->fetchSql(true)
             ->select();
-        //var_dump($data);die;
+//        var_dump($data);die;
 
 //        foreach($data as &$i){
 //            $i['orders']=D('OrderVehicle')->where(['worker_id'=>$i['id']
@@ -280,6 +280,17 @@ class MerchantModel extends AdvModel
 //                    OrderVehicleModel::STATUS_CONFIRM]]])->count();
 //        }
 
+        /*TODO 注：员工打分暂时的处理方法*/
+        $appraise=D('appraise');
+        foreach($data as &$i){
+           $grade_1=$appraise->where(['merchant_id'=>$i['id']])->sum('grade_1');
+            $i['grade_1']=empty($grade_1)?0:$grade_1;
+            $grade_2=$appraise->where(['merchant_id'=>$i['id']])->sum('grade_2');
+            $i['grade_2']=empty($grade_2)?0:$grade_2;
+            $grade_3=$appraise->where(['merchant_id'=>$i['id']])->sum('grade_3');
+            $i['grade_3']= empty($grade_3)?0:$grade_3;
+            $i['grade'] =($i['grade_1']+$i['grade_2']+$i['grade_3'])/3;
+        }
         return $data;
     }
 
@@ -289,7 +300,7 @@ class MerchantModel extends AdvModel
 
         $bind[':presetTime']=$presetTime-$timeRange;
         $bind[':roleId']=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_WORKER');
-        $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant.lnglat').
+        $where=build_distance_sql_where($lng,$lat, 'sq_merchant.service_scope',$bind,'sq_merchant.lnglat',$type = false).
             ' and ST_Distance_Sphere(sq_merchant.centre_lnglat,sq_merchant.lnglat) <= sq_merchant.service_scope
               and sq_merchant.id in (select uid from sq_auth_access where role_id=:roleId and sq_auth_access.status=1)
               and sq_merchant.id not in (select worker_id from sq_order_vehicle
@@ -421,6 +432,9 @@ class MerchantModel extends AdvModel
                 if (empty($key['photo'])) {
                     $key['photo'] = self::DEFAULT_PHOTO;
                 }
+
+                $appraise=D('appraise');
+                $key['total_orders']=$appraise->where(['merchant_id'=>$key['id']])->count();
             }
 
 //            if(empty($userInfo))
@@ -459,6 +473,8 @@ class MerchantModel extends AdvModel
                 if (empty($key['photo'])) {
                     $key['photo'] = self::DEFAULT_PHOTO;
                 }
+                $appraise=D('appraise');
+                $key['total_orders']=$appraise->where(['merchant_id'=>$key['id']])->count();
             }
 
 //            if(empty($userInfo))

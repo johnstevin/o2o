@@ -2,7 +2,7 @@
 use Common\Model\PictureModel;
 
 // OneThink常量定义
-const SQ_VERSION    = '1.1.141212';
+const SQ_VERSION = '1.1.141212';
 const SQ_ADDON_PATH = './Addons/';
 /**
  * 检查IP是否合法
@@ -225,19 +225,21 @@ function tree_to_list($tree, $child = '_child', $order = 'id', &$list = [])
 
 /**
  * 处理插件钩子
- * @param string $hook   钩子名称
+ * @param string $hook 钩子名称
  * @param mixed $params 传入参数
  * @return void
  */
-function hook($hook,$params=array()){
-    \Think\Hook::listen($hook,$params);
+function hook($hook, $params = array())
+{
+    \Think\Hook::listen($hook, $params);
 }
 
 /**
  * 获取插件类的类名
  * @param strng $name 插件名
  */
-function get_addon_class($name){
+function get_addon_class($name)
+{
     $class = "Addons\\{$name}\\{$name}Addon";
     return $class;
 }
@@ -246,12 +248,13 @@ function get_addon_class($name){
  * 获取插件类的配置文件数组
  * @param string $name 插件名
  */
-function get_addon_config($name){
+function get_addon_config($name)
+{
     $class = get_addon_class($name);
-    if(class_exists($class)) {
+    if (class_exists($class)) {
         $addon = new $class();
         return $addon->getConfig();
-    }else {
+    } else {
         return array();
     }
 }
@@ -262,24 +265,25 @@ function get_addon_config($name){
  * @param array $param 参数
  * @author liu hui
  */
-function addons_url($url, $param = array()){
-    $url        = parse_url($url);
-    $case       = C('URL_CASE_INSENSITIVE');
-    $addons     = $case ? parse_name($url['scheme']) : $url['scheme'];
+function addons_url($url, $param = array())
+{
+    $url = parse_url($url);
+    $case = C('URL_CASE_INSENSITIVE');
+    $addons = $case ? parse_name($url['scheme']) : $url['scheme'];
     $controller = $case ? parse_name($url['host']) : $url['host'];
-    $action     = trim($case ? strtolower($url['path']) : $url['path'], '/');
+    $action = trim($case ? strtolower($url['path']) : $url['path'], '/');
 
     /* 解析URL带的参数 */
-    if(isset($url['query'])){
+    if (isset($url['query'])) {
         parse_str($url['query'], $query);
         $param = array_merge($query, $param);
     }
 
     /* 基础参数 */
     $params = array(
-        '_addons'     => $addons,
+        '_addons' => $addons,
         '_controller' => $controller,
-        '_action'     => $action,
+        '_action' => $action,
     );
     $params = array_merge($params, $param); //添加额外参数
 
@@ -919,7 +923,7 @@ function bacth_check_can_modify_depot($uid, $depotId)
  */
 function except_merchant_manager($uid, $gid)
 {
-    if (!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid, 'role_id' =>array('in',[ C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'), C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER')])])->find())
+    if (!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid, 'role_id' => array('in', [C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'), C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER')])])->find())
         E('用户无权限操作该店铺');
 }
 
@@ -1156,16 +1160,24 @@ function pinyin_long($zh)
  * @param $lat
  * @param $distance
  * @param $bind
+ * @param bool|true $type
  * @return string
  */
-function build_distance_sql_where($lng, $lat, $distance, &$bind, $lnglatField = 'lnglat')
+function build_distance_sql_where($lng, $lat, $distance, &$bind, $lnglatField = 'lnglat', $type = true)
 {
-    $sql = "ST_Distance_Sphere($lnglatField,POINT(:lng,:lat))<:dist";
-    $bind[':lng'] = $lng;
-    $bind[':lat'] = $lat;
-    $bind[':dist'] = $distance;
+    if ($type) {
+        $sql = "ST_Distance_Sphere($lnglatField,POINT(:lng,:lat))<:dist";
+        $bind[':lng'] = $lng;
+        $bind[':lat'] = $lat;
+        $bind[':dist'] = $distance;
+    } else {
+        $sql = "ST_Distance_Sphere($lnglatField,POINT(:lng,:lat))<=$distance";
+        $bind[':lng'] = $lng;
+        $bind[':lat'] = $lat;
+    }
     return $sql;
 }
+
 
 function upload_picture($uid, $type)
 {
