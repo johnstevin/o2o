@@ -25,7 +25,7 @@ return [
     /* 缓存设置 */
     'DATA_CACHE_PREFIX'    => 'o2o_cmn_',
 
-    'API_WEB_CALL'         => true,
+    'API_WEB_CALL'         => false,
 
     /* 系统数据加密设置 */
     'DATA_AUTH_KEY' => '$5sdhnr4%#^d9smjf&345sfsdb2f4%*)&*)@#@!$sanhgh645#@#sdf', //默认数据加密KEY
