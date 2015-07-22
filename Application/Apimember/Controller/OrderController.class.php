@@ -251,11 +251,10 @@ class OrderController extends ApiController
      * @param int $id 订单ID
      * @param bool|false $getProducts 是否要获取产品信息
      * @param bool|false $getShop 是否要获取店铺信息
-     * @param bool|false $getUser 是否要获取用户信息
      */
-    public function findById($id, $getProducts = false, $getShop = false, $getUser = false)
+    public function findById($id, $getProducts = false, $getShop = false)
     {
-        $this->apiSuccess(['data' => OrderModel::getInstance()->getLists(null, $this->getUserId(), null, null, null, $getShop, $getUser, $getProducts, 10, $id)]);
+        $this->apiSuccess(['data' => OrderModel::getInstance()->getLists(null, $this->getUserId(), null, null, null, $getShop, false, $getProducts, 10, $id)['data']]);
     }
 
     /**
