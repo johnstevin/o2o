@@ -700,16 +700,23 @@ class OrderModel extends RelationModel
             $productTotal = array_sum(array_column($cart, 'total'));
 
             foreach ($cart as $key => $product) {
-                $shopIds = array_merge($shopIds, $product['shop_id']);//把商铺ID加入到商铺ID列表里
+                //排除没有购买数量的商品
+                if ($product['total'] == 0) continue;
+                //把商铺ID加入到商铺ID列表里
+                $shopIds = array_merge($shopIds, $product['shop_id']);
                 //如果这个商品只有这家有卖或者用户选定了这家商家，则直接放入已经确定商家的商品列表里
                 if (count($product['shop_id']) === 1) {
-                    $hasProductShopIds[] = current($product['shop_id']);
-                    $products[$product['depot_id']] = [
-                        'total' => $product['total'],
-                        'depot_id' => $product['depot_id'],
-                        'shop_id' => current($product['shop_id']),
-                        'product_id' => $product['product_id']
-                    ];
+                    if (isset($products[$product['depot_id']])) {
+                        $products[$product['depot_id']]['total'] += $product['total'];
+                    } else {
+                        $hasProductShopIds[] = current($product['shop_id']);
+                        $products[$product['depot_id']] = [
+                            'total' => $product['total'],
+                            'depot_id' => $product['depot_id'],
+                            'shop_id' => current($product['shop_id']),
+                            'product_id' => $product['product_id']
+                        ];
+                    }
                 } else {//否则放入需要系统分配商家的列表里
                     $_cart[] = $product;
                     $notAllocationProducts[$product['product_id']] = [
@@ -745,12 +752,16 @@ class OrderModel extends RelationModel
                 }
                 //TODO 目前是直接往价格最低的商家分配商品，待优化
                 foreach ($depots as $depot) {
-                    $products[$depot[0]['id']] = [
-                        'total' => $notAllocationProducts[$depot[0]['product_id']]['total'],
-                        'depot_id' => $depot[0]['id'],
-                        'shop_id' => $depot[0]['shop_id'],
-                        'product_id' => $depot[0]['product_id']
-                    ];
+                    if (!isset($products[$depot[0]['id']])) {//如果这个仓库商品不存在，则添加到已分配的列表里
+                        $products[$depot[0]['id']] = [
+                            'total' => $notAllocationProducts[$depot[0]['product_id']]['total'],
+                            'depot_id' => $depot[0]['id'],
+                            'shop_id' => $depot[0]['shop_id'],
+                            'product_id' => $depot[0]['product_id']
+                        ];
+                    } else {//如果这个ID已经在已分配的列表里了，那就把购买的数量加一
+                        $products[$depot[0]['id']]['total'] += $notAllocationProducts[$depot[0]['product_id']]['total'];
+                    }
                 }
             }
             $order = [];
