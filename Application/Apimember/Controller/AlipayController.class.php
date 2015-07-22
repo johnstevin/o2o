@@ -4,11 +4,7 @@ namespace Apimember\Controller;
 use Common\Model\OrderModel;
 use Common\Model\OrderVehicleModel;
 
-require APP_PATH . 'Common/Vendor/alipay/alipay_core.function.php';
-require APP_PATH . 'Common/Vendor/alipay/alipay_md5.function.php';
-require APP_PATH . 'Common/Vendor/alipay/alipay_notify.class.php';
-require APP_PATH . 'Common/Vendor/alipay/alipay_submit.class.php';
-require APP_PATH . 'Common/Vendor/alipay/alipay_rsa.function.php';
+require APP_PATH . '/Common/Vendor/alipay/alipay_notify.class.php';
 
 /**
  * 支付宝控制器
@@ -25,8 +21,9 @@ class AlipayController extends ApiController
      * HTTP形式消息验证地址
      */
     public $http_verify_url = 'http://notify.alipay.com/trade/notify_query.do?';
-
     public static $alipayNotify;
+    public $merchantPrivateKeyPath = 'key/rsa_private_key.pem';
+    public $alipayPublicKeyPath = 'key/alipay_public_key.pem';
 
     /**
      * 支付宝成功支付的回调接口
@@ -41,19 +38,29 @@ class AlipayController extends ApiController
             'sign_type' => C('ALIPAY.SIGN_TYPE'),//签名方式
             'input_charset' => 'utf-8',//字符编码格式
             'cacert' => getcwd() . '\\cacert.pem',//ca证书路径地址，用于curl中ssl校验，请保证cacert.pem文件在当前文件夹目录中
-            'transport' => C('ALIPAY.TRANSPORT')
+            'transport' => C('ALIPAY.TRANSPORT'),
+            'private_key_path' => $this->merchantPrivateKeyPath,
+            'ali_public_key_path' => $this->alipayPublicKeyPath
         ];
         $alipayNotify = new \AlipayNotify($config);
-        if (!$alipayNotify->verifyNotify()) {
-            logResult('支付宝异步通知验证失败');
-            exit('fail');
-        }
+
+        //如果通知验证失败
+        if (!$alipayNotify->verifyNotify()) exit('fail');
+
+        //如果是准备付款，就告诉支付宝我收到通知了，不往下走了
+        if ($_POST['trade_status'] === 'WAIT_BUYER_PAY') exit('success');
+
         //商户订单号
         $out_trade_no = $_POST['out_trade_no'];
-        $first = substr($out_trade_no, 0, 1);//截取订单的第一位
+        //截取订单的第一位
+        $first = strtoupper(substr(trim($out_trade_no), 0, 1));
+
         if ($first === 'S') {//如果第一位是S，那么就是商超订单
             $orderModel = OrderModel::getInstance();
             $order = $orderModel->getByCode($out_trade_no);
+            if (empty($order)) {//如果订单未找到，直接告诉支付宝失败（因为可能是系统问题导致未找到）
+                exit('fail');
+            }
             if ($order['pay_status'] == OrderModel::PAY_STATUS_TRUE) {
                 exit('success');//如果订单的状态已经是已经支付，则直接告诉支付宝成功鸟
             }
@@ -90,21 +97,39 @@ class AlipayController extends ApiController
                 exit('fail');
             }
         } else {//否则就是洗车订单
-            if (!$order = OrderVehicleModel::getInstance()->getByCode($out_trade_no)) exit('fail');
-            if ($order['pay_status'] == 1) {
-                exit('success');
+            if ($_POST['trade_status'] == 'TRADE_FINISHED' || $_POST['trade_status'] == 'TRADE_SUCCESS') {//普通接口在支付成功后的状态，高级接口在支付成功后会返回【TRADE_SUCCESS】，3个月后才会返回【TRADE_FINISHED】
+                if (!$order = OrderVehicleModel::getInstance()->getByCode($out_trade_no)) exit('fail');
+                if ($order['pay_status'] == 1) {
+                    exit('success');
+                }
+                if (OrderVehicleModel::getInstance()->where(['id' => $order['id']])->save(['pay_status' => 1, 'status' => OrderVehicleModel::STATUS_CLOSED])) {
+                    $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $order['order_code'] . '】';
+                    $pushTitle = '订单已支付提醒';
+                    $pushExtras = [
+                        'action' => 'VehicleOrderDetail',
+                        'order_id' => $order['id']
+                    ];
+                    push_by_uid('STORE', get_shopkeeper_by_shopid($order['shop_id']), $pushContet, $pushExtras, $pushTitle);
+                    exit('success');
+                };
+                exit('fail');
             }
-            if (OrderVehicleModel::getInstance()->where(['id' => $order['id']])->save(['pay_status' => 1])) {
-                $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $order['order_code'] . '】';
-                $pushTitle = '订单已支付提醒';
-                $pushExtras = [
-                    'action' => 'VihedeOrderDetail',
-                    'order_id' => $order['id']
-                ];
-                push_by_uid('STORE', get_shopkeeper_by_shopid($order['shop_id']), $pushContet, $pushExtras, $pushTitle);
-                exit('success');
-            };
-            exit('fail');
         }
+    }
+
+    public function createRsaSign()
+    {
+        //除去待签名参数数组中的空值和签名参数
+        $para_filter = paraFilter($_POST);
+
+        //对待签名参数数组排序
+        $para_sort = argSort($para_filter);
+
+        //把数组所有元素，按照“参数=参数值”的模式用“&”字符拼接成字符串
+        $prestr = createLinkstring($para_sort);
+
+        $sign = rsaSign($prestr, $this->merchantPrivateKeyPath);
+
+        $this->apiSuccess(['data' => $sign]);
     }
 }
