@@ -73,7 +73,7 @@ abstract class RestController extends Controller {
         $token = $this->getToken();
         define('UID', $this->isLogin($token));
         if (!UID)
-            E('用户未登录，不能访问该方法。');
+            E('请您先登录...');
         return UID;
     }
 
@@ -130,8 +130,6 @@ abstract class RestController extends Controller {
     protected function _exception_handler(){
         set_exception_handler(function ($e) {
             header('Content-Type:application/json; charset=utf-8');
-//            header('HTTP/1.1 ' . $e->getCode() . ' Not Found');
-//            header('Status:' . $e->getCode() . ' Not Found');
             exit(json_encode([
                 'success' => false,
                 'error_code' => $e->getCode(),

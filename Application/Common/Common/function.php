@@ -492,8 +492,8 @@ function is_merchant_login($token)
  * @param $auth
  */
 function set_merchant_login($token, $auth){
-    S('MT_OL_' . $token, $auth, 1200);
-    S('MT_OL_' . $auth['uid'], ['ac_time'=>$auth['ac_time'],'token'=>$token], 1200);
+    S('MT_OL_' . $token, $auth, 86400);
+    S('MT_OL_' . $auth['uid'], ['ac_time'=>$auth['ac_time'],'token'=>$token], 86400);
 }
 
 /**
@@ -516,7 +516,7 @@ function isMTOL($token) {
     if ($user && $uol) {
         $uol['token'] === $token ? : E('您的账号已在其它地方登陆，请您重新登陆');
         $user['ac_time'] = time();
-        set_merchant_login($token, $user, 1200);
+        set_merchant_login($token, $user);
     } else
         E('Abnormal login');
 }
@@ -542,8 +542,8 @@ function is_member_login($token){
  * @param $auth
  */
 function set_member_login($token, $auth){
-    S('ME_OL_' . $token, $auth, 1200);
-    S('ME_OL_' . $auth['uid'], ['ac_time'=>$auth['ac_time'],'token'=>$token], 1200);
+    S('ME_OL_' . $token, $auth, 86400);
+    S('ME_OL_' . $auth['uid'], ['ac_time'=>$auth['ac_time'],'token'=>$token], 86400);
 }
 
 /**
@@ -566,7 +566,7 @@ function isMEOL($token) {
     if ($user && $uol) {
         $uol['token'] === $token ? : E('您的账号已在其它地方登陆，请您重新登陆');
         $user['ac_time'] = time();
-        set_member_login($token, $user, 1200);
+        set_member_login($token, $user);
     } else
         E('Abnormal login');
 }
