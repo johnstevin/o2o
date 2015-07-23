@@ -179,10 +179,10 @@ class OrderVehicleController extends ApiController
                     }
                 }));
 
-                push_by_uid('STORE', $data['worker_id'], '您有新订单，请及时处理', [
-                    'action' => 'vehicleOrderDetail',
-                    'order_id' => $newId,
-                ], '您有新的订单');
+                push_by_uid('STORE',$data['worker_id'],'您有一个新订单，请及时处理！',[
+                    'action'=>'vehicleOrderDetail',
+                    'order_id'=>$newId,
+                ],'您有新的订单');
 
                 action_log('api_create_order_veh', $model, $newId, UID, 3);
 
@@ -266,28 +266,28 @@ class OrderVehicleController extends ApiController
             $data = $m->find($oid);
 
             D()->startTrans();
-            try {
-                $m->save(['id' => $oid, 'status' => OrderVehicleModel::STATUS_CLOSED]);
-
+            try{
+               $m->save(['id'=>$oid,'status'=>OrderVehicleModel::STATUS_CLOSED]);
                 D('Appraise')->add([
-                    'order_id' => $oid,
-                    'shop_id' => $data['shop_id'],
-                    'user_id' => $this->getUserId(),
-                    'merchant_id' => $data['worker_id'],
-                    'grade_1' => $grade1,
-                    'grade_2' => $grade2,
-                    'grade_3' => $grade3,
-                    'content' => $content,
-                    'anonymity' => $anonymity,
+                    'order_id'=>$oid,
+                    'shop_id'=>$data['shop_id'],
+                    'user_id'=>$this->getUserId(),
+                    'merchant_id'=>$data['worker_id'],
+                    'grade_1'=>$grade1,
+                    'grade_2'=>$grade2,
+                    'grade_3'=>$grade3,
+                    'content'=>$content,
+                    'anonymity'=>$anonymity,
+                    'status'=>$m::APPRAISE_END,
                 ]);
 
                 D()->commit();
 
-                /*用户取消订单消息推送*/
-                push_by_uid('STORE', $data['worker_id'], '用户评价了订单', [
-                    'action' => 'vehicleOrderDetail',
-                    'order_id' => $oid
-                ], '用户评价了订单');
+                /*订单消息推送*/
+                push_by_uid('STORE',$data['worker_id'],'用户付款并评价了订单【'.$data['order_code'].'】，点击查看详细...',[
+                    'action'=>'vehicleOrderDetail',
+                    'order_id'=>$oid
+                ],'用户付款并评价了订单');
 
                 $this->apiSuccess(['data' => []], '成功');
             } catch (\Exception $ex) {

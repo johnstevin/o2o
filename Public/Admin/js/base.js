@@ -325,7 +325,7 @@ function contentload(target) {
 
         if (status == "success") {
 
-            $('#rg-container-fun').html(response);
+            //$('#rg-container-fun').html(response);
         }
         else {
             $('#rg-container-fun').html("An error occured: <br/>" + xhr.status + " " + xhr.statusText)

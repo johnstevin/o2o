@@ -280,7 +280,7 @@ class OrderVehicleController extends ApiController{
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
         $oid=I('post.id');
-        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_CONFIRM);
+        (new OrderVehicleModel())->accept($oid,$uid);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
@@ -296,7 +296,7 @@ class OrderVehicleController extends ApiController{
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
         $oid=I('post.id');
-        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_TREATING);
+        (new OrderVehicleModel())->start($oid,$uid);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
@@ -312,7 +312,7 @@ class OrderVehicleController extends ApiController{
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
         $oid=I('post.id');
-        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_DONE,$photo=true);
+        (new OrderVehicleModel())->end($oid,$uid);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
@@ -328,7 +328,7 @@ class OrderVehicleController extends ApiController{
             E('非法调用，请用POST命令');
         $uid=$this->getUserId();
         $oid=I('post.id');
-        (new OrderVehicleModel())->workerChaneStatus($oid,$uid,OrderVehicleModel::STATUS_NO_WORKER);
+        (new OrderVehicleModel())->reject($oid,$uid);
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
@@ -385,16 +385,14 @@ class OrderVehicleController extends ApiController{
         if(empty($worker))
             E('没有找到合适的服务人员');
 
-        $model->save(['id'=>$id,'worker_id'=>$worker['id']]);
+        $model->save(['id'=>$id,'worker_id'=>$worker[0]['id'],'shop_id'=>$worker[0]['shop_id'],'status'=>OrderVehicleModel::STATUS_HAS_WORKER]);
 
         action_log('api_reassign_order_veh', $model, $id, UID,2);
-        //TODO 实现消息推送$wid
 
-        /*用户取消订单消息推送*/
-        push_by_uid('CLIENT',$order['user_id'],'管理员重新分配订单',[
+        push_by_uid('CLIENT',$order['user_id'],'管理员重新分配了您的订单',[
             'action'=>'vehicleOrderDetail',
             'order_id'=>$id
-        ],'管理员重新分配订单');
+        ],'管理员重新分配了您的订单');
 
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -419,10 +417,12 @@ class OrderVehicleController extends ApiController{
 
         (new OrderVehicleModel())->managerCancel($this->getUserId(),$id,$remark,$groupIds);
 
-        //TODO 实现消息推送，通知用户该订单取消，同时附上取消人和原因
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
 
+    /**
+     * 管理员修改订单信息
+     */
     private function __update()
     {
         $model = D('OrderVehicle');
@@ -449,5 +449,73 @@ class OrderVehicleController extends ApiController{
         $model->data($data);
         if ($model->update($id))
             action_log('api_update_order_veh', $model, $id, UID, 2);
+    }
+
+
+    /**
+     * 获取某个订单的详细信息
+     * @param null $id 订单id
+     */
+    public function vehicleOrderDetail($id=null){
+
+        if(is_null($id)||!is_numeric($id)||$id==0)
+            E('参数非法');
+
+        $this->getUserId();
+
+        $m = D('OrderVehicle');
+        $data = $m
+            ->field(['st_astext(lnglat) as lnglat',
+                'id',
+                'order_code',
+                'user_id',
+                'shop_id',
+                'status',
+                'pay_status',
+                'worker_id',
+                'address',
+                'street_number',
+                'car_number',
+                'price',
+                'ifnull(user_picture_ids,\'\') as user_picture_ids',
+                'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
+                'add_time',
+                'update_time',
+                'preset_time',
+                'add_time',
+            ])
+            ->where(['id'=>$id])
+            ->find();
+
+          if(empty($data)){
+              $this->apiSuccess(['data' => array()], '');
+            }
+
+            $OrderVehicleStatus=M('OrderVehicleStatus')->field('id,update_time,content')->where(['order_id'=>$id,'status'=>OrderVehicleModel::STATUS_NO_WORKER])->order('update_time desc')->select();
+
+             $reason=$OrderVehicleStatus[0]['content'];
+            $data['reason']=empty($reason)?"":$reason;
+
+            $data['user_pictures']=array_column(D('Picture')->field(['path'])
+                ->where(['id'=>['in',$data['user_picture_ids']]])
+                ->select(),'path');
+
+            unset($data['user_picture_ids']);
+
+        $data['worker_pictures']=array_column(D('Picture')
+                ->field(['path'])
+                ->where(['id'=>['in',$data['worder_picture_ids']]])
+                ->select(),'path');
+
+            unset($data['worder_picture_ids']);
+
+            $user=D('UcenterMember')
+                ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+                ->where(['sq_ucenter_member.id'=>$data['user_id']])
+                ->find();
+        $data['user_name']=$user['real_name']?$user['real_name']:"";
+        $data['user_picture']=$user['path']?$user['path']:"";
+
+        $this->apiSuccess(['data' => empty($data)?"[]":[$data]], '');
     }
 }

@@ -107,10 +107,11 @@
     baseJs();
     //ajax loading请求
     $('.ajax-loading').click(function () {
-        var target;
-        if ((target = $(this).attr('href')) || (target = $(this).attr('url'))) {
-            contentload(target);
+        var target = getCookie('o2o_admin___forward__')
+        if (target == "" || target == null) {
+            target = $(this).attr('href');
         }
+        contentload(target);
 
         return false;
     });

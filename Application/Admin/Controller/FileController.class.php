@@ -68,7 +68,7 @@ class FileController extends AdminController {
         /* 记录图片信息 */
         if($info){
             $return['status'] = 1;
-            $return = array_merge($info['download'], $return);
+            $return = array_merge($info['file'], $return);
         } else {
             $return['status'] = 0;
             $return['info']   = $Picture->getError();

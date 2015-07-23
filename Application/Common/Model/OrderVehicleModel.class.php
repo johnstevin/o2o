@@ -26,6 +26,16 @@ class OrderVehicleModel extends AdvModel
     const STATUS_CLOSED = 5;
     const STATUS_CANCELED = 6;
 
+    /*支付状态*/
+    const PAY_STATUS_TRUE = 1;//已支付
+    const PAY_STATUS_FALSE = 0;//未支付
+
+
+    /*评价状态*/
+    const APPRAISE_CLOSED = -1;
+    const APPRAISE_END = 1;
+
+
     protected $pk = 'id';
     protected $autoinc = true;
 
@@ -356,18 +366,28 @@ class OrderVehicleModel extends AdvModel
                 E('参数传递失败 ' . $ovs->getError());
             $ovs->add();
             $this->commit();
+            if($data['status']!==self::STATUS_CANCELED) {
+                /*订单消息推送*/
+                push_by_uid('STORE', $data['worker_id'], '您的订单【' . $data['order_code'] . '】被用户取消了，点击查看原因...', [
+                    'action' => 'vehicleOrderDetail',
+                    'order_id' => $oid
+                ], '用户取消了订单');
+            }else{
 
-            /*用户取消订单消息推送*/
-            push_by_uid('STORE', $data['worker_id'], '用户取消了订单', [
-                'action' => 'vehicleOrderDetail',
-                'order_id' => $oid
-            ], '用户取消了订单');
-
+                //TODO 推送给管理员
+            }
         } catch (\Exception $ex) {
             $this->rollback();
         }
     }
 
+    /**
+     * 管理员取消了订单
+     * @param $uid
+     * @param $id
+     * @param $remark
+     * @param $groupIds
+     */
     public function managerCancel($uid, $id, $remark, $groupIds)
     {
 
@@ -440,16 +460,15 @@ class OrderVehicleModel extends AdvModel
     }
 
     /**
-     * 洗车工修改订单状态
-     * @autjor WangJiang
+     * * 洗车工接受订单
      * @param $oid
      * @param $uid
-     * @param $status
      */
-    public function workerChaneStatus($oid, $uid, $status, $photo = false)
-    {
-        if ($status == self::STATUS_CANCELED)
-            E('服务人员不能取消订单');
+    public function accept($oid, $uid){
+
+
+        $status=  $this::STATUS_CONFIRM;
+
         $data = $this->find($oid);
         if ($data['worker_id'] != $uid)
             E('非本人操作');
@@ -457,37 +476,61 @@ class OrderVehicleModel extends AdvModel
 
         $ovs = new OrderVehicleStatusModel();
 
-
-        /*图片上传*/
-
-        if ($photo) {
-
-            $type = 'CARWASH_MERCHANT';
-
-            $photoinfos = upload_picture($uid, $type);
-
-            $worder_picture_ids = array_column($photoinfos, 'id');
-
-            $worder_picture_ids = is_array($worder_picture_ids) ? implode(',', $worder_picture_ids) : trim($worder_picture_ids, ',');
-
-        }
-
         $this->startTrans();
         try {
 
-            if ($photo) {
-                $this->save(['id' => $data['id'], 'status' => $status, 'worder_picture_ids' => $worder_picture_ids]);
-            } else {
-                $this->save(['id' => $data['id'], 'status' => $status]);
-            }
-            //var_dump($ovs->getError());die;
+            $this->save(['id' => $data['id'], 'status' => $status]);
+
             if (!$ovs->create([
                 'order_id' => $oid,
                 'user_id' => $data['user_id'],
                 'merchant_id' => $uid,
                 'shop_id' => $data['shop_id'],
                 'status' => $status,
-                'content' => '服务人员修改状态',
+                'content' => '服务人员受理该订单',
+            ])
+            )
+                E('参数传递失败 ' . $ovs->getError());
+
+            $ovs->add();
+            $this->commit();
+        } catch (\Exception $ex) {
+            $this->rollback();
+        }
+        /*订单消息推送*/
+        push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】已被洁车师接单', [
+            'action' => 'vehicleOrderDetail',
+            'order_id' => $oid
+        ], "您的订单已被接单");
+    }
+
+    /**
+     * 洗车工开始处理订单，订单状态转换成开始处理
+     * @param $oid
+     * @param $uid
+     */
+    public function start($oid, $uid){
+
+        $status= $this::STATUS_TREATING;
+        $data = $this->find($oid);
+        if ($data['worker_id'] != $uid)
+            E('非本人操作');
+        $this->_assert_new_status($data['status'], $status);
+
+        $ovs = new OrderVehicleStatusModel();
+
+        $this->startTrans();
+        try {
+
+            $this->save(['id' => $data['id'], 'status' => $status]);
+
+            if (!$ovs->create([
+                'order_id' => $oid,
+                'user_id' => $data['user_id'],
+                'merchant_id' => $uid,
+                'shop_id' => $data['shop_id'],
+                'status' => $status,
+                'content' => '服务人员开始处理订单',
             ])
             )
                 E('参数传递失败 ' . $ovs->getError());
@@ -499,11 +542,141 @@ class OrderVehicleModel extends AdvModel
             $this->rollback();
         }
 
-        /*用户取消订单消息推送*/
-        push_by_uid('CLIENT', $data['user_id'], '服务人员修改了订单状态', [
-            'action' => 'vehicleOrderDetail',
-            'order_id' => $oid
-        ], '服务人员修改了订单状态');
+            /*订单消息推送*/
+            push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】已开始处理', [
+                'action' => 'vehicleOrderDetail',
+                'order_id' => $oid
+            ], "洁车师开始处理您的订单");
+
+    }
+
+
+    /**
+     * 洗车工开始处理订单，订单状态转换成开始处理
+     * @param $oid
+     * @param $uid
+     */
+    public function end($oid, $uid){
+
+        $status= $this::STATUS_DONE;
+
+        $data = $this->find($oid);
+        if ($data['worker_id'] != $uid)
+            E('非本人操作');
+        $this->_assert_new_status($data['status'], $status);
+
+        $ovs = new OrderVehicleStatusModel();
+
+
+             /*图片上传*/
+            $type = 'CARWASH_MERCHANT';
+
+            $photoinfos = upload_picture($uid, $type);
+
+            $worder_picture_ids = array_column($photoinfos, 'id');
+
+            $worder_picture_ids = is_array($worder_picture_ids) ? implode(',', $worder_picture_ids) : trim($worder_picture_ids, ',');
+
+        $this->startTrans();
+        try {
+                $this->save(['id' => $data['id'], 'status' => $status, 'worder_picture_ids' => $worder_picture_ids]);
+
+            //var_dump($ovs->getError());die;
+            if (!$ovs->create([
+                'order_id' => $oid,
+                'user_id' => $data['user_id'],
+                'merchant_id' => $uid,
+                'shop_id' => $data['shop_id'],
+                'status' => $status,
+                'content' => '订单已被处理完毕',
+            ])
+            )
+                E('参数传递失败 ' . $ovs->getError());
+
+
+            $ovs->add();
+            $this->commit();
+        } catch (\Exception $ex) {
+            $this->rollback();
+        }
+
+
+            /*订单消息推送*/
+            push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】已处理完毕', [
+                'action' => 'vehicleOrderDetail',
+                'order_id' => $oid
+            ], "您的订单已处理完毕");
+
+    }
+
+
+    /**
+     * 洗车工取消了订单
+     * @param $oid
+     * @param $uid
+     * @param $status
+     */
+    public function reject($oid, $uid)
+    {
+
+        $reason=I('post.reason');
+
+        if(empty($reason))
+            E("请填写原因");
+
+        $status=$this::STATUS_NO_WORKER;
+
+        $data = $this->find($oid);
+        if ($data['worker_id'] != $uid)
+            E('非本人操作');
+        $this->_assert_new_status($data['status'], $status);
+
+        $ovs = new OrderVehicleStatusModel();
+
+        $this->startTrans();
+        try {
+                $this->save(['id' => $data['id'], 'status' => $status]);
+
+            if (!$ovs->create([
+                'order_id' => $oid,
+                'user_id' => $data['user_id'],
+                'merchant_id' => $uid,
+                'shop_id' => $data['shop_id'],
+                'status' => $status,
+                'content' => '服务人员取消了订单，原因：'.$reason,
+            ])
+            )
+                E('参数传递失败 ' . $ovs->getError());
+
+
+            $ovs->add();
+            $this->commit();
+        } catch (\Exception $ex) {
+            $this->rollback();
+        }
+
+            /*订单消息推送*/
+            push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】特殊原因被洁车师取消了，请您及时关注', [
+                'action' => 'vehicleOrderDetail',
+                'order_id' => $oid
+            ], "您的订单未能帮你处理");
+
+
+
+            $group_id=M('MerchantShop')->where(['id'=>$data['shop_id']])->getField('group_id');
+
+            $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//店长角色
+
+
+            $mgruid=M('AuthAccess')->where(['group_id'=>$group_id,'role_id'=>$mgrRoleId,'status'=>1])->getField('uid');
+
+
+            /*订单消息推送*/
+            push_by_uid('STORE', $mgruid, '订单【' . $data['order_code'] . '】被服务人员取消', [
+                'action' => 'vehicleOrderDetail',
+                'order_id' => $oid
+            ], "有一个订单被服务人员取消");
+
     }
 
 
