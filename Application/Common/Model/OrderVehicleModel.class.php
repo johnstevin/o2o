@@ -60,27 +60,29 @@ class OrderVehicleModel extends AdvModel
         'update_ip',
         'consignee',
         'mobile',
+        'pay_status',
         '_type' => [
-            'id'=>'int',
-            'order_code'=>'string',
-            'user_id'=>'int',
-            'shop_id'=>'int',
-            'status'=>'int',
-            'worker_id'=>'int',
-            'address'=>'string',
-            'street_number'=>'string',
-            'lnglat'=>'point',
-            'preset_time'=>'int',
-            'car_number'=>'string',
-            'price'=>'float',
-            'user_picture_ids'=>'string',
-            'worder_picture_ids'=>'string',
-            'add_time'=>'int',
-            'add_ip'=>'int',
-            'update_time'=>'int',
-            'update_ip'=>'int',
-            'consignee'=>'string',
-            'mobile'=>'string',
+            'id' => 'int',
+            'order_code' => 'string',
+            'user_id' => 'int',
+            'shop_id' => 'int',
+            'status' => 'int',
+            'worker_id' => 'int',
+            'address' => 'string',
+            'street_number' => 'string',
+            'lnglat' => 'point',
+            'preset_time' => 'int',
+            'car_number' => 'string',
+            'price' => 'float',
+            'user_picture_ids' => 'string',
+            'worder_picture_ids' => 'string',
+            'add_time' => 'int',
+            'add_ip' => 'int',
+            'update_time' => 'int',
+            'update_ip' => 'int',
+            'consignee' => 'string',
+            'mobile' => 'string',
+            'pay_status' => 'int'
         ]
     ];
 
@@ -309,7 +311,7 @@ class OrderVehicleModel extends AdvModel
 
         //var_dump($bind);die;
 
-        if(empty($sets))
+        if (empty($sets))
             return false;
 
         $bind[':id'] = $id;
@@ -327,93 +329,97 @@ class OrderVehicleModel extends AdvModel
      * @param $oid
      * @param $uid
      */
-    public function userCancel($oid,$uid){
-        $data=$this->find($oid);
+    public function userCancel($oid, $uid)
+    {
+        $data = $this->find($oid);
 
         //print_r($data);die;
         //echo json_encode(['user_id'=>$data['user_id'],'uid'=>$uid,'oid'=>$oid]);die;
-        $this->_assert_new_status($data['status'],self::STATUS_CANCELED);
+        $this->_assert_new_status($data['status'], self::STATUS_CANCELED);
         //var_dump($data['user_id']);var_dump($uid);var_dump($data['user_id']!=intval($uid));die;
-        if($data['user_id']!=$uid)
+        if ($data['user_id'] != $uid)
             E('非本人操作');
-        $ovs=D('OrderVehicleStatus');
+        $ovs = D('OrderVehicleStatus');
 
         $this->startTrans();
-        try{
-            $this->save(['id'=>$data['id'],'status'=>self::STATUS_CANCELED]);
-            if(!$ovs->create([
-                'order_id'=>$oid,
-                'user_id'=>$uid,//$order['user_id'],
+        try {
+            $this->save(['id' => $data['id'], 'status' => self::STATUS_CANCELED]);
+            if (!$ovs->create([
+                'order_id' => $oid,
+                'user_id' => $uid,//$order['user_id'],
                 //'merchant_id'=>0,
-                'shop_id'=>$data['shop_id'],
+                'shop_id' => $data['shop_id'],
                 'status' => self::STATUS_CANCELED,
                 'content' => '用户取消订单',
-            ]))
-                E('参数传递失败 '.$ovs->getError());
+            ])
+            )
+                E('参数传递失败 ' . $ovs->getError());
             $ovs->add();
             $this->commit();
 
             /*用户取消订单消息推送*/
-            push_by_uid('STORE',$data['worker_id'],'用户取消了订单',[
-                'action'=>'vehicleOrderDetail',
-                'order_id'=>$oid
-            ],'用户取消了订单');
+            push_by_uid('STORE', $data['worker_id'], '用户取消了订单', [
+                'action' => 'vehicleOrderDetail',
+                'order_id' => $oid
+            ], '用户取消了订单');
 
-        }catch(\Exception $ex){
+        } catch (\Exception $ex) {
             $this->rollback();
         }
     }
 
-    public function managerCancel($uid,$id,$remark,$groupIds){
+    public function managerCancel($uid, $id, $remark, $groupIds)
+    {
 
-        $model=D('OrderVehicle');
-        $order=$model
+        $model = D('OrderVehicle');
+        $order = $model
             //->field(['st_astext(lnglat) as lnglat','preset_time'])
             ->find($id);
         //var_dump($order);die;
-        if(empty($order))
+        if (empty($order))
             E('订单不存在');
-        $shop=D('MerchantShop')->find($order['shop_id']);
-        if(!in_array($shop['group_id'],$groupIds))
+        $shop = D('MerchantShop')->find($order['shop_id']);
+        if (!in_array($shop['group_id'], $groupIds))
             E('用户无权修改此订单');
-        if(!in_array($order['status'],[0,1,2]))
+        if (!in_array($order['status'], [0, 1, 2]))
             E('订单已经不能取消');
-        $ovs=D('OrderVehicleStatus');
+        $ovs = D('OrderVehicleStatus');
 
         $model->startTrans();
-        try{
-            $model->save(['id'=>$id,'status'=>OrderVehicleModel::STATUS_CANCELED]);
-            if(!$ovs->create([
-                'order_id'=>$id,
+        try {
+            $model->save(['id' => $id, 'status' => OrderVehicleModel::STATUS_CANCELED]);
+            if (!$ovs->create([
+                'order_id' => $id,
                 //'user_id'=>0,//$order['user_id'],
-                'merchant_id'=>$uid,
-                'shop_id'=>$order['shop_id'],
+                'merchant_id' => $uid,
+                'shop_id' => $order['shop_id'],
                 'status' => OrderVehicleModel::STATUS_CANCELED,
-                'content' => $remark ?$remark:'经理取消订单',
-            ]))
-                E('参数传递失败 '.$ovs->getError());
+                'content' => $remark ? $remark : '经理取消订单',
+            ])
+            )
+                E('参数传递失败 ' . $ovs->getError());
 
             $ovs->add();
             $model->commit();
-        }catch (\Exception $ex){
+        } catch (\Exception $ex) {
             $model->rollback();
         }
 
         /*用户取消订单消息推送*/
-        push_by_uid('CLIENT',$order['user_id'],'取消的原因'.$remark,[
-            'action'=>'vehicleOrderDetail',
-            'order_id'=>$id
-        ],'您的订单被取消');
+        push_by_uid('CLIENT', $order['user_id'], '取消的原因' . $remark, [
+            'action' => 'vehicleOrderDetail',
+            'order_id' => $id
+        ], '您的订单被取消');
     }
 
     private static function _get_status_chain()
     {
         return [
-            ['id'=>0,[1,6]],
-            ['id'=>1,[2,6,0]],
-            ['id'=>2,[3]],
-            ['id'=>3,[4]],
-            ['id'=>4,[5]]
+            ['id' => 0, [1, 6]],
+            ['id' => 1, [2, 6, 0]],
+            ['id' => 2, [3]],
+            ['id' => 3, [4]],
+            ['id' => 4, [5]]
         ];
     }
 
@@ -440,62 +446,64 @@ class OrderVehicleModel extends AdvModel
      * @param $uid
      * @param $status
      */
-    public function workerChaneStatus($oid,$uid,$status,$photo=false){
-        if($status==self::STATUS_CANCELED)
+    public function workerChaneStatus($oid, $uid, $status, $photo = false)
+    {
+        if ($status == self::STATUS_CANCELED)
             E('服务人员不能取消订单');
-        $data=$this->find($oid);
-        if($data['worker_id']!=$uid)
+        $data = $this->find($oid);
+        if ($data['worker_id'] != $uid)
             E('非本人操作');
-        $this->_assert_new_status($data['status'],$status);
+        $this->_assert_new_status($data['status'], $status);
 
-        $ovs=new OrderVehicleStatusModel();
+        $ovs = new OrderVehicleStatusModel();
 
 
         /*图片上传*/
 
-        if($photo){
+        if ($photo) {
 
-        $type='CARWASH_MERCHANT';
+            $type = 'CARWASH_MERCHANT';
 
-        $photoinfos=upload_picture($uid,$type);
+            $photoinfos = upload_picture($uid, $type);
 
-        $worder_picture_ids=array_column($photoinfos,'id');
+            $worder_picture_ids = array_column($photoinfos, 'id');
 
-        $worder_picture_ids = is_array($worder_picture_ids) ? implode(',', $worder_picture_ids) : trim($worder_picture_ids, ',');
+            $worder_picture_ids = is_array($worder_picture_ids) ? implode(',', $worder_picture_ids) : trim($worder_picture_ids, ',');
 
         }
 
         $this->startTrans();
-        try{
+        try {
 
-            if($photo) {
+            if ($photo) {
                 $this->save(['id' => $data['id'], 'status' => $status, 'worder_picture_ids' => $worder_picture_ids]);
-            }else{
+            } else {
                 $this->save(['id' => $data['id'], 'status' => $status]);
             }
             //var_dump($ovs->getError());die;
-            if(!$ovs->create([
-                'order_id'=>$oid,
-                'user_id'=>$data['user_id'],
-                'merchant_id'=>$uid,
-                'shop_id'=>$data['shop_id'],
+            if (!$ovs->create([
+                'order_id' => $oid,
+                'user_id' => $data['user_id'],
+                'merchant_id' => $uid,
+                'shop_id' => $data['shop_id'],
                 'status' => $status,
                 'content' => '服务人员修改状态',
-            ]))
-                E('参数传递失败 '.$ovs->getError());
+            ])
+            )
+                E('参数传递失败 ' . $ovs->getError());
 
 
             $ovs->add();
             $this->commit();
-        }catch(\Exception $ex){
+        } catch (\Exception $ex) {
             $this->rollback();
         }
 
         /*用户取消订单消息推送*/
-        push_by_uid('CLIENT',$data['user_id'],'服务人员修改了订单状态',[
-            'action'=>'vehicleOrderDetail',
-            'order_id'=>$oid
-        ],'服务人员修改了订单状态');
+        push_by_uid('CLIENT', $data['user_id'], '服务人员修改了订单状态', [
+            'action' => 'vehicleOrderDetail',
+            'order_id' => $oid
+        ], '服务人员修改了订单状态');
     }
 
 
@@ -565,12 +573,12 @@ class OrderVehicleModel extends AdvModel
             }
             unset($i['user_picture_ids']);
 
-            $user=D('UcenterMember')
+            $user = D('UcenterMember')
                 ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
-                ->where(['sq_ucenter_member.id'=>$i['worker_id']])
+                ->where(['sq_ucenter_member.id' => $i['worker_id']])
                 ->find();
-            $i['worker_name']=$user['real_name']?$user['real_name']:'';
-            $i['worker_photo']=$user['path']?$user['path']:'';
+            $i['worker_name'] = $user['real_name'] ? $user['real_name'] : '';
+            $i['worker_photo'] = $user['path'] ? $user['path'] : '';
         }
 
         return $data;
@@ -587,7 +595,8 @@ class OrderVehicleModel extends AdvModel
      */
     public function getByCode($code, $getShop = false, $getUser = false)
     {
-        if ($code = trim($code) === '') E('订单code非法');
+        $code = trim($code);
+        if ($code === '') E('订单code非法');
         $model = self::getInstance();
         $fields = [
             'ov.id',
@@ -597,7 +606,7 @@ class OrderVehicleModel extends AdvModel
             'ov.status',
             'ov.worker_id',
             'ov.address',
-            'astest(ov.lnglat) lnglat',
+            'astext(ov.lnglat) lnglat',
             'ov.car_number',
             'ov.price',
             'ov.user_picture_ids',
@@ -624,7 +633,7 @@ class OrderVehicleModel extends AdvModel
             ]);
             $model->join('LEFT JOIN sq_member user ON user.uid=ov.user_id');
         }
-        $data = $model->field($fields)->where(['ov.order_code' => $code])->find();
+        $data = $model->alias('ov')->field($fields)->where(['ov.order_code' => $code])->find();
         if ($getShop) {
             $data['_shop'] = [
                 'id' => $data['_shop_id'],
