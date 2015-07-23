@@ -493,7 +493,8 @@ class OrderVehicleController extends ApiController{
 
             $OrderVehicleStatus=M('OrderVehicleStatus')->field('id,update_time,content')->where(['order_id'=>$id,'status'=>OrderVehicleModel::STATUS_NO_WORKER])->order('update_time desc')->select();
 
-            $data['reason']=$OrderVehicleStatus[0]['content'];
+             $reason=$OrderVehicleStatus[0]['content'];
+            $data['reason']=empty($reason)?"":$reason;
 
             $data['user_pictures']=array_column(D('Picture')->field(['path'])
                 ->where(['id'=>['in',$data['user_picture_ids']]])
