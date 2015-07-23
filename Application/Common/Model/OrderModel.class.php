@@ -543,6 +543,8 @@ class OrderModel extends RelationModel
      */
     public function getLists($shopId = null, $userId = null, $status = null, $payStatus = null, $deliveryMode = null, $getShop = false, $getUser = false, $getProducts = false, $pageSize = 10, $id = null)
     {
+        $pageSize = intval($pageSize);
+        $pageSize > 50 && $pageSize = 50;
         if ($id = intval($id)) {
             $where['o.id'] = $id;
         }
@@ -1487,7 +1489,7 @@ class OrderModel extends RelationModel
         if ($saveStatus) {//如果订单状态更新成功才存入日志
             //OrderStatusModel::getInstance()->add($logData);
             $shopkeeper = get_shopkeeper_by_shopid($orderInfo['shop_id']);
-            $pushContent = '订单【' . $orderInfo['order_code'] . '】已经被用户【' . $orderInfo['nickname'] . '】取消，原因：' . $content ?: '未知';
+            $pushContent = '订单【' . $orderInfo['order_code'] . '】已经被用户【' . $orderInfo['nickname'] . '】取消';
             $pushTitle = '您有订单被用户取消';
             $pushExtras = [
                 'action' => 'orderDetail',
