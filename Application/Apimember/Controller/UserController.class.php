@@ -320,7 +320,7 @@ class UserController extends ApiController {
                     $model  = D("UcenterMember");
                     //TODO 这里做手机认证
                     $map = array(
-                        'is_merchant' => 1,
+                        'is_member' => 1,
                         'mobile'      => $mobile,
                     );
                     $uid = $model->field('id')->where($map)->find() ? : E('该手机号未注册或不是商家用户');
