@@ -210,104 +210,105 @@ class MerchantShopModel extends AdvModel
      * @param int $tagId 商家门店服务类型，可选''表示所有店铺，'商超'，'生鲜'，'洗车'，'送水'，缺省为''
      * @param int $type 商家类别，有超市，洗车
      * @param int $order 排序，1-按距离，2-按评价
+     * @param string|null $regionName 区域名称
      * @return mixed
      */
-    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1
-                             //,page,pageSize该函数不能采用分页，原因时客户端需要一下获得所有商铺
-    )
+    public function getNearby($lat, $lng, $range, $words = null, $words_op = null, $tagId = 0, $type = null, $order = 1, $regionName = null)
     {
-        if (!is_numeric($lat) or !is_numeric($lng))
-            //$this->error('坐标必须是数值', '', true);
-            E('坐标必须是数值');
+        //,page,pageSize该函数不能采用分页，原因时客户端需要一下获得所有商铺
+        if (!is_numeric($lat) or !is_numeric($lng)) E('坐标必须是数值');
 
-        if ($lat < -90 or $lat > 90 or $lng < -180 or $lng > 180)
-            //$this->error('非法坐标', '', true);
-            E('非法坐标');
+        if ($lat < -90 or $lat > 90 or $lng < -180 or $lng > 180) E('非法坐标');
 
-        if (!is_numeric($range))
-            //$this->error('查询范围必须是数值', '', true);
-            E('查询范围必须是数值');
+        if (!is_numeric($range)) E('查询范围必须是数值');
 
         //TODO 需要考虑最大查询范围
-        if ($range < 0)
-            //$this->error('非法查询范围', '', true);
-            E('非法查询范围');
+        if ($range < 0) E('非法查询范围');
 
         $range = floatval($range);
         $range += $range * 0.15;
 
+        if ($regionName !== null) {
+            $regionName = trim($regionName);
+            $regionId = RegionModel::getInstance()->where(['name' => $regionName, 'status' => RegionModel::STATUS_ACTIVE])->find();
+            if (!$regionId) E('没有找到相应的区域');
+        }
+
         //当前时间，秒
         $seconds = time() - strtotime("00:00:00");//8*3600;
 
-        $bind=[':seconds'=>$seconds];
-        $where=build_distance_sql_where($lng,$lat, $range,$bind,'sq_merchant_shop.lnglat').' and (sq_merchant_shop.open_time_mode=2
-            or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
+        $bind = [':seconds' => $seconds];
 
-        if (!is_null($type))
-            $map['type'] = $type;
+        //诺，注释这行呢，是王哥写的，要求不得了
+//        $where = build_distance_sql_where($lng, $lat, $range, $bind, 'sq_merchant_shop.lnglat') . ' and (sq_merchant_shop.open_time_mode=2
+//            or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
+
+        $where = 'ST_Distance_Sphere(sq_merchant_shop.lnglat,point(:lng,:lat)) <= if(delivery_distance_limit >= 500, delivery_distance_limit + 111, delivery_distance_limit + 50) AND (sq_merchant_shop.open_time_mode=2 or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
+        if($regionName !== null){
+            $where .= ' AND sq_merchant_shop.region_id=:region_id';
+            $bind[':region_id'] = $regionId;
+        }
+        $bind[':lng'] = floatval($lng);
+        $bind[':lat'] = floatval($lat);
+        if (!is_null($type)) $map['type'] = $type;
 
 //        if (!in_array($tag, C('SHOP_TAG')))
 //            E('非法店面服务，可选项：\'\'表示所有店铺，\'商超\'，\'生鲜\'，\'洗车\'，\'送水\'');
 
-        if ($tagId!=0){
-            $where.=' and sq_merchant_shop.id in (select shop_id from sq_shop_tag where tag_id=:tag_id)';
+        if ($tagId != 0) {
+            $where .= ' and sq_merchant_shop.id in (select shop_id from sq_shop_tag where tag_id=:tag_id)';
             //$this->join('inner join sq_shop_tag on shop_id=sq_merchant_shop.id and tag_id=:tag_id');
-            $bind[':tag_id']=$tagId;
+            $bind[':tag_id'] = $tagId;
         }
 
         if (!empty($words))
             build_words_query(explode(',', $words), $words_op, ['sq_merchant_shop.title', 'sq_merchant_shop.description'], $map);
 
-        $map['_string'] =$where;
-        $map['sq_merchant_shop.status&sq_merchant_shop.open_status']=1;
+        $map['_string'] = $where;
+        $map['sq_merchant_shop.status&sq_merchant_shop.open_status'] = 1;
         $this->where($map)
             //->join('LEFT JOIN sq_appraise on sq_appraise.shop_id = sq_merchant_shop.id')
             ->join('LEFT JOIN sq_picture on sq_picture.id = sq_merchant_shop.picture')
             ->bind($bind)
             ->field([
                 'sq_merchant_shop.id'
-                ,'sq_merchant_shop.open_status'
-                ,'sq_merchant_shop.status'
-                ,'sq_merchant_shop.title'
-                ,'sq_merchant_shop.picture'
-                ,'sq_merchant_shop.description'
-                ,'sq_merchant_shop.type'
-                ,'sq_merchant_shop.phone_number'
-                ,'sq_merchant_shop.address'
-                ,'sq_merchant_shop.open_time_mode'
-                ,'sq_merchant_shop.begin_open_time'
-                ,'sq_merchant_shop.end_open_time'
-                ,'sq_merchant_shop.pay_delivery_time_begin'
-                ,'sq_merchant_shop.pay_delivery_time_end'
-                ,'sq_merchant_shop.delivery_time_cost'
-                ,'sq_merchant_shop.delivery_distance_limit'
-                ,'sq_merchant_shop.pay_delivery_distance'
-                ,'sq_merchant_shop.delivery_distance_cost'
-                ,'sq_merchant_shop.free_delivery_amount'
-                ,'sq_merchant_shop.pay_delivery_amount'
-                ,'sq_merchant_shop.delivery_amount_cost'
-                ,'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat)) as distance'
-                ,'st_astext(sq_merchant_shop.lnglat) as lnglat'
-                ,'sq_merchant_shop.grade_1'
-                ,'sq_merchant_shop.grade_2'
-                ,'sq_merchant_shop.grade_3'
-                ,'(sq_merchant_shop.grade_1+sq_merchant_shop.grade_2+sq_merchant_shop.grade_3)/3 as grade'
-                ,'ifnull(sq_picture.path,\'\') as picture_path'
+                , 'sq_merchant_shop.open_status'
+                , 'sq_merchant_shop.status'
+                , 'sq_merchant_shop.title'
+                , 'sq_merchant_shop.picture'
+                , 'sq_merchant_shop.description'
+                , 'sq_merchant_shop.type'
+                , 'sq_merchant_shop.phone_number'
+                , 'sq_merchant_shop.address'
+                , 'sq_merchant_shop.open_time_mode'
+                , 'sq_merchant_shop.begin_open_time'
+                , 'sq_merchant_shop.end_open_time'
+                , 'sq_merchant_shop.pay_delivery_time_begin'
+                , 'sq_merchant_shop.pay_delivery_time_end'
+                , 'sq_merchant_shop.delivery_time_cost'
+                , 'sq_merchant_shop.delivery_distance_limit'
+                , 'sq_merchant_shop.pay_delivery_distance'
+                , 'sq_merchant_shop.delivery_distance_cost'
+                , 'sq_merchant_shop.free_delivery_amount'
+                , 'sq_merchant_shop.pay_delivery_amount'
+                , 'sq_merchant_shop.delivery_amount_cost'
+                , 'ST_Distance_Sphere(sq_merchant_shop.lnglat,POINT(:lng,:lat)) as distance'
+                , 'st_astext(sq_merchant_shop.lnglat) as lnglat'
+                , 'sq_merchant_shop.grade_1'
+                , 'sq_merchant_shop.grade_2'
+                , 'sq_merchant_shop.grade_3'
+                , '(sq_merchant_shop.grade_1+sq_merchant_shop.grade_2+sq_merchant_shop.grade_3)/3 as grade'
+                , 'ifnull(sq_picture.path,\'\') as picture_path'
             ]);
 
-        if(1==$order)
+        if (1 == $order)
             $this->order('distance');
         //TODO 暂时即时计算，后期应该定期计算存入shop表
         else if (2 == $order)
             $this->order('grade desc');
 
         $this->group('sq_merchant_shop.id');
-
-        $ret = $this->select();
-//        foreach($ret as $i){
-//            print_r($i['id']);print_r(',');
-//        }
-        //print_r($this->getLastSql());die;
+        $ret = $this->fetchSql(0)->select();
         return $ret;
     }
 
