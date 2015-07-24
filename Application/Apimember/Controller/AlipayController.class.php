@@ -25,13 +25,12 @@ class AlipayController extends ApiController
     public $merchantPrivateKeyPath = 'key/rsa_private_key.pem';
     public $alipayPublicKeyPath = 'key/alipay_public_key.pem';
 
-    /**
-     * 支付宝成功支付的回调接口
-     * @author Fufeng Nie <niefufeng@gmail.com>
-     */
-    public function callback()
+    private $config = [];//支付宝配置信息
+
+    public function _initialize()
     {
-        $config = [
+        parent::_initialize();
+        $this->config = [
             'partner' => C('ALIPAY.PARTNER'),//合作身份者id
             'seller_email' => C('ALIPAY.SELLER_EMAIL'),//收款支付宝账号
             'key' => C('ALIPAY.KEY'),//安全检验码，以数字和字母组成的32位字符
@@ -42,7 +41,15 @@ class AlipayController extends ApiController
             'private_key_path' => $this->merchantPrivateKeyPath,
             'ali_public_key_path' => $this->alipayPublicKeyPath
         ];
-        $alipayNotify = new \AlipayNotify($config);
+    }
+
+    /**
+     * 支付宝成功支付的回调接口
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     */
+    public function callback()
+    {
+        $alipayNotify = new \AlipayNotify($this->config);
 
         //如果通知验证失败
         if (!$alipayNotify->verifyNotify()) exit('fail');
@@ -117,8 +124,32 @@ class AlipayController extends ApiController
         }
     }
 
+    /**
+     * 创建rsa签名
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     */
     public function createRsaSign()
     {
+        if (empty($_POST)) E('签名参数不能为空');
+
+        $_POST['partner'] = $this->config['partner'];
+
+        $_POST['seller_id'] = $this->config['seller_email'];
+
+        if (empty($_POST['subject'])) {
+            $_POST['subject'] = '一点社区订单收费';
+        }
+
+        $_POST['body'] = '一点社区订单收费';
+
+        $_POST['service'] = 'mobile.securitypay.pay';
+
+        $_POST['payment_type'] = '1';
+
+        $_POST['_input_charset'] = 'utf-8';
+
+        $_POST['it_b_pay'] = '30m';
+
         //除去待签名参数数组中的空值和签名参数
         $para_filter = paraFilter($_POST);
 
