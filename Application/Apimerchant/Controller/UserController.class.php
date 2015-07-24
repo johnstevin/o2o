@@ -522,7 +522,7 @@ class UserController extends ApiController {
 
 
         } else {
-
+            $this->assign('http_host', $_SERVER['HTTP_HOST']);
             $this->display();
 
         }
