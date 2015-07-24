@@ -289,12 +289,20 @@ class UserController extends ApiController {
                             $oCode   = I('post.code');
                             if(!verify_sms_code($oMobile, $oCode))
                                 E('验证码错误');
+                            $randVal = md5(generate_saltKey());
+                            S('MERCHANT_EDITINFO_RANDVAL_'.$uid, $randVal, 300);
+                            $this->apiSuccess(array('data'=>array('randVal'=>$randVal)), '请点下一步');
                             break;
                         case 2 :
-                            $nMobile = I('post.mobile');
+                            $nMobile = I('post.mobile') != '' ? I('post.mobile') : E('新手机号不能为空');
+                            $nMobile != $user['mobile'] ? : E('新手机不能和旧手机相同');
+                            $randVal   = I('post.randval') != '' ? I('post.randval') :  E('不安全的手机设置');
                             $nCode   = I('post.code');
                             if(!verify_sms_code($nMobile, $nCode))
                                 E('验证码错误');
+                            $randCache = S('MERCHANT_EDITINFO_RANDVAL_'.$uid);
+                            $randCache ? '' : E('已超时，请重新设置');
+                            $randCache == $randVal ? '' : E('安全码不正确');
                             $data['mobile'] = $nMobile;
                             $data['id'] = $uid;
                             break;
@@ -309,10 +317,13 @@ class UserController extends ApiController {
 
             $result = $model->saveInfo($data);
             if($result===true){
-                $this->apiSuccess(array('data'=>''), '成功');
+                $this->apiSuccess(array('data'=>''), '资料修改成功');
             }else{
-
-                E($model->getError());
+                switch ($model->getError()) {
+                    case -11 : $error = '手机号被占用'; break;
+                    default  : $error = '未知错误';
+                }
+                E($error);
 
             }
 
