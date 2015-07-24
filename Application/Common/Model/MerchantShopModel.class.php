@@ -232,6 +232,11 @@ class MerchantShopModel extends AdvModel
             $regionName = trim($regionName);
             $regionId = RegionModel::getInstance()->where(['name' => $regionName, 'status' => RegionModel::STATUS_ACTIVE])->find();
             if (!$regionId) E('没有找到相应的区域');
+            $pdo = get_pdo();
+            $sth = $pdo->prepare('SELECT id FROM sq_region WHERE id = :id OR id IN (SELECT id FROM sq_region WHERE pid = :id) OR id IN (SELECT id FROM sq_region WHERE pid IN (SELECT id FROM sq_region WHERE pid = :id))', [':id' => $regionId]);
+            $sth->execute([':id' => $regionId]);
+            $regionIds = $sth->fetchAll(\PDO::FETCH_ASSOC);
+            return $regionIds = array_column($regionIds, 'id');
         }
 
         //当前时间，秒
@@ -245,8 +250,7 @@ class MerchantShopModel extends AdvModel
 
         $where = 'ST_Distance_Sphere(sq_merchant_shop.lnglat,point(:lng,:lat)) <= if(delivery_distance_limit >= 500, delivery_distance_limit + 111, delivery_distance_limit + 50) AND (sq_merchant_shop.open_time_mode=2 or (sq_merchant_shop.begin_open_time <:seconds and sq_merchant_shop.end_open_time >:seconds))';
         if($regionName !== null){
-            $where .= ' AND sq_merchant_shop.region_id=:region_id';
-            $bind[':region_id'] = $regionId;
+            $where .= ' AND sq_merchant_shop.region_id IN (' . implode(',', $regionIds) . ')';
         }
         $bind[':lng'] = floatval($lng);
         $bind[':lat'] = floatval($lat);
@@ -308,7 +312,7 @@ class MerchantShopModel extends AdvModel
             $this->order('grade desc');
 
         $this->group('sq_merchant_shop.id');
-        $ret = $this->fetchSql(0)->select();
+        $ret = $this->fetchSql(1)->select();
         return $ret;
     }
 
