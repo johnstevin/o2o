@@ -82,17 +82,10 @@ class ProductController extends ApiController
      * ```
      * @author  stevin WangJiang
      */
-    public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or'
-        , $tagId = 0, $type = null, $order = 1
-        //,page,pageSize该函数不能采用分页，原因时客户端需要一下获得所有商铺
-    )
+    //,page,pageSize该函数不能采用分页，原因时客户端需要一下获得所有商铺
+    public function getMerchantList($lat, $lng, $range = 100, $words = null, $wordsOp = 'or', $tagId = 0, $type = null, $order = 1, $regionName)
     {
-        try {
-            $this->apiSuccess(['data' => (new MerchantShopModel())
-                ->getNearby($lat, $lng, $range, $words, $wordsOp, $tagId, $type, $order)],'');
-        } catch (\Exception $ex) {
-            $this->apiError(50002, $ex->getMessage());
-        }
+        $this->apiSuccess(['data' => MerchantShopModel::getInstance()->getNearby($lat, $lng, $range, $words, $wordsOp, $tagId, $type, $order, $regionName)], '');
     }
 
     /**
@@ -126,15 +119,16 @@ class ProductController extends ApiController
      * ```
      *调用样例 GET apimber.php?s=Product/getAppriseList/shopId/2
      */
-    public function getAppriseList($shopId,$page = 1, $pageSize = 10){
+    public function getAppriseList($shopId, $page = 1, $pageSize = 10)
+    {
         try {
             $pageSize > 50 and $pageSize = 50;
 
-            $this->apiSuccess(['data' =>D('Appraise')
+            $this->apiSuccess(['data' => D('Appraise')
                 ->join('join sq_member on sq_member.uid=sq_appraise.user_id')
                 ->join('join sq_ucenter_member on sq_ucenter_member.id=sq_appraise.user_id')
                 ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
-                ->where(['sq_appraise.shop_id'=>$shopId])
+                ->where(['sq_appraise.shop_id' => $shopId])
                 ->page($page, $pageSize)
                 ->order('sq_appraise.update_time')
                 ->field([
@@ -148,7 +142,7 @@ class ProductController extends ApiController
                     'if(anonymity=0,ifnull(sq_picture.path,\'\'),\'\') as picture_path',
                     'if(anonymity=0,sq_member.nickname,\'匿名用户\') as nickname',
                 ])
-                ->select()],'');
+                ->select()], '');
         } catch (\Exception $ex) {
             $this->apiError(50002, $ex->getMessage());
         }
@@ -161,7 +155,7 @@ class ProductController extends ApiController
     public function getMerchantDetail($id)
     {
         try {
-            $this->apiSuccess(['data' => (new MerchantShopModel())->get($id)],'');
+            $this->apiSuccess(['data' => (new MerchantShopModel())->get($id)], '');
         } catch (Exception $ex) {
             $this->apiError(50003, $ex->getMessage());
         }
@@ -257,11 +251,11 @@ class ProductController extends ApiController
 
             list($bindNames, $bindValues) = build_sql_bind($shopIds);
 
-            $where='a.shop_id in (' . implode(',', $bindNames) . ') and a.category_id=b.id';
+            $where = 'a.shop_id in (' . implode(',', $bindNames) . ') and a.category_id=b.id';
 
-            if(!empty($pid)){
-                $where.=' and b.pid=:pid';
-                $bindValues[':pid']=$pid;
+            if (!empty($pid)) {
+                $where .= ' and b.pid=:pid';
+                $bindValues[':pid'] = $pid;
             }
 
             $sql = M()->table('sq_merchant_depot_pro_category as a,sq_category as b')
@@ -278,16 +272,16 @@ class ProductController extends ApiController
 
             if ($returnMore and !empty($data)) {
 
-                if(empty($catIds)){
-                    foreach($data as $i){
-                        $catIds[]=$i['id'];
+                if (empty($catIds)) {
+                    foreach ($data as $i) {
+                        $catIds[] = $i['id'];
                     }
                 }
 
                 //print_r($catIds);
                 list($bindNames, $bindValues) = build_sql_bind($catIds);
                 $sql = M()->table('sq_category_brand_norms as l')
-                    ->field(['sq_brand.id as bid', 'sq_brand.title as brand', 'sq_norms.id as nid', 'sq_norms.title as norm','l.category_id as cid'])
+                    ->field(['sq_brand.id as bid', 'sq_brand.title as brand', 'sq_norms.id as nid', 'sq_norms.title as norm', 'l.category_id as cid'])
                     ->join('LEFT JOIN sq_norms on sq_norms.id=l.norms_id')
                     ->join('left JOIN sq_brand on sq_brand.id=l.brand_id')
                     ->where('l.norms_id<>0 and l.category_id in (' . implode(',', $bindNames) . ')')
@@ -295,49 +289,49 @@ class ProductController extends ApiController
 
                 $temp = $sql->select();
 
-                $cates=[];
+                $cates = [];
                 foreach ($catIds as $i) {
-                    $cid=$i;
-                    if(!array_key_exists($cid,$cates)){
-                        $cates[$cid]['norms']=[];
-                        $cates[$cid]['brands']=[];
+                    $cid = $i;
+                    if (!array_key_exists($cid, $cates)) {
+                        $cates[$cid]['norms'] = [];
+                        $cates[$cid]['brands'] = [];
                     }
-                    $brandHint=[];
-                    foreach($temp as $cbn){
-                        if($cid==$cbn['cid']){
-                            $cates[$cid]['norms'][]=['id' => $cbn['nid'], 'title' => $cbn['norm'],'bid'=>$cbn['bid']];
-                            if(!in_array($cbn['bid'],$brandHint)){
-                                $brandHint[]=$cbn['bid'];
-                                $cates[$cid]['brands'][]=['id' => $cbn['bid'], 'title' => $cbn['brand']];
+                    $brandHint = [];
+                    foreach ($temp as $cbn) {
+                        if ($cid == $cbn['cid']) {
+                            $cates[$cid]['norms'][] = ['id' => $cbn['nid'], 'title' => $cbn['norm'], 'bid' => $cbn['bid']];
+                            if (!in_array($cbn['bid'], $brandHint)) {
+                                $brandHint[] = $cbn['bid'];
+                                $cates[$cid]['brands'][] = ['id' => $cbn['bid'], 'title' => $cbn['brand']];
                             }
                         }
                     }
                 }
 
-                foreach($cates as &$v){
-                    $brands=&$v['brands'];
-                    $norms=$v['norms'];
-                    foreach($brands as &$b){
-                        foreach($norms as $n){
-                            if($n['bid']==$b['id']){
-                                $b['norms'][]=$n;
+                foreach ($cates as &$v) {
+                    $brands =& $v['brands'];
+                    $norms = $v['norms'];
+                    foreach ($brands as &$b) {
+                        foreach ($norms as $n) {
+                            if ($n['bid'] == $b['id']) {
+                                $b['norms'][] = $n;
                             }
                         }
                     }
                     unset($v['norms']);
                 }
 
-                foreach($data as &$i){
-                    foreach ($cates as $k=>$v) {
-                        if ($k==$i['id']) {
+                foreach ($data as &$i) {
+                    foreach ($cates as $k => $v) {
+                        if ($k == $i['id']) {
                             $i['brands'][] = $v['brands'];
                         }
                     }
                 }
             }
-            $ret['categories']=list_to_tree($data,'id', 'pid', '_child', $root = $pid);
+            $ret['categories'] = list_to_tree($data, 'id', 'pid', '_child', $root = $pid);
 
-            $this->apiSuccess(['data' => $ret],'');
+            $this->apiSuccess(['data' => $ret], '');
 
         } catch (Exception $ex) {
             $this->apiError(50004, $ex->getMessage());
@@ -380,29 +374,29 @@ class ProductController extends ApiController
                 ->join('left JOIN sq_brand on sq_brand.id=l.brand_id')
                 ->field(['sq_brand.id as bid', 'sq_brand.title as brand', 'sq_norms.id as nid', 'sq_norms.title as norm'])
                 ->where('l.category_id=:cid')
-                ->bind([':cid'=>$categoryId]);
+                ->bind([':cid' => $categoryId]);
 
             $data = $sql->select();
 
-            $brandHint=[];
-            foreach($data as $i){
-                if(!array_key_exists($i['bid'],$brandHint)){
-                    $brandHint[$i['bid']]=['id'=>$i['bid'],'title'=>$i['brand'],'norms'=>[]];
+            $brandHint = [];
+            foreach ($data as $i) {
+                if (!array_key_exists($i['bid'], $brandHint)) {
+                    $brandHint[$i['bid']] = ['id' => $i['bid'], 'title' => $i['brand'], 'norms' => []];
                 }
             }
 
-            foreach($data as $i){
-                if(!is_null($i['nid']) and !array_key_exists($i['nid'],$brandHint[$i['bid']]['norms'])){
-                    $brandHint[$i['bid']]['norms'][]=['id'=>$i['nid'],'title'=>$i['norm']];
+            foreach ($data as $i) {
+                if (!is_null($i['nid']) and !array_key_exists($i['nid'], $brandHint[$i['bid']]['norms'])) {
+                    $brandHint[$i['bid']]['norms'][] = ['id' => $i['nid'], 'title' => $i['norm']];
                 }
             }
 
-            $ret=[];
-            foreach($brandHint as $i){
-                $ret[]=$i;
+            $ret = [];
+            foreach ($brandHint as $i) {
+                $ret[] = $i;
             }
 
-            $this->apiSuccess(['data' => $ret],'');
+            $this->apiSuccess(['data' => $ret], '');
 
             //print_r($sql->getLastSql());
 
@@ -556,7 +550,7 @@ class ProductController extends ApiController
      */
     public function getProductList($shopIds = null, $categoryId = null, $brandId = null, $normId = null, $title = null
         , $priceMin = null, $priceMax = null
-        , $returnAlters = 'true',$page = 1,$pageSize=30)
+        , $returnAlters = 'true', $page = 1, $pageSize = 30)
     {
         try {
             empty($shopIds) and E('参数shopIds不能为空');
@@ -566,9 +560,9 @@ class ProductController extends ApiController
             $returnAlters = $returnAlters === 'true';
             $shopIds = explode(',', $shopIds);
 
-            $this->apiSuccess(['data'=>(new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
+            $this->apiSuccess(['data' => (new MerchantDepotModel())->getProductList($shopIds, $categoryId, $brandId, $normId, $title
                 , $priceMin, $priceMax
-                , $returnAlters,$page, $pageSize),'page'=>$page+1],'');
+                , $returnAlters, $page, $pageSize), 'page' => $page + 1], '');
 
         } catch (Exception $ex) {
             $this->apiError(50005, $ex->getMessage());
@@ -585,13 +579,14 @@ class ProductController extends ApiController
      * @param null $priceMax
      */
     public function getShopProductList($shopIds = null, $categoryId = null, $title = null
-        , $priceMin = null, $priceMax = null){
+        , $priceMin = null, $priceMax = null)
+    {
         try {
             empty($shopIds) and E('参数shopIds不能为空');
             $shopIds = explode(',', $shopIds);
 
-            $this->apiSuccess(['data'=>(new MerchantShopModel())->getProductList($shopIds, $categoryId,  $title
-                , $priceMin, $priceMax)],'');
+            $this->apiSuccess(['data' => (new MerchantShopModel())->getProductList($shopIds, $categoryId, $title
+                , $priceMin, $priceMax)], '');
 
         } catch (Exception $ex) {
             $this->apiError(50005, $ex->getMessage());
@@ -608,7 +603,7 @@ class ProductController extends ApiController
     public function getProductDetail($id)
     {
         try {
-            $this->apiSuccess(['data' => ProductModel::get($id)],'');
+            $this->apiSuccess(['data' => ProductModel::get($id)], '');
         } catch (Exception $ex) {
             $this->apiError(50006, $ex->getMessage());
         }
@@ -716,21 +711,22 @@ class ProductController extends ApiController
      * @param $pageSize
      * @return array
      */
-    private function _get_order_list($uid,$status,$payStatus,$page,$pageSize){
+    private function _get_order_list($uid, $status, $payStatus, $page, $pageSize)
+    {
 
-        $model=new OrderModel();
-        $where['sq_order.user_id']=$uid;
+        $model = new OrderModel();
+        $where['sq_order.user_id'] = $uid;
 
-        if(!is_null($status)){
-            if(is_array($status))
-                $where['sq_order.status']=['in',$status];
+        if (!is_null($status)) {
+            if (is_array($status))
+                $where['sq_order.status'] = ['in', $status];
             else
-                $where['sq_order.status']=$status;
+                $where['sq_order.status'] = $status;
         }
-        if(!is_null($payStatus))
-            $where['sq_order.pay_status']=$payStatus;
+        if (!is_null($payStatus))
+            $where['sq_order.pay_status'] = $payStatus;
 
-        $data=$model
+        $data = $model
             ->field([
                 'sq_order.id',
                 'sq_order.order_code',
@@ -759,30 +755,30 @@ class ProductController extends ApiController
             ->where($where)
             ->order('update_time desc,add_time desc')
             ->group('sq_order.id')
-            ->page($page,$pageSize)
+            ->page($page, $pageSize)
             //->fetchSql()
             ->select();
 
         //dump($data);die;
 
-        foreach($data as $k=>&$order){
-            $items=D('OrderItem')
+        foreach ($data as $k => &$order) {
+            $items = D('OrderItem')
                 ->alias('oi')
                 ->field(['oi.*',
                     'sq_product.title',
                     'ifnull(sq_picture.path,\'\') as picture',
-                'ifnull(sq_norms.title,\'\') norms'])
-                ->where(['order_id'=>$order['id']])
+                    'ifnull(sq_norms.title,\'\') norms'])
+                ->where(['order_id' => $order['id']])
                 ->join('join sq_product on sq_product.id=product_id')
                 ->join('left join sq_picture on sq_picture.id=picture')
                 ->join('left join sq_norms on sq_norms.id=sq_product.norms_id')
                 ->select();
-            $order['_products']=$items;
-            if(empty($items))
+            $order['_products'] = $items;
+            if (empty($items))
                 unset($data[$k]);
         }
 
-        return ['data'=>$data];
+        return ['data' => $data];
     }
 
     /**
@@ -792,69 +788,70 @@ class ProductController extends ApiController
      * @param int $page
      * @param int $pageSize
      */
-    public function getOrderList($status=null,$page=1,$pageSize=10){
+    public function getOrderList($status = null, $page = 1, $pageSize = 10)
+    {
 
         //0-未分配，1-已分配，2-已接单，3-处理中，4-处理完，5-订单结束，6订单取消
         //0-取消的订单,1-等待商家确定,2-用户确定（商家的修改），3-正在配送,4-已经完成，5-申请退款,6-退款完成
 
-        $orderStatuees=[['status'=>[OrderModel::STATUS_DELIVERY,OrderModel::STATUS_COMPLETE],'payStatus'=>0]
-            ,['status'=>OrderModel::STATUS_USER_CONFIRM,'payStatus'=>null]
-            ,['status'=>OrderModel::STATUS_COMPLETE,'payStatus'=>1]];
+        $orderStatuees = [['status' => [OrderModel::STATUS_DELIVERY, OrderModel::STATUS_COMPLETE], 'payStatus' => 0]
+            , ['status' => OrderModel::STATUS_USER_CONFIRM, 'payStatus' => null]
+            , ['status' => OrderModel::STATUS_COMPLETE, 'payStatus' => 1]];
 
-        $orderVehStatuses=[['status'=>OrderVehicleModel::STATUS_DONE,'payStatus'=>0]
-            ,['status'=>-2,'payStatus'=>null]
-            ,['status'=>OrderVehicleModel::STATUS_CLOSED,'payStatus'=>1]];
+        $orderVehStatuses = [['status' => OrderVehicleModel::STATUS_DONE, 'payStatus' => 0]
+            , ['status' => -2, 'payStatus' => null]
+            , ['status' => OrderVehicleModel::STATUS_CLOSED, 'payStatus' => 1]];
 
-        $uid=$this->getUserId();
-        $_GET['p']=$page;
+        $uid = $this->getUserId();
+        $_GET['p'] = $page;
 
-        $statusOrder=(is_null($status) or $status=='' )? null :$orderStatuees[$status];
-        $statusOrderVeh=(is_null($status) or $status=='')? null :$orderVehStatuses[$status];
+        $statusOrder = (is_null($status) or $status == '') ? null : $orderStatuees[$status];
+        $statusOrderVeh = (is_null($status) or $status == '') ? null : $orderVehStatuses[$status];
 
         //var_dump($statusOrder);
         //var_dump($statusOrderVeh);
 
-        $orders=$this->_get_order_list($uid, $statusOrder['status'], $statusOrder['payStatus'], $page,$pageSize);//(new OrderModel())->getLists(null, $uid, $statusOrder['status'], $statusOrder['payStatus'], null, true, false, true, $pageSize);
-        $orders_veh=(new OrderVehicleModel())->getUserList($uid,$statusOrderVeh['status'], $statusOrderVeh['payStatus'],null,$page,$pageSize);
+        $orders = $this->_get_order_list($uid, $statusOrder['status'], $statusOrder['payStatus'], $page, $pageSize);//(new OrderModel())->getLists(null, $uid, $statusOrder['status'], $statusOrder['payStatus'], null, true, false, true, $pageSize);
+        $orders_veh = (new OrderVehicleModel())->getUserList($uid, $statusOrderVeh['status'], $statusOrderVeh['payStatus'], null, $page, $pageSize);
 
-        $iter_order=(new \ArrayObject($orders['data']))->getIterator();
-        $iter_order_veh=(new \ArrayObject($orders_veh))->getIterator();
+        $iter_order = (new \ArrayObject($orders['data']))->getIterator();
+        $iter_order_veh = (new \ArrayObject($orders_veh))->getIterator();
 
-        $data=[];
-        while($iter_order->valid() and $iter_order_veh->valid()){
-            $order=$iter_order->current();
-            $order_veh=$iter_order_veh->current();
+        $data = [];
+        while ($iter_order->valid() and $iter_order_veh->valid()) {
+            $order = $iter_order->current();
+            $order_veh = $iter_order_veh->current();
 
-            if(empty($order) or empty($order_veh))
+            if (empty($order) or empty($order_veh))
                 break;
-            $order['order_type']='shop';
-            $order_veh['order_type']='vehicle';
-            if($order['update_time']<$order_veh['update_time']){
-                $data[]=$order;
-                $data[]=$order_veh;
-            }else{
-                $data[]=$order_veh;
-                $data[]=$order;
+            $order['order_type'] = 'shop';
+            $order_veh['order_type'] = 'vehicle';
+            if ($order['update_time'] < $order_veh['update_time']) {
+                $data[] = $order;
+                $data[] = $order_veh;
+            } else {
+                $data[] = $order_veh;
+                $data[] = $order;
             }
             $iter_order->next();
             $iter_order_veh->next();
         }
 
-        while($iter_order->valid()){
+        while ($iter_order->valid()) {
 
-            $order=$iter_order->current();
-            $order['order_type']='shop';
-            $data[]=$order;
+            $order = $iter_order->current();
+            $order['order_type'] = 'shop';
+            $data[] = $order;
             $iter_order->next();
         }
 
-        while($iter_order_veh->valid()){
-            $order_veh=$iter_order_veh->current();
-            $order_veh['order_type']='vehicle';
-            $data[]=$order_veh;
+        while ($iter_order_veh->valid()) {
+            $order_veh = $iter_order_veh->current();
+            $order_veh['order_type'] = 'vehicle';
+            $data[] = $order_veh;
             $iter_order_veh->next();
         }
-        $this->apiSuccess(['data'=>$data],'');
+        $this->apiSuccess(['data' => $data], '');
     }
 
 
@@ -872,26 +869,27 @@ class ProductController extends ApiController
      * @author WangJiang
      * @return json
      */
-    public function appraise(){
-        try{
-            if(!IS_POST)
+    public function appraise()
+    {
+        try {
+            if (!IS_POST)
                 E('非法调用，请用POST调用');
-            $oid=I('post.orderId');
-            $grade1=I('post.grade1',0);
-            $grade2=I('post.grade2',0);
-            $grade3=I('post.grade3',0);
-            $content=I('post.content');
-            $anonymity=I('post.anonymity',0);
-            if(empty($content))
-                $content='该用户很深沉，什么也没说。';
+            $oid = I('post.orderId');
+            $grade1 = I('post.grade1', 0);
+            $grade2 = I('post.grade2', 0);
+            $grade3 = I('post.grade3', 0);
+            $content = I('post.content');
+            $anonymity = I('post.anonymity', 0);
+            if (empty($content))
+                $content = '该用户很深沉，什么也没说。';
 
-            $m=new OrderModel();
-            $data=$m->find($oid);
+            $m = new OrderModel();
+            $data = $m->find($oid);
 
-            AppraiseModel::addAppraise($oid,$data['shop_id'],$this->getUserId(),null,$content,$grade1,$grade2,$grade3,$anonymity);
+            AppraiseModel::addAppraise($oid, $data['shop_id'], $this->getUserId(), null, $content, $grade1, $grade2, $grade3, $anonymity);
 
-            $this->apiSuccess(['data'=>[]],'成功');
-        }catch (\Exception $ex) {
+            $this->apiSuccess(['data' => []], '成功');
+        } catch (\Exception $ex) {
             $this->apiError(51023, $ex->getMessage());
         }
     }

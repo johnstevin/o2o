@@ -97,7 +97,9 @@ class OrderController extends ApiController
     public function findById($id, $getProducts = false, $getUser = false)
     {
         $data = OrderModel::getInstance()->getLists(null, null, null, null, null, false, $getUser, $getProducts, 10, $id)['data'];
-        $data['_products_total'] = count($data['_products']);
+        if (!empty($data) && isset($data[0]['_products'])) {
+            $data[0]['_products_total'] = count($data['_products']);
+        }
         $this->apiSuccess(['data' => $data]);
     }
 }

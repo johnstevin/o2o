@@ -73,7 +73,7 @@ class AlipayController extends ApiController
                     }, $order['_childs']);
                 }
                 $ids[] = $order['id'];//无论是否有子订单，都把父级订单的ID加入
-                if ($orderModel->where(['id' => ['IN', $ids]])->save(['pay_status' => OrderModel::PAY_STATUS_TRUE])) {
+                if ($orderModel->where(['id' => ['IN', $ids]])->save(['pay_status' => OrderModel::PAY_STATUS_TRUE, 'reality_price' => $_POST['total_fee']])) {
                     $pushTitle = '订单已支付提醒';
                     if (empty($order['_childs'])) {
                         $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $order['order_code'] . '】';
@@ -102,7 +102,7 @@ class AlipayController extends ApiController
                 if ($order['pay_status'] == 1) {
                     exit('success');
                 }
-                if (OrderVehicleModel::getInstance()->where(['id' => $order['id']])->save(['pay_status' => 1, 'status' => OrderVehicleModel::STATUS_CLOSED])) {
+                if (OrderVehicleModel::getInstance()->where(['id' => $order['id']])->save(['pay_status' => 1, 'status' => OrderVehicleModel::STATUS_CLOSED, 'reality_price' => $_POST['total_fee']])) {
                     $pushContet = '用户于【' . date('Y-m-d H:i:s') . '】支付了您的订单【' . $order['order_code'] . '】';
                     $pushTitle = '订单已支付提醒';
                     $pushExtras = [
