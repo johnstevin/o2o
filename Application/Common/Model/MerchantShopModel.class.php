@@ -220,14 +220,6 @@ class MerchantShopModel extends AdvModel
 
         if ($lat < -90 or $lat > 90 or $lng < -180 or $lng > 180) E('非法坐标');
 
-        if (!is_numeric($range)) E('查询范围必须是数值');
-
-        //TODO 需要考虑最大查询范围
-        if ($range < 0) E('非法查询范围');
-
-        $range = floatval($range);
-        $range += $range * 0.15;
-
         if ($regionName !== null) {
             $regionName = trim($regionName);
             $regionId = RegionModel::getInstance()->where(['name' => $regionName, 'status' => RegionModel::STATUS_ACTIVE])->find();
