@@ -119,7 +119,8 @@ class UcenterMemberModel extends AdvModel {
             if(generate_password($password, $user['saltkey']) === $user['password']){
                 /* 极光推送服务 */
                 update_device_tag_alias('STORE',$registrationId, $user['id']);
-                $user['random'] = $random;
+                $user['random']         = $random;
+                $user['registrationId'] = $registrationId;
                 return $this->updateLogin($user);
             } else {
                 return -2; //密码错误
@@ -162,6 +163,7 @@ class UcenterMemberModel extends AdvModel {
             'random'          => $user['random'],
             'unique'          => create_unique(),
             'ac_time'         => time(),
+            'registrationId'  => $user['registrationId'],
         );
         $token = md5($auth['random'] . $auth['unique']);
         set_merchant_login($token,$auth);

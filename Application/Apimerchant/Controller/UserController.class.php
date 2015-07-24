@@ -31,7 +31,7 @@ class UserController extends ApiController {
             if(1){
                 $username = I('username');
                 $password = I('password');
-                $registrationId = I('post.registrationId') == '' ? E('注册码不能为空') : I('post.registrationId');
+                $registrationId = I('post.registrationId') == '' ? E('设备码不能为空') : I('post.registrationId');
                 $random   = I('random') == '' ? E('请正确传递散列数') : I('random');
                 $Ucenter  = D('UcenterMember');
                 $token = $Ucenter->login($username, $password, $registrationId, $random, 5);

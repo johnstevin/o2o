@@ -32,7 +32,7 @@ class UserController extends ApiController {
             if(1){
                 $username = I('username') == '' ? E('手机号不能为空') : I('username');
                 $password = I('password') == '' ? E('密码不能为空') : I('password');
-                $registrationId = I('registrationId') == '' ? E('注册码不能为空') : I('registrationId');
+                $registrationId = I('registrationId') == '' ? E('设备码不能为空') : I('registrationId');
                 $random   = I('random') == '' ? E('请正确传递散列数') : I('random');
 
                 $Ucenter  = D('UcenterMember');
