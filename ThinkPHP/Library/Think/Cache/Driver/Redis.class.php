@@ -14,7 +14,7 @@ defined('THINK_PATH') or exit();
 
 /**
  * Redis缓存驱动 
- * 要求安装phpredis扩展：https://github.com/nicolasff/phpredis
+ * 要求安装phpredis扩展：https://github.com/johnstevin/phpredis
  */
 class Redis extends Cache {
 	 /**
@@ -32,7 +32,8 @@ class Redis extends Cache {
             'port'          => C('REDIS_PORT') ? : 6379,
             'timeout'       => C('DATA_CACHE_TIMEOUT') ? : false,
             'db_index'      => C('REDIS_DB_INDEX') ? : 0,
-            'persistent'    => false,
+            'persistent'    => C('REDIS_PERSISTENT') ? : false,
+            'auth'          => C('REDIS_AUTH') ? : false,
         ),$options);
 
         $this->options =  $options;
@@ -40,11 +41,13 @@ class Redis extends Cache {
         $this->options['prefix'] =  isset($options['prefix'])?  $options['prefix']  :   C('DATA_CACHE_PREFIX');        
         $this->options['length'] =  isset($options['length'])?  $options['length']  :   0;
         $this->options['db_index'] = isset($options['db_index']) ? $options['db_index'] : 0;
+        $this->options['auth']     = $options['auth'];
         $func = $options['persistent'] ? 'pconnect' : 'connect';
         $this->handler  = new \Redis;
         $options['timeout'] === false ?
             $this->handler->$func($options['host'], $options['port']) :
             $this->handler->$func($options['host'], $options['port'], $options['timeout']);
+        $options['auth'] === false ? : $this->auth($options['auth']);
         $options['db_index']  === 0 ? : $this->select($options['db_index']);
     }
 
@@ -115,5 +118,13 @@ class Redis extends Cache {
      */
     public function select() {
         return $this->handler->select($this->options['db_index']);
+    }
+
+    /**
+     * @return bool
+     * @author Stevin.John@qq.com
+     */
+    public function auth() {
+        return $this->handler->auth($this->options['auth']);
     }
 }
