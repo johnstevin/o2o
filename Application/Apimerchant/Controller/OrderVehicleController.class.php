@@ -364,7 +364,7 @@ class OrderVehicleController extends ApiController{
         if(!IS_POST)
             E('非法调用，请用POST命令');
 
-        $this->__update();
+       // $this->__update();
 
         $id=I('post.id');//为了避免传递参数时混淆，强制指定post
 
