@@ -283,11 +283,11 @@ class OrderVehicleController extends ApiController
 
                 D()->commit();
 
-                /*订单消息推送*/
-                push_by_uid('STORE',$data['worker_id'],'用户付款并评价了订单【'.$data['order_code'].'】，点击查看详细...',[
-                    'action'=>'vehicleOrderDetail',
-                    'order_id'=>$oid
-                ],'用户付款并评价了订单');
+//                /*订单消息推送*/
+//                push_by_uid('STORE',$data['worker_id'],'用户付款并评价了订单【'.$data['order_code'].'】，点击查看详细...',[
+//                    'action'=>'vehicleOrderDetail',
+//                    'order_id'=>$oid
+//                ],'用户付款并评价了订单');
 
                 $this->apiSuccess(['data' => []], '成功');
             } catch (\Exception $ex) {
@@ -308,5 +308,22 @@ class OrderVehicleController extends ApiController
     public function findByCode($code)
     {
         $this->apiSuccess(['data' => OrderVehicleModel::getInstance()->getByCode($code)]);
+    }
+
+
+
+    /**
+     * 获取某个订单的详细信息
+     * @param null $id 订单id
+     */
+    public function vehicleOrderDetail($id=null){
+
+        if(is_null($id)||!is_numeric($id)||$id==0)
+            E('参数非法');
+
+        //$this->getUserId();
+
+        $data = D('OrderVehicle')->MemberOrderDetail($id);
+        $this->apiSuccess(['data' => empty($data)?"[]":$data], '');
     }
 }

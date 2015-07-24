@@ -1,9 +1,6 @@
 <?php
 use Common\Model\PictureModel;
 
-// OneThink常量定义
-const SQ_VERSION = '1.1.141212';
-const SQ_ADDON_PATH = './Addons/';
 /**
  * 检查IP是否合法
  * @param string $ip 要检查的IP地址

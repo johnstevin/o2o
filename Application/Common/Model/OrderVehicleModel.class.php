@@ -366,13 +366,13 @@ class OrderVehicleModel extends AdvModel
                 E('参数传递失败 ' . $ovs->getError());
             $ovs->add();
             $this->commit();
-            if($data['status']!==self::STATUS_CANCELED) {
+            if ($data['status'] !== self::STATUS_CANCELED) {
                 /*订单消息推送*/
                 push_by_uid('STORE', $data['worker_id'], '您的订单【' . $data['order_code'] . '】被用户取消了，点击查看原因...', [
                     'action' => 'vehicleOrderDetail',
                     'order_id' => $oid
                 ], '用户取消了订单');
-            }else{
+            } else {
 
                 //TODO 推送给管理员
             }
@@ -464,10 +464,11 @@ class OrderVehicleModel extends AdvModel
      * @param $oid
      * @param $uid
      */
-    public function accept($oid, $uid){
+    public function accept($oid, $uid)
+    {
 
 
-        $status=  $this::STATUS_CONFIRM;
+        $status = $this::STATUS_CONFIRM;
 
         $data = $this->find($oid);
         if ($data['worker_id'] != $uid)
@@ -509,9 +510,10 @@ class OrderVehicleModel extends AdvModel
      * @param $oid
      * @param $uid
      */
-    public function start($oid, $uid){
+    public function start($oid, $uid)
+    {
 
-        $status= $this::STATUS_TREATING;
+        $status = $this::STATUS_TREATING;
         $data = $this->find($oid);
         if ($data['worker_id'] != $uid)
             E('非本人操作');
@@ -542,11 +544,11 @@ class OrderVehicleModel extends AdvModel
             $this->rollback();
         }
 
-            /*订单消息推送*/
-            push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】已开始处理', [
-                'action' => 'vehicleOrderDetail',
-                'order_id' => $oid
-            ], "洁车师开始处理您的订单");
+        /*订单消息推送*/
+        push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】已开始处理', [
+            'action' => 'vehicleOrderDetail',
+            'order_id' => $oid
+        ], "洁车师开始处理您的订单");
 
     }
 
@@ -556,9 +558,10 @@ class OrderVehicleModel extends AdvModel
      * @param $oid
      * @param $uid
      */
-    public function end($oid, $uid){
+    public function end($oid, $uid)
+    {
 
-        $status= $this::STATUS_DONE;
+        $status = $this::STATUS_DONE;
 
         $data = $this->find($oid);
         if ($data['worker_id'] != $uid)
@@ -568,18 +571,18 @@ class OrderVehicleModel extends AdvModel
         $ovs = new OrderVehicleStatusModel();
 
 
-             /*图片上传*/
-            $type = 'CARWASH_MERCHANT';
+        /*图片上传*/
+        $type = 'CARWASH_MERCHANT';
 
-            $photoinfos = upload_picture($uid, $type);
+        $photoinfos = upload_picture($uid, $type);
 
-            $worder_picture_ids = array_column($photoinfos, 'id');
+        $worder_picture_ids = array_column($photoinfos, 'id');
 
-            $worder_picture_ids = is_array($worder_picture_ids) ? implode(',', $worder_picture_ids) : trim($worder_picture_ids, ',');
+        $worder_picture_ids = is_array($worder_picture_ids) ? implode(',', $worder_picture_ids) : trim($worder_picture_ids, ',');
 
         $this->startTrans();
         try {
-                $this->save(['id' => $data['id'], 'status' => $status, 'worder_picture_ids' => $worder_picture_ids]);
+            $this->save(['id' => $data['id'], 'status' => $status, 'worder_picture_ids' => $worder_picture_ids]);
 
             //var_dump($ovs->getError());die;
             if (!$ovs->create([
@@ -601,11 +604,11 @@ class OrderVehicleModel extends AdvModel
         }
 
 
-            /*订单消息推送*/
-            push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】已处理完毕', [
-                'action' => 'vehicleOrderDetail',
-                'order_id' => $oid
-            ], "您的订单已处理完毕");
+        /*订单消息推送*/
+        push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】已处理完毕', [
+            'action' => 'vehicleOrderDetail',
+            'order_id' => $oid
+        ], "您的订单已处理完毕");
 
     }
 
@@ -614,17 +617,16 @@ class OrderVehicleModel extends AdvModel
      * 洗车工取消了订单
      * @param $oid
      * @param $uid
-     * @param $status
      */
     public function reject($oid, $uid)
     {
 
-        $reason=I('post.reason');
+        $reason = I('post.reason');
 
-        if(empty($reason))
+        if (empty($reason))
             E("请填写原因");
 
-        $status=$this::STATUS_NO_WORKER;
+        $status = $this::STATUS_NO_WORKER;
 
         $data = $this->find($oid);
         if ($data['worker_id'] != $uid)
@@ -635,7 +637,7 @@ class OrderVehicleModel extends AdvModel
 
         $this->startTrans();
         try {
-                $this->save(['id' => $data['id'], 'status' => $status]);
+            $this->save(['id' => $data['id'], 'status' => $status]);
 
             if (!$ovs->create([
                 'order_id' => $oid,
@@ -643,7 +645,7 @@ class OrderVehicleModel extends AdvModel
                 'merchant_id' => $uid,
                 'shop_id' => $data['shop_id'],
                 'status' => $status,
-                'content' => '服务人员取消了订单，原因：'.$reason,
+                'content' => '服务人员取消了订单，原因：' . $reason,
             ])
             )
                 E('参数传递失败 ' . $ovs->getError());
@@ -655,31 +657,47 @@ class OrderVehicleModel extends AdvModel
             $this->rollback();
         }
 
+        /*订单消息推送*/
+        push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】特殊原因被洁车师取消了，请您及时关注', [
+            'action' => 'vehicleOrderDetail',
+            'order_id' => $oid
+        ], "您的订单未能帮你处理");
+
+
+        $group_id = M('MerchantShop')->where(['id' => $data['shop_id']])->getField('group_id');
+
+        $mgrRoleId = C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//店长角色
+
+
+        $mgruid = M('AuthAccess')->field('uid')->where(['group_id' => $group_id, 'role_id' => $mgrRoleId, 'status' => 1])->select();
+
+
+        if (!empty($mgruid)) {
             /*订单消息推送*/
-            push_by_uid('CLIENT', $data['user_id'], '您的订单【' . $data['order_code'] . '】特殊原因被洁车师取消了，请您及时关注', [
-                'action' => 'vehicleOrderDetail',
-                'order_id' => $oid
-            ], "您的订单未能帮你处理");
-
-
-
-            $group_id=M('MerchantShop')->where(['id'=>$data['shop_id']])->getField('group_id');
-
-            $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//店长角色
-
-
-            $mgruid=M('AuthAccess')->where(['group_id'=>$group_id,'role_id'=>$mgrRoleId,'status'=>1])->getField('uid');
-
-
-            /*订单消息推送*/
-            push_by_uid('STORE', $mgruid, '订单【' . $data['order_code'] . '】被服务人员取消', [
-                'action' => 'vehicleOrderDetail',
-                'order_id' => $oid
-            ], "有一个订单被服务人员取消");
-
+            try {
+                push_by_uid('STORE', $mgruid[0]['uid'], '订单【' . $data['order_code'] . '】被服务人员取消', [
+                    'action' => 'vehicleOrderDetail',
+                    'order_id' => $oid
+                ], "有一个订单被服务人员取消");
+                return;
+            } catch (\Exception $ex) {
+                //TODO 报异常：设备未找到
+                return;
+            }
+        }
     }
 
 
+    /**
+     * 用户获取洗车订单列表
+     * @param $uid
+     * @param $status
+     * @param $payStatus
+     * @param $orderCode
+     * @param $page
+     * @param $pageSize
+     * @return mixed
+     */
     public function getUserList($uid, $status, $payStatus, $orderCode, $page, $pageSize)
     {
         $pageSize > 50 and $pageSize = 50;
@@ -825,5 +843,140 @@ class OrderVehicleModel extends AdvModel
             unset($data['_user_nickname'], $data['_user_birthday'], $data['_user_sex']);
         }
         return $data;
+    }
+
+
+    /**
+     * 商家获取某个订单详情
+     * @param $id
+     * @return mixed|string
+     */
+    public function MerchantOrderDetail($id)
+    {
+
+        //$this->getUserId();
+
+        $data = $this
+            ->field(['st_astext(lnglat) as lnglat',
+                'id',
+                'order_code',
+                'user_id',
+                'shop_id',
+                'status',
+                'pay_status',
+                'worker_id',
+                'address',
+                'street_number',
+                'car_number',
+                'price',
+                'ifnull(user_picture_ids,\'\') as user_picture_ids',
+                'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
+                'add_time',
+                'update_time',
+                'preset_time',
+                'add_time',
+            ])
+            ->where(['id' => $id])
+            ->find();
+
+        if (empty($data)) {
+            return "[]";
+        }
+
+        $OrderVehicleStatus = M('OrderVehicleStatus')->field('id,update_time,content')->where(['order_id' => $id, 'status' => OrderVehicleModel::STATUS_NO_WORKER])->order('update_time desc')->select();
+
+        $reason = $OrderVehicleStatus[0]['content'];
+        $data['reason'] = empty($reason) ? "" : $reason;
+
+        $data['user_pictures'] = array_column(D('Picture')->field(['path'])
+            ->where(['id' => ['in', $data['user_picture_ids']]])
+            ->select(), 'path');
+
+        unset($data['user_picture_ids']);
+
+        $data['worker_pictures'] = array_column(D('Picture')
+            ->field(['path'])
+            ->where(['id' => ['in', $data['worder_picture_ids']]])
+            ->select(), 'path');
+
+        unset($data['worder_picture_ids']);
+
+        $user = D('UcenterMember')
+            ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+            ->where(['sq_ucenter_member.id' => $data['user_id']])
+            ->find();
+        $data['user_name'] = $user['real_name'] ? $user['real_name'] : "";
+        $data['user_picture'] = $user['path'] ? $user['path'] : "";
+
+        return empty($data) ? "[]" : $data;
+    }
+
+    /**
+     * 用户获取订单信息
+     * @param $id
+     * @return mixed|string
+     */
+    public function MemberOrderDetail($id)
+    {
+        $data = $this
+            ->join('left join sq_merchant_shop on sq_merchant_shop.id=sq_order_vehicle.shop_id')
+            ->join('left join sq_picture on sq_picture.id=sq_merchant_shop.picture')
+            //->join('left join sq_ucenter_member on sq_ucenter_member.id=sq_order_vehicle.user_id')
+            ->field(['st_astext(sq_order_vehicle.lnglat) as lnglat',
+                'sq_order_vehicle.id',
+                'ifnull(sq_merchant_shop.title,\'\') as shop_title',
+                'ifnull(sq_merchant_shop.phone_number,\'\') as shop_phone_number',
+                'ifnull(sq_picture.path,\'\') as shop_photo',
+                'sq_order_vehicle.order_code',
+                'sq_order_vehicle.user_id',
+                //'ifnull(sq_ucenter_member.real_name,\'\') as user_name',
+                'sq_order_vehicle.shop_id',
+                'sq_order_vehicle.status',
+                'sq_order_vehicle.pay_status',
+                'sq_order_vehicle.worker_id',
+                'sq_order_vehicle.address',
+                'sq_order_vehicle.car_number',
+                'sq_order_vehicle.price',
+                'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
+                'ifnull(user_picture_ids,\'\') as user_picture_ids',
+                'sq_order_vehicle.add_time',
+                'sq_order_vehicle.update_time',
+                'sq_order_vehicle.preset_time',
+                'consignee',
+                'mobile',
+                'sq_order_vehicle.street_number'
+            ])
+            ->where(['sq_order_vehicle.id' => $id])
+            ->find();
+
+        if (empty($data)) {
+            return "[]";
+        }
+
+        $data['worker_pictures'] = [];
+        foreach (D('Picture')
+                     ->field(['path'])
+                     ->where(['id' => ['in', $data['worder_picture_ids']]])
+                     ->select() as $p) {
+            $data['worker_pictures'][] = $p['path'];
+        }
+        unset($data['worder_picture_ids']);
+        $data['user_pictures'] = [];
+        foreach (D('Picture')
+                     ->field(['path'])
+                     ->where(['id' => ['in', $data['user_picture_ids']]])
+                     ->select() as $p) {
+            $data['user_pictures'][] = $p['path'];
+        }
+        unset($data['user_picture_ids']);
+
+        $user = D('UcenterMember')
+            ->join('left join sq_picture on sq_picture.id=sq_ucenter_member.photo')
+            ->where(['sq_ucenter_member.id' => $data['worker_id']])
+            ->find();
+        $data['worker_name'] = $user['real_name'] ? $user['real_name'] : '';
+        $data['worker_photo'] = $user['path'] ? $user['path'] : '';
+
+        return empty($data) ? "[]" : $data;
     }
 }

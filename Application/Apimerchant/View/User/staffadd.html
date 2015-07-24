@@ -154,7 +154,7 @@
             success: function (json) {
                 if (json.success == 1) {
                     $('#msg').html("注册成功，正在跳转...");
-                    window.location.href="http://apitest.cmxue.com/apimchant.php?s=/System/apkDownload";
+                    window.location.href="http://{$http_host}/apimchant.php?s=/System/apkDownload";
 //                    alert('注册成功！请下载APP应用登陆...');
                 } else {
                     $('#msg').html("注册失败！错误原因:" + json.message);

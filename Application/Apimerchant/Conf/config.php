@@ -32,6 +32,10 @@ return array(
     'APIMCHT_ALLOW_ACCESS' => [
         'user/login',
         'user/register',
+        'user/staffAdd',
+        'user/getVerifyCode',
+        'user/forgetPassword',
+        'system/apkDownload'
     ],
 
 
