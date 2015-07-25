@@ -25,7 +25,7 @@ class AlipayController extends ApiController
     public $merchantPrivateKeyPath = 'key/rsa_private_key.pem';
     public $alipayPublicKeyPath = 'key/alipay_public_key.pem';
 
-    private $config = [];//支付宝配置信息
+    protected $config = [];//支付宝配置信息
 
     public function _initialize()
     {
