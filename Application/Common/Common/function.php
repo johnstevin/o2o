@@ -1620,7 +1620,7 @@ function passport_encode($array) {
 
 }
 
-/*
+/**
  * 生成图片缩略图
  * @param string $ImagePath 图片地址
  * @param int $height 缩略图默认最大高度

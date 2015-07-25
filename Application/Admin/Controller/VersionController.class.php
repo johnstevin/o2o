@@ -79,8 +79,8 @@ class VersionController extends AdminController
 
         /* 记录附件信息 */
         if ($info) {
-            $return['data'] = think_encrypt(json_encode($info['versionfile']));
-            $return['info'] = $info['versionfile']['name'];
+            $return['data'] = think_encrypt(json_encode($info['file']));
+            $return['info'] = $info['file']['name'];
         } else {
             $return['status'] = 0;
             $return['info'] = $File->getError();
