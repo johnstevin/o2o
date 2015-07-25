@@ -123,6 +123,7 @@ class OrderVehicleController extends ApiController{
                 'address',
                 'street_number',
                 'car_number',
+                'mobile',
                 'price',
                 'ifnull(user_picture_ids,\'\') as user_picture_ids',
                 'ifnull(worder_picture_ids,\'\') as worder_picture_ids',
@@ -367,32 +368,11 @@ class OrderVehicleController extends ApiController{
        // $this->__update();
 
         $id=I('post.id');//为了避免传递参数时混淆，强制指定post
-
+        $remark=I('remark');
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $groupIds=$this->getUserGroupIds($mgrRoleId,true);
-
-        $model=D('OrderVehicle');
-        $order=$model->field(['st_astext(lnglat) as lnglat','preset_time','shop_id'])->find($id);
-        //var_dump($order);die;
-        if(empty($order))
-            E('订单不存在');
-        $shop=D('MerchantShop')->find($order['shop_id']);
-//        var_dump($order);var_dump($shop);var_dump($groupIds);die;
-        if(!in_array($shop['group_id'],$groupIds))
-            E('用户无权修改此订单');
-
-        $worker=(new MerchantModel())->getAvailableWorker($order['lnglat'][0],$order['lnglat'][1],$order['preset_time']);
-        if(empty($worker))
-            E('没有找到合适的服务人员');
-
-        $model->save(['id'=>$id,'worker_id'=>$worker[0]['id'],'shop_id'=>$worker[0]['shop_id'],'status'=>OrderVehicleModel::STATUS_HAS_WORKER]);
-
-        action_log('api_reassign_order_veh', $model, $id, UID,2);
-
-        push_by_uid('CLIENT',$order['user_id'],'管理员重新分配了您的订单',[
-            'action'=>'vehicleOrderDetail',
-            'order_id'=>$id
-        ],'管理员重新分配了您的订单');
+        $uid=$this->uid;
+        D('OrderVehicle')->managerReassign($uid,$id,$remark,$groupIds);
 
         $this->apiSuccess(['data'=>[]], '操作成功');
     }
@@ -414,8 +394,8 @@ class OrderVehicleController extends ApiController{
 
         $mgrRoleId=C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER');//管理角色
         $groupIds=$this->getUserGroupIds($mgrRoleId,true);
-
-        (new OrderVehicleModel())->managerCancel($this->getUserId(),$id,$remark,$groupIds);
+        $uid=$this->uid;
+        (new OrderVehicleModel())->managerCancel($uid,$id,$remark,$groupIds);
 
         $this->apiSuccess(['data'=>[]], '操作成功');
     }

@@ -120,7 +120,7 @@
                 <div id="filePicker">选择图片</div>
                 <div id="fileList" class="uploader-list"></div>
                 <div class="upload-img-box">
-                    <a class="upload-pre-item" class="thumbnail"><img class="img-thumbnail" src="{$info['_picture']['path']|default=''}"/></a>
+                    <a class="upload-pre-item" href="{$info['_picture']['path']|default=''}" target="_blank" class="thumbnail"><img class="img-thumbnail" src="{:image_thumb($info['_picture']['path'])}"/></a>
                 </div>
             </div>
                 </div>

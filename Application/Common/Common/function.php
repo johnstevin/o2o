@@ -488,9 +488,10 @@ function is_merchant_login($token)
  * @param $token
  * @param $auth
  */
-function set_merchant_login($token, $auth){
+function set_merchant_login($token, $auth)
+{
     S('MT_OL_' . $token, $auth, 86400);
-    S('MT_OL_' . $auth['uid'], ['ac_time'=>$auth['ac_time'],'token'=>$token], 86400);
+    S('MT_OL_' . $auth['uid'], ['ac_time' => $auth['ac_time'], 'token' => $token], 86400);
 }
 
 /**
@@ -498,7 +499,8 @@ function set_merchant_login($token, $auth){
  * @author WangJiang,Stevin.John@qq.com
  * @param $token
  */
-function clear_merchant_login($token){
+function clear_merchant_login($token)
+{
     $user = S('MT_OL_' . $token);
     S('MT_OL_' . $token) || S('MT_OL_' . $user['uid']) ? S('MT_OL_' . $token, null) && S('MT_OL_' . $user['uid'], null) : '';
 }
@@ -507,9 +509,10 @@ function clear_merchant_login($token){
  * @param $token
  * @author Stevin.John@qq.com
  */
-function isMTOL($token) {
+function isMTOL($token)
+{
     $user = S('MT_OL_' . $token);
-    $uol  = S('MT_OL_' . $user['uid']);
+    $uol = S('MT_OL_' . $user['uid']);
     if ($user && $uol) {
         $uol['token'] === $token ? : remove_device_alias('STORE', $user['registrationId']) && S('MT_OL_' . $token, null) && E('您的账号已在其它地方登陆，请您重新登陆',10001);
         $user['ac_time'] = time();
@@ -523,7 +526,8 @@ function isMTOL($token) {
  * @return int
  * @author Stevin.John@qq.com
  */
-function is_member_login($token){
+function is_member_login($token)
+{
     $user = S('ME_OL_' . $token);
     if (empty($user)) {
         return 0;
@@ -538,9 +542,10 @@ function is_member_login($token){
  * @param $token
  * @param $auth
  */
-function set_member_login($token, $auth){
+function set_member_login($token, $auth)
+{
     S('ME_OL_' . $token, $auth, 86400);
-    S('ME_OL_' . $auth['uid'], ['ac_time'=>$auth['ac_time'],'token'=>$token], 86400);
+    S('ME_OL_' . $auth['uid'], ['ac_time' => $auth['ac_time'], 'token' => $token], 86400);
 }
 
 /**
@@ -548,7 +553,8 @@ function set_member_login($token, $auth){
  * @author WangJiang,Stevin.John@qq.com
  * @param $token
  */
-function clear_member_login($token){
+function clear_member_login($token)
+{
     $user = S('ME_OL_' . $token);
     S('ME_OL_' . $token) || S('ME_OL_' . $user['uid']) ? S('ME_OL_' . $token, null) && S('ME_OL_' . $user['uid'], null) : '';
 }
@@ -557,11 +563,12 @@ function clear_member_login($token){
  * @param $token
  * @author Stevin.John@qq.com
  */
-function isMEOL($token) {
+function isMEOL($token)
+{
     $user = S('ME_OL_' . $token);
-    $uol  = S('ME_OL_' . $user['uid']);
+    $uol = S('ME_OL_' . $user['uid']);
     if ($user && $uol) {
-        $uol['token'] === $token ? : remove_device_alias('CLIENT', $user['registrationId']) && S('ME_OL_' . $token, null) && E('您的账号已在其它地方登陆，请您重新登陆');
+        $uol['token'] === $token ?: remove_device_alias('CLIENT', $user['registrationId']) && S('ME_OL_' . $token, null) && E('您的账号已在其它地方登陆，请您重新登陆');
         $user['ac_time'] = time();
         set_member_login($token, $user);
     } else
@@ -874,7 +881,8 @@ function getUcenterMobile($uid = 0)
  * @param string $token
  * @return string
  */
-function encode_token($token){
+function encode_token($token)
+{
     return base64_encode($token);
 }
 
@@ -884,7 +892,8 @@ function encode_token($token){
  * @param string $token
  * @return string
  */
-function decode_token($token) {
+function decode_token($token)
+{
     return base64_decode($token);
 }
 
@@ -1477,7 +1486,8 @@ function _arrMinByField($acRes, $field)
  * @return string
  * @author Stevin.John@qq.com
  */
-function create_unique() {
+function create_unique()
+{
     $data = $_SERVER['HTTP_USER_AGENT'] . $_SERVER['REMOTE_ADDR'] . time() . rand();
     return substr(sha1($data), 4, 24);
 }
@@ -1486,40 +1496,41 @@ function create_unique() {
  * @return bool
  * @author Stevin.John@qq.com
  */
-function is_mobile_request(){
+function is_mobile_request()
+{
     $_SERVER['ALL_HTTP'] = isset($_SERVER['ALL_HTTP']) ? $_SERVER['ALL_HTTP'] : '';
     $mobile_browser = '0';
-    if(preg_match('/(up.browser|up.link|mmp|symbian|smartphone|midp|wap|phone|iphone|ipad|ipod|android|xoom)/i', strtolower($_SERVER['HTTP_USER_AGENT'])))
+    if (preg_match('/(up.browser|up.link|mmp|symbian|smartphone|midp|wap|phone|iphone|ipad|ipod|android|xoom)/i', strtolower($_SERVER['HTTP_USER_AGENT'])))
         $mobile_browser++;
-    if((isset($_SERVER['HTTP_ACCEPT'])) and (strpos(strtolower($_SERVER['HTTP_ACCEPT']),'application/vnd.wap.xhtml+xml') !== false))
+    if ((isset($_SERVER['HTTP_ACCEPT'])) and (strpos(strtolower($_SERVER['HTTP_ACCEPT']), 'application/vnd.wap.xhtml+xml') !== false))
         $mobile_browser++;
-    if(isset($_SERVER['HTTP_X_WAP_PROFILE']))
+    if (isset($_SERVER['HTTP_X_WAP_PROFILE']))
         $mobile_browser++;
-    if(isset($_SERVER['HTTP_PROFILE']))
+    if (isset($_SERVER['HTTP_PROFILE']))
         $mobile_browser++;
-    $mobile_ua = strtolower(substr($_SERVER['HTTP_USER_AGENT'],0,4));
+    $mobile_ua = strtolower(substr($_SERVER['HTTP_USER_AGENT'], 0, 4));
     $mobile_agents = array(
-        'w3c ','acs-','alav','alca','amoi','audi','avan','benq','bird','blac',
-        'blaz','brew','cell','cldc','cmd-','dang','doco','eric','hipt','inno',
-        'ipaq','java','jigs','kddi','keji','leno','lg-c','lg-d','lg-g','lge-',
-        'maui','maxo','midp','mits','mmef','mobi','mot-','moto','mwbp','nec-',
-        'newt','noki','oper','palm','pana','pant','phil','play','port','prox',
-        'qwap','sage','sams','sany','sch-','sec-','send','seri','sgh-','shar',
-        'sie-','siem','smal','smar','sony','sph-','symb','t-mo','teli','tim-',
-        'tosh','tsm-','upg1','upsi','vk-v','voda','wap-','wapa','wapi','wapp',
-        'wapr','webc','winw','winw','xda','xda-'
+        'w3c ', 'acs-', 'alav', 'alca', 'amoi', 'audi', 'avan', 'benq', 'bird', 'blac',
+        'blaz', 'brew', 'cell', 'cldc', 'cmd-', 'dang', 'doco', 'eric', 'hipt', 'inno',
+        'ipaq', 'java', 'jigs', 'kddi', 'keji', 'leno', 'lg-c', 'lg-d', 'lg-g', 'lge-',
+        'maui', 'maxo', 'midp', 'mits', 'mmef', 'mobi', 'mot-', 'moto', 'mwbp', 'nec-',
+        'newt', 'noki', 'oper', 'palm', 'pana', 'pant', 'phil', 'play', 'port', 'prox',
+        'qwap', 'sage', 'sams', 'sany', 'sch-', 'sec-', 'send', 'seri', 'sgh-', 'shar',
+        'sie-', 'siem', 'smal', 'smar', 'sony', 'sph-', 'symb', 't-mo', 'teli', 'tim-',
+        'tosh', 'tsm-', 'upg1', 'upsi', 'vk-v', 'voda', 'wap-', 'wapa', 'wapi', 'wapp',
+        'wapr', 'webc', 'winw', 'winw', 'xda', 'xda-'
     );
-    if(in_array($mobile_ua, $mobile_agents))
+    if (in_array($mobile_ua, $mobile_agents))
         $mobile_browser++;
-    if(strpos(strtolower($_SERVER['ALL_HTTP']), 'operamini') !== false)
+    if (strpos(strtolower($_SERVER['ALL_HTTP']), 'operamini') !== false)
         $mobile_browser++;
     // Pre-final check to reset everything if the user is on Windows
-    if(strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'windows') !== false)
-        $mobile_browser=0;
+    if (strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'windows') !== false)
+        $mobile_browser = 0;
     // But WP7 is also Windows, with a slightly different characteristic
-    if(strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'windows phone') !== false)
+    if (strpos(strtolower($_SERVER['HTTP_USER_AGENT']), 'windows phone') !== false)
         $mobile_browser++;
-    if($mobile_browser>0)
+    if ($mobile_browser > 0)
         return true;
     else
         return false;
@@ -1529,20 +1540,21 @@ function is_mobile_request(){
  * @return bool
  * @author Stevin.John@qq.com
  */
-function browsers(){
-    global $HTTP_USER_AGENT ;
-    if (isset($HTTP_USER_AGENT)){
+function browsers()
+{
+    global $HTTP_USER_AGENT;
+    if (isset($HTTP_USER_AGENT)) {
         $sAgent = $HTTP_USER_AGENT;
-    }else{
+    } else {
         $sAgent = $_SERVER['HTTP_USER_AGENT'];
     }
-    if (strpos($sAgent,'MSIE') !== false && strpos($sAgent,'mac') === false && strpos($sAgent,'Opera') === false){
-        $iVersion = (float)substr($sAgent,strpos($sAgent,'MSIE') + 5,3);
-        return ($iVersion >= 5.5) ;
-    }else if (strpos($sAgent,'Gecko/') !== false){
-        $iVersion = (int)substr($sAgent,strpos($sAgent,'Gecko/') + 6,8);
-        return ($iVersion >= 20030210) ;
-    }else{
+    if (strpos($sAgent, 'MSIE') !== false && strpos($sAgent, 'mac') === false && strpos($sAgent, 'Opera') === false) {
+        $iVersion = (float)substr($sAgent, strpos($sAgent, 'MSIE') + 5, 3);
+        return ($iVersion >= 5.5);
+    } else if (strpos($sAgent, 'Gecko/') !== false) {
+        $iVersion = (int)substr($sAgent, strpos($sAgent, 'Gecko/') + 6, 8);
+        return ($iVersion >= 20030210);
+    } else {
         return false;
     }
 }
@@ -1550,8 +1562,9 @@ function browsers(){
 /**
  * @author Stevin.John@qq.com
  */
-function gather(){
-    $_SERVER['HTTP_USER_AGENT'] ? : E('未授权的终端');
+function gather()
+{
+    $_SERVER['HTTP_USER_AGENT'] ?: E('未授权的终端');
 }
 
 /**
@@ -1605,4 +1618,68 @@ function passport_encode($array) {
     }
     return implode('&', $arrayenc);
 
+}
+
+/*
+ * 生成图片缩略图
+ * @param string $ImagePath 图片地址
+ * @param int $height 缩略图默认最大高度
+ * @param int $width 缩略图默认最大高度
+ * @return string
+ */
+function image_thumb($ImagePath, $width = 170, $height = 180)
+{
+
+    /*图片地址参数不存在或为空,返回空*/
+    if (empty($ImagePath)) {
+        return "";
+    }
+
+    $ImagePath='.'.$ImagePath;
+
+    try {
+
+        /*获取图片扩展名*/
+        $fileExt = pathinfo($ImagePath, PATHINFO_EXTENSION);
+
+        /*获取图片名称*/
+        $ImageName=basename($ImagePath, '.'.$fileExt);
+
+        /*获取文件夹路径*/
+        $ImageFolder=dirname($ImagePath);
+
+        /*缩略图保存路径*/
+        $pathStr=$ImageFolder.'/thumb/';
+
+        /*不存在文件夹则生成*/
+        if ( !file_exists( $pathStr ) ) {
+            if ( !mkdir( $pathStr , 0777 , true ) ) {
+                E('文件夹创建失败');
+            }
+        }
+
+        /*得到缩略图的地址*/
+        $pathUrl = $pathStr.$ImageName.'_' . $width . '_' . $height . '.' . $fileExt;
+
+        /*检查缩略图文件是否存在*/
+        if (file_exists($pathUrl)) {
+            return $pathUrl;
+        }
+
+        /*实例化图像类*/
+        $image = new \Think\Image();
+
+        /*打开图片*/
+        $image->open($ImagePath);
+
+        /*生成缩略图*/
+        $image->thumb($width, $height)->save($pathUrl);
+
+        /*返回缩略图地址*/
+        return $pathUrl;
+
+    } catch (\Exception $ex) {
+        /*如果报异常，如图片不存在，非法等等都返回空字符串*/
+        return "";
+    }
 }
