@@ -31,6 +31,7 @@ class FeedbackController extends AdminController
         $this->meta_title = '用户信息';
         // 记录当前列表页的cookie
         Cookie('__forward__', $_SERVER['REQUEST_URI']);
+        Cookie('__forward__FeedBack', $_SERVER['REQUEST_URI']);
         $this->display();
     }
 
@@ -137,8 +138,8 @@ class FeedbackController extends AdminController
             $this->assign('replys', $reply);
             $this->assign('uid', UID);
             $this->meta_title = '问题描述';
-//            // 记录当前列表页的cookie
-//            Cookie('__forward__', $_SERVER['REQUEST_URI']);
+            // 记录当前列表页的cookie
+            Cookie('__forward__', $_SERVER['REQUEST_URI']);
             $this->display();
         }
     }
