@@ -357,7 +357,7 @@ class OrderVehicleModel extends AdvModel
             if (!$ovs->create([
                 'order_id' => $oid,
                 'user_id' => $uid,//$order['user_id'],
-                //'merchant_id'=>0,
+                'merchant_id'=>$data['worker_id'],
                 'shop_id' => $data['shop_id'],
                 'status' => self::STATUS_CANCELED,
                 'content' => '用户取消订单',
@@ -391,8 +391,8 @@ class OrderVehicleModel extends AdvModel
     public function managerCancel($uid, $id, $remark, $groupIds)
     {
 
-        $model = D('OrderVehicle');
-        $order = $model
+        //$model = D('OrderVehicle');
+        $order = $this
             //->field(['st_astext(lnglat) as lnglat','preset_time'])
             ->find($id);
         //var_dump($order);die;
@@ -405,24 +405,25 @@ class OrderVehicleModel extends AdvModel
             E('订单已经不能取消');
         $ovs = D('OrderVehicleStatus');
 
-        $model->startTrans();
+        $this->startTrans();
         try {
-            $model->save(['id' => $id, 'status' => OrderVehicleModel::STATUS_CANCELED]);
+            $this->save(['id' => $id, 'status' => self::STATUS_CANCELED]);
             if (!$ovs->create([
                 'order_id' => $id,
-                //'user_id'=>0,//$order['user_id'],
+                'user_id'=>$order['user_id'],
                 'merchant_id' => $uid,
                 'shop_id' => $order['shop_id'],
-                'status' => OrderVehicleModel::STATUS_CANCELED,
+                'status' => self::STATUS_CANCELED,
                 'content' => $remark ? $remark : '经理取消订单',
             ])
             )
                 E('参数传递失败 ' . $ovs->getError());
 
             $ovs->add();
-            $model->commit();
+            $this->commit();
         } catch (\Exception $ex) {
-            $model->rollback();
+            $this->rollback();
+            E($ex->getMessage());
         }
 
         /*用户取消订单消息推送*/
@@ -430,6 +431,61 @@ class OrderVehicleModel extends AdvModel
             'action' => 'vehicleOrderDetail',
             'order_id' => $id
         ], '您的订单被取消');
+    }
+
+    public function managerReassign($uid,$id,$remark,$groupIds){
+
+
+        //$model=D('OrderVehicle');
+        $order=$this->field(['st_astext(lnglat) as lnglat','preset_time','shop_id','user_id','status'])->find($id);
+        //var_dump($order);die;
+        if(empty($order))
+            E('订单不存在');
+        $shop=D('MerchantShop')->find($order['shop_id']);
+//        var_dump($order);var_dump($shop);var_dump($groupIds);die;
+        if(!in_array($shop['group_id'],$groupIds))
+            E('用户无权修改此订单');
+
+        $worker=(new MerchantModel())->getAvailableWorker($order['lnglat'][0],$order['lnglat'][1],$order['preset_time']);
+
+        if(empty($worker))
+            E('没有找到合适的服务人员');
+
+
+        $ovs = D('OrderVehicleStatus');
+        M()->startTrans();
+        try {
+            $this->save(['id'=>$id,'worker_id'=>$worker[0]['id'],'shop_id'=>$worker[0]['shop_id'],'status'=>self::STATUS_HAS_WORKER]);
+
+            if (!$ovs->create([
+                'order_id' => $id,
+                'user_id' => $order['user_id'],
+                'merchant_id' => $uid,
+                'shop_id' => $worker[0]['shop_id'],
+                'status' => self::STATUS_HAS_WORKER,
+                'content' => '管理员重新分配了订单， 附说明：' . $remark,
+            ]))
+                E('参数传递失败');
+
+
+            $ovs->add();
+            M()->commit();
+        } catch (\Exception $ex) {
+            M()->rollback();
+            E($ex->getMessage());
+        }
+
+
+        action_log('api_reassign_order_veh', 'OrderVehicle', $id, UID,2);
+        try {
+        push_by_uid('CLIENT',$order['user_id'],"管理员重新分配了您的订单,附说明:$remark",[
+            'action'=>'vehicleOrderDetail',
+            'order_id'=>$id
+        ],'管理员重新分配了您的订单');
+        } catch (\Exception $ex) {
+            /*不抛异常*/
+            return;
+        }
     }
 
     private static function _get_status_chain()
@@ -468,7 +524,7 @@ class OrderVehicleModel extends AdvModel
     {
 
 
-        $status = $this::STATUS_CONFIRM;
+        $status = self::STATUS_CONFIRM;
 
         $data = $this->find($oid);
         if ($data['worker_id'] != $uid)
@@ -513,7 +569,7 @@ class OrderVehicleModel extends AdvModel
     public function start($oid, $uid)
     {
 
-        $status = $this::STATUS_TREATING;
+        $status = self::STATUS_TREATING;
         $data = $this->find($oid);
         if ($data['worker_id'] != $uid)
             E('非本人操作');
@@ -561,7 +617,7 @@ class OrderVehicleModel extends AdvModel
     public function end($oid, $uid)
     {
 
-        $status = $this::STATUS_DONE;
+        $status = self::STATUS_DONE;
 
         $data = $this->find($oid);
         if ($data['worker_id'] != $uid)
@@ -626,7 +682,7 @@ class OrderVehicleModel extends AdvModel
         if (empty($reason))
             E("请填写原因");
 
-        $status = $this::STATUS_NO_WORKER;
+        $status = self::STATUS_NO_WORKER;
 
         $data = $this->find($oid);
         if ($data['worker_id'] != $uid)
@@ -875,6 +931,7 @@ class OrderVehicleModel extends AdvModel
                 'update_time',
                 'preset_time',
                 'add_time',
+                'mobile',
             ])
             ->where(['id' => $id])
             ->find();
@@ -883,10 +940,10 @@ class OrderVehicleModel extends AdvModel
             return "[]";
         }
 
-        $OrderVehicleStatus = M('OrderVehicleStatus')->field('id,update_time,content')->where(['order_id' => $id, 'status' => OrderVehicleModel::STATUS_NO_WORKER])->order('update_time desc')->select();
+        $OrderVehicleStatus = M('OrderVehicleStatus')->field('id,update_time,content')->where(['order_id' => $id, 'status' => $this::STATUS_NO_WORKER])->order('update_time desc')->select();
 
         $reason = $OrderVehicleStatus[0]['content'];
-        $data['reason'] = empty($reason) ? "" : $reason;
+        $data['reason'] = empty($reason)||$data['status'] != self::STATUS_NO_WORKER ? "" : $reason;
 
         $data['user_pictures'] = array_column(D('Picture')->field(['path'])
             ->where(['id' => ['in', $data['user_picture_ids']]])
@@ -952,6 +1009,10 @@ class OrderVehicleModel extends AdvModel
         if (empty($data)) {
             return "[]";
         }
+        $OrderVehicleStatus = M('OrderVehicleStatus')->field('id,update_time,content')->where(['order_id' => $id, 'status' => self::STATUS_NO_WORKER])->order('update_time desc')->select();
+
+        $reason = $OrderVehicleStatus[0]['content'];
+        $data['reason'] = empty($reason)||$data['status'] != self::STATUS_NO_WORKER ? "" : $reason;
 
         $data['worker_pictures'] = [];
         foreach (D('Picture')

@@ -225,7 +225,8 @@ class OrderVehicleController extends ApiController
                 E('非法调用，请用POST调用');
             $oid = I('post.id');
             $m = new OrderVehicleModel();
-            $m->userCancel($oid, $this->getUserId());
+            $uid=$this->uid;
+            $m->userCancel($oid,$uid);
             action_log('api_cancel_order_veh', $m, $oid, UID, 3);
             $this->apiSuccess(['data' => []], '成功');
         } catch (\Exception $ex) {
