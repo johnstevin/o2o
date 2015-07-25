@@ -73,7 +73,7 @@ abstract class RestController extends Controller {
         $token = $this->getToken();
         define('UID', $this->isLogin($token));
         if (!UID)
-            E('请您先登录...');
+            E('请您先登录...', 10002);
         return UID;
     }
 

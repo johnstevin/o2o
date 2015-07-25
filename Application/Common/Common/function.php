@@ -511,7 +511,7 @@ function isMTOL($token) {
     $user = S('MT_OL_' . $token);
     $uol  = S('MT_OL_' . $user['uid']);
     if ($user && $uol) {
-        $uol['token'] === $token ? : remove_device_alias('STORE', $user['registrationId']) && S('MT_OL_' . $token, null) && E('您的账号已在其它地方登陆，请您重新登陆');
+        $uol['token'] === $token ? : remove_device_alias('STORE', $user['registrationId']) && S('MT_OL_' . $token, null) && E('您的账号已在其它地方登陆，请您重新登陆',10001);
         $user['ac_time'] = time();
         set_merchant_login($token, $user);
     } else

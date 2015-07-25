@@ -51,5 +51,7 @@ return array(
         'region/tree',
         'region/treeToXml',
         'system/apkDownload',
+        'Alipay/callback',
+        'Alipay/createRsaSign',
     ],
 );
