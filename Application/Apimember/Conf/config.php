@@ -54,4 +54,9 @@ return array(
         'Alipay/callback',
         'Alipay/createRsaSign',
     ],
+
+    'APIMEM_WEB_ACCESS'  => [
+        'Alipay/callback',
+        'Alipay/createRsaSign',
+    ],
 );

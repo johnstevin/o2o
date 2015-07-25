@@ -9,6 +9,7 @@ namespace Common\Controller;
 
 use Common\Exception\ReturnException;
 use Think\Controller;
+use Think\Model;
 
 /**
  * 所有REST API的公共类 *
@@ -34,7 +35,7 @@ abstract class RestController extends Controller {
      */
     protected function _initialize(){
         $this->_exception_handler();
-        if ( C('API_WEB_CALL') === false )
+        if ( C('API_WEB_CALL') === false && !$this->webAccess() )
             is_mobile_request() ? : E('请在移动设备登陆!');
 
     }
@@ -75,6 +76,15 @@ abstract class RestController extends Controller {
         if (!UID)
             E('请您先登录...', 10002);
         return UID;
+    }
+
+    final protected function webAccess() {
+        $allow = C('APIMEM_WEB_ACCESS');
+        $check = strtolower(CONTROLLER_NAME . '/' . ACTION_NAME);
+        if (!empty($allow) && in_array_case($check, $allow)) {
+            return true;
+        }
+        return false;
     }
 
     /**
