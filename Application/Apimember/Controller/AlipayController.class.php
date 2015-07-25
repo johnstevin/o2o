@@ -125,31 +125,51 @@ class AlipayController extends ApiController
     }
 
     /**
-     * 创建rsa签名
+     * 创建rsa签名，注意，因为这个方法给了一些默认值，所以只能用于支付宝的支付签名
      * @author Fufeng Nie <niefufeng@gmail.com>
      */
     public function createRsaSign()
     {
+        $file = fopen('Runtime/alipay' . date('Y-m-d') . '.log', 'a');
+        fwrite($file, "用户初始传入的POST：\n" . print_r($_POST, 1) . "\n");
+
         if (empty($_POST)) E('签名参数不能为空');
 
-        $_POST['partner'] = $this->config['partner'];
+        $_POST['partner'] = $this->config['partner'];//商户合作ID
 
-        $_POST['seller_id'] = $this->config['seller_email'];
+        $_POST['seller_id'] = $this->config['seller_email'];//收款人
 
-        if (empty($_POST['subject'])) {
+        if (empty($_POST['subject'])) {//订单的标题，用于用户在支付宝支付界面显示
             $_POST['subject'] = '一点社区订单收费';
         }
 
-        $_POST['body'] = '一点社区订单收费';
+        if (empty($_POST['body'])) {//订单的说明，用于用户在支付宝支付界面显示
+            $_POST['body'] = '一点社区订单收费';
+        }
 
-        $_POST['service'] = 'mobile.securitypay.pay';
+        if (empty($_POST['service'])) {//这是什么鬼？
+            $_POST['service'] = 'mobile.securitypay.pay';
+        }
 
-        $_POST['payment_type'] = '1';
+        if (!isset($_POST['payment_type'])) {//支付方式
+            $_POST['payment_type'] = '1';
+        }
 
-        $_POST['_input_charset'] = 'utf-8';
+        if (empty($_POST['_input_charset'])) {//编码
+            $_POST['_input_charset'] = $this->config['input_charset'];
+        }
 
-        $_POST['it_b_pay'] = '30m';
+        if (empty($_POST['it_b_pay'])) {//过期时间
+            $_POST['it_b_pay'] = '30m';
+        }
 
+        if (empty($_POST['show_url'])) {
+            $_POST['show_url'] = 'm.alipay.com';
+        }
+
+        $data = $_POST;
+        fwrite($file, "我已经修改过的POST：\n" . print_r($_POST, 1) . "\n");
+        fclose($file);
         //除去待签名参数数组中的空值和签名参数
         $para_filter = paraFilter($_POST);
 
@@ -161,6 +181,7 @@ class AlipayController extends ApiController
 
         $sign = rsaSign($prestr, $this->merchantPrivateKeyPath);
 
-        $this->apiSuccess(['data' => $sign]);
+        $data['sign'] = $sign;
+        $this->apiSuccess(['data' => $data]);
     }
 }
