@@ -38,7 +38,7 @@ abstract class RestController extends Controller
     protected function _initialize()
     {
         $this->_exception_handler();
-        set_error_handler([&$this, 'ApiErrorHandler']);
+        //set_error_handler([&$this, 'ApiErrorHandler']);
         if ( C('API_WEB_CALL') === false && !$this->webAccess() )
             is_mobile_request() ?: E('请在移动设备登陆!');
 
