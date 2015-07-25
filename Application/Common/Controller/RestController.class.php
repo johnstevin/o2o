@@ -38,7 +38,7 @@ abstract class RestController extends Controller
     protected function _initialize()
     {
         $this->_exception_handler();
-        set_error_handler([&$this, 'ApiErrorHandler']);
+        //set_error_handler([&$this, 'ApiErrorHandler']);
         if ( C('API_WEB_CALL') === false && !$this->webAccess() )
             is_mobile_request() ?: E('请在移动设备登陆!');
 
@@ -143,13 +143,11 @@ abstract class RestController extends Controller
 
     public function ApiErrorHandler($errno, $errstr, $errfile, $errline)
     {
-        $file = fopen('Runtime/system_error_' . date('Ymd') . '.log', 'a');
-        fwrite($file, date('Y-m-d H:i:s') . "\n错误文件：{$errfile}\n错误行号：{$errline}\n错误代码：{$errno}\n错误信息：{$errstr}\n\n");
-        fclose($file);
+
         exit(json_encode([
             'success' => false,
             'error_code' => 40004,
-            'message' => '系统发生了错误，有人要扣工资啦~'
+            'message' => '系统发生了错误'
         ]));
     }
 
@@ -159,16 +157,19 @@ abstract class RestController extends Controller
             header('Content-Type:application/json; charset=utf-8');
             if ($e instanceof APIRequestException) {//如果是极光推送抛出的异常，直接记录然后继续执行
                 $file = fopen('Runtime/jpush_error_' . date('Ymd') . '.log', 'a');
-                fwrite(date('Y-m-d H:i:s') . "\n" . print_r($e, true) . "\n");
+                fwrite($file, date('Y-m-d H:i:s') . "\n" . print_r($e, true) . "\n");
                 fclose($file);
                 return false;
             }
-            exit(json_encode([
+            return json_encode([
                 'success' => false,
                 'error_code' => $e->getCode(),
                 'message' => $e->getMessage(),
-            ]));
+            ]);
+            exit();
+
         });
+
     }
 
     public function setInternalCallApi($value = true)
