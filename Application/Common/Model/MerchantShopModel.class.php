@@ -220,23 +220,23 @@ class MerchantShopModel extends AdvModel
 
         if ($lat < -90 or $lat > 90 or $lng < -180 or $lng > 180) E('非法坐标');
 
-        if (!is_numeric($range)) E('查询范围必须是数值');
-
-        //TODO 需要考虑最大查询范围
-        if ($range < 0) E('非法查询范围');
-
-        $range = floatval($range);
-        $range += $range * 0.15;
-
         if ($regionName !== null) {
             $regionName = trim($regionName);
             $regionId = RegionModel::getInstance()->where(['name' => $regionName, 'status' => RegionModel::STATUS_ACTIVE])->find();
             if (!$regionId) E('没有找到相应的区域');
-            $pdo = get_pdo();
-            $sth = $pdo->prepare('SELECT id FROM sq_region WHERE id = :id OR id IN (SELECT id FROM sq_region WHERE pid = :id) OR id IN (SELECT id FROM sq_region WHERE pid IN (SELECT id FROM sq_region WHERE pid = :id))', [':id' => $regionId]);
-            $sth->execute([':id' => $regionId]);
-            $regionIds = $sth->fetchAll(\PDO::FETCH_ASSOC);
-            return $regionIds = array_column($regionIds, 'id');
+            $regionIds = [
+                $regionId['id']
+            ];
+            $regions = RegionModel::getInstance()->field(['id'])->where(['pid' => $regionId['id'], 'status' => RegionModel::STATUS_ACTIVE])->select();
+            $ids = array_column($regions, 'id');
+            $regionIds = array_merge($regionIds, $ids);
+            while ($ids) {
+                if (!$regions = RegionModel::getInstance()->field(['id'])->where(['pid' => ['IN', $ids], 'status' => RegionModel::STATUS_ACTIVE])->select()) {
+                    break;
+                }
+                $ids = array_column($regions, 'id');
+                $regionIds = array_merge($regionIds, $ids);
+            }
         }
 
         //当前时间，秒
@@ -305,15 +305,13 @@ class MerchantShopModel extends AdvModel
                 , 'ifnull(sq_picture.path,\'\') as picture_path'
             ]);
 
-        if (1 == $order)
+        if (1 == $order) {
             $this->order('distance');
-        //TODO 暂时即时计算，后期应该定期计算存入shop表
-        else if (2 == $order)
+            //TODO 暂时即时计算，后期应该定期计算存入shop表
+        } else if (2 == $order) {
             $this->order('grade desc');
-
-        $this->group('sq_merchant_shop.id');
-        $ret = $this->fetchSql(1)->select();
-        return $ret;
+        }
+        return $this->group('sq_merchant_shop.id')->select();
     }
 
     /**

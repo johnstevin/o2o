@@ -25,13 +25,12 @@ class AlipayController extends ApiController
     public $merchantPrivateKeyPath = 'key/rsa_private_key.pem';
     public $alipayPublicKeyPath = 'key/alipay_public_key.pem';
 
-    /**
-     * 支付宝成功支付的回调接口
-     * @author Fufeng Nie <niefufeng@gmail.com>
-     */
-    public function callback()
+    protected $config = [];//支付宝配置信息
+
+    public function _initialize()
     {
-        $config = [
+        parent::_initialize();
+        $this->config = [
             'partner' => C('ALIPAY.PARTNER'),//合作身份者id
             'seller_email' => C('ALIPAY.SELLER_EMAIL'),//收款支付宝账号
             'key' => C('ALIPAY.KEY'),//安全检验码，以数字和字母组成的32位字符
@@ -42,7 +41,15 @@ class AlipayController extends ApiController
             'private_key_path' => $this->merchantPrivateKeyPath,
             'ali_public_key_path' => $this->alipayPublicKeyPath
         ];
-        $alipayNotify = new \AlipayNotify($config);
+    }
+
+    /**
+     * 支付宝成功支付的回调接口
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     */
+    public function callback()
+    {
+        $alipayNotify = new \AlipayNotify($this->config);
 
         //如果通知验证失败
         if (!$alipayNotify->verifyNotify()) exit('fail');
@@ -117,8 +124,52 @@ class AlipayController extends ApiController
         }
     }
 
+    /**
+     * 创建rsa签名，注意，因为这个方法给了一些默认值，所以只能用于支付宝的支付签名
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     */
     public function createRsaSign()
     {
+        $file = fopen('Runtime/alipay' . date('Y-m-d') . '.log', 'a');
+        fwrite($file, "用户初始传入的POST：\n" . print_r($_POST, 1) . "\n");
+
+        if (empty($_POST)) E('签名参数不能为空');
+
+        $_POST['partner'] = $this->config['partner'];//商户合作ID
+
+        $_POST['seller_id'] = $this->config['seller_email'];//收款人
+
+        if (empty($_POST['subject'])) {//订单的标题，用于用户在支付宝支付界面显示
+            $_POST['subject'] = '一点社区订单收费';
+        }
+
+        if (empty($_POST['body'])) {//订单的说明，用于用户在支付宝支付界面显示
+            $_POST['body'] = '一点社区订单收费';
+        }
+
+        if (empty($_POST['service'])) {//这是什么鬼？
+            $_POST['service'] = 'mobile.securitypay.pay';
+        }
+
+        if (!isset($_POST['payment_type'])) {//支付方式
+            $_POST['payment_type'] = '1';
+        }
+
+        if (empty($_POST['_input_charset'])) {//编码
+            $_POST['_input_charset'] = $this->config['input_charset'];
+        }
+
+        if (empty($_POST['it_b_pay'])) {//过期时间
+            $_POST['it_b_pay'] = '30m';
+        }
+
+        if (empty($_POST['show_url'])) {
+            $_POST['show_url'] = 'm.alipay.com';
+        }
+
+        $data = $_POST;
+        fwrite($file, "我已经修改过的POST：\n" . print_r($_POST, 1) . "\n");
+        fclose($file);
         //除去待签名参数数组中的空值和签名参数
         $para_filter = paraFilter($_POST);
 
@@ -130,6 +181,7 @@ class AlipayController extends ApiController
 
         $sign = rsaSign($prestr, $this->merchantPrivateKeyPath);
 
-        $this->apiSuccess(['data' => $sign]);
+        $data['sign'] = $sign;
+        $this->apiSuccess(['data' => $data]);
     }
 }
