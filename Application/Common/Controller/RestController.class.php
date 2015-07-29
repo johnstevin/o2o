@@ -39,7 +39,7 @@ abstract class RestController extends Controller
     {
         $this->_exception_handler();
         //set_error_handler([&$this, 'ApiErrorHandler']);
-        if ( C('API_WEB_CALL') === false && !$this->webAccess() )
+        if (C('API_WEB_CALL') === false && !$this->webAccess())
             is_mobile_request() ?: E('请在移动设备登陆!');
 
     }
@@ -82,7 +82,8 @@ abstract class RestController extends Controller
         return UID;
     }
 
-    final protected function webAccess() {
+    final protected function webAccess()
+    {
         $allow = C('APIMEM_WEB_ACCESS');
         $check = strtolower(CONTROLLER_NAME . '/' . ACTION_NAME);
         if (!empty($allow) && in_array_case($check, $allow)) {
@@ -157,12 +158,6 @@ abstract class RestController extends Controller
     {
         set_exception_handler(function ($e) {
             header('Content-Type:application/json; charset=utf-8');
-            if ($e instanceof APIRequestException) {//如果是极光推送抛出的异常，直接记录然后继续执行
-                $file = fopen('Runtime/jpush_error_' . date('Ymd') . '.log', 'a');
-                fwrite(date('Y-m-d H:i:s') . "\n" . print_r($e, true) . "\n");
-                fclose($file);
-                return false;
-            }
             exit(json_encode([
                 'success' => false,
                 'error_code' => $e->getCode(),
