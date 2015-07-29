@@ -226,7 +226,7 @@ function tree_to_list($tree, $child = '_child', $order = 'id', &$list = [])
  * @param mixed $params 传入参数
  * @return void
  */
-function hook($hook, $params = array())
+function hook($hook, $params = [])
 {
     \Think\Hook::listen($hook, $params);
 }
@@ -252,7 +252,7 @@ function get_addon_config($name)
         $addon = new $class();
         return $addon->getConfig();
     } else {
-        return array();
+        return [];
     }
 }
 
@@ -262,7 +262,7 @@ function get_addon_config($name)
  * @param array $param 参数
  * @author liu hui
  */
-function addons_url($url, $param = array())
+function addons_url($url, $param = [])
 {
     $url = parse_url($url);
     $case = C('URL_CASE_INSENSITIVE');
@@ -277,11 +277,11 @@ function addons_url($url, $param = array())
     }
 
     /* 基础参数 */
-    $params = array(
+    $params = [
         '_addons' => $addons,
         '_controller' => $controller,
         '_action' => $action,
-    );
+    ];
     $params = array_merge($params, $param); //添加额外参数
 
     return U('Addons/execute', $params);
@@ -514,7 +514,7 @@ function isMTOL($token)
     $user = S('MT_OL_' . $token);
     $uol = S('MT_OL_' . $user['uid']);
     if ($user && $uol) {
-        $uol['token'] === $token ? : remove_device_alias('STORE', $user['registrationId']) && S('MT_OL_' . $token, null) && E('您的账号已在其它地方登陆，请您重新登陆',10001);
+        $uol['token'] === $token ?: remove_device_alias('STORE', $user['registrationId']) && S('MT_OL_' . $token, null) && E('您的账号已在其它地方登陆，请您重新登陆', 10001);
         $user['ac_time'] = time();
         set_merchant_login($token, $user);
     } else
@@ -954,7 +954,7 @@ function bacth_check_can_modify_depot($uid, $depotId)
  */
 function except_merchant_manager($uid, $gid)
 {
-    if (!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid, 'role_id' => array('in', [C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'), C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER')])])->find())
+    if (!D('AuthAccess')->where(['uid' => $uid, 'group_id' => $gid, 'role_id' => ['in', [C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_SHOP_MANAGER'), C('AUTH_ROLE_ID.ROLE_ID_MERCHANT_VEHICLE_MANAGER')]]])->find())
         E('用户无权限操作该店铺');
 }
 
@@ -1364,6 +1364,37 @@ function get_shopkeeper_by_shopid($shopId)
 }
 
 /**
+ * 获取swoole的客户端
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @return \swoole_client
+ */
+function get_swoole_client()
+{
+    static $client;
+    if ($client instanceof swoole_client) {
+        return $client;
+    }
+    $client = new swoole_client(SWOOLE_TCP, SWOOLE_ASYNC);
+    $client->connect(C('SWOOLE_HOST'), C('SWOOLE_PORT'), C('SWOOLE_TIME_OUT'));
+    return $client;
+}
+
+/**
+ * 记录推送的日志
+ * @author Fufeng Nie <niefufeng@gmail.com>
+ * @param $log
+ */
+function push_log($log)
+{
+    if (!is_dir('Runtime/Logs/Push')) {
+        mkdir('Runtime/Logs/Push', 0770, true);
+    }
+    $file = fopen('Runtime/Logs/Push/' . date('Ymd') . '.log');
+    fwrite(date('Y-m-d H:i:s     ') . $log . "\n\n");
+    fclose($file);
+}
+
+/**
  * 根据用户ID推送消息
  * @author Fufeng Nie <niefufeng@gmail.com>
  *
@@ -1384,7 +1415,28 @@ function push_by_uid($appid, $uid, $notification_content, $extras = [], $notific
     //开发模式下，不检查验证码，不推送消息
     if (!empty(C('DEVELOPMENT_MODE')))
         return;
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
+
+    return get_swoole_client()->send(json_encode([
+        'action' => 'push_by_uid',
+        'app' => $appid,
+        'uid' => $uid,
+        'notificationContent' => $notification_content,
+        'extras' => $extras,
+        'notificationTitle' => $notification_title,
+        'messageContent' => $message_content,
+        'messageTitle' => $message_title,
+        'category' => $category,
+        'messageType' => $message_type
+    ]));
+//    try {
+//        return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->pushByUid($uid, $message_content, $message_title, $message_type, $notification_content, $notification_title, $extras, $category);
+//    } catch (\JPush\Exception\APIRequestException $e) {//请求异常
+//        push_log('请求异常:' . $e->getMessage());
+//    } catch (\JPush\Exception\APIConnectionException $e) {//连接异常
+//        push_log('连接异常:' . $e->getMessage());
+//    } catch (Exception $e) {//其它异常
+//        push_log('其它异常:' . $e->getMessage());
+//    }
 }
 
 /**
@@ -1403,7 +1455,23 @@ function update_device_tag_alias($appid, $registrationId, $alias = null, $addTag
     //开发模式下，不检查验证码，不推送消息
     if (!empty(C('DEVELOPMENT_MODE')))
         return;
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
+    return get_swoole_client()->send(json_encode([
+        'action' => 'update_device_tag_alias',
+        'app' => $appid,
+        'registrationId' => $registrationId,
+        'alias' => $alias,
+        'addTags' => $addTags,
+        'removeTags' => $removeTags
+    ]));
+//    try {
+//        return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appid)->updateDeviceTagAlias($registrationId, $alias, $addTags, $removeTags);
+//    } catch (\JPush\Exception\APIRequestException $e) {//请求异常
+//        push_log('请求异常:' . $e->getMessage());
+//    } catch (\JPush\Exception\APIConnectionException $e) {//连接异常
+//        push_log('连接异常:' . $e->getMessage());
+//    } catch (Exception $e) {//其它异常
+//        push_log('其它异常:' . $e->getMessage());
+//    }
 }
 
 /**
@@ -1422,7 +1490,26 @@ function update_device_tag_alias($appid, $registrationId, $alias = null, $addTag
  */
 function push_by_platform($appId, $platform, $notification_content, $extras = [], $notification_title = null, $message_content = '', $message_title = null, $category = null)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->pushByPlatform($platform, $notification_content, $extras, $notification_title, $message_content, $message_title, $category);
+    return get_swoole_client()->send(json_encode([
+        'action' => 'push_by_platform',
+        'app' => $appId,
+        'platform' => $platform,
+        'notificationContent' => $notification_content,
+        'extras' => $extras,
+        'notificationTitle' => $notification_title,
+        'messageContent' => $message_content,
+        'messageTitle' => $message_title,
+        'category' => $category
+    ]));
+//    try {
+//        return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->pushByPlatform($platform, $notification_content, $extras, $notification_title, $message_content, $message_title, $category);
+//    } catch (\JPush\Exception\APIRequestException $e) {//请求异常
+//        push_log('请求异常:' . $e->getMessage());
+//    } catch (\JPush\Exception\APIConnectionException $e) {//连接异常
+//        push_log('连接异常:' . $e->getMessage());
+//    } catch (Exception $e) {//其它异常
+//        push_log('其它异常:' . $e->getMessage());
+//    }
 }
 
 /**
@@ -1435,7 +1522,20 @@ function push_by_platform($appId, $platform, $notification_content, $extras = []
  */
 function remove_device_alias($appId, $registrationId)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceAlias($registrationId);
+    return get_swoole_client()->send(json_encode([
+        'action' => 'remove_device_alias',
+        'app' => $appId,
+        'registrationId' => $registrationId
+    ]));
+//    try {
+//        return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceAlias($registrationId);
+//    } catch (\JPush\Exception\APIRequestException $e) {//请求异常
+//        push_log('请求异常:' . $e->getMessage());
+//    } catch (\JPush\Exception\APIConnectionException $e) {//连接异常
+//        push_log('连接异常:' . $e->getMessage());
+//    } catch (Exception $e) {//其它异常
+//        push_log('其它异常:' . $e->getMessage());
+//    }
 }
 
 /**
@@ -1448,7 +1548,20 @@ function remove_device_alias($appId, $registrationId)
  */
 function remove_device_tag($appId, $registrationId)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceTag($registrationId);
+    return get_swoole_client()->send(json_encode([
+        'action' => 'remove_device_tag',
+        'app' => $appId,
+        'registrationId' => $registrationId
+    ]));
+//    try {
+//        return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->removeDeviceTag($registrationId);
+//    } catch (\JPush\Exception\APIRequestException $e) {//请求异常
+//        push_log('请求异常:' . $e->getMessage());
+//    } catch (\JPush\Exception\APIConnectionException $e) {//连接异常
+//        push_log('连接异常:' . $e->getMessage());
+//    } catch (Exception $e) {//其它异常
+//        push_log('其它异常:' . $e->getMessage());
+//    }
 }
 
 /**
@@ -1461,7 +1574,20 @@ function remove_device_tag($appId, $registrationId)
  */
 function delete_alias($appId, $alias)
 {
-    return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->deleteAlias($alias);
+    return get_swoole_client()->send(json_encode([
+        'action' => 'delete_alias',
+        'app' => $appId,
+        'alias' => $alias
+    ]));
+//    try {
+//        return \Addons\Push\Push::getInstance(C('PUSH_TYPE'), $appId)->deleteAlias($alias);
+//    } catch (\JPush\Exception\APIRequestException $e) {//请求异常
+//        push_log('请求异常:' . $e->getMessage());
+//    } catch (\JPush\Exception\APIConnectionException $e) {//连接异常
+//        push_log('连接异常:' . $e->getMessage());
+//    } catch (Exception $e) {//其它异常
+//        push_log('其它异常:' . $e->getMessage());
+//    }
 }
 
 /**
@@ -1509,7 +1635,7 @@ function is_mobile_request()
     if (isset($_SERVER['HTTP_PROFILE']))
         $mobile_browser++;
     $mobile_ua = strtolower(substr($_SERVER['HTTP_USER_AGENT'], 0, 4));
-    $mobile_agents = array(
+    $mobile_agents = [
         'w3c ', 'acs-', 'alav', 'alca', 'amoi', 'audi', 'avan', 'benq', 'bird', 'blac',
         'blaz', 'brew', 'cell', 'cldc', 'cmd-', 'dang', 'doco', 'eric', 'hipt', 'inno',
         'ipaq', 'java', 'jigs', 'kddi', 'keji', 'leno', 'lg-c', 'lg-d', 'lg-g', 'lge-',
@@ -1519,7 +1645,7 @@ function is_mobile_request()
         'sie-', 'siem', 'smal', 'smar', 'sony', 'sph-', 'symb', 't-mo', 'teli', 'tim-',
         'tosh', 'tsm-', 'upg1', 'upsi', 'vk-v', 'voda', 'wap-', 'wapa', 'wapi', 'wapp',
         'wapr', 'webc', 'winw', 'winw', 'xda', 'xda-'
-    );
+    ];
     if (in_array($mobile_ua, $mobile_agents))
         $mobile_browser++;
     if (strpos(strtolower($_SERVER['ALL_HTTP']), 'operamini') !== false)
@@ -1570,14 +1696,15 @@ function gather()
 /**
  * @author Stevin.John@qq.com
  */
-function passport_encrypt($txt, $key) {
+function passport_encrypt($txt, $key)
+{
     srand((double)microtime() * 1000000);
     $encrypt_key = md5(rand(0, 32000));
     $ctr = 0;
     $tmp = '';
-    for($i = 0; $i < strlen($txt); $i++) {
+    for ($i = 0; $i < strlen($txt); $i++) {
         $ctr = $ctr == strlen($encrypt_key) ? 0 : $ctr;
-        $tmp .= $encrypt_key[$ctr].($txt[$i] ^ $encrypt_key[$ctr++]);
+        $tmp .= $encrypt_key[$ctr] . ($txt[$i] ^ $encrypt_key[$ctr++]);
     }
     return base64_encode(passport_key($tmp, $key));
 }
@@ -1585,7 +1712,8 @@ function passport_encrypt($txt, $key) {
 /**
  * @author Stevin.John@qq.com
  */
-function passport_decrypt($txt, $key) {
+function passport_decrypt($txt, $key)
+{
     $txt = passport_key(base64_decode($txt), $key);
     $tmp = '';
     for ($i = 0; $i < strlen($txt); $i++) {
@@ -1597,11 +1725,12 @@ function passport_decrypt($txt, $key) {
 /**
  * @author Stevin.John@qq.com
  */
-function passport_key($txt, $encrypt_key) {
+function passport_key($txt, $encrypt_key)
+{
     $encrypt_key = md5($encrypt_key);
     $ctr = 0;
     $tmp = '';
-    for($i = 0; $i < strlen($txt); $i++) {
+    for ($i = 0; $i < strlen($txt); $i++) {
         $ctr = $ctr == strlen($encrypt_key) ? 0 : $ctr;
         $tmp .= $txt[$i] ^ $encrypt_key[$ctr++];
     }
@@ -1611,10 +1740,11 @@ function passport_key($txt, $encrypt_key) {
 /**
  * @author Stevin.John@qq.com
  */
-function passport_encode($array) {
-    $arrayenc = array();
-    foreach($array as $key => $val) {
-        $arrayenc[] = $key.'='.urlencode($val);
+function passport_encode($array)
+{
+    $arrayenc = [];
+    foreach ($array as $key => $val) {
+        $arrayenc[] = $key . '=' . urlencode($val);
     }
     return implode('&', $arrayenc);
 
@@ -1635,7 +1765,7 @@ function image_thumb($ImagePath, $width = 170, $height = 180)
         return "";
     }
 
-    $ImagePath='.'.$ImagePath;
+    $ImagePath = '.' . $ImagePath;
 
     try {
 
@@ -1643,23 +1773,23 @@ function image_thumb($ImagePath, $width = 170, $height = 180)
         $fileExt = pathinfo($ImagePath, PATHINFO_EXTENSION);
 
         /*获取图片名称*/
-        $ImageName=basename($ImagePath, '.'.$fileExt);
+        $ImageName = basename($ImagePath, '.' . $fileExt);
 
         /*获取文件夹路径*/
-        $ImageFolder=dirname($ImagePath);
+        $ImageFolder = dirname($ImagePath);
 
         /*缩略图保存路径*/
-        $pathStr=$ImageFolder.'/thumb/';
+        $pathStr = $ImageFolder . '/thumb/';
 
         /*不存在文件夹则生成*/
-        if ( !file_exists( $pathStr ) ) {
-            if ( !mkdir( $pathStr , 0777 , true ) ) {
+        if (!file_exists($pathStr)) {
+            if (!mkdir($pathStr, 0777, true)) {
                 E('文件夹创建失败');
             }
         }
 
         /*得到缩略图的地址*/
-        $pathUrl = $pathStr.$ImageName.'_' . $width . '_' . $height . '.' . $fileExt;
+        $pathUrl = $pathStr . $ImageName . '_' . $width . '_' . $height . '.' . $fileExt;
 
         /*检查缩略图文件是否存在*/
         if (file_exists($pathUrl)) {
