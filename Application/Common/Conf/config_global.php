@@ -23,9 +23,9 @@ return [
     'DATE_FORMAT' => 'Y-m-d H:i:s',
 
     /* 缓存设置 */
-    'DATA_CACHE_PREFIX'    => 'o2o_cmn_',
+    'DATA_CACHE_PREFIX' => 'o2o_cmn_',
 
-    'API_WEB_CALL'         => false,
+    'API_WEB_CALL' => false,
 
     /* 系统数据加密设置 */
     'DATA_AUTH_KEY' => '$5sdhnr4%#^d9smjf&345sfsdb2f4%*)&*)@#@!$sanhgh645#@#sdf', //默认数据加密KEY
@@ -36,6 +36,11 @@ return [
     'JPUSH_STORE_MASTER_SECRET' => 'cc6141c26da194563766896c',
     'JPUSH_CLIENT_APP_KEY' => '9c987ff4739ce826e20e7920',
     'JPUSH_CLIENT_MASTER_SECRET' => '018dd4b4c6b576ab7d98118c',
+
+    ## SWOOLE
+    'SWOOLE_HOST' => '127.0.0.1',
+    'SWOOLE_PORT' => 9501,
+    'SWOOLE_TIME_OUT' => 3000,
 
     /* 权限组配置-数据库id值 */
     'AUTH_GROUP_ID' => [
@@ -110,22 +115,22 @@ return [
     ],
 
 
-    'VAR_SESSION_ID' => 'session_id',	//修复uploadify插件无法传递session_id的bug
+    'VAR_SESSION_ID' => 'session_id',    //修复uploadify插件无法传递session_id的bug
     /* 文件上传相关配置 */
-    'VERSION_PACKAGE_UPLOAD' => array(
-        'mimes'    => '', //允许上传的文件MiMe类型
-        'maxSize'  => 50*1024*1024, //上传的文件大小限制 (0-不做限制)
-        'exts'     => 'jpg,gif,png,jpeg,zip,rar,tar,gz,7z,doc,docx,txt,xml,apk,pdf', //允许上传的文件后缀
-        'autoSub'  => true, //自动子目录保存文件
-        'subName'  => array('date', 'Y/m/d'), //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
+    'VERSION_PACKAGE_UPLOAD' => [
+        'mimes' => '', //允许上传的文件MiMe类型
+        'maxSize' => 50 * 1024 * 1024, //上传的文件大小限制 (0-不做限制)
+        'exts' => 'jpg,gif,png,jpeg,zip,rar,tar,gz,7z,doc,docx,txt,xml,apk,pdf', //允许上传的文件后缀
+        'autoSub' => true, //自动子目录保存文件
+        'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
         'rootPath' => './Uploads/VersionPackage/', //保存根路径
         'savePath' => '', //保存路径
-        'saveName' => array('uniqid', ''), //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
-        'saveExt'  => '', //文件保存后缀，空则使用原后缀
-        'replace'  => false, //存在同名是否覆盖
-        'hash'     => true, //是否生成hash编码
+        'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
+        'saveExt' => '', //文件保存后缀，空则使用原后缀
+        'replace' => false, //存在同名是否覆盖
+        'hash' => true, //是否生成hash编码
         'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
-    ), //下载模型上传配置（文件上传类配置）
+    ], //下载模型上传配置（文件上传类配置）
 
     'VAR_SESSION_ID' => 'session_id',    //修复uploadify插件无法传递session_id的bug
 
@@ -161,12 +166,12 @@ return [
         'callback' => false, //检测文件是否存在回调函数，如果存在返回文件信息数组
     ], //图片上传相关配置（文件上传类配置）
     'UCENTER_MEMBER_PICTURE_UPLOAD' => [
-        'picType'=>'UCENTER_MEMBER_PHOTO',//ADD by wangjiang
-        'mimes'    => '', //允许上传的文件MiMe类型
-        'maxSize'  => 2*1024*1024, //上传的文件大小限制 (0-不做限制)
-        'exts'     => 'jpg,gif,png,jpeg', //允许上传的文件后缀
-        'autoSub'  => true, //自动子目录保存文件
-        'subName'  => array('date', 'Y/m/d'), //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
+        'picType' => 'UCENTER_MEMBER_PHOTO',//ADD by wangjiang
+        'mimes' => '', //允许上传的文件MiMe类型
+        'maxSize' => 2 * 1024 * 1024, //上传的文件大小限制 (0-不做限制)
+        'exts' => 'jpg,gif,png,jpeg', //允许上传的文件后缀
+        'autoSub' => true, //自动子目录保存文件
+        'subName' => ['date', 'Y/m/d'], //子目录创建方式，[0]-函数名，[1]-参数，多个参数使用数组
         'rootPath' => './Uploads/UcenterMember/', //保存根路径
         'savePath' => '', //保存路径
         'saveName' => ['uniqid', ''], //上传文件命名规则，[0]-函数名，[1]-参数，多个参数使用数组
