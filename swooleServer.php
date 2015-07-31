@@ -50,12 +50,12 @@ class server
         if (!is_dir(__DIR__ . '/Runtime/Logs/Swoole')) {
             mkdir(__DIR__ . '/Runtime/Logs/Swoole', 0775, true);
         }
-        set_exception_handler([$this, 'exceptionHandler']);
         $this->server->start();
     }
 
     /**
      * 用户记录日志
+     * @author Fufeng Nie <niefufeng@gmail.com>
      * @param $log
      * @return bool
      */
@@ -64,21 +64,6 @@ class server
         $file = fopen(__DIR__ . '/Runtime/Logs/Swoole/' . date('Y-m-d') . '.log', 'a');
         fwrite($file, date('Y-m-d H:i:s') . "\n{$log}\n\n");
         fclose($file);
-    }
-
-    /**
-     * @param $e
-     * @return bool
-     */
-    public function exceptionHandler(Exception $e)
-    {
-        if ($e instanceof \JPush\Exception\APIConnectionException) {
-            return $this->log('推送连接异常:' . $e->getMessage() . "\n错误文件:{$e->getFile()}\n错误行号:{$e->getLine()}");
-        }
-        if ($e instanceof \JPush\Exception\APIRequestException) {
-            return $this->log('推送请求异常:' . $e->getMessage() . "\n错误文件:{$e->getFile()}\n错误行号:{$e->getLine()}");
-        }
-        return $this->log('其它异常:' . $e->getMessage() . "\n错误文件:{$e->getFile()}\n错误行号:{$e->getLine()}");
     }
 
     /**
@@ -102,12 +87,20 @@ class server
         $this->log('服务器启动成功');
     }
 
+    /**
+     * 当有新客户端链接的时候的回调
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param \swoole_server $server
+     * @param $fd
+     * @param $fromId
+     */
     public function onConnect(swoole_server $server, $fd, $fromId)
     {
     }
 
     /**
      * 接收到数据的回调
+     * @author Fufeng Nie <niefufeng@gmail.com>
      * @param \swoole_server $server
      * @param $fd
      * @param $fromId
@@ -115,6 +108,9 @@ class server
      */
     public function onReceive(swoole_server $server, $fd, $fromId, $data)
     {
+        if ($server->stats()['tasking_num'] > 10) {
+            $this->log('当前正在排队的任务有' . $server->stats()['tasking_num'] . '个');
+        }
         $server->task($data);
     }
 
@@ -122,6 +118,15 @@ class server
     {
     }
 
+    /**
+     * 执行异步任务
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param \swoole_server $server
+     * @param integer $taskId 任务ID
+     * @param $fromId worker ID
+     * @param int|null|array|object|string $data 数据
+     * @return \JPush\Model\DeviceResponse
+     */
     public function onTask(swoole_server $server, $taskId, $fromId, $data)
     {
         $data = json_decode($data, true);
@@ -133,28 +138,43 @@ class server
         if (!in_array($app, ['STORE', 'CLIENT'])) {
             $this->log($app . ' 不在APP名称列表里');
         }
-        switch ($action) {
-            case 'push_by_uid'://根据用户ID发送推送消息
-                return $this->pushByUid($app, $data['uid'], $data['notificationContent'], $data['extras'], $data['notificationTitle'], $data['messageContent'], $data['messageTitle'], $data['category'], $data['messageType']);
-                break;
-            case 'update_device_tag_alias'://更新设备的别名和标签
-                return $this->updateDeviceTagAlias($app, $data['registrationId'], $data['alias'], $data['addTags'], $data['removeTags']);
-                break;
-            case 'push_by_platform'://根据设备种类推送消息
-                return $this->pushByPlatform($app, $data['platform'], $data['notificationContent'], $data['extras'], $data['notificationTitle'], $data['messageContent'], $data['messageTitle'], $data['category']);
-                break;
-            case 'remove_device_alias'://删除设备的别名
-                return $this->removeDeviceAlias($app, $data['registrationId']);
-                break;
-            case 'removeDeviceTag'://删除设备的标签
-                return $this->removeDeviceTag($app, $data['registrationId']);
-                break;
-            case 'deleteAlias'://删除别名(用于这个用户被删除之后)
-                return $this->deleteAlias($app, $data['alias']);
-                break;
+        try {
+            switch ($action) {
+                case 'push_by_uid'://根据用户ID发送推送消息
+                    return $this->pushByUid($app, $data['uid'], $data['notificationContent'], $data['extras'], $data['notificationTitle'], $data['messageContent'], $data['messageTitle'], $data['category'], $data['messageType']);
+                    break;
+                case 'update_device_tag_alias'://更新设备的别名和标签
+                    return $this->updateDeviceTagAlias($app, $data['registrationId'], $data['alias'], $data['addTags'], $data['removeTags']);
+                    break;
+                case 'push_by_platform'://根据设备种类推送消息
+                    return $this->pushByPlatform($app, $data['platform'], $data['notificationContent'], $data['extras'], $data['notificationTitle'], $data['messageContent'], $data['messageTitle'], $data['category']);
+                    break;
+                case 'remove_device_alias'://删除设备的别名
+                    return $this->removeDeviceAlias($app, $data['registrationId']);
+                    break;
+                case 'removeDeviceTag'://删除设备的标签
+                    return $this->removeDeviceTag($app, $data['registrationId']);
+                    break;
+                case 'deleteAlias'://删除别名(用于这个用户被删除之后)
+                    return $this->deleteAlias($app, $data['alias']);
+                    break;
+            }
+        } catch (\JPush\Exception\APIRequestException $e) {
+            $this->log('推送连接异常:' . $e->getMessage() . "\n错误文件:{$e->getFile()}\n错误行号:{$e->getLine()}\n客户端请求的数据如下:\n" . print_r($data, true));
+        } catch (\JPush\Exception\APIConnectionException $e) {
+            $this->log('推送请求异常:' . $e->getMessage() . "\n错误文件:{$e->getFile()}\n错误行号:{$e->getLine()}\n客户端请求的数据如下:\n" . print_r($data, true));
+        } catch (Exception $e) {
+            $this->log('其它异常:' . $e->getMessage() . "\n错误文件:{$e->getFile()}\n错误行号:{$e->getLine()}\n客户端请求的数据如下:\n" . print_r($data, true));
         }
     }
 
+    /**
+     * 异步任务执行完毕的回调(onTask)
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param \swoole_server $server
+     * @param integer $taskId 任务ID
+     * @param int|string|array|object|null $data onTask返回的数据
+     */
     public function onFinish(swoole_server $server, $taskId, $data)
     {
     }
