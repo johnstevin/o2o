@@ -418,4 +418,20 @@ class OrderController extends ApiController
     {
         $this->apiSuccess(['data' => OrderModel::getInstance()->DeleteOrder($id, $this->getUserId())]);
     }
+
+    /**
+     * (下单)预处理
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string|array $cart 购物车
+     * @param int $deliveryMode 配送模式
+     * @param int $deliveryTime 配送时间
+     * @param float $lng 经度
+     * @param float $lat 纬度
+     * @param bool|true $split 是否需要服务器拆单
+     */
+    public function pretreatment($cart, $deliveryMode = OrderModel::DELIVERY_MODE_DELIVERY, $deliveryTime = 0, $lng, $lat, $split = true)
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->pretreatment($cart, $lng, $lat, $deliveryMode, $deliveryTime, $split, $this->getUserId())]);
+    }
 }
