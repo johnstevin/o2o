@@ -674,6 +674,202 @@ class OrderModel extends RelationModel
     }
 
     /**
+     * 预处理下单
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string|array $cart 购物车
+     * @param float $lng 经度
+     * @param float $lat 纬度
+     * @param int $deliveryMode 配送方式
+     * @param int $deliveryTime 配送时间
+     * @param bool|true $split 是否需要服务器拆单
+     * @param null $userId 用户ID
+     * @return array
+     */
+    public function pretreatment($cart, $lng, $lat, $deliveryMode = self::DELIVERY_MODE_DELIVERY, $deliveryTime = 0, $split = true, $userId = null)
+    {
+        ## 对数据进行简单处理
+        if (is_string($cart)) $cart = trim($cart);
+        if (is_array($cart)) $cart = array_unique($cart);
+        if (empty($cart)) E('购物车不能为空');
+        $_cart = is_string($cart) ? json_decode($cart, true) : $cart;
+        $cart = [];
+        foreach ($_cart as $key => $depot) {
+            $cart[$depot['depot_id']] = &$_cart[$key];
+        }
+
+        $deliveryMode = intval($deliveryMode);
+        $deliveryTime = intval($deliveryTime);
+        //如果配送时间是0(即立即配送),则配送时间改为当前时间加一分钟,这个配送时间用于下面的计算,上面那个配送时间用于存数据库
+        $_deliveryTime = $deliveryTime === 0 ? time() + 60 : $deliveryTime;
+        $lng = floatval($lng);
+        $lat = floatval($lat);
+        $split = boolval($split);
+
+        ## 一些简单的验证
+        if (!array_key_exists($deliveryMode, self::getInstance()->getDeliveryModeOptions())) {
+            E('系统不支持此配送模式');
+        }
+        if ($deliveryMode === self::DELIVERY_MODE_DELIVERY && $_deliveryTime < time()) {
+            E('配送时间不能小于当前时间');
+        }
+        if ($lng > 180 || $lng < -180 || $lat < -90 || $lat > 90) {
+            E('经纬度不正确');
+        }
+
+        ## 初始化一些模型
+        $depotModel = MerchantDepotModel::getInstance();
+        $shopModel = MerchantShopModel::getInstance();
+        $pdo = get_pdo();
+
+        //商品总数统计
+        $productTotal = array_sum(array_column($cart, 'total'));
+        if ($split) {
+            $cart = $this->split($cart, $deliveryMode, $_deliveryTime, $lng, $lat);
+        }
+
+        $depotIds = array_unique(array_column($cart, 'depot_id'));
+        if (empty($depotIds)) E('商品ID不能为空');
+        //查出所有商品所属的商铺和价格,商铺用于计算配送费用
+        $depots = $depotModel->field([
+            'id',
+            'shop_id',
+            'price',
+            'type',
+            'product_id'
+        ])->where([
+            'status' => MerchantDepotModel::STATUS_ACTIVE,
+            'id' => [
+                'IN', $depotIds
+            ]
+        ])->select(['index' => 'id']);
+        if (empty($depots)) E('没有找到相关商品');
+
+        $shopIds = array_unique(array_column($depots, 'shop_id'));
+        //查出所有店铺的配送收费信息
+        $sth = $pdo->prepare('SELECT id,title,open_time_mode,begin_open_time,end_open_time,open_status,pay_delivery_time_begin,delivery_time_cost,delivery_distance_limit,ST_Distance_Sphere(lnglat,point(:lng,:lat)) distance' .
+            ",pay_delivery_distance,delivery_distance_cost,free_delivery_amount,pay_delivery_amount,delivery_amount_cost FROM sq_merchant_shop WHERE status = :status AND id IN (:ids)");
+        $sth->execute([
+            ':status' => MerchantShopModel::STATUS_ACTIVE,
+            ':ids' => implode(',', $shopIds),
+            ':lng' => $lng,
+            ':lat' => $lat
+        ]);
+        $_shops = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        $shops = [];
+        foreach ($_shops as $key => $shop) {
+            $shops[$shop['id']] = &$_shops[$key];
+        }
+        //重新取一下商铺ID
+        $shopIds = array_unique(array_column($shops, 'id'));
+        $products = [];//根据商铺分配过的商品
+        $priceDetails = [];//价格详情
+
+        $delivery = $deliveryMode === self::DELIVERY_MODE_DELIVERY;
+
+        $deliveryDayTimestamp = strtotime(date('Y-m-d'));//收货当天0:00的时间戳
+        foreach ($depots as $key => $depot) {
+            $currentShop = $shops[$depot['shop_id']];
+            //如果商铺不存在
+            if (!$currentShop) {
+                E('商铺不存在或者已经关闭');
+            };
+
+            //用户要求的配送时间是否在商家的营业时间内 TODO 这儿提前了一分钟
+            $deliveryTimeInOpenTime = $_deliveryTime >= ($deliveryDayTimestamp + $currentShop['begin_open_time'] - 60) || $_deliveryTime <= ($deliveryDayTimestamp + $currentShop['end_open_time']);
+            if ($delivery && $currentShop['open_time_mode'] == 1 && !$deliveryTimeInOpenTime) {
+                E('商铺"' . $currentShop['title'] . '"在您的配送时间里不营业');
+            }
+
+            //用户的距离大于商家最大的配送距离 TODO 这儿在商家的配送距离上增加了0.1倍
+            if ($currentShop['distance'] > ($currentShop['delivery_distance_limit'] * 1.1)) {
+                E('您的送货距离超出商家"' . $currentShop['title'] . '"的最远送货距离');
+            }
+
+            //根据商铺进行订单拆分
+            $products[$depot['shop_id']][] = &$depots[$key];
+            //计算商品价格
+            $priceDetails[$depot['shop_id']]['product'] += ($cart[$depot['id']]['total'] * $depot['price']);
+        }
+
+        //配送时间在当天距离当天0:00的秒数
+        $deliverySeconds = $_deliveryTime - $deliveryDayTimestamp;
+
+        //循环订单,计算价格
+        foreach ($products as $shopId => $product) {
+            $currentPriceDetail = &$priceDetails[$product['shop_id']];
+            $currentPriceDetail['delivery'] = 0;
+            $currentPriceDetail['price'] = 0;
+            $currentPriceDetail['distance'] = 0;
+            $currentPriceDetail['time'] = 0;
+            $currentPriceDetail['total'] = $currentPriceDetail['product'];
+
+            $currentShop = $shops[$product['shop_id']];
+
+            //如果是自提或者价格到了免费配送的价格,则跳过
+            if (!$delivery || $currentPriceDetail['product'] > $currentShop['free_delivery_amount']) continue;
+
+            //如果当前商家的商品没有达到当前商家的包邮价格，则增加配送费
+            if ($currentPriceDetail['product'] < $currentShop['pay_delivery_amount']) {
+                $currentPriceDetail['price'] = $currentShop['delivery_amount_cost'];
+            }
+
+            //TODO 因为怕商家坐标和用户坐标偏移过大导致用户莫名收取距离服务费,所以大于500M的增加了80M的误差,小于500M的增加了20M误差
+            if ($currentShop['distance'] > ($currentShop['pay_delivery_distance'] > 500 ? $currentShop['pay_delivery_distance'] + 80 : $currentShop['pay_delivery_distance'] + 20)) {
+                $currentPriceDetail['distance'] = $currentShop['delivery_distance_cost'];
+            }
+
+            //如果配送时间在商家收费配送时间内
+            if ($currentShop['pay_delivery_time_begin'] < $deliverySeconds && $currentShop['pay_delivery_time_end'] > $deliverySeconds) {
+                $currentPriceDetail['time'] = $currentShop['delivery_time_cost'];
+            }
+
+            $currentPriceDetail['delivery'] = ($currentPriceDetail['price'] + $currentPriceDetail['distance'] + $currentPriceDetail['time']);
+            $currentPriceDetail['total'] = ($currentPriceDetail['delivery'] + $currentPriceDetail['product']);
+        }
+        //订单总价
+        $priceTotal = array_sum(array_column($priceDetails, 'total'));
+        //配送费总计
+        $deliveryPrice = array_sum(array_column($priceDetails, 'delivery'));
+        //商品价格总计
+        $productPrice = array_sum(array_column($priceDetails, 'product'));
+
+        $cacheData = [
+            'order' => &$products,
+            'price_detail' => &$priceDetails,
+            'price_total' => &$priceTotal,
+            'delivery_mode' => $deliveryMode,
+            'delivery_time' => $deliveryTime,
+            'delivery_price' => $deliveryPrice,
+            'user_id' => $userId
+        ];
+        $cacheKey = md5($cacheData);
+        S($cacheKey, $cacheData, 3600);
+        return [
+            'price_total' => $priceTotal,//总价统计
+            'price_delivery' => $deliveryPrice,//配送费统计
+            'price_product' => $productPrice,//商品价格统计
+            'product_total' => $productTotal,//商品数量统计
+            'key' => $cacheKey,//缓存的key名
+        ];
+    }
+
+    /**
+     * 对订单进行拆单,因为需求的更改,所以暂时不做了
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     * @param array $cart 购物车
+     * @param integer $deliveryMode 配送方式
+     * @param integer $deliveryTime 配送时间
+     * @param float $lng 经度
+     * @param float $lat 纬度
+     */
+    protected function split(array $cart, $deliveryMode, $deliveryTime, $lng, $lat)
+    {
+        //TODO 根据组织的要求,现在不做拆单
+        return $cart;
+    }
+
+    /**
      * 初始化订单，用于分配未指定商家的商品到商铺，计算价格等，会把计算后的结果缓存到服务器
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
