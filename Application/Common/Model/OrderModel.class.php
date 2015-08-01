@@ -617,19 +617,38 @@ class OrderModel extends RelationModel
             if ($getProducts || $getShop) {
                 if (empty($item['_childs'])) {
                     if ($getProducts) {//获取产品
-                        $item['_products'] = $orderItemModel->field([
+                        //TODO 因为sq_shop_product表与sq_shop_product_norms表的关系为一对多,这儿会有性能和数据结构的改变,所以...暂时放弃了治疗
+                        $products1 = $orderItemModel->field([
                             'oi.depot_id',
                             'p.title',
                             'p.id product_id',
                             'md.price',
                             'oi.total',
                             'p.detail',
-                            'n.title norm',
+//                            'n.title norm',
                             'product_picture.path picture_path'
-                        ])->alias('oi')->where(['oi.order_id' => $item['id']])->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
-                            ->join('LEFT JOIN sq_product p ON md.product_id=p.id')->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
-                            ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
+                        ])->alias('oi')->where(['oi.order_id' => $item['id'], 'type' => 0])
+                            ->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
+                            ->join('LEFT JOIN sq_product p ON md.product_id=p.id')
+                            ->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
+//                            ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
                             ->select();
+                        $products2 = $orderItemModel->field([
+                            'oi.depot_id',
+                            'p.title',
+                            'p.id product_id',
+                            'md.price',
+                            'oi.total',
+                            'p.detail',
+//                            'n.title norm',
+                            'product_picture.path picture_path'
+                        ])->alias('oi')->where(['oi.order_id' => $item['id'], 'type' => 1])
+                            ->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
+                            ->join('LEFT JOIN sq_shop_product p ON md.product_id=p.id')
+                            ->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
+//                            ->join('LEFT JOIN sq_shop_product_norms n ON n.id=p.norms_id')
+                            ->select();
+                        $item['_products'] = array_merge($products1, $products2);
                     }
                     if ($getShop) {//获取商铺信息
                         $sth = $pdo->prepare('SELECT ms.id,ms.title,ms.description,ms.status,ms.type,ms.phone_number phone,ms.address,ms.open_status,ms.region_id,p.path picture FROM sq_merchant_shop ms LEFT JOIN sq_picture p ON ms.picture=p.id WHERE ms.id=:shop_id');
@@ -640,19 +659,37 @@ class OrderModel extends RelationModel
                     $item['_products'] = [];
                     foreach ($item['_childs'] as &$child) {
                         if ($getProducts) {//获取产品信息
-                            $child['_products'] = $orderItemModel->field([
+                            $products1 = $orderItemModel->field([
                                 'oi.depot_id',
                                 'p.title',
                                 'p.id product_id',
                                 'md.price',
                                 'oi.total',
                                 'p.detail',
-                                'n.title norm',
+//                                'n.title norm',
                                 'product_picture.path picture_path'
-                            ])->alias('oi')->where(['oi.order_id' => $child['id']])->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
-                                ->join('LEFT JOIN sq_product p ON md.product_id=p.id')->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
-                                ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
+                            ])->alias('oi')->where(['oi.order_id' => $child['id'], 'type' => 0])
+                                ->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
+                                ->join('LEFT JOIN sq_product p ON md.product_id=p.id')
+                                ->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
+//                                ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
                                 ->select();
+                            $products2 = $orderItemModel->field([
+                                'oi.depot_id',
+                                'p.title',
+                                'p.id product_id',
+                                'md.price',
+                                'oi.total',
+                                'p.detail',
+//                                'n.title norm',
+                                'product_picture.path picture_path'
+                            ])->alias('oi')->where(['oi.order_id' => $child['id'], 'type' => 0])
+                                ->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
+                                ->join('LEFT JOIN sq_shop_product p ON md.product_id=p.id')
+                                ->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
+//                                ->join('LEFT JOIN sq_norms n ON n.id=p.norms_id')
+                                ->select();
+                            $child['_products'] = array_merge($products1, $products2);
                         }
                         if ($getShop) {//获取商铺信息
                             $sth = $pdo->prepare('SELECT ms.id,ms.title,ms.description,ms.status,ms.type,ms.phone_number phone,ms.address,ms.open_status,ms.region_id,p.path picture FROM sq_merchant_shop ms LEFT JOIN sq_picture p ON ms.picture=p.id WHERE ms.id=:shop_id');
@@ -895,6 +932,7 @@ class OrderModel extends RelationModel
      * @param string $remark 订单备注
      * @param int $payMode 支付方式
      * @return bool
+     * @throws \Exception
      */
     public function order($userId, $orderKey, $mobile, $consignee, $address, $remark, $payMode = self::PAY_MODE_OFFLINE)
     {
