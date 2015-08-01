@@ -683,7 +683,7 @@ class OrderModel extends RelationModel
                                 'p.detail',
 //                                'n.title norm',
                                 'product_picture.path picture_path'
-                            ])->alias('oi')->where(['oi.order_id' => $child['id'], 'type' => 0])
+                            ])->alias('oi')->where(['oi.order_id' => $child['id'], 'type' => 1])
                                 ->join('LEFT JOIN sq_merchant_depot md ON md.id=oi.depot_id')
                                 ->join('LEFT JOIN sq_shop_product p ON md.product_id=p.id')
                                 ->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id')
