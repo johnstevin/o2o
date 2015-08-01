@@ -78,7 +78,7 @@ class ProductController extends AdminController
             }
         } else {
             /*获取分类信息*/
-            $category = M('category')->where(array('status' => array('egt', 1), 'pid' => '0'))->order('title asc')->select();
+            $category = M('category')->where(array('status' => array('eq', 1), 'pid' => '0'))->order('title asc')->select();
             /* 获取品牌信息 */
             // $brands = M('Brand')->where(array('status' => array('egt', 1)))->order('title asc')->select();
             /*获取规格信息*/
@@ -148,7 +148,7 @@ class ProductController extends AdminController
         } else {
 
             /*获取分类信息*/
-            $category = M('category')->where(array('status' => array('egt', -1), 'pid' => '0'))->order('title asc')->select();
+            $category = M('category')->where(array('status' => array('eq', 1), 'pid' => '0'))->order('title asc')->select();
             $product_category = $Product->CategoryInfo($id);
             /* 获取品牌信息 */
             //  $brands = M('Brand')->where(array('status' => array('egt', -1)))->order('title asc')->select();

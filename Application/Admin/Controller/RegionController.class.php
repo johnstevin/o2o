@@ -20,15 +20,6 @@ class RegionController extends AdminController
         // 记录当前列表页的cookie
         Cookie('__forward__', $_SERVER['REQUEST_URI']);
 
-
-//        <li><a href="#">Home</a></li>
-//        <li><a href="#">Library</a></li>
-//        <li><a href="#">Data</a></li>
-//        <li><a href="#">Home</a></li>
-//        <li><a href="#">Library</a></li>
-//        <li class="active">Data</li>
-
-        //TODO  千万别看
         if ($id) {
             $Region=D('Region');
             $info = $Region->info($id);

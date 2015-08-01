@@ -32,6 +32,8 @@ class UcenterMemberModel extends Model
 //        array('mobile', '#^13[\d]{9}$|14^[0-9]\d{8}|^15[0-9]\d{8}$|^18[0-9]\d{8}$#', -9, self::EXISTS_VALIDATE), //手机格式不正确 TODO:
         array('mobile', 'checkDenyMobile', -10, self::EXISTS_VALIDATE, 'callback'), //过滤手机黑名单
         array('mobile', '', -11, self::EXISTS_VALIDATE, 'unique'), //手机号被占用
+        array('username', '', -3, self::EXISTS_VALIDATE, 'unique'), //手机号被占用
+        array('email', '', -8, self::EXISTS_VALIDATE, 'unique'), //手机号被占用
     );
 
     /* 用户模型自动完成 */
@@ -42,7 +44,7 @@ class UcenterMemberModel extends Model
         array('reg_ip', 'get_client_ip', self::MODEL_INSERT, 'function', 1),
         array('update_time', NOW_TIME),
         array('is_member', 1),
-        array('is_admin', 1),
+//        array('is_admin', 1),
     );
 
     final public function getPwd($pwd)
@@ -115,7 +117,9 @@ class UcenterMemberModel extends Model
 
         /* 获取用户数据 */
         $user = $this->where($map)->find();
-        if (is_array($user) && $user['is_admin']) {
+
+//        if (is_array($user) && $user['is_admin']) {
+        if (is_array($user)) {
             /* 验证用户密码 */
             if (generate_password($password, $user['saltkey']) === $user['password']) {
                 //是管理员，插入或更新数据admin
@@ -123,6 +127,7 @@ class UcenterMemberModel extends Model
             } else {
                 return -2; //密码错误
             }
+
         } else {
             return -1; //用户不存在或不是管理员
         }
@@ -135,30 +140,32 @@ class UcenterMemberModel extends Model
      */
     protected function updateLogin($user, $token)
     {
-        $data = array(
-            'id' => $user['id'],
-            'login' => array('exp', '`login`+1'),
-            'last_login_time' => NOW_TIME,
-            'last_login_ip' => get_client_ip(1),
-            'status' => 1,
-        );
-        $admin = M(self::USER_ADMIN);
-        $result = $admin->field('id')->where('id=' . $user['id'])->find();
-        if ($result) {
-            $admin->save($data);
-        } else {
-            $admin->add($data);
-        }
-
-        if ($admin->getDbError())
-            return -3;  //插入或更新管理员信息失败
+        /*TODO 用户登录后台不做任何处理*/
+//        $data = array(
+//            'id' => $user['id'],
+//            'login' => array('exp', '`login`+1'),
+//            'last_login_time' => NOW_TIME,
+//            'last_login_ip' => get_client_ip(1),
+//            'status' => 1,
+//        );
+//        $admin = M(self::USER_ADMIN);
+//        $result = $admin->field('id')->where('id=' . $user['id'])->find();
+//        if ($result) {
+//            $admin->save($data);
+//        } else {
+//            $admin->add($data);
+//        }
+//
+//        if ($admin->getDbError())
+//            return -3;  //插入或更新管理员信息失败
 
         /* 记录登录SESSION和COOKIES */
         $auth = array(
             'uid' => $user['id'],
             'mobile' => $user['mobile'],
-            'last_login_time' => $data['last_login_time'],
-            'token'     => $token,
+//            'last_login_time' => $data['last_login_time'],
+            'last_login_time' =>NOW_TIME,
+            'token' => $token,
         );
 
         session('admin_auth', $auth);
@@ -169,8 +176,9 @@ class UcenterMemberModel extends Model
         return $user['id'];
     }
 
-    private function _setOnline($auth) {
-        S('ADMIN_ONLINE_'.$auth['uid'], $auth, 1200);
+    private function _setOnline($auth)
+    {
+        S('ADMIN_ONLINE_' . $auth['uid'], $auth, 1200);
     }
 
     /**
@@ -203,7 +211,7 @@ class UcenterMemberModel extends Model
 
                 /*查询*/
                 $UserInfo = $this
-                    ->field('a.id,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
+                    ->field('a.id,a.is_admin,a.mobile,a.username,a.real_name,a.email,a.reg_time,b.status,b.last_login_ip,b.last_login_time')
                     ->table('__UCENTER_MEMBER__ a')
                     ->join('__ADMIN__ b ON  a.id = b.id', 'LEFT')
                     ->where($map)
@@ -478,7 +486,7 @@ class UcenterMemberModel extends Model
      * @param $method
      * @return bool
      */
-    function changeStatus($model,$key, $method)
+    function changeStatus($model, $key, $method)
     {
         $id = I('id');
         if (empty($id)) {
@@ -550,7 +558,7 @@ class UcenterMemberModel extends Model
                 }
 
                 if (false !== $msg) {
-                    if (false!== $this->save($data)) {
+                    if (false !== $this->save($data)) {
                         M()->commit();
                         return true;
                     } else {
@@ -586,7 +594,7 @@ class UcenterMemberModel extends Model
                 }
 
                 if (false !== $msg) {
-                    if (false!== $this->save($data)) {
+                    if (false !== $this->save($data)) {
                         M()->commit();
                         return true;
                     } else {
@@ -599,7 +607,6 @@ class UcenterMemberModel extends Model
                     $this->error = '编辑详细信息失败';
                     return false;
                 }
-
 
 
                 break;
@@ -625,7 +632,7 @@ class UcenterMemberModel extends Model
                 }
 
                 if (false !== $msg) {
-                    if (false!== $this->save($data)) {
+                    if (false !== $this->save($data)) {
                         M()->commit();
                         return true;
                     } else {
@@ -647,37 +654,119 @@ class UcenterMemberModel extends Model
         }
     }
 
-   function editProfile(){
-       $Admin = M('Admin');
-       $data = $this->create();
-       $result = $Admin->where('id=' . UID)->field('id')->find();
+    function editProfile()
+    {
+        $Admin = M('Admin');
+        $data = $this->create();
+        $result = $Admin->where('id=' . UID)->field('id')->find();
 
-       $detail = $Admin->create();
-       $detail['id'] = UID;
+        $detail = $Admin->create();
+        $detail['id'] = UID;
 
 
-       M()->startTrans();
-       if ($result) {
-           $msg = $Admin->save($detail);
-       } else {
-           $msg = $Admin->add($detail);
-       }
+        M()->startTrans();
+        if ($result) {
+            $msg = $Admin->save($detail);
+        } else {
+            $msg = $Admin->add($detail);
+        }
 
-       if (false !== $msg) {
-           if (false!== $this->save($data)) {
-               M()->commit();
-               return true;
-           } else {
-               M()->rollback();
-               $this->error = '编辑失败';
-               return false;
-           }
-       } else {
-           M()->rollback();
-           $this->error = '编辑失败';
-           return false;
-       }
-   }
+        if (false !== $msg) {
+            if (false !== $this->save($data)) {
+                M()->commit();
+                return true;
+            } else {
+                M()->rollback();
+                $this->error = '编辑失败';
+                return false;
+            }
+        } else {
+            M()->rollback();
+            $this->error = '编辑失败';
+            return false;
+        }
+    }
+
+    /**
+     * 管理员提交资料
+     * @param $info
+     * @param $group_id
+     */
+    public function adminRegister($info, $group_id)
+    {
+        $AuthAccess = D('AuthAccess');
+        $auth = array(
+            'uid' => $info['id'],
+            'group_id' => $group_id,
+            'role_id' => 0,
+            'status' => 0,
+        );
+
+        $data = array(
+            'id' => $info['id'],
+            'login' => array('exp', '`login`+1'),
+            'last_login_time' => NOW_TIME,
+            'last_login_ip' => get_client_ip(1),
+            'status' => 2,//待审核状态
+        );
+
+        $admin = M('Admin');
+
+
+        D()->startTrans();
+        if (false !== $this->save($info)) {
+
+            $AdminInfo = $admin->field('id')->where('id=' . $info['id'])->find();
+            if ($AdminInfo) {
+                $result = $admin->save($data);
+            } else {
+                $result = $admin->add($data);
+            }
+
+            if (false !== $result) {
+
+                if (false !== $AuthAccess->add($auth)) {
+
+                    D()->commit();
+
+                    action_log('admin_register', 'ucentermember', $info['id'], $info['id'], 1);
+
+                    return true;
+
+                } else {
+
+                    D()->rollback();
+
+                    $this->error("提交失败");
+                }
+            } else {
+                D()->rollback();
+
+                $this->error = '提交失败';
+            }
+        } else {
+            D()->rollback();
+
+            $this->error = '提交失败';
+        }
+    }
+
+    /**
+     * 管理员通过审核
+     * @param $uid
+     * @return bool
+     */
+    public function auditAdmin($uid){
+        //检查用户是否存在
+        $info = $this->info($uid,'admin');
+        if (empty($info)) {
+            $this->error = '没有此用户';
+            return false;
+        }
+
+        return  D('Admin')->where(array('id' => $uid))->setField('status', 1);
+
+    }
 
 }
 

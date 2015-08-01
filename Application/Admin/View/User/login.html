@@ -11,51 +11,65 @@
 
 
 <div class="container">
+    <h3>用户登录</h3>
+    <hr>
     <div class="row">
-        <div class="col-xs-12 col-sm-offset-2 col-sm-10 col-md-offset-3 col-md-6">
-            <nav class="navbar">
-                <div class="text-center"><h3>用户登录</h3></div>
-            </nav>
+        <div class="col-md-6">
             <div id="msg"></div>
-            <form action="?" method="post" name="form" class="form" >
+            <form action="?" method="post" name="form" class="form">
                 <div class="form-group">
                     <label class="control-label" for="username">用户名</label>
-                    <input type="text" class="form-control  input-lg" id="username" name="username" placeholder="请输入用户名/手机/邮箱">
+                    <input type="text" class="form-control  input-lg" id="username" name="username"
+                           placeholder="请输入用户名/手机/邮箱">
                 </div>
                 <div class="form-group">
                     <label class="control-label" for="password">密码</label>
-                    <input type="password" class="form-control  input-lg" id="password" name="password" placeholder="请输入密码">
+                    <input type="password" class="form-control  input-lg" id="password" name="password"
+                           placeholder="请输入密码">
                 </div>
 
                 <div class="form-group">
-                    <label for="verify" class="control-label" for="verify">验证码</label>
-                    <input type="text" class="form-control  input-lg" id="verify"  name="verify" placeholder="请填写验证码" autocomplete="off">
+                <label for="verify" class="control-label">验证码</label>
+                <input type="text" class="form-control  input-lg" id="verify"  name="verify" placeholder="请输入验证码" autocomplete="off">
                 </div >
 
                 <div class="form-group">
-                   <a href="javascript:void(0)"><img class="verifyimg reloadverify" alt="点击切换" src="{:U('Public/verify')}"></a>
-                    <a class="reloadverify" title="换一张" href="javascript:void(0)">换一张？</a>
+                <a href="javascript:void(0)"><img class="verifyimg reloadverify" style="width: 40%;" alt="点击切换" src="{:U('Public/verify')}"></a>
+                <a class="reloadverify" title="换一张" href="javascript:void(0)">换一张？</a>
                 </div>
 
+
+                <!--<div class="checkbox">-->
+                    <!--<label style="height: 40px;padding-top: 10px;">-->
+                        <!--<input type="checkbox"> 一周内自动登录-->
+                    <!--</label>-->
+                <!--</div>-->
+                <!--<div class="form-group">-->
+                    <!--<label style="height: 40px;padding-top: 10px;">-->
+                        <!--<a>忘记密码？</a></p>-->
+                    <!--</label>-->
+                <!--</div>-->
+
                 <div class="form-group">
-                    <button type="button" class="btn btn-primary btn-lg btn-block" onclick="login()">登录</button>
+                    <button type="button" id="btn-login" class="btn btn-info  btn-lg btn-block" onclick="login()">登录
+                    </button>
                 </div>
 
             </form>
 
         </div>
 
-        <!--<div class="colcol-md-offset-2 col-md-4">-->
-            <!--还没有账号？<br>-->
-            <!--<a type="button" href="{:U('Public/register')}" class="btn btn-default" >立即注册</a>-->
-        <!--</div>-->
+        <div class="col-md-offset-1 col-md-5">
+            还没有账号？<br>
+            <a type="button" href="{:U('Public/register')}" class="btn btn-default">立即注册</a>
+        </div>
     </div>
 
 </div>
 </body>
 </html>
 <script>
-    $(function(){
+    $(function () {
         //回车提交
         $(".form").keyup(function (e) {
             if (e.keyCode === 13) {
@@ -65,21 +79,20 @@
         });
         //刷新验证码
         var verifyimg = $(".verifyimg").attr("src");
-        $(".reloadverify").click(function(){
-            if( verifyimg.indexOf('?')>0){
-                $(".verifyimg").attr("src", verifyimg+'&random='+Math.random());
-            }else{
-                $(".verifyimg").attr("src", verifyimg.replace(/\?.*$/,'')+'?'+Math.random());
+        $(".reloadverify").click(function () {
+            if (verifyimg.indexOf('?') > 0) {
+                $(".verifyimg").attr("src", verifyimg + '&random=' + Math.random());
+            } else {
+                $(".verifyimg").attr("src", verifyimg.replace(/\?.*$/, '') + '?' + Math.random());
             }
         });
 
     });
 
     function login() {
-        var verify=$("#verify").val();
+        var verify = $("#verify").val();
         var username = $("#username").val();
         var password = $("#password").val();
-
 
 
         if (username == "") {
@@ -104,15 +117,16 @@
             type: "POST",
             url: '{:U("Public/login")}',
             dataType: "json",
-            data: {"username": username, "password": password,"verify":verify,"token":token},
+            data: {"username": username, "password": password, "verify": verify, "token": token},
             beforeSend: function () {
+
                 $('#msg').addClass('alert alert-success').html("正在登陆...");
             },
             success: function (json) {
                 if (json.status == 1) {
                     $('#msg').addClass('alert alert-success').html("登陆成功，正在跳转...");
                     // alert('登陆成功！');
-                    location.href = "{:U('Index/index')}";
+                    window.location.href = json.url;
                 } else {
                     $('#msg').addClass('alert alert-warning').html("登陆失败！" + json.info);
                     $(".reloadverify").click();
@@ -120,6 +134,7 @@
                 }
             }
         });
+
     }
 
 </script>

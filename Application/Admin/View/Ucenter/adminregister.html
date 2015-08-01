@@ -1,0 +1,37 @@
+<extend name="base"/>
+
+<block name="body">
+    <eq name="UserInfo['status']" value="2">
+
+        <div class="alert alert-success" role="alert">亲,你的资料已提交,请认真等待审核</div>
+
+        <else/>
+
+    <div class="alert alert-success" role="alert">亲,你还不是管理员,请先提交你的资料,并认真等待工作人员审核</div>
+           <div class="container">
+            <form id="fm" action="{:U()}" method="post">
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" class="form-control input-lg" name="real_name" value="" placeholder="请输入真实姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>授权码</label>
+                        <input type="text" class="form-control input-lg" name="key"  placeholder="请输入授权码">
+
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-info btn-lg">提交资料</button>
+            </form>
+           </div>
+    </eq>
+</block>
+
+<block name="script">
+    <script type="text/javascript">
+        $(function(){
+            //导航高亮
+            highlight_subnav("{:U('adminRegister')}");
+        });
+    </script>
+</block>

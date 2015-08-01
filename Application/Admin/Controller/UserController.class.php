@@ -384,4 +384,27 @@ class UserController extends AdminController
         }
 
     }
+
+    /**
+     * 审核管理员
+     * @param $uid
+     */
+    public function auditAdmin($uid){
+
+        $ucentermember = D('UcenterMember');
+        if (IS_POST) {
+            if (false !== $ucentermember->auditAdmin($uid)) {
+                $this->success('编辑成功！');
+            } else {
+                $error = $ucentermember->getError();
+                $this->error(empty($error) ? '未知错误！' : $error);
+            }
+        } else {
+
+            $info = $uid ? $ucentermember->info($uid, $type = 'admin') : '';
+            $this->assign('info', $info);
+            $this->meta_title = '审核管理员';
+            $this->display();
+        }
+    }
 }

@@ -18,7 +18,8 @@ class GroupController extends AdminController
         $tree = D('AuthGroup')->getTree(0, 'id,group_code,title,description,level,pid,status,public,type');
         $this->assign('_list', $tree);
         $this->meta_title = '组织机构管理';
-        $this->assign('http_host', $_SERVER['HTTP_HOST']);
+       // $this->assign('http_host', $_SERVER['HTTP_HOST']);
+        //http://{$http_host}{:U("Public/register")}&key='+v.group_key+'
         // 记录当前列表页的cookie
         Cookie('__forward__',$_SERVER['REQUEST_URI']);
         $this->display();

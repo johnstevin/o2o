@@ -36,6 +36,7 @@ class ProductModel extends Model
      */
     protected $_auto = array(
         array('add_time', NOW_TIME, self::MODEL_INSERT),
+        array('edit_time', NOW_TIME, self::MODEL_BOTH),
         array('add_ip', 'get_client_ip', self::MODEL_INSERT, 'function', 1),
         array('edit_time', NOW_TIME),
     );

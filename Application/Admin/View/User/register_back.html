@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>社区O2O平台</title>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" href="__STATIC__/bootstrap/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h3>用户注册</h3>
+    <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <div  id="msg"  ></div>
+            <form action="?" method="post" name="form" class="form">
+                <div class="form-group">
+                    <div>
+                        <label>手机</label>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-7 col-sm-8 col-md-8">
+                            <input type="text" class="form-control  input-lg" id="mobile" name="mobile" placeholder="手机号码">
+                        </div>
+                        <div class="col-xs-5 col-sm-4 col-md-4">
+                            <button type="button" class="btn btn-default btn-lg btn-block" onclick="getVerifyCode()">获取验证码
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+                    <label for="verify_code">短信验证码</label>
+                    <input type="text" class="form-control  input-lg" id="verify_code" name="verify_code"
+                           placeholder="短信验证码">
+                </div>
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" class="form-control input-lg" id="username" name="username" placeholder="用户名">
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" class="form-control  input-lg" id="password" name="password"
+                           placeholder="6-16为数字、英文字母大小写">
+                </div>
+                <div class="form-group">
+                    <label for="password">确认密码</label>
+                    <input type="password" class="form-control  input-lg" id="repassword" name="repassword"
+                           placeholder="请输入确认密码">
+                </div>
+                <div class="form-group">
+                    <label for="email">邮箱</label>
+                    <input type="text" class="form-control  input-lg" id="email" name="email" placeholder="邮箱">
+                </div>
+
+
+                <button type="button" class="btn btn-info btn-lg btn-block" onclick="register()">注册</button>
+            </form>
+
+
+        </div>
+        <div class="col-md-offset-1 col-md-5">
+            已经有账号？<br><br>
+            <a type="button" href="{:U('Public/login')}" class="btn btn-default" >立即登陆</a>
+        </div>
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="__STATIC__/js/jquery.min.js"></script>
+    <script src="__STATIC__/js/jquery.md5.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script type="text/javascript" src="__STATIC__/bootstrap/js/bootstrap.min.js"></script>
+</div>
+</body>
+</html>
+<script>
+
+    //回车提交
+    $(".form").keyup(function (e) {
+        if (e.keyCode === 13) {
+            register();
+            return false;
+        }
+    });
+
+    function getVerifyCode() {
+        var target = "{:U('getVerifyCode')}";
+        var mobile = $("#mobile").val();
+        if (mobile == "") {
+            $('#msg').addClass('alert alert-warning').html("手机号不能为空！");
+            $("#mobile").focus();
+            return false;
+        }
+        $.get(target, {"mobile": mobile}, function (data) {
+            //TODO
+            if(data.status){
+                $('#msg').addClass('alert alert-success').html("发送成功！");
+            }else{
+                $('#msg').addClass('alert alert-warning').html("发送失败！错误原因:" + data.info);
+            }
+        });
+    }
+
+    function register() {
+        var username=$("#username").val();
+        var mobile = $("#mobile").val();
+        var password = $("#password").val();
+        var repassword = $("#repassword").val();
+        var email=$("#email").val();
+        var verify_code = $('#verify_code').val();
+        var group_id = "{:I('key')}";
+        if (group_id == '' || group_id == null) {
+            $('#msg').addClass('alert alert-warning').html("注册失败！非法注册！");
+            //};
+            return false;
+        }
+
+        if (mobile == "") {
+            $('#msg').addClass('alert alert-warning').html("手机号不能为空！");
+            $("#mobile").focus();
+            return false;
+        }
+        if (password == "") {
+            $('#msg').addClass('alert alert-warning').html("密码不能为空！");
+            $("#password").focus();
+            return false;
+        }
+
+        if(password!=repassword){
+            $('#msg').addClass('alert alert-warning').html("两次密码输入不一致！");
+            $("#repassword").focus();
+            return false;
+        }
+
+        password = $.md5(password);
+
+        repassword = $.md5(repassword);
+
+        $.ajax({
+            type: "POST",
+            url: '{:U("Public/register")}',
+            dataType: "json",
+            data: {
+                "mobile": mobile,
+                "password": password,
+                "group_id": group_id,
+                "is_admin": '1',
+                "email":email,
+                "repassword":repassword,
+                "verify_code":verify_code
+            },
+            beforeSend: function () {
+                $('#msg').addClass('alert alert-success').html("正在注册...");
+            },
+            success: function(json){
+                if(json.status==1){
+                    $('#msg').addClass('alert alert-success').html("注册成功，正在跳转...");
+                    alert('注册成功！');
+                    location.href="{:U('Public/login')}";
+                }else{
+                    $('#msg').addClass('alert alert-warning').html("注册失败！"+json.info);
+                    return false;
+                }
+            }
+        });
+    }
+
+</script>
