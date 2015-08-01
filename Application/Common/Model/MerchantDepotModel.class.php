@@ -1032,14 +1032,16 @@ class MerchantDepotModel extends RelationModel
             'md.price',
             'md.remark',
             'md.add_time',
-            'p.title',
-            'p.detail',
-            'p.number',
-            'p.description',
+            'if(md.type = 0, p.title, sp.title) title',
+            'if(md.type = 0, p.detail, sp.detail) detail',
+            'if(md.type = 0, p.number, sp.number) number',
+            'if(md.type = 0, p.description, sp.description) description',
             'p.message',
+            'md.type'
         ];
         $model = self::getInstance()->alias('md');//给当前表取一个别名
         $model->join('LEFT JOIN sq_product p ON md.product_id=p.id');
+        $model->join('LEFT JOIN sq_shop_product sp ON md.product_id=sp.id');
         if ($getPicture) {//如果需要获取图片
             $model->join('LEFT JOIN sq_picture product_picture ON p.picture=product_picture.id');
             $fields = array_merge($fields, [
