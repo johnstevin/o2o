@@ -25,13 +25,26 @@ class PublicController extends Controller {
             }
             $token = I('post.token') == '' ? $this->error('请正确设置安全码!') : I('post.token');
             $randCache = S('ADMIN_LOGIN_TOKEN_'.$token);
-            $randCache !== false ? '' : $this->error('已超时，请重新设置!');
+            $randCache !== false ? '' : $this->error('已超时，请先刷新再登录!');
             $randCache == $token ? '' : $this->error('安全码不正确!');
             $Ucenter = D('UcenterMember');
             $uid = $Ucenter->login($username, $password, $token, 5);
             if(0 < $uid){
-                action_log('admin_login', 'admin', $uid, $uid, 1);
-                $this->success('登录成功！', U('Index/index'));
+
+
+                /*根据用户的角色引导到不同的界面*/
+                $info=$Ucenter->info($uid,'admin');
+
+                /*是管理员并且已经授权*/
+                if($info['is_admin']==1&&$info['status']==1){
+                    action_log('admin_login', 'admin', $uid, $uid, 1);
+                    $this->success('登录成功！', U('Index/index'));
+                }
+                else{
+                    $this->success('登录成功！', U('Ucenter/index'));
+                }
+
+
 
             } else {
                 switch($uid) {
@@ -61,9 +74,78 @@ class PublicController extends Controller {
         }
     }
 
+//    /**
+//     * 后台用户注册
+//     * @author stevin.john
+//     */
+//    public function register(){
+//
+//        if(IS_POST){
+//            $verify_code = I('post.verify_code');
+//            $mobile      = I('post.mobile');
+//            $password    = I('post.password');
+//            $repassword  = I('post.repassword');
+//            $username    = I('post.username');
+//            $email       = I('post.email');
+//            $group_id    = think_decrypt(I('post.group_id'));
+//            $is_admin    = I('post.is_admin',1);
+//
+//            ///* 检测短信验证码 */
+//            if(!$verify_code||!verify_sms_code($mobile,$verify_code)){
+//                $this->error('验证码输入错误！');
+//            }
+//
+//            empty($password) && $this->error('请输入新密码');
+//
+//            empty($repassword) && $this->error('请输入确认密码');
+//
+//            if($password!== $repassword){
+//                $this->error('您输入的新密码与确认密码不一致');
+//            }
+//
+//            $Ucenter = D('UcenterMember');
+//            D()->startTrans();
+//
+//            $uid = $Ucenter->register($mobile, $password, $username, $email);
+//            if(0 < $uid){
+//                //赋组织：用户组，赋角色：普通用户,状态1-正常
+//                //赋组织：GET组织id,赋角色：0,状态0-待审核
+//                $auth = D('AuthAccess');
+//                $data[] = array(
+//                    'uid'          => $uid,
+//                    'group_id'     => C('AUTH_GROUP_ID.GROUP_ID_MEMBER_CLIENT'),
+//                    'role_id'      => C('AUTH_ROLE_ID.ROLE_ID_MEMBER_CLIENT'),
+//                    'status'       => 1,
+//                );
+//                $data[] = array(
+//                    'uid'          => $uid,
+//                    'group_id'     => $group_id,
+//                    'role_id'      => 0,
+//                    'status'       => 0,
+//                );
+//                $result = $auth->addUserAccess($data);
+//                if( 0 > $result ){
+//                    D()->rollback();
+//                    $this->error($this->showRegError($result));
+//                }else{
+//                    D()->commit();
+//                    action_log('admin_register', 'ucentermember', $uid, $uid, 1);
+//                    $this->success('注册成功！', U('Public/login'));
+//                }
+//
+//            } else {
+//                D()->rollback();
+//                $this->error($this->showRegError($uid));
+//            }
+//
+//        } else {
+//            $this->display('User/register');
+//        }
+//    }
+
     /**
      * 后台用户注册
-     * @author stevin.john
+     * @author liu hui
      */
     public function register(){
 
@@ -74,10 +156,10 @@ class PublicController extends Controller {
             $repassword  = I('post.repassword');
             $username    = I('post.username');
             $email       = I('post.email');
-            $group_id    = think_decrypt(I('post.group_id'));
-            $is_admin    = I('post.is_admin',1);
+//            $group_id    = think_decrypt(I('post.group_id'));
+//            $is_admin    = I('post.is_admin',1);
 
-            ///* 检测短信验证码 */
+            /* 检测短信验证码 */
             if(!$verify_code||!verify_sms_code($mobile,$verify_code)){
                 $this->error('验证码输入错误！');
             }
@@ -104,12 +186,12 @@ class PublicController extends Controller {
                     'role_id'      => C('AUTH_ROLE_ID.ROLE_ID_MEMBER_CLIENT'),
                     'status'       => 1,
                 );
-                $data[] = array(
-                    'uid'          => $uid,
-                    'group_id'     => $group_id,
-                    'role_id'      => 0,
-                    'status'       => 0,
-                );
+//                $data[] = array(
+//                    'uid'          => $uid,
+//                    'group_id'     => $group_id,
+//                    'role_id'      => 0,
+//                    'status'       => 0,
+//                );
                 $result = $auth->addUserAccess($data);
                 if( 0 > $result ){
                     D()->rollback();
@@ -184,7 +266,7 @@ class PublicController extends Controller {
     }
 
     public function verify(){
-        $verify = new \Think\Verify();
+        $verify = new \Think\Verify(array('length'=>4));
         $verify->entry(1);
     }
 

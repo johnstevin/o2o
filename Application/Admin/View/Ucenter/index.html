@@ -1,0 +1,41 @@
+<extend name="base"/>
+
+<block name="body">
+
+            <div>
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">首页</a></li>
+                    <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">基本信息</a></li>
+                    <li role="presentation"><a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">头像</a></li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="home"><div class="jumbotron">
+                        <h1>Hello, world!</h1>
+                        <p>This is home</p>
+                        <p><a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a></p>
+                    </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="profile">
+
+                     <h1>我是基本资料</h1>
+
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="messages">
+                       <h1>我是头像</h1>
+                    </div>
+                </div>
+
+            </div>
+</block>
+
+<block name="script">
+        <script type="text/javascript">
+            $(function(){
+                //导航高亮
+                highlight_subnav("{:U('index')}");
+            });
+        </script>
+</block>

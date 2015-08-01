@@ -23,6 +23,7 @@ class FeedbackController extends AdminController
         }
         if (!IS_ROOT) {
             $map['user_id'] = UID;
+//            $map['user_id|appoint_user'] = UID;
         }
 
         $list = $this->lists('Feedback', $map);
@@ -49,7 +50,9 @@ class FeedbackController extends AdminController
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
+//            $appoint_users=M('UcenterMember')->field('id,real_name as name')->where('')->select();
             $this->meta_title = '提交工单';
+//            $this->assign('appoint_users',$appoint_users);
             $this->assign('info', null);
             $this->display('edit');
         }
@@ -73,7 +76,9 @@ class FeedbackController extends AdminController
                 $this->error(empty($error) ? '未知错误！' : $error);
             }
         } else {
+//            $appoint_users=M('UcenterMember')->field('id,real_name as name')->where('')->select();
             $info = $id ? $Feedback->info($id) : '';
+//            $this->assign('appoint_users',$appoint_users);
             $this->assign('info', $info);
             $this->meta_title = '编辑工单';
             $this->display();

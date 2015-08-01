@@ -1,107 +1,139 @@
-
-    <div class="row">
-        <div class=" col-sm-6 col-lg-4">
-            <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-category"
-               class="btn btn-success"
-               href="{:U('add')}">新 增</a>
-        </div>
-        <!-- 高级搜索 -->
-        <div class="search-form fr cf  col-sm-6 col-lg-8">
-            <div class="input-group">
-                <input type="text" id="searchInput" name="name" class="form-control search-input" value="{:I('name')}"
-                       placeholder="请输入产品编号或名称或编码">
+<div class="row">
+    <div class=" col-sm-6 col-lg-4">
+        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal" id="add-category"
+           class="btn btn-success"
+           href="{:U('add')}">新 增</a>
+    </div>
+    <!-- 高级搜索 -->
+    <div class="search-form fr cf  col-sm-6 col-lg-8">
+        <div class="input-group">
+            <input type="text" id="searchInput" name="name" class="form-control search-input" value="{:I('name')}"
+                   placeholder="请输入产品编号或名称或编码">
                     <span class="input-group-btn">
                         <button class="btn btn-default sch-btn" class="sch-btn" href="javascript:void(0);" id="search"
                                 type="button" url="{:U('Product/index')}">搜索
                         </button>
                     </span>
-            </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-sm-12">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                    <tr>
-                        <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
-                        <th>商品编号</th>
-                        <th>商品名称</th>
-                        <th>详细信息</th>
-                        <th>品牌</th>
-                        <th>商品规格</th>
-                        <th>价格</th>
-                        <th>商品编码</th>
-                        <th>最后编辑时间</th>
-                        <th>商品审核</th>
-                        <th>编辑</th>
-                        <th>是否启用</th>
-                        <th>操作</th>
+</div>
+<div class="row">
+    <div class="col-sm-12">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                <tr>
+                    <th class="row-selected row-selected"><input class="check-all" type="checkbox"/></th>
+                    <th>商品编号</th>
+                    <th>商品名称</th>
+                    <th>详细信息</th>
+                    <th>品牌</th>
+                    <th>商品规格</th>
+                    <th>价格</th>
+                    <th>商品编码</th>
+                    <th>最后编辑时间</th>
+                    <th>商品审核</th>
+                    <th>编辑</th>
+                    <th>是否启用</th>
+                    <th>操作</th>
 
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <notempty name="_list">
-                        <volist name="_list" id="vo">
-                            <tr>
-                                <td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}"/></td>
-                                <td>{$vo.id}</td>
-                                <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                                       href="{:U('edit?id='.$vo['id'])}">{$vo.title}</a></td>
-                                <td><span>{:mb_strimwidth($vo['description'],0,60,"...","utf-8")}</span></td>
-                                <td>{$vo.brand}</td>
-                                <td>{$vo.norm}</td>
-                                <td>{$vo.price}</td>
-                                <td><span>{$vo.number}</span></td>
-                                <td>{$vo.edit_time|time_format}</td>
-                                <td>
-                                    <egt name="vo.status" value="2">
-                                        <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                                           href="{:U('audit?id='.$vo['id'])}">审核商品</a>
-                                    </egt>
-                                </td>
-                                <td> <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
-                                        href="{:U('edit?id='.$vo['id'])}">编辑</a></td>
+                </tr>
+                </thead>
+                <tbody>
+                <notempty name="_list">
+                    <volist name="_list" id="vo">
+                        <tr>
+                            <td><input class="ids" type="checkbox" name="id[]" value="{$vo.id}"/></td>
+                            <td>{$vo.id}</td>
+                            <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                                   href="{:U('edit?id='.$vo['id'])}">{$vo.title}</a></td>
+                            <td><span>{:mb_strimwidth($vo['description'],0,60,"...","utf-8")}</span></td>
+                            <td>{$vo.brand}</td>
+                            <td>{$vo.norm}</td>
+                            <td>{$vo.price}</td>
+                            <td><span>{$vo.number}</span></td>
+                            <td>{$vo.edit_time|time_format}</td>
+                            <td>
+                                <egt name="vo.status" value="2">
+                                    <a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                                       href="{:U('audit?id='.$vo['id'])}">审核商品</a>
+                                </egt>
+                            </td>
+                            <td><a data-backdrop="false" data-toggle="modal" data-target="#DlgModal"
+                                   href="{:U('edit?id='.$vo['id'])}">编辑</a></td>
 
-                                <td>
-                                    <input class="switch"  type="checkbox" data-size="small"
-                                     data-off-href="{:U('Product/changeStatus?method=forbid&id='.$vo['id'])}"
-                                     data-on-href="{:U('Product/changeStatus?method=resume&id='.$vo['id'])}"
+                            <td>
+                                <input class="switch" type="checkbox" data-size="small"
+                                       data-off-href="{:U('Product/changeStatus?method=forbid&id='.$vo['id'])}"
+                                       data-on-href="{:U('Product/changeStatus?method=resume&id='.$vo['id'])}"
 
-                                    <if condition="$vo.status heq '1'">
-                                        data-on-color="success" data-off-color="warning"  checked
-                                        <elseif condition="($vo.status heq '2') OR ($name heq '3')"/>
-                                        data-on-color="info" data-off-color="warning" checked disabled
+                                <if condition="$vo.status heq '1'">
+                                    data-on-color="success" data-off-color="warning" checked
+                                    <elseif condition="($vo.status heq '2') OR ($name heq '3')"/>
+                                    data-on-color="info" data-off-color="warning" checked disabled
 
-                                        <else />
-                                        data-on-color="success" data-off-color="warning"
+                                    <else/>
+                                    data-on-color="success" data-off-color="warning"
 
-                                    </if>
-                                    />
+                                </if>
+                                />
 
 
+                            </td>
+                            <td>
 
-                                </td>
-                                <td>
+                                <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
+                                   class="confirm ajax-get">删除</a>
+                            </td>
 
-                                    <a href="{:U('Product/changeStatus?method=delete&id='.$vo['id'])}"
-                                       class="confirm ajax-get">删除</a>
-                                </td>
-
-                            </tr>
-                        </volist>
-                        <else/>
-                        <td colspan="11" class="text-center"> aOh! 暂时还没有内容!</td>
-                    </notempty>
-                    </tbody>
-                </table>
-            </div>
-            <div class="page">
-                {$_page}
-            </div>
+                        </tr>
+                    </volist>
+                    <else/>
+                    <td colspan="11" class="text-center"> aOh! 暂时还没有内容!</td>
+                </notempty>
+                </tbody>
+            </table>
         </div>
+
     </div>
+
+    <div class="page">
+        {$_page}
+    </div>
+    <div class="input-group switch_page col-md-2">
+        <input type="number" name="p" class="form-control input-PageSize" placeholder="输入页码回车">
+      <span class="input-group-btn">
+        <button class="btn btn-default"  href="javascript:void(0);" id="PageSize"
+                type="button" url="{:U('Product/index')}">Go!</button>
+      </span>
+    </div>
+</div>
 <script>
+    //页码跳转
+    $("#PageSize").click(function () {
+        var url = $(this).attr('url');
+        var query = $('.switch_page').find('input').serialize();
+        query = query.replace(/(&|^)(\w*?\d*?\-*?_*?)*?=?((?=&)|(?=$))/g, '');
+        query = query.replace(/^&/g, '');
+        if (url.indexOf('?') > 0) {
+            url += '&' + query+'&r=50';
+        } else {
+            url += '?' + query+'&r=50';
+        }
+        var target = url;
+        // var target = $('#rg-container-fun').attr("href") + "?name=" + $('#searchInput').val();
+        if (target) {
+            contentload(target);
+        }
+        //window.location.href = url;
+    });
+    //回车
+    $(".input-PageSize").keyup(function (e) {
+        if (e.keyCode === 13) {
+            $("#PageSize").click();
+            return false;
+        }
+    });
     //搜索功能
     $("#search").click(function () {
         var url = $(this).attr('url');
@@ -113,8 +145,8 @@
         } else {
             url += '?' + query;
         }
-        var target =url;
-       // var target = $('#rg-container-fun').attr("href") + "?name=" + $('#searchInput').val();
+        var target = url;
+        // var target = $('#rg-container-fun').attr("href") + "?name=" + $('#searchInput').val();
         if (target) {
             contentload(target);
         }

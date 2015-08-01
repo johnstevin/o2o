@@ -77,11 +77,55 @@
                     </select>
                 </div>
             </div>
+
+            <!--<div class="form-group">-->
+                <!--<label for="norm" class="control-label col-md-2">规格</label>-->
+
+                <!--<div class="col-md-10">-->
+                    <!--<div class="row">-->
+                        <!--<div class="col-md-7">-->
+                            <!--<input type="text" class="form-control" placeholder="请输入规格"/>-->
+                        <!--</div>-->
+                        <!--<div class="col-md-5">-->
+                            <!--<input type="number" class="form-control" placeholder="规格对应价格"/>-->
+                        <!--</div>-->
+
+                    <!--</div>-->
+                    <!--<div class="row" style="padding-top: 10px;">-->
+                        <!--<div class="col-md-7">-->
+                            <!--<input type="text"  class="form-control" placeholder="请输入规格"/>-->
+                        <!--</div>-->
+                        <!--<div class="col-md-4">-->
+                            <!--<input type="number"class="form-control" placeholder="规格对应价格"/>-->
+                        <!--</div>-->
+                        <!--<div class="col-md-1">-->
+                            <!--<button type="button" class="btn btn-default remove_self">-->
+                                <!--<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>-->
+                            <!--</button>-->
+                        <!--</div>-->
+
+                    <!--</div>-->
+                    <!--<div class="row" id="guige_option" style="padding-top: 10px;">-->
+
+                        <!--<div class="col-lg-offset-4 col-md-4">-->
+                            <!--<button type="button" class="btn btn-default btn-sm add_guige">-->
+                                <!--<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>添加一行-->
+                            <!--</button>-->
+                            <!--<button type="button" class="btn btn-default btn-sm remore_guige">-->
+                                <!--<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>移除一行-->
+                            <!--</button>-->
+                        <!--</div>-->
+
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+
+
             <div class="form-group">
                 <label for="title" class="control-label col-md-2">名称</label>
 
                 <div class="col-md-10">
-                    <input id="title" type="text" name="title" class="form-control"
+                    <input id="title" type="text" name="title" class="form-control" placeholder="商品名称"
                            value="{$info.title|default=''}"/>
                 </div>
             </div>
@@ -89,7 +133,7 @@
                 <label for="price" class="control-label col-md-2">价格</label>
 
                 <div class="col-md-10">
-                    <input id="price" type="text" name="price" class="form-control"
+                    <input id="price" type="text" name="price" class="form-control" placeholder="商品价格"
                            value="{$info.price|default=''}"/>
                 </div>
             </div>
@@ -97,7 +141,7 @@
                 <label for="code" class="control-label col-md-2">编码</label>
 
                 <div class="col-md-10">
-                    <input id="code" type="text" name="number" class="form-control"
+                    <input id="code" type="text" name="number" class="form-control" placeholder="商品条形码"
                            value="{$info.number|default=''}"/>
                 </div>
             </div>
@@ -105,7 +149,7 @@
                 <label for="description" class="control-label col-md-2">详细</label>
 
                 <div class="col-md-10">
-                    <textarea id="description" rows="4" type="text" name="description" class="form-control">{$info.description|default=''}</textarea>
+                    <textarea id="description" rows="4" type="text" placeholder="商品名称" name="description" class="form-control">{$info.description|default=''}</textarea>
                 </div>
             </div>
 
@@ -222,7 +266,21 @@
     });
 
 
+    $('.add_guige').click(function(){
 
+        $("#guige_option").before('<div class="row" style="padding-top: 10px;"><div class="col-md-7"><input type="text"  class="form-control" placeholder="请输入规格"/> </div> <div class="col-md-4"> <input type="number"class="form-control" placeholder="规格对应价格"/> </div> <div class="col-md-1"> <button type="button" class="btn btn-default"> <span class="glyphicon glyphicon-minus" aria-hidden="true"></span> </button> </div> </div>');
+
+    });
+
+    $('.remove_guige').click(function(){
+
+        $("#mend").children("input[type='checkbox']:last").parent().remove();
+
+    });
+
+    $('.remove_self').click(function(){
+        $(this).parent().remove();
+    });
 
     $('#category1').change(function () {
         // alert($(this).val());
