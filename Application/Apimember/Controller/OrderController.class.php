@@ -420,18 +420,37 @@ class OrderController extends ApiController
     }
 
     /**
-     * (下单)预处理
+     * NEW 预处理下单,新的订单预处理方法,后续为order(并非submitOrder)
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param string|array $cart 购物车
-     * @param int $deliveryMode 配送模式
-     * @param int $deliveryTime 配送时间
      * @param float $lng 经度
      * @param float $lat 纬度
+     * @param int $deliveryMode 配送方式
+     * @param int $deliveryTime 配送时间
      * @param bool|true $split 是否需要服务器拆单
+     * @return array
      */
     public function pretreatment($cart, $deliveryMode = OrderModel::DELIVERY_MODE_DELIVERY, $deliveryTime = 0, $lng, $lat, $split = true)
     {
         $this->apiSuccess(['data' => OrderModel::getInstance()->pretreatment($cart, $lng, $lat, $deliveryMode, $deliveryTime, $split, $this->getUserId())]);
+    }
+
+    /**
+     * NEW 提交订单,新的提交订单的方法,需要先执行pretreatment
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param string $orderKey 预处理过后的订单KEY
+     * @param string $mobile 收货人联系电话
+     * @param string $consignee 收货人
+     * @param string $address 收货地址
+     * @param string $remark 订单备注
+     * @param int $payMode 支付方式
+     * @return bool
+     * @throws \Exception
+     */
+    public function order($orderKey, $mobile, $consignee, $address, $remark, $payMode = OrderModel::PAY_MODE_OFFLINE)
+    {
+        $this->apiSuccess(['data' => OrderModel::getInstance()->order($this->getUserId(), $orderKey, $mobile, $consignee, $address, $remark, $payMode)]);
     }
 }
