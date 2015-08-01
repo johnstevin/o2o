@@ -35,11 +35,20 @@ use Think\Page;
 class OrderModel extends RelationModel
 {
     /**
+     * 当前模型的实例
      * @var self
      */
     protected static $model;
+    /**
+     * 主键是否自增长
+     * @var bool
+     */
     protected $autoinc = true;
     protected $pk = 'id';
+    /**
+     * 是否开启批量验证
+     * @var bool
+     */
     protected $patchValidate = true;
 
     ## 状态常量
@@ -674,7 +683,7 @@ class OrderModel extends RelationModel
     }
 
     /**
-     * 预处理下单
+     * NEW 预处理下单,新的订单预处理方法,后续为order(并非submitOrder)
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
      * @param string|array $cart 购物车
@@ -694,7 +703,9 @@ class OrderModel extends RelationModel
         if (empty($cart)) E('购物车不能为空');
         $_cart = is_string($cart) ? json_decode($cart, true) : $cart;
         $cart = [];
-        foreach ($_cart as $key => $depot) {
+        foreach ($_cart as $key => &$depot) {
+            $depot['depot_id'] = intval($depot['depot_id']);
+            if ($depot['depot_id'] === 0) E('商品ID非法');
             $cart[$depot['depot_id']] = &$_cart[$key];
         }
 
@@ -724,6 +735,7 @@ class OrderModel extends RelationModel
 
         //商品总数统计
         $productTotal = array_sum(array_column($cart, 'total'));
+        if ($productTotal === 0) E('商品数量不能为空');
         if ($split) {
             $cart = $this->split($cart, $deliveryMode, $_deliveryTime, $lng, $lat);
         }
@@ -756,6 +768,7 @@ class OrderModel extends RelationModel
             ':lat' => $lat
         ]);
         $_shops = $sth->fetchAll(\PDO::FETCH_ASSOC);
+        if (empty($_shops)) E('您所选择的商铺不存在或者已被关闭');
         $shops = [];
         foreach ($_shops as $key => $shop) {
             $shops[$shop['id']] = &$_shops[$key];
@@ -768,7 +781,8 @@ class OrderModel extends RelationModel
         $delivery = $deliveryMode === self::DELIVERY_MODE_DELIVERY;
 
         $deliveryDayTimestamp = strtotime(date('Y-m-d'));//收货当天0:00的时间戳
-        foreach ($depots as $key => $depot) {
+        foreach ($depots as $key => &$depot) {
+            $depot['total'] = $cart[$depot['id']]['total'];
             $currentShop = $shops[$depot['shop_id']];
             //如果商铺不存在
             if (!$currentShop) {
@@ -870,6 +884,123 @@ class OrderModel extends RelationModel
     }
 
     /**
+     * NEW 提交订单,新的提交订单的方法,需要先执行pretreatment
+     * @author Fufeng Nie <niefufeng@gmail.com>
+     *
+     * @param int $userId 用户ID
+     * @param string $orderKey 预处理过后的订单KEY
+     * @param string $mobile 收货人联系电话
+     * @param string $consignee 收货人
+     * @param string $address 收货地址
+     * @param string $remark 订单备注
+     * @param int $payMode 支付方式
+     * @return bool
+     */
+    public function order($userId, $orderKey, $mobile, $consignee, $address, $remark, $payMode = self::PAY_MODE_OFFLINE)
+    {
+        ## 对传入的参数做一下简单处理
+        $userId = intval($userId);
+        $orderKey = trim($orderKey);
+        $consignee = trim($consignee);
+        $address = trim($address);
+        $remark = trim($remark);
+        $payMode = intval($payMode);
+
+        ## 对数据做一下简单验证
+        if (!check_user_exist($userId)) E('用户ID非法');
+        if (!$pretreatment = S($orderKey)) E('下单超时');
+
+        ## 声明一些模型
+        $model = self::getInstance();
+        $orderItemModel = M('order_item');
+        $statusLogModel = OrderStatusModel::getInstance();
+
+        //启动事务
+        $model->startTrans();
+
+        $orderItemData = [];//要插入到order_item的数据
+        $orderLog = [];//日志记录
+
+        $orders = $pretreatment['order'];
+
+        try {
+            if (count($orders) === 1) {
+                $order = current($orders);
+                $priceDetail = current($pretreatment['price_detail']);
+                $shopId = key($orders);
+                $orderData = [
+                    'pid' => 0,
+                    'user_id' => $userId,
+                    'shop_id' => $shopId,
+                    'price' => $priceDetail['total'],
+                    'remark' => $remark,
+                    'pay_mode' => $payMode,
+                    'delivery_mode' => $pretreatment['delivery_mode'],
+                    'delivery_time' => $pretreatment['delivery_time'],
+                    'mobile' => $mobile,
+                    'address' => $address,
+                    'consignee' => $consignee
+                ];
+                if ($model->create($orderData)) E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
+                if (!$orderId = $model->add()) {
+                    E(is_array($model->getDbError()) ? current($model->getDbError()) : $model->getDbError());
+                }
+                foreach ($order as $item) {
+                    $orderItemData[] = [
+                        'order_id' => $orderId,
+                        'product_id' => $item['product_id'],
+                        'depot_id' => $item['depot_id'],
+                        'price' => $item['price'],
+                        'total' => $item['total'],
+                        'type' => $item['type'],
+                        'attribute' => json_encode([]),//TODO 这个不知道是什么鬼
+                    ];
+                }
+            } else {
+                $priceDetail = $pretreatment['price_detail'];
+                if (!$parentId = $model->createEmptyParentOrder($userId, 0, array_sum(array_column($priceDetail, 'total')), $payMode, $pretreatment['delivery_mode'])) E('下单失败');
+                foreach ($pretreatment['order'] as $shopId => $order) {
+                    $orderData = [
+                        'pid' => $parentId,
+                        'user_id' => $userId,
+                        'shop_id' => $shopId,
+                        'price' => $priceDetail[$shopId]['total'],
+                        'remark' => $remark,
+                        'pay_mode' => $payMode,
+                        'delivery_mode' => $pretreatment['delivery_mode'],
+                        'delivery_time' => $pretreatment['delivery_time'],
+                        'mobile' => $mobile,
+                        'address' => $address,
+                        'consignee' => $consignee
+                    ];
+                    if (!$model->create($orderData)) E(is_array($model->getError()) ? current($model->getError()) : $model->getError());
+                    if (!$orderId = $model->add()) E(is_array($model->getDbError()) ? current($model->getDbError()) : $model->getDbError());
+                    foreach ($order as $item) {
+                        $orderItemData[] = [
+                            'order_id' => $orderId,
+                            'product_id' => $item['product_id'],
+                            'depot_id' => $item['depot_id'],
+                            'price' => $item['price'],
+                            'total' => $item['total'],
+                            'type' => $item['type'],
+                            'attribute' => json_encode([]),//TODO 这个不知道是什么鬼
+                        ];
+                    }
+                }
+            }
+            if (!$orderItemModel->addAll($orderItemData)) E($orderItemModel->getDbError());
+            $model->commit();
+            return [
+                'order_id' => isset($parentId) ? $parentId : $orderId
+            ];
+        } catch (\Exception $e) {
+            $model->rollback();
+            throw $e;
+        }
+    }
+
+    /**
+     * TODO 已经有了新接口,在服务器数据库更新之后,这个方法将废弃
      * 初始化订单，用于分配未指定商家的商品到商铺，计算价格等，会把计算后的结果缓存到服务器
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
@@ -1119,6 +1250,7 @@ class OrderModel extends RelationModel
     }
 
     /**
+     * TODO 已经有了新接口,在服务器数据库更新之后,这个方法将废弃
      * 提交订单
      * @author Fufeng Nie <niefufeng@gmail.com>
      *
